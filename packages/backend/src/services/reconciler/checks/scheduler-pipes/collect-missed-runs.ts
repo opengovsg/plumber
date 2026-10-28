@@ -23,7 +23,7 @@ interface CollectMissedRunsInput {
   graceSeconds: number
 }
 
-// One pipe with bad trigger parameters must not stop the gauges for every other pipe.
+// One pipe with bad trigger parameters must not stop the check for every other pipe.
 function readSchedulePattern(pipe: PublishedScheduledPipe): string | null {
   try {
     return getSchedulePattern(pipe.triggerKey, pipe.triggerParameters)

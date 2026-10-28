@@ -3,7 +3,7 @@
  *
  * - "Count once across all tasks. For each missed run time:
  *   `SET scheduler:missed-run:<flowId>:<runTimeMillis> 1 NX EX 604800`.
- *   Increment `plumber.schedules.missed_runs` only when it returns `OK`."
+ *   Log one `reconciler-missed-run` line, with its `reason`, only when it returns `OK`."
  * - "The counter carries a `reason` tag."
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -12,11 +12,11 @@ import { countMissedRuns } from '../count-missed-runs'
 import type { MissedRun } from '../missed-runs'
 
 const mocks = vi.hoisted(() => ({
-  increment: vi.fn(),
+  logWarn: vi.fn(),
 }))
 
-vi.mock('@/helpers/tracer', () => ({
-  default: { dogstatsd: { gauge: vi.fn(), increment: mocks.increment } },
+vi.mock('@/helpers/logger', () => ({
+  default: { info: vi.fn(), warn: mocks.logWarn, error: vi.fn() },
 }))
 
 // The real module connects to Redis on import.
@@ -68,7 +68,7 @@ describe('countMissedRuns', () => {
     )
   })
 
-  it('increments the counter with the reason of each missed run', async () => {
+  it('logs one missed-run line with the reason of each missed run', async () => {
     const markerRedis = createSharedMarkerRedis()
 
     const counted = await countMissedRuns({
@@ -77,16 +77,24 @@ describe('countMissedRuns', () => {
     })
 
     expect(counted).toEqual(MISSED_RUNS)
-    expect(mocks.increment).toHaveBeenCalledTimes(2)
-    expect(mocks.increment).toHaveBeenCalledWith(
-      'plumber.schedules.missed_runs',
-      1,
-      { reason: 'late' },
+    expect(mocks.logWarn).toHaveBeenCalledTimes(2)
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      {
+        event: 'reconciler-missed-run',
+        flowId: FLOW_ID,
+        runTimeMillis: RUN_TIME,
+        reason: 'late',
+      },
     )
-    expect(mocks.increment).toHaveBeenCalledWith(
-      'plumber.schedules.missed_runs',
-      1,
-      { reason: 'stale-timestamp' },
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      {
+        event: 'reconciler-missed-run',
+        flowId: FLOW_ID,
+        runTimeMillis: RUN_TIME + 3_600_000,
+        reason: 'stale-timestamp',
+      },
     )
   })
 
@@ -105,6 +113,6 @@ describe('countMissedRuns', () => {
 
     expect(secondCheck).toEqual([])
     expect(secondTask).toEqual([])
-    expect(mocks.increment).toHaveBeenCalledTimes(2)
+    expect(mocks.logWarn).toHaveBeenCalledTimes(2)
   })
 })
