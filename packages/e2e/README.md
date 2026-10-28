@@ -68,12 +68,15 @@ It does not provide production-specific fixtures. This migration preserves that 
 Configuration tests run without live credentials or network requests.
 
 Local execution uses real third-party credentials. The application's sample environment does not provide them.
-For an existing localhost session, pass its `plumber.sid` cookie value from the repository root:
+For an existing localhost session, pass its `plumber.sid` cookie value from the repository root.
+Tests target staging unless `BASE_URL` points them at your local app:
 
 ```sh
-BASE_URL=http://localhost:3001 pnpm run login:e2e:local <cookie>
+pnpm run login:e2e:local <cookie>
 BASE_URL=http://localhost:3001 pnpm run test:e2e
 ```
+
+A `BASE_URL` already exported in your shell also retargets E2E runs. Unset it before testing staging.
 
 Do not add `--` before the cookie. pnpm forwards it to the script as the first argument.
 
