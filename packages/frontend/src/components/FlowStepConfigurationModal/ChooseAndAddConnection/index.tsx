@@ -14,6 +14,7 @@ import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
 import ConfigureDatabricksConnection from './ConfigureDatabricksConnection'
 import ConfigureExcelConnection from './ConfigureExcelConnection'
+import { databricksReconnectConnections } from './databricks-reconnect-connections'
 
 interface ChooseAndAddConnectionProps {
   onClose: () => void
@@ -98,11 +99,11 @@ export default function ChooseAndAddConnection(
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
     const storedConnectionId = step?.connection?.id
-    // An existing Databricks step reconnects to the connection it already stores.
     const connections =
       appWithConnections?.key === DATABRICKS_APP_KEY && storedConnectionId
-        ? (appWithConnections.connections ?? []).filter(
-            (connection) => connection.id === storedConnectionId,
+        ? databricksReconnectConnections(
+            appWithConnections.connections ?? [],
+            storedConnectionId,
           )
         : appWithConnections?.connections
     const options =
