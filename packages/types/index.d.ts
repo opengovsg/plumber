@@ -48,6 +48,7 @@ export interface IConnection {
   updatedAt: string
   description?: string
   environment?: IConnectionEnvironment | null
+  generation?: string | null
 }
 
 /**
