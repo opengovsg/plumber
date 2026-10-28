@@ -9,6 +9,7 @@ import {
 } from './constants'
 
 const UPDATE_MAILING_LISTS_ID = 'a03f3914-bbbf-43b0-8385-c6934362cce8'
+const TILE_STEP_POSITION = 2
 
 export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
   id: UPDATE_MAILING_LISTS_ID,
@@ -26,22 +27,49 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
-      position: 2,
+      position: TILE_STEP_POSITION,
       appKey: 'tiles',
       eventKey: 'findSingleRow',
+      templateData: {
+        name: 'Mailing list',
+        columns: ['Email', 'Name', 'Mobile number'],
+        rowData: [
+          {
+            Email: 'anna_lee@email.com',
+            Name: 'Anna Lee',
+            'Mobile number': '+6598625072',
+          },
+          {
+            Email: 'susan_tjl@email.com',
+            Name: 'Susan Tan Jia Ling',
+          },
+          {
+            Email: 'jane_98@email.com',
+            Name: 'Jane Lim',
+          },
+          {
+            Email: 'amy_low_ll@email.com',
+            Name: 'Amy Low',
+          },
+          {
+            Email: 'judy_00@email.com',
+            Name: 'Judy Ng',
+          },
+        ],
+      },
       sampleUrl:
         'https://plumber.gov.sg/tiles/ba2150f6-14d5-44cf-8a77-083c18f43518/c6b75dfa-9fa9-494c-b027-773da38ebaff',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
       parameters: {
         filters: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Name'),
             value: CREATE_TEMPLATE_STEP_VARIABLE('Replace with name response'),
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
     {
@@ -72,25 +100,28 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       parameters: {
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Email'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with email response',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Name'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with name response',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Mobile number',
+            ),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with mobile number response',
             ),
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
     {
@@ -122,47 +153,23 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Name'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with name response',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Mobile number',
+            ),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with mobile number response',
             ),
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
   ],
-  tileTemplateData: {
-    name: 'Mailing list',
-    columns: ['Email', 'Name', 'Mobile number'],
-    rowData: [
-      {
-        Email: 'anna_lee@email.com',
-        Name: 'Anna Lee',
-        'Mobile number': '+6598625072',
-      },
-      {
-        Email: 'susan_tjl@email.com',
-        Name: 'Susan Tan Jia Ling',
-      },
-      {
-        Email: 'jane_98@email.com',
-        Name: 'Jane Lim',
-      },
-      {
-        Email: 'amy_low_ll@email.com',
-        Name: 'Amy Low',
-      },
-      {
-        Email: 'judy_00@email.com',
-        Name: 'Judy Ng',
-      },
-    ],
-  },
 }

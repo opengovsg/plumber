@@ -9,6 +9,7 @@ import {
 } from '../constants'
 
 const ATTENDANCE_TAKING_ID = '04f95a37-46fe-455b-aa96-28c421379e1a'
+const TILE_STEP_POSITION = 2
 
 export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
   id: ATTENDANCE_TAKING_ID,
@@ -27,22 +28,38 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
-      position: 2,
+      position: TILE_STEP_POSITION,
       appKey: 'tiles',
       eventKey: 'findSingleRow',
+      templateData: {
+        name: 'Event attendance',
+        columns: ['Name', 'Email', 'Attended?'],
+        rowData: [
+          {
+            Name: 'Jane Doe',
+            Email: 'jane@email.com',
+            'Attended?': 'No',
+          },
+          {
+            Name: 'John Doe',
+            Email: 'john@email.com',
+            'Attended?': 'Yes',
+          },
+        ],
+      },
       sampleUrl:
         'https://plumber.gov.sg/tiles/c77bc8fc-e1ca-4300-a50d-7f2933b9e5b4/a4ca3902-f0ef-41e1-9f5d-45c602c04d50',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
       parameters: {
         filters: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Email'),
             value: 'jane@email.com',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
     {
@@ -53,28 +70,15 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Attended?'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Attended?',
+            ),
             cellValue: 'Yes',
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
   ],
-  tileTemplateData: {
-    name: 'Event attendance',
-    columns: ['Name', 'Email', 'Attended?'],
-    rowData: [
-      {
-        Name: 'Jane Doe',
-        Email: 'jane@email.com',
-        'Attended?': 'No',
-      },
-      {
-        Name: 'John Doe',
-        Email: 'john@email.com',
-        'Attended?': 'Yes',
-      },
-    ],
-  },
 }
