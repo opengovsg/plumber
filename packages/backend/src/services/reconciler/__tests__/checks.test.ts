@@ -11,21 +11,14 @@ describe('createReconcilerChecks', () => {
     vi.unstubAllEnvs()
   })
 
-  it('includes the schedule check on its configured cron pattern', () => {
-    vi.stubEnv('RECONCILER_SCHEDULE_CHECK_CRON', '5 * * * *')
-
+  it('includes the schedule check', () => {
     const checks = createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } })
 
-    expect(checks).toEqual([
-      expect.objectContaining({
-        name: 'schedules',
-        cronPattern: '5 * * * *',
-      }),
-    ])
+    expect(checks).toEqual([{ name: 'schedules', run: expect.any(Function) }])
   })
 
-  it('fails fast on an invalid cron pattern', () => {
-    vi.stubEnv('RECONCILER_SCHEDULE_CHECK_CRON', 'abc')
+  it('fails fast on an invalid grace period', () => {
+    vi.stubEnv('SCHEDULE_MISSED_RUN_GRACE_SECONDS', '0')
 
     expect(() =>
       createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } }),
