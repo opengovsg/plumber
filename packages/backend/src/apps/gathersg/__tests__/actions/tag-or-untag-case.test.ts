@@ -1,10 +1,8 @@
 import type { IGlobalVariable } from '@plumber/types'
-import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
-
 import app from '../../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import tagOrUntagCaseAction from '../../actions/tag-or-untag-case'
 
 const MOCK_RESPONSE = {
@@ -199,38 +197,32 @@ describe('tag or untag case', () => {
   })
 
   it('should throw step error for case not found', async () => {
-    const error = {
-      response: {
-        data: {
-          error: {
-            code: 'RESOURCE_NOT_FOUND',
-            message: 'Case not found',
-          },
+    const httpError = makeHttpError({
+      data: {
+        error: {
+          code: 'RESOURCE_NOT_FOUND',
+          message: 'Case not found',
         },
-        status: 404,
-        statusText: 'Not Found',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 404,
+      statusText: 'Not Found',
+    })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow()
   })
 
   it('should throw step error for invalid tag value', async () => {
-    const error = {
-      response: {
-        data: {
-          error: {
-            code: 'INVALID_INPUT',
-            message: 'Invalid tag value',
-          },
+    const httpError = makeHttpError({
+      data: {
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Invalid tag value',
         },
-        status: 400,
-        statusText: 'Bad Request',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 400,
+      statusText: 'Bad Request',
+    })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
@@ -239,16 +231,13 @@ describe('tag or untag case', () => {
   })
 
   it('should throw step error for server error', async () => {
-    const error = {
-      response: {
-        data: {
-          message: 'Internal server error',
-        },
-        status: 500,
-        statusText: 'Internal Server Error',
+    const httpError = makeHttpError({
+      data: {
+        message: 'Internal server error',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 500,
+      statusText: 'Internal Server Error',
+    })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(

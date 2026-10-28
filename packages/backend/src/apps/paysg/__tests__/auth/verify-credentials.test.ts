@@ -1,20 +1,9 @@
 import type { IGlobalVariable } from '@plumber/types'
-import type { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
-
 import app from '../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import verifyCredentials from '../../auth/verify-credentials'
-
-function mockHttpErrorWithStatus(status: number): HttpError {
-  return new HttpError({
-    isAxiosError: true,
-    name: 'AxiosError',
-    message: `Request failed with status code ${status}`,
-    response: { status },
-  } as unknown as AxiosError)
-}
 
 const mocks = vi.hoisted(() => ({
   httpGet: vi.fn(),
@@ -55,14 +44,29 @@ describe('Verify credentials', () => {
   })
 
   it('should throw an error if test api returns a 401 or 403', async () => {
-    mocks.httpGet.mockRejectedValue(mockHttpErrorWithStatus(401))
+    mocks.httpGet.mockRejectedValue(
+      makeHttpError({
+        status: 401,
+        message: 'Request failed with status code 401',
+      }),
+    )
     await expect(verifyCredentials($)).rejects.toThrow('Invalid credentials')
-    mocks.httpGet.mockRejectedValue(mockHttpErrorWithStatus(403))
+    mocks.httpGet.mockRejectedValue(
+      makeHttpError({
+        status: 403,
+        message: 'Request failed with status code 403',
+      }),
+    )
     await expect(verifyCredentials($)).rejects.toThrow('Invalid credentials')
   })
 
   it('should throw an error if test api returns a different error', async () => {
-    mocks.httpGet.mockRejectedValue(mockHttpErrorWithStatus(404))
+    mocks.httpGet.mockRejectedValue(
+      makeHttpError({
+        status: 404,
+        message: 'Request failed with status code 404',
+      }),
+    )
     await expect(verifyCredentials($)).rejects.toThrow(
       'Unable to validate payment service id and api key',
     )

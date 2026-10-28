@@ -1,10 +1,8 @@
 import type { IGlobalVariable } from '@plumber/types'
-import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
-
 import app from '../../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import updateCaseAction from '../../actions/update-case'
 import * as attachment from '../../common/attachment'
 
@@ -235,19 +233,16 @@ describe('update case', () => {
   })
 
   it('should throw step error for case not found', async () => {
-    const error = {
-      response: {
-        data: {
-          error: {
-            code: 'RESOURCE_NOT_FOUND',
-            message: 'Case not found',
-          },
+    const httpError = makeHttpError({
+      data: {
+        error: {
+          code: 'RESOURCE_NOT_FOUND',
+          message: 'Case not found',
         },
-        status: 400,
-        statusText: 'Bad Request',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 400,
+      statusText: 'Bad Request',
+    })
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrow(
@@ -256,22 +251,19 @@ describe('update case', () => {
   })
 
   it('should throw step error for invalid field value type', async () => {
-    const error = {
-      response: {
-        data: {
-          error: {
-            code: 'INVALID_INPUT',
-            message: 'Invalid field value type',
-            details: {
-              fields: ['age', 'score'],
-            },
+    const httpError = makeHttpError({
+      data: {
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Invalid field value type',
+          details: {
+            fields: ['age', 'score'],
           },
         },
-        status: 422,
-        statusText: 'Unprocessable Entity',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 422,
+      statusText: 'Unprocessable Entity',
+    })
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrow(
@@ -280,19 +272,16 @@ describe('update case', () => {
   })
 
   it('should throw step error for insufficient permissions', async () => {
-    const error = {
-      response: {
-        data: {
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Insufficient permissions to perform this action',
-          },
+    const httpError = makeHttpError({
+      data: {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Insufficient permissions to perform this action',
         },
-        status: 403,
-        statusText: 'Forbidden',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 403,
+      statusText: 'Forbidden',
+    })
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrow(
@@ -301,16 +290,13 @@ describe('update case', () => {
   })
 
   it('should throw generic step error for unknown error', async () => {
-    const error = {
-      response: {
-        data: {
-          message: 'Unknown error',
-        },
-        status: 500,
-        statusText: 'Internal Server Error',
+    const httpError = makeHttpError({
+      data: {
+        message: 'Unknown error',
       },
-    } as AxiosError
-    const httpError = new HttpError(error)
+      status: 500,
+      statusText: 'Internal Server Error',
+    })
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrow(

@@ -1,11 +1,10 @@
 import type { IGlobalVariable } from '@plumber/types'
-import type { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
+import { makeHttpError } from '../../../../test/utils/make-http-error'
 import requestErrorHandler from '../common/request-error-handler'
 
 describe('Postman SMS request error handler', () => {
@@ -29,16 +28,10 @@ describe('Postman SMS request error handler', () => {
 
   describe('HTTP 429 (Too Many Requests)', () => {
     it('throws `step` RetriableError with default delay when retry-after header is missing', async () => {
-      const axiosError = {
-        isAxiosError: true,
-        name: 'AxiosError',
+      const error = makeHttpError({
         message: 'Request failed with status code 429',
-        response: {
-          status: 429,
-        },
-      } as unknown as AxiosError
-
-      const error = new HttpError(axiosError)
+        status: 429,
+      })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(
         RetriableError,
@@ -52,21 +45,15 @@ describe('Postman SMS request error handler', () => {
 
   describe('HTTP 400 with parameter_invalid', () => {
     it('throws StepError with campaign template setup message', async () => {
-      const axiosError = {
-        isAxiosError: true,
-        name: 'AxiosError',
+      const error = makeHttpError({
         message: 'Request failed with status code 400',
-        response: {
-          status: 400,
-          data: {
-            error: {
-              code: 'parameter_invalid',
-            },
+        status: 400,
+        data: {
+          error: {
+            code: 'parameter_invalid',
           },
         },
-      } as unknown as AxiosError
-
-      const error = new HttpError(axiosError)
+      })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
     })
@@ -74,16 +61,10 @@ describe('Postman SMS request error handler', () => {
 
   describe('Other errors', () => {
     it.each([500, 502, 503, 520, 524])('should retry on %s', async (status) => {
-      const axiosError = {
-        isAxiosError: true,
-        name: 'AxiosError',
+      const error = makeHttpError({
         message: 'Internal server error',
-        response: {
-          status,
-        },
-      } as unknown as AxiosError
-
-      const error = new HttpError(axiosError)
+        status,
+      })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(
         RetriableError,
@@ -95,13 +76,9 @@ describe('Postman SMS request error handler', () => {
     })
 
     it('should retry on read ETIMEDOUT', async () => {
-      const axiosError = {
-        isAxiosError: true,
-        name: 'AxiosError',
+      const error = makeHttpError({
         message: 'read ETIMEDOUT',
-      } as unknown as AxiosError
-
-      const error = new HttpError(axiosError)
+      })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(
         RetriableError,
@@ -113,14 +90,10 @@ describe('Postman SMS request error handler', () => {
     })
 
     it('should retry on connection ETIMEDOUT', async () => {
-      const axiosError = {
-        isAxiosError: true,
-        name: 'AxiosError',
+      const error = makeHttpError({
         message: 'connect ETIMEDOUT 1.2.3.4:443',
         code: 'ETIMEDOUT',
-      } as unknown as AxiosError
-
-      const error = new HttpError(axiosError)
+      })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(
         RetriableError,
@@ -132,16 +105,10 @@ describe('Postman SMS request error handler', () => {
     })
 
     it('should not crash when HTTP error response data is missing', async () => {
-      const axiosError = {
-        isAxiosError: true,
-        name: 'AxiosError',
+      const error = makeHttpError({
         message: 'Request failed with status code 400',
-        response: {
-          status: 400,
-        },
-      } as unknown as AxiosError
-
-      const error = new HttpError(axiosError)
+        status: 400,
+      })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
       await expect(requestErrorHandler($, error)).rejects.not.toThrow(TypeError)
