@@ -1,12 +1,13 @@
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
-import { TEMPLATES } from '@/db/storage'
+import { getUserVisibleTemplates } from '@/helpers/get-user-visible-templates'
 import logger from '@/helpers/logger'
 import {
   searchTemplates,
   TemplateSearchNotConfiguredError,
 } from '@/services/template-search'
+import type { AuthenticatedRequest } from '@/types/express/context'
 
 import { rateLimitApi } from './middleware/rate-limit'
 
@@ -16,7 +17,7 @@ const searchBodySchema = z.object({
   query: z.string().trim().min(1).max(200),
 })
 
-router.post('/search', rateLimitApi, async (req, res) => {
+router.post('/search', rateLimitApi, async (req: AuthenticatedRequest, res) => {
   const parsed = searchBodySchema.safeParse(req.body)
   if (!parsed.success) {
     res
@@ -28,7 +29,7 @@ router.post('/search', rateLimitApi, async (req, res) => {
   try {
     const templateIds = await searchTemplates({
       query: parsed.data.query,
-      templates: TEMPLATES,
+      templates: await getUserVisibleTemplates(req.context.currentUser.id),
     })
     res.json({ data: { templateIds } })
   } catch (error) {
