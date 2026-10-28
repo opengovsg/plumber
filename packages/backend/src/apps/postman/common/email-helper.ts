@@ -322,13 +322,13 @@ export async function sendTransactionalEmails(
   useSes: boolean,
 ): Promise<{
   dataOut: PostmanEmailDataOut
+  blacklistedCcs: string[]
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }> {
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to
-  // (which would re-bounce and inflate the bounce rate). CC suppression is
-  // silent — the full ccList is still reported in dataOut.
+  // (which would re-bounce and inflate the bounce rate).
   let suppressedSet = new Set<string>()
   if (useSes) {
     const suppressedEmails = await EmailSuppressionEntry.getSuppressedEmails([
@@ -347,9 +347,10 @@ export async function sendTransactionalEmails(
   }
 
   const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
-  // Suppressed CCs are removed from the API call only — dataOut keeps the full
-  // ccList (CC status is not tracked per the field's documented behaviour).
+  // Suppressed CCs are removed from the API call only. dataOut keeps the full
+  // ccList.
   const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
+  const blacklistedCcs = email.ccList?.filter((cc) => suppressedSet.has(cc)) ?? []
 
   const isCombinedSes = useSes && email.sendMode === 'combined'
   if (!useSes && email.sendMode === 'combined' && activeRecipients.length) {
@@ -523,6 +524,18 @@ export async function sendTransactionalEmails(
     }
   })
 
+  // Suppressed CCs surface as BLACKLISTED like suppressed To recipients, so the
+  // step reports them even when every To send succeeded.
+  for (const cc of blacklistedCcs) {
+    errors.push({
+      status: 'BLACKLISTED',
+      recipient: cc,
+      error: {
+        message: 'CC email address is in suppression list',
+      } as HttpError,
+    })
+  }
+
   /**
    * Since we can only return one error per postman step, we have to select in terms of priority:
    * 1. RATE-LIMITED (so we can auto-retry)
@@ -550,6 +563,7 @@ export async function sendTransactionalEmails(
   } satisfies PostmanEmailDataOut
   return {
     dataOut,
+    blacklistedCcs,
     error: sortedErrors.length ? sortedErrors[0].error : undefined,
     errorStatus: sortedErrors.length ? sortedErrors[0].status : undefined,
   }
