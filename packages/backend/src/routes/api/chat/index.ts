@@ -18,6 +18,7 @@ import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
+import { GITBOOK_MCP_SERVER } from '@/config/flags'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   buildSupportFormUrl,
@@ -205,7 +206,7 @@ const handleChatStream = observe(
       let mcpClient: GitbookMcpClient | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
 
-      if (!disabledMcpServerSet.has('gitbook')) {
+      if (!disabledMcpServerSet.has(GITBOOK_MCP_SERVER)) {
         try {
           const gitbook = await connectGitbookMcp()
           mcpClient = gitbook.client
