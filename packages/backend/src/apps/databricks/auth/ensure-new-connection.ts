@@ -1,3 +1,8 @@
+import {
+  databricksConfigSchema,
+  readNewDatabricksConfig,
+} from '@/config/app-env-vars/databricks'
+import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
 import User from '@/models/user'
 
@@ -12,19 +17,34 @@ import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allo
 const NEW_CONNECTION_FLAG = 'databricks-new-connection'
 const NEW_CONNECTION_ENV = 'DATABRICKS_NEW_CONNECTION_ENABLED'
 
+function newCredentialsAreConfigured(): boolean {
+  const parsed = databricksConfigSchema.safeParse(readNewDatabricksConfig())
+  if (parsed.success) {
+    return true
+  }
+  logger.error('Databricks new credentials are missing')
+  return false
+}
+
 export async function isDatabricksNewEnabled(
   userEmail: string,
 ): Promise<boolean> {
   const override = process.env[NEW_CONNECTION_ENV]
-  if (override === 'true') {
-    return true
-  }
   if (override === 'false') {
     return false
   }
 
-  const { getLdFlagValue } = await import('@/helpers/launch-darkly')
-  return getLdFlagValue(NEW_CONNECTION_FLAG, userEmail, false)
+  const requested =
+    override === 'true' ||
+    (await (
+      await import('@/helpers/launch-darkly')
+    ).getLdFlagValue(NEW_CONNECTION_FLAG, userEmail, false))
+
+  if (!requested) {
+    return false
+  }
+
+  return newCredentialsAreConfigured()
 }
 
 function connectionEnv(generation: DatabricksGeneration): string {
