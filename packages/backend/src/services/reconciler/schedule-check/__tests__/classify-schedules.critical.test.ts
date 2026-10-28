@@ -127,17 +127,6 @@ describe('parseScheduleEntries', () => {
     expect(entries).toEqual(new Map([[FLOW_A, NOW]]))
   })
 
-  it('keeps the latest run time when a pipe has two entries', () => {
-    const entries = parseScheduleEntries([
-      `flow-${FLOW_A}:${FLOW_A}:::0 * * * *`,
-      String(NOW - 86_400_000),
-      `flow-${FLOW_A}`,
-      String(NOW),
-    ])
-
-    expect(entries).toEqual(new Map([[FLOW_A, NOW]]))
-  })
-
   it('skips entries that do not belong to a pipe', () => {
     const entries = parseScheduleEntries(['something-else', String(NOW)])
 

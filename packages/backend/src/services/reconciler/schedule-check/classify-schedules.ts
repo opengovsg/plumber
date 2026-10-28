@@ -16,13 +16,7 @@ export function parseScheduleEntries(
       continue
     }
 
-    const flowId = match[1]
-    const runTimeMillis = Number(zrangeWithScores[i + 1])
-    // A leftover entry from the older member format must not hide a healthy one.
-    const existing = nextRunTimeByFlowId.get(flowId)
-    if (existing === undefined || runTimeMillis > existing) {
-      nextRunTimeByFlowId.set(flowId, runTimeMillis)
-    }
+    nextRunTimeByFlowId.set(match[1], Number(zrangeWithScores[i + 1]))
   }
 
   return nextRunTimeByFlowId
