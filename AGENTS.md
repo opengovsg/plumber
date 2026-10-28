@@ -74,7 +74,7 @@ biometric prompt that an agent cannot answer.
 
 ## Conventions
 
-- **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, single-threaded). Don't mix.
+- **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, parallel with per-worker isolation). Don't mix.
 - **Business-critical tests**: tests pinning down an explicit, user-specified business rule live in their own `*.critical.test.ts` / `*.critical.itest.ts` file, separate from general coverage. Give the file a header comment stating the rule(s) verbatim. A failing test there means the implementation regressed. Confirm with the user before loosening or deleting the assertion.
 - **Package manager**: only use `pnpm`. Never use `npm`, `yarn`, or other package managers.
 - **Installing packages**: always pass the `-E` (exact version) flag, e.g. `pnpm --filter backend add -E <package>`.

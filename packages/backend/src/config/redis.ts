@@ -3,15 +3,20 @@ import ioRedis, { type RedisOptions } from 'ioredis'
 import logger from '@/helpers/logger'
 
 import appConfig from './app'
+import { integrationTestIsolation } from './integration-test-isolation'
 
-// Maximum of 16; be careful when adding!
+const { REDIS_DB_OFFSET: redisDbOffset, REDIS_APP_DATA_DB: redisAppDataDb } =
+  integrationTestIsolation
+
+// Maximum of 16 logical DBs on a default Redis instance; integration tests start
+// Redis with 256 and assign each worker its own DBs.
 export const REDIS_DB_INDEX = {
-  JOBS: 0,
-  RATE_LIMIT: 1,
-  PIPE_ERRORS: 2,
-  APP_DATA: 3,
-  AUTH_TOKEN_DENYLIST: 4,
-}
+  JOBS: redisDbOffset + 0,
+  RATE_LIMIT: redisDbOffset + 1,
+  PIPE_ERRORS: redisDbOffset + 2,
+  APP_DATA: redisAppDataDb ?? redisDbOffset + 3,
+  AUTH_TOKEN_DENYLIST: redisDbOffset + 4,
+} as const
 
 function reconnectOnError(err: Error) {
   const targetError = 'READONLY'

@@ -1,8 +1,12 @@
 import { DynamoDB } from '@aws-sdk/client-dynamodb'
 
 import appConfig from './app'
+import { integrationTestIsolation } from './integration-test-isolation'
 
-export const tableName = `plumber-${appConfig.appEnv}-tiles`
+const tableSuffix = integrationTestIsolation.DYNAMODB_TABLE_SUFFIX
+export const tableName = tableSuffix
+  ? `plumber-${appConfig.appEnv}-tiles-${tableSuffix}`
+  : `plumber-${appConfig.appEnv}-tiles`
 
 const dynamodbEndpoint = appConfig.isDev
   ? `http://localhost:${process.env.LOCAL_DYNAMODB_PORT ?? 8000}`

@@ -4,10 +4,13 @@
 // This is for tests that require a database connection.
 
 import { globSync, readFileSync } from 'fs'
+import { cpus } from 'os'
 import { join, resolve } from 'path'
 
 import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
+
+import { MAX_WORKER_SLOTS } from './test/helpers/integration-constants'
 
 function getPath(relativePath: string): string {
   return resolve(__dirname, relativePath)
@@ -47,25 +50,21 @@ const isolatedItests = globSync(ITEST_INCLUDE, { cwd: __dirname }).filter(
   changesModuleState,
 )
 
-const sharedResolve = {
-  alias: {
-    '@': getPath('./src'),
-  },
-}
-
 const sharedTest = {
   root: __dirname,
-  // Each project runs its own globalSetup. The setup file shares one set of
-  // containers between them.
-  globalSetup: [getPath('./test/containers-global-setup.ts')],
+  globalSetup: [getPath('./test/global-setup.ts')],
   setupFiles: [
     'dotenv/config',
     getPath('./test/pg-reset-db-setup.ts'),
-    getPath('./test/ddb-reset-db-setup.ts'),
+    getPath('./test/redis-reset-setup.ts'),
+    getPath('./test/dynamodb-reset-setup.ts'),
   ],
+  // Wiping DynamoDB after large tile row tests (e.g. 10k rows) can exceed 10s.
+  hookTimeout: 120_000,
   pool: 'threads' as const,
-  maxWorkers: 1,
-  fileParallelism: false,
+  sequence: {
+    concurrent: false,
+  },
   onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
     if (log.startsWith('vite:')) {
       return false
@@ -73,10 +72,18 @@ const sharedTest = {
   },
 }
 
+// IMPORTANT: Each worker needs its own isolation slot. Configs that run these
+// projects must cap maxWorkers at this value.
+export const integrationMaxWorkers = Math.min(cpus().length, MAX_WORKER_SLOTS)
+
+const sharedResolve = {
+  alias: {
+    '@': getPath('./src'),
+  },
+}
+
 // Exported so the root config can register these projects directly. Vitest
 // does not expand projects nested inside a project config.
-// IMPORTANT: Distinct groupOrder values stop both projects, and other root
-// projects, from running in parallel against the shared databases.
 export const integrationProjects = [
   {
     resolve: sharedResolve,
@@ -86,7 +93,9 @@ export const integrationProjects = [
       include: [ITEST_INCLUDE],
       exclude: isolatedItests,
       isolate: false,
-      sequence: { groupOrder: 1 },
+      env: {
+        PLUMBER_ITEST_PROJECT: 'shared',
+      },
     },
   },
   {
@@ -96,15 +105,16 @@ export const integrationProjects = [
       name: 'backend-integration-isolated',
       include: isolatedItests,
       isolate: true,
-      sequence: { groupOrder: 2 },
+      env: {
+        PLUMBER_ITEST_PROJECT: 'isolated',
+      },
     },
   },
 ]
 
 export default defineConfig({
   test: {
-    maxWorkers: 1,
-    fileParallelism: false,
+    maxWorkers: integrationMaxWorkers,
     projects: integrationProjects,
   },
   resolve: sharedResolve,
