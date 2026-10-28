@@ -1,5 +1,5 @@
 import { IGlobalVariable, IJSONValue } from '@plumber/types'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import FormData from 'form-data'
 import { z } from 'zod'
 
@@ -202,7 +202,7 @@ export async function uploadFileToGather(
     return data.data
   } catch (error) {
     // Normalize to HttpError so the action's catch can map it consistently.
-    throw new HttpError(error)
+    throw new HttpError(error as AxiosError)
   }
 }
 

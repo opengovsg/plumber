@@ -129,7 +129,13 @@ const addFiltersToQuery = (
         const whereExpressions: string[] = []
         for (const filter of filters) {
           const { columnId, operator, value } = filter
-          const marshalledValue = autoMarshallNumberStrings(value)
+          if (operator !== TableRowFilterOperator.IsEmpty && !value) {
+            throw new Error(
+              `Filter value is required for operator: ${operator}`,
+            )
+          }
+          // Guaranteed above for every operator except IsEmpty, which never reads it.
+          const marshalledValue = autoMarshallNumberStrings(value as string)
           switch (operator) {
             case TableRowFilterOperator.Equals:
               whereExpressions.push(eq(data[columnId], marshalledValue))
@@ -243,26 +249,27 @@ export const patchTableRow = async ({
       tableId,
       rowId,
     }).data(({ data }, { set, add, subtract }) => {
+      // patchData's values are always strings by construction (see
+      // TableRowItem['data'] callers), but ElectroDB's 'any' attribute type
+      // erases that to unknown.
+      const patchSet = (patchData.set || {}) as Record<string, string>
+      const patchAdd = (patchData.add || {}) as Record<string, string>
+      const patchSubtract = (patchData.subtract || {}) as Record<string, string>
+
       // Handle set operations
-      Object.entries(patchData.set || {}).forEach(
-        ([key, value]: [string, string]) => {
-          set(data[key], value ? autoMarshallNumberStrings(value) : '')
-        },
-      )
+      Object.entries(patchSet).forEach(([key, value]) => {
+        set(data[key], value ? autoMarshallNumberStrings(value) : '')
+      })
 
       // Handle add operations
-      Object.entries(patchData.add || {}).forEach(
-        ([key, value]: [string, string]) => {
-          add(data[key], autoMarshallNumberStrings(value))
-        },
-      )
+      Object.entries(patchAdd).forEach(([key, value]) => {
+        add(data[key], autoMarshallNumberStrings(value))
+      })
 
       // Handle subtract operations
-      Object.entries(patchData.subtract || {}).forEach(
-        ([key, value]: [string, string]) => {
-          subtract(data[key], autoMarshallNumberStrings(value))
-        },
-      )
+      Object.entries(patchSubtract).forEach(([key, value]) => {
+        subtract(data[key], autoMarshallNumberStrings(value))
+      })
     })
 
     const res = await patchOperation.go({
@@ -384,7 +391,7 @@ export const getTableRows = async ({
         Items: TableRowOutput[]
       }
       tableRows.push(...data.Items)
-      remainingScanLimit -= data.ScannedCount
+      remainingScanLimit -= data.ScannedCount ?? 0
       cursor = data.LastEvaluatedKey
       // loop only if cursor is
     } while (cursor && !stringifiedCursor && remainingScanLimit > 0)
