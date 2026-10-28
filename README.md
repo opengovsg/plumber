@@ -55,8 +55,7 @@ Leaving either variable empty disables PostHog export.
 Rome still receives traces regardless of whether PostHog export is enabled.
 
 ECS injects these settings from SSM Parameter Store through `ecs/env.json`.
-Before deploying, create `plumber-posthog-project-token` and `plumber-posthog-host` in each deployment account.
-These shared parameter names apply to every environment.
+Before deploying, create `plumber-<ENVIRONMENT>-posthog-project-token` and `plumber-<ENVIRONMENT>-posthog-host` for each environment.
 Store the project token as a `SecureString` parameter.
 The host can use a `String` parameter.
 Both parameters must exist for ECS to start the task, even when PostHog export is disabled in application configuration.

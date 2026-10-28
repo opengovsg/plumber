@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
   sdk: vi.fn(),
   start: vi.fn(),
   shutdown: vi.fn().mockResolvedValue(undefined),
-  exporter: vi.fn(),
+  posthogProcessor: vi.fn(),
+  posthogClient: vi.fn(),
   config: {
     appEnv: 'staging',
     posthog: { projectToken: '', host: '' },
@@ -43,10 +44,17 @@ vi.mock('@opentelemetry/sdk-node', () => ({
     shutdown = mocks.shutdown
   },
 }))
-vi.mock('@opentelemetry/exporter-trace-otlp-http', () => ({
-  OTLPTraceExporter: class {
+vi.mock('@posthog/ai/otel', () => ({
+  PostHogSpanProcessor: class {
     constructor(options: unknown) {
-      mocks.exporter(options)
+      mocks.posthogProcessor(options)
+    }
+  },
+}))
+vi.mock('posthog-node', () => ({
+  PostHog: class {
+    constructor(...args: unknown[]) {
+      mocks.posthogClient(this, ...args)
     }
   },
 }))
@@ -70,7 +78,7 @@ describe('Rome and PostHog instrumentation', () => {
 
       expect(mocks.sdk.mock.calls[0][0].spanProcessors).toHaveLength(2)
       expect(mocks.langfuse).toHaveBeenCalledTimes(2)
-      expect(mocks.exporter).not.toHaveBeenCalled()
+      expect(mocks.posthogProcessor).not.toHaveBeenCalled()
       expect(mocks.start).toHaveBeenCalledOnce()
     },
   )
@@ -99,10 +107,17 @@ describe('Rome and PostHog instrumentation', () => {
       2,
       expect.objectContaining({ publicKey: 'pk-pair', secretKey: 'sk-pair' }),
     )
-    expect(mocks.exporter).toHaveBeenCalledWith({
-      url: 'https://eu.i.posthog.com/i/v0/ai/otel',
-      headers: { Authorization: 'Bearer phc-test' },
-      timeoutMillis: 5000,
+    expect(mocks.posthogClient).toHaveBeenCalledOnce()
+    const [client, clientToken, clientOptions] =
+      mocks.posthogClient.mock.calls[0]
+    expect(clientToken).toBe('phc-test')
+    expect(clientOptions).toEqual({ host: 'https://eu.i.posthog.com/' })
+    // The processor must read identity from the same client the request context is entered on.
+    expect(mocks.posthogProcessor).toHaveBeenCalledWith({
+      projectToken: 'phc-test',
+      host: 'https://eu.i.posthog.com/',
+      client,
+      privacyMode: false,
     })
 
     await shutdownTelemetry()
