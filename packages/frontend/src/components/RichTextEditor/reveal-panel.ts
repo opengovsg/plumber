@@ -1,4 +1,6 @@
-export const REVEAL_MARGIN_PX = 16
+// Space left under the panel, so it does not sit at the very bottom edge.
+const REVEAL_BOTTOM_MARGIN_PX = 48
+const REVEAL_TOP_MARGIN_PX = 16
 const REVEAL_DURATION_MS = 320
 const RELEASE_DELAY_MS = 200
 
@@ -15,21 +17,23 @@ export function getRevealScrollDelta(params: {
   viewportBottom: number
   inputTop: number
   viewportTop: number
-  margin?: number
+  bottomMargin?: number
+  topMargin?: number
 }): number {
   const {
     panelBottom,
     viewportBottom,
     inputTop,
     viewportTop,
-    margin = REVEAL_MARGIN_PX,
+    bottomMargin = REVEAL_BOTTOM_MARGIN_PX,
+    topMargin = REVEAL_TOP_MARGIN_PX,
   } = params
 
-  const needed = panelBottom + margin - viewportBottom
+  const needed = panelBottom + bottomMargin - viewportBottom
   if (needed <= 0) {
     return 0
   }
-  const roomAboveInput = Math.max(0, inputTop - viewportTop - margin)
+  const roomAboveInput = Math.max(0, inputTop - viewportTop - topMargin)
   return Math.min(needed, roomAboveInput)
 }
 

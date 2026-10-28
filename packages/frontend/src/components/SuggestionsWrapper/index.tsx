@@ -78,15 +78,16 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
                 flexShrink={0}
                 alignItems="center"
                 px={5}
-                bg={isSelected ? 'base.divider.medium' : undefined}
+                // Same greys as the dropdown lists: 50 selected and hovered,
+                // 100 while pressed.
+                bg={isSelected ? 'secondary.50' : undefined}
                 aria-current={isSelected || undefined}
                 onClick={() => onTabChange(index)}
                 _hover={{
-                  backgroundColor: isSelected
-                    ? 'base.divider.medium'
-                    : 'base.canvas.alt',
+                  backgroundColor: 'secondary.50',
                   cursor: 'pointer',
                 }}
+                _active={{ backgroundColor: 'secondary.100' }}
               >
                 <Text
                   title={option.name}

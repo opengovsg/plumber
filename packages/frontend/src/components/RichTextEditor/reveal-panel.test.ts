@@ -26,8 +26,12 @@ describe('getRevealScrollDelta', () => {
     expect(getRevealScrollDelta(base)).toBe(0)
   })
 
-  it('scrolls just enough to show the whole panel plus the margin', () => {
-    expect(getRevealScrollDelta({ ...base, panelBottom: 700 })).toBe(116)
+  it('scrolls when the panel fits but sits closer than the margin', () => {
+    expect(getRevealScrollDelta({ ...base, panelBottom: 580 })).toBe(28)
+  })
+
+  it('scrolls enough to show the whole panel plus the bottom margin', () => {
+    expect(getRevealScrollDelta({ ...base, panelBottom: 700 })).toBe(148)
   })
 
   it('never pushes the input off the top of the viewport', () => {

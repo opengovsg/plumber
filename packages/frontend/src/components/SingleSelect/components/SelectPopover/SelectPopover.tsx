@@ -12,6 +12,10 @@ import { PropsWithChildren, useLayoutEffect, useMemo, useRef } from 'react'
 import { useSelectContext } from '../../SelectContext'
 import { SelectPopoverContext } from './SelectPopoverContext'
 
+// Leaves the same 4px under the input as the data panel. The anchor sits 1px
+// below the input's border, which makes up the rest.
+const DROPDOWN_GAP_PX = 3
+
 export const SelectPopoverProvider = ({
   children,
 }: PropsWithChildren): JSX.Element => {
@@ -31,7 +35,7 @@ export const SelectPopoverProvider = ({
     open: isOpen,
     middleware: [
       // offset middleware should be the first middleware
-      offset(1),
+      offset(DROPDOWN_GAP_PX),
       flip(),
       hide(),
       // Set width to be the same as the reference element.
