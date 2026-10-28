@@ -709,7 +709,8 @@ describe('m365-excel batch worker (integration)', () => {
         return execution.status === 'success'
       })
       await waitFor(
-        async () => (await createTableRowSteps('success')).length === ITERATIONS,
+        async () =>
+          (await createTableRowSteps('success')).length === ITERATIONS,
       )
 
       // One batch -> one POST with all iteration rows.
