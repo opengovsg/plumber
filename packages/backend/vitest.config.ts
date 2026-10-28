@@ -78,6 +78,7 @@ const resolveAliases = {
 }
 
 const sharedTest = {
+  root: __dirname,
   // Read by @/config/unit-test-mode. Set here so it is live before any test
   // file imports a module that would otherwise connect to Redis or Postgres.
   env: {
@@ -94,37 +95,41 @@ const sharedTest = {
   disableConsoleIntercept: true,
 }
 
+// Exported so the root config can register these projects directly. Vitest
+// does not expand projects nested inside a project config.
+export const unitProjects = [
+  {
+    plugins: [reclassifyMockedTestsOnChange],
+    resolve: {
+      alias: resolveAliases,
+    },
+    test: {
+      ...sharedTest,
+      name: 'backend',
+      include: [UNIT_INCLUDE],
+      exclude: isolatedTests,
+      isolate: false,
+    },
+  },
+  {
+    plugins: [reclassifyMockedTestsOnChange],
+    resolve: {
+      alias: resolveAliases,
+    },
+    test: {
+      ...sharedTest,
+      name: 'backend-isolated',
+      include: isolatedTests,
+      isolate: true,
+    },
+  },
+]
+
 export default defineConfig({
   test: {
     maxWorkers: cpus().length,
     disableConsoleIntercept: true,
-    projects: [
-      {
-        plugins: [reclassifyMockedTestsOnChange],
-        resolve: {
-          alias: resolveAliases,
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend',
-          include: [UNIT_INCLUDE],
-          exclude: isolatedTests,
-          isolate: false,
-        },
-      },
-      {
-        plugins: [reclassifyMockedTestsOnChange],
-        resolve: {
-          alias: resolveAliases,
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend-isolated',
-          include: isolatedTests,
-          isolate: true,
-        },
-      },
-    ],
+    projects: unitProjects,
   },
   resolve: {
     alias: resolveAliases,
