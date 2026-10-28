@@ -28,10 +28,13 @@ Root lint, format, and typecheck tasks include this workspace.
 
 ## Configuration
 
-Use the existing E2E `.env` configuration in `packages/e2e/.env`.
-The required settings remain `GMAIL_CREDENTIALS`, `GMAIL_TOKEN`, and `GATHERSG_API_KEY`.
-Copy the existing `AUTH_FILE_ENCRYPTION_SECRET` when reusing encrypted session state.
-Its original `'secret'` fallback remains available.
+The root `login:e2e`, `test:e2e`, and `test:e2e:ui` commands load secrets from the shared `e2e` 1Password Environment.
+Add its id under `environments.e2e` in your `op-dev.json`. See the root README for the 1Password setup.
+The Environment holds `E2E_FIXTURE_MANIFEST`, `GMAIL_CREDENTIALS`, `GMAIL_TOKEN`, `GATHERSG_API_KEY`, and `AUTH_FILE_ENCRYPTION_SECRET`.
+Shell exports override the Environment. Set `E2E_ENV=uat` in your shell to target UAT.
+`AUTH_FILE_ENCRYPTION_SECRET` keeps its original `'secret'` fallback.
+
+Commands run inside this directory skip 1Password. They read the ignored `packages/e2e/.env` instead.
 
 `E2E_ENV` selects `staging` by default or `uat` fixtures from the JSON setting `E2E_FIXTURE_MANIFEST`.
 Create an Actions secret named `E2E_FIXTURE_MANIFEST` in the repository or each selected GitHub environment.
@@ -40,7 +43,8 @@ The populated manifest lives in the trusted Notion consolidation document. Do no
 Each profile contains all 13 `pipes` keys and four `forms` keys from that example.
 The selected profile is required. Missing, malformed, or incomplete manifests stop execution.
 Environment secrets can contain only their matching profile. The legacy production option requires the staging profile.
-For local execution, add the JSON as one single-quoted line in the ignored `packages/e2e/.env`:
+Store the manifest as compact JSON in the shared 1Password Environment.
+For the `.env` fallback, add it as one single-quoted line:
 
 ```dotenv
 E2E_FIXTURE_MANIFEST='<compact JSON from the trusted Notion document>'
@@ -50,7 +54,7 @@ Keep local copies private. Configuration tests use synthetic fixtures and requir
 The UAT profile targets `https://uat.plumber.gov.sg` and supplies 13 pipe IDs and four form IDs.
 Action webhook URLs and editor/execution paths use the selected profile.
 
-For local UAT execution, set `E2E_ENV=uat` in `packages/e2e/.env`, then run login and tests.
+For local UAT execution, export `E2E_ENV=uat`, then run login and tests.
 Login and tests use `cookie-auth-state-uat`. Staging uses `cookie-auth-state-staging`.
 Rerun login after switching environments rather than reusing the previous environment's session.
 
@@ -63,10 +67,13 @@ The upstream `production` option retains staging fixtures and the staging URL un
 It does not provide production-specific fixtures. This migration preserves that upstream behavior.
 Configuration tests run without live credentials or network requests.
 
-For local execution, follow the existing setup instructions in `plumber-e2e/README.md`.
-Use compatible fixtures and real third-party credentials.
-The application's sample environment does not provide those credentials.
-For an existing localhost session, run `pnpm --filter @plumber/e2e run login:local <cookie>`.
+Local execution uses real third-party credentials. The application's sample environment does not provide them.
+For an existing localhost session, run this from the repository root:
+
+```sh
+node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run login:local <cookie>
+```
+
 Do not add `--` before the cookie. pnpm forwards it to the script as the first argument.
 
 ## CI and rollout
