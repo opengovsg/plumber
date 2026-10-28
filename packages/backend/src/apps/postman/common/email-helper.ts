@@ -2,7 +2,7 @@ import { IHttpClient } from '@plumber/types'
 
 import { SendEmailCommand } from '@aws-sdk/client-sesv2'
 import FormData from 'form-data'
-import { sortBy } from 'lodash'
+import { chunk, sortBy } from 'lodash'
 
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
@@ -22,6 +22,7 @@ import {
   PostmanEmailDataOut,
   PostmanEmailSendStatus,
 } from './data-out-validator'
+import { SendMode } from './parameters'
 import { getPostmanErrorStatus, getSesErrorStatus } from './throw-errors'
 
 const ENDPOINT = '/v1/transactional/email/send'
@@ -68,6 +69,33 @@ interface Email {
   attachments?: { fileName: string; data: Uint8Array }[]
   replyTo?: string
   ccList?: string[]
+  sendMode: SendMode
+}
+
+/**
+ * One SES API call. Individual mode has one To address per group. Combined
+ * mode puts a batch of To addresses in a group. Every group carries the CCs.
+ */
+interface SendGroup {
+  to: string[]
+  cc?: string[]
+}
+
+// SES rejects a message with more than 50 destinations (To + CC + BCC).
+const SES_MAX_RECIPIENTS_PER_MESSAGE = 50
+
+/**
+ * Splits combined-mode recipients into SES-sized groups. CCs go on every group
+ * so they receive every email.
+ */
+export function buildCombinedSendGroups(
+  recipients: string[],
+  cc: string[] | undefined,
+): SendGroup[] {
+  const ccCount = cc?.length ?? 0
+  return chunk(recipients, SES_MAX_RECIPIENTS_PER_MESSAGE - ccCount).map(
+    (to) => ({ to, ...(ccCount > 0 && { cc }) }),
+  )
 }
 
 interface PostmanPromiseFulfilled {
@@ -84,9 +112,11 @@ interface PostmanPromiseRejected {
 
 async function sendViaPostman(
   http: IHttpClient,
-  recipientEmail: string,
+  group: SendGroup,
   email: Email,
 ): Promise<PostmanPromiseFulfilled> {
+  // Postman groups always hold exactly one recipient.
+  const recipientEmail = group.to[0]
   const requestData = new FormData()
   requestData.append('subject', email.subject)
   requestData.append('body', email.body)
@@ -96,8 +126,8 @@ async function sendViaPostman(
     `${email.senderName} <${appConfig.postman.fromAddress}>`,
   )
   requestData.append('disable_tracking', 'true')
-  if (email.ccList?.length > 0) {
-    requestData.append('cc', JSON.stringify(email.ccList))
+  if (group.cc?.length > 0) {
+    requestData.append('cc', JSON.stringify(group.cc))
   }
 
   if (email.replyTo) {
@@ -154,21 +184,19 @@ class AttachmentSizeExceededError extends Error {
   }
 }
 
+/**
+ * Sends one SES message to a group of To addresses. Returns the dataOut params
+ * shared by every recipient in the group.
+ */
 async function sendViaSes(
-  recipientEmail: string,
+  group: SendGroup,
   email: Email,
-  // CC addresses to actually send to. Suppressed CCs are dropped from the SES
-  // call so we don't re-send to known-bad addresses (which would re-bounce and
-  // inflate the bounce rate). The full email.ccList is still reported in
-  // dataOut below — only the API call is filtered.
-  ccAddressesToSend: string[] | undefined,
-  // Raw MIME message built once per email (no `To:` header) by
-  // sendTransactionalEmails. Always set when email.attachments?.length (that's
-  // the caller's contract); the per-recipient `To:` header is added cheaply
-  // via withRecipient rather than rebuilding (and re-base64-encoding
-  // attachments for) every recipient.
+  // Raw MIME message (no `To:` header) built once by sendTransactionalEmails.
+  // Always set when email.attachments?.length (that's the caller's contract);
+  // the `To:` header is added cheaply via withRecipient rather than rebuilding
+  // (and re-base64-encoding attachments for) every group.
   sharedRawMessage: Buffer | undefined,
-): Promise<PostmanPromiseFulfilled> {
+): Promise<Omit<PostmanEmailDataOut, 'status' | 'recipient'>> {
   const client = getSesClient()
   // Address sent to SES: display name is RFC 5322-quoted when it contains
   // specials (e.g. a comma) so the header isn't malformed.
@@ -187,20 +215,22 @@ async function sendViaSes(
       0,
     ) ?? 0
 
+  const destination = {
+    ToAddresses: group.to,
+    ...(group.cc?.length && { CcAddresses: group.cc }),
+  }
+
   if (email.attachments?.length) {
     // Attachments require a raw MIME message — Content.Simple can't carry them.
     // From/Cc/Reply-To/Subject/body and the transport header all live in the
-    // shared MIME; To: is added per recipient below, and the envelope is still
+    // shared MIME; To: is added per group below, and the envelope is still
     // set via FromEmailAddress/Destination, matching the Simple path.
-    const rawMessage = withRecipient(sharedRawMessage as Buffer, recipientEmail)
+    const rawMessage = withRecipient(sharedRawMessage as Buffer, group.to)
 
     await client.send(
       new SendEmailCommand({
         FromEmailAddress: fromAddress,
-        Destination: {
-          ToAddresses: [recipientEmail],
-          ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
-        },
+        Destination: destination,
         Content: { Raw: { Data: rawMessage } },
         ...(appConfig.ses.configurationSet && {
           ConfigurationSetName: appConfig.ses.configurationSet,
@@ -211,10 +241,7 @@ async function sendViaSes(
     await client.send(
       new SendEmailCommand({
         FromEmailAddress: fromAddress,
-        Destination: {
-          ToAddresses: [recipientEmail],
-          ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
-        },
+        Destination: destination,
         Content: {
           Simple: {
             Subject: { Data: email.subject, Charset: 'UTF-8' },
@@ -235,29 +262,28 @@ async function sendViaSes(
       }),
     )
   }
-  incrementMetric('ses.email.sent')
+  // Counted per recipient so the bounce/complaint rate denominator holds in
+  // combined mode.
+  incrementMetric('ses.email.sent', {}, group.to.length)
 
   // TODO: remove this log once the SES rollout is verified and stable.
   logger.info('Postman step email sent via SES', {
     event: 'postman-step-ses-email-sent',
     subject: email.subject,
     from: fromAddress,
-    recipient: recipientEmail,
-    ccAddressesToSend,
+    recipients: group.to,
+    ccAddressesToSend: group.cc,
+    sendMode: email.sendMode,
     attachmentCount,
     totalAttachmentBytes,
   })
 
   return {
-    status: 'ACCEPTED',
-    recipient: recipientEmail,
-    params: {
-      body: email.body,
-      subject: email.subject,
-      from: displayFrom,
-      reply_to: email.replyTo,
-      ...(email.ccList?.length && { cc: email.ccList }),
-    },
+    body: email.body,
+    subject: email.subject,
+    from: displayFrom,
+    reply_to: email.replyTo,
+    ...(email.ccList?.length && { cc: email.ccList }),
   }
 }
 
@@ -325,13 +351,28 @@ export async function sendTransactionalEmails(
   // ccList (CC status is not tracked per the field's documented behaviour).
   const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
-  // Attachments, subject, body, cc and reply-to are identical across
-  // recipients — only the `To:` header differs. Build the (potentially large)
-  // base64-encoded MIME message once here rather than once per recipient
-  // inside sendViaSes; per-recipient `To:` is added cheaply via withRecipient.
-  // Any build/size-cap failure is captured and re-thrown inside each
-  // recipient's own try/catch below, so per-recipient status/error mapping
-  // (e.g. ATTACHMENT-SIZE-EXCEEDED) is unchanged.
+  const isCombinedSes = useSes && email.sendMode === 'combined'
+  if (!useSes && email.sendMode === 'combined' && activeRecipients.length) {
+    // Postman's API takes one recipient per call, so combined mode cannot be
+    // honoured there. Deliver individually rather than fail the step.
+    logger.warn('Combined send mode fell back to Postman', {
+      event: 'postman-step-combined-mode-fallback',
+      recipientCount: activeRecipients.length,
+    })
+    incrementMetric('postman.email.combined_fallback')
+  }
+
+  const sendGroups: SendGroup[] = isCombinedSes
+    ? buildCombinedSendGroups(activeRecipients, ccAddressesToSend)
+    : activeRecipients.map((to) => ({ to: [to], cc: ccAddressesToSend }))
+
+  // Attachments, subject, body, cc and reply-to are identical across groups —
+  // only the `To:` header differs. Build the (potentially large)
+  // base64-encoded MIME message once here rather than once per group inside
+  // sendViaSes; `To:` is added cheaply via withRecipient. Any build/size-cap
+  // failure is captured and re-thrown inside each group's own try/catch below,
+  // so per-recipient status/error mapping (e.g. ATTACHMENT-SIZE-EXCEEDED) is
+  // unchanged.
   let sharedRawMessage: Buffer | undefined
   let attachmentBuildError: unknown
   if (useSes && email.attachments?.length && activeRecipients.length) {
@@ -382,27 +423,23 @@ export async function sendTransactionalEmails(
     })
   }
 
-  const promises = activeRecipients.map(async (recipientEmail) => {
+  const promises = sendGroups.map(async (group) => {
     try {
       if (useSes) {
         if (attachmentBuildError) {
           throw attachmentBuildError
         }
-        return await sendViaSes(
-          recipientEmail,
-          email,
-          ccAddressesToSend,
-          sharedRawMessage,
-        )
+        return await sendViaSes(group, email, sharedRawMessage)
       }
-      return await sendViaPostman(http, recipientEmail, email)
+      const sent = await sendViaPostman(http, group, email)
+      return sent.params
     } catch (e) {
       // attachmentBuildError is already logged once above; only log genuine
-      // per-recipient send failures here to avoid logging it once per recipient.
+      // send failures here to avoid logging it once per group.
       if (useSes && e !== attachmentBuildError) {
         logger.error('Email send failed via SES', {
           event: 'postman-step-ses-email-failed',
-          recipient: recipientEmail,
+          recipients: group.to,
           errorName: e instanceof Error ? e.name : undefined,
           // The AWS error message is the actual reason (e.g. unverified
           // identity, malformed address/header). e.message is non-enumerable,
@@ -414,13 +451,39 @@ export async function sendTransactionalEmails(
       }
       throw {
         status: useSes ? getSesErrorStatus(e) : getPostmanErrorStatus(e),
-        recipient: recipientEmail,
         error: e,
-      } satisfies PostmanPromiseRejected
+      } satisfies Omit<PostmanPromiseRejected, 'recipient'>
     }
   })
 
-  const results = await Promise.allSettled(promises)
+  const groupResults = await Promise.allSettled(promises)
+
+  // Every recipient in a group shares its outcome. Expand to one result per
+  // recipient, in activeRecipients order, so the merge below is mode-agnostic.
+  const results: PromiseSettledResult<PostmanPromiseFulfilled>[] = []
+  groupResults.forEach((result, groupIdx) => {
+    for (const recipientEmail of sendGroups[groupIdx].to) {
+      if (result.status === 'fulfilled') {
+        results.push({
+          status: 'fulfilled',
+          value: {
+            status: 'ACCEPTED',
+            recipient: recipientEmail,
+            params: result.value,
+          },
+        })
+      } else {
+        results.push({
+          status: 'rejected',
+          reason: {
+            ...result.reason,
+            recipient: recipientEmail,
+          } satisfies PostmanPromiseRejected,
+        })
+      }
+    }
+  })
+
   const status: PostmanEmailSendStatus[] = []
   const recipient: string[] = []
   let params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
