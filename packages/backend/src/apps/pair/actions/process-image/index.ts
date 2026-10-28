@@ -136,7 +136,7 @@ const action: IRawAction = {
               isEnabled: true,
               functionId: 'pair-action-process-image',
               metadata: {
-                userId: $.user.id,
+                userId: $.user.email,
                 executionId: $.execution.id,
                 flowId: $.flow.id,
                 stepId: $.step.id,
