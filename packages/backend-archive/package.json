@@ -1,6 +1,6 @@
 {
   "name": "backend-archive",
-  "version": "1.99.1",
+  "version": "1.100.0",
   "private": true,
   "scripts": {
     "prebuild": "rimraf ./dist",
