@@ -10,8 +10,7 @@ const ENV = JSON.stringify({
 })
 
 describe('explore url', () => {
-  it('uses screenName for the last path segment and leaves a deprecated label out of the URL', () => {
-    const label = '[DEPRECATED] user_example_com'
+  it('uses screenName for the last path segment', () => {
     const screenName = 'user_example_com'
 
     const url = buildExploreUrl(screenName, ENV)
@@ -20,7 +19,6 @@ describe('explore url', () => {
       'https://example.cloud.databricks.com/explore/data/main/user_example_com',
     )
     expect(url?.split('/').at(-1)).toBe(screenName)
-    expect(url?.includes(label)).toBe(false)
   })
 
   it('returns null when env is empty', () => {
