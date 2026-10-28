@@ -29,3 +29,20 @@ export function databricksReconnectConnections<T extends ReconnectConnection>(
   )
   return legacy ? [legacy] : []
 }
+
+// The dropdown shows both generations when this user owns the stored row.
+// A transferred pipe stores an id that is absent, so that case still returns one row.
+export function databricksReconnectDropdownConnections<
+  T extends ReconnectConnection,
+>(
+  connections: readonly T[],
+  storedConnectionId: string | undefined,
+): readonly T[] {
+  if (
+    storedConnectionId &&
+    !connections.some((connection) => connection.id === storedConnectionId)
+  ) {
+    return databricksReconnectConnections(connections, storedConnectionId)
+  }
+  return connections
+}
