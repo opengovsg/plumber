@@ -66,7 +66,8 @@ Configuration tests run without live credentials or network requests.
 For local execution, follow the existing setup instructions in `plumber-e2e/README.md`.
 Use compatible fixtures and real third-party credentials.
 The application's sample environment does not provide those credentials.
-For an existing localhost session, run `pnpm --filter @plumber/e2e run login:local -- <cookie>`.
+For an existing localhost session, run `pnpm --filter @plumber/e2e run login:local <cookie>`.
+Do not add `--` before the cookie. pnpm forwards it to the script as the first argument.
 
 ## CI and rollout
 
