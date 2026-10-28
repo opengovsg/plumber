@@ -1,4 +1,5 @@
 import logger from '@/helpers/logger'
+import { withTimeout } from '@/helpers/with-timeout'
 
 export type McpToolSource = 'plumber' | 'gitbook'
 
@@ -7,6 +8,19 @@ type McpToolUsageMeta = {
   traceId: string
   userId?: string
 }
+
+/**
+ * Returned to the model as the tool result when a GitBook tool call throws.
+ * The raw error stays in the logs.
+ */
+export const GITBOOK_UNAVAILABLE_MESSAGE =
+  'Documentation lookup is temporarily unavailable. Continue without it and do not retry.'
+
+/**
+ * GitBook can hang until its gateway returns a 504.
+ * The MCP client ignores abort signals until a response arrives, so race a timer instead.
+ */
+export const GITBOOK_TOOL_TIMEOUT_MS = 30_000
 
 const SAFE_ARG_KEYS = new Set([
   'pipe_id',
@@ -122,6 +136,9 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
   tools: T,
   meta: McpToolUsageMeta,
 ): T {
+  // One GitBook outage costs one timeout per chat message, not one per call.
+  let gitbookUnavailable = false
+
   return Object.fromEntries(
     Object.entries(tools).map(([name, toolDef]) => {
       if (!hasExecute(toolDef)) {
@@ -136,8 +153,16 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
           execute: async (...executeArgs: never[]) => {
             const startedAt = Date.now()
             const args = executeArgs[0]
+            if (meta.source === 'gitbook' && gitbookUnavailable) {
+              logUsage({ tool: name, args, status: 'error', startedAt, meta })
+              return { error: GITBOOK_UNAVAILABLE_MESSAGE }
+            }
             try {
-              const result = await execute(...executeArgs)
+              const pending = Promise.resolve(execute(...executeArgs))
+              const result =
+                meta.source === 'gitbook'
+                  ? await withTimeout(pending, GITBOOK_TOOL_TIMEOUT_MS)
+                  : await pending
               logUsage({
                 tool: name,
                 args,
@@ -159,6 +184,12 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
                 traceId: meta.traceId,
                 error: error instanceof Error ? error.message : String(error),
               })
+              // GitBook is a third-party server. Return a readable result so
+              // the model continues the chat without the docs lookup.
+              if (meta.source === 'gitbook') {
+                gitbookUnavailable = true
+                return { error: GITBOOK_UNAVAILABLE_MESSAGE }
+              }
               throw error
             }
           },

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   http: vi.fn(),
@@ -12,7 +12,11 @@ vi.mock('@/helpers/logger', () => ({
   },
 }))
 
-import { wrapMcpToolsWithUsageLogs } from '../mcp-tool-usage-log'
+import {
+  GITBOOK_TOOL_TIMEOUT_MS,
+  GITBOOK_UNAVAILABLE_MESSAGE,
+  wrapMcpToolsWithUsageLogs,
+} from '../mcp-tool-usage-log'
 
 describe('wrapMcpToolsWithUsageLogs', () => {
   beforeEach(() => {
@@ -81,7 +85,7 @@ describe('wrapMcpToolsWithUsageLogs', () => {
           execute: vi.fn().mockRejectedValue(new Error('Must be contiguous')),
         },
       },
-      { source: 'gitbook', traceId: 'trace-3' },
+      { source: 'plumber', traceId: 'trace-3' },
     )
 
     await expect(
@@ -92,7 +96,7 @@ describe('wrapMcpToolsWithUsageLogs', () => {
       expect.objectContaining({
         event: 'mcp-tool',
         tool: 'create_pipe',
-        source: 'gitbook',
+        source: 'plumber',
         status: 'error',
       }),
     )
@@ -100,6 +104,135 @@ describe('wrapMcpToolsWithUsageLogs', () => {
       tool: 'create_pipe',
       traceId: 'trace-3',
       error: 'Must be contiguous',
+    })
+  })
+
+  it('logs the raw error and returns a readable result when a gitbook tool throws', async () => {
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        search_documentation: {
+          execute: vi
+            .fn()
+            .mockRejectedValue(new Error('MCP error: socket hang up')),
+        },
+      },
+      { source: 'gitbook', traceId: 'trace-7' },
+    )
+
+    await expect(
+      tools.search_documentation.execute({
+        query: 'how to send sms',
+      } as never),
+    ).resolves.toEqual({ error: GITBOOK_UNAVAILABLE_MESSAGE })
+
+    expect(mocks.http).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'search_documentation',
+        source: 'gitbook',
+        status: 'error',
+      }),
+    )
+    expect(mocks.warn).toHaveBeenCalledWith('MCP tool failed', {
+      tool: 'search_documentation',
+      traceId: 'trace-7',
+      error: 'MCP error: socket hang up',
+    })
+  })
+
+  it('skips later gitbook calls in the same chat message after one fails', async () => {
+    const getPage = vi.fn()
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        search_documentation: {
+          execute: vi.fn().mockRejectedValue(new Error('HTTP 504')),
+        },
+        get_page: { execute: getPage },
+      },
+      { source: 'gitbook', traceId: 'trace-10' },
+    )
+
+    await tools.search_documentation.execute({} as never)
+
+    await expect(tools.get_page.execute({} as never)).resolves.toEqual({
+      error: GITBOOK_UNAVAILABLE_MESSAGE,
+    })
+    expect(getPage).not.toHaveBeenCalled()
+    expect(mocks.http).toHaveBeenLastCalledWith(
+      expect.objectContaining({ tool: 'get_page', status: 'error' }),
+    )
+  })
+
+  it('keeps calling plumber tools after one fails', async () => {
+    const listApps = vi.fn().mockResolvedValue([])
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        create_pipe: {
+          execute: vi.fn().mockRejectedValue(new Error('Must be contiguous')),
+        },
+        list_apps: { execute: listApps },
+      },
+      { source: 'plumber', traceId: 'trace-11' },
+    )
+
+    await expect(tools.create_pipe.execute({} as never)).rejects.toThrow()
+    await tools.list_apps.execute({} as never)
+
+    expect(listApps).toHaveBeenCalledTimes(1)
+  })
+
+  describe('gitbook timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('returns a readable result when a gitbook tool call hangs', async () => {
+      const tools = wrapMcpToolsWithUsageLogs(
+        {
+          search_documentation: {
+            execute: vi.fn().mockReturnValue(new Promise(() => undefined)),
+          },
+        },
+        { source: 'gitbook', traceId: 'trace-8' },
+      )
+
+      const result = tools.search_documentation.execute({} as never)
+      await vi.advanceTimersByTimeAsync(GITBOOK_TOOL_TIMEOUT_MS)
+
+      await expect(result).resolves.toEqual({
+        error: GITBOOK_UNAVAILABLE_MESSAGE,
+      })
+      expect(mocks.warn).toHaveBeenCalledWith('MCP tool failed', {
+        tool: 'search_documentation',
+        traceId: 'trace-8',
+        error: `Timed out after ${GITBOOK_TOOL_TIMEOUT_MS}ms`,
+      })
+    })
+
+    it('does not time out plumber tool calls', async () => {
+      let resolve: (value: unknown) => void = () => undefined
+      const tools = wrapMcpToolsWithUsageLogs(
+        {
+          create_pipe: {
+            execute: vi.fn().mockReturnValue(
+              new Promise((r) => {
+                resolve = r
+              }),
+            ),
+          },
+        },
+        { source: 'plumber', traceId: 'trace-9' },
+      )
+
+      const result = tools.create_pipe.execute({} as never)
+      await vi.advanceTimersByTimeAsync(GITBOOK_TOOL_TIMEOUT_MS * 2)
+      resolve({ id: 'flow-1' })
+
+      await expect(result).resolves.toEqual({ id: 'flow-1' })
+      expect(mocks.warn).not.toHaveBeenCalled()
     })
   })
 

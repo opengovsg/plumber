@@ -162,7 +162,7 @@ describe('chat handler — GitBook MCP integration', () => {
       get_page: vi.fn(),
     }
     const mockBridgeTools = { list_apps: vi.fn() }
-    const mockClose = vi.fn()
+    const mockClose = vi.fn().mockResolvedValue(undefined)
     vi.mocked(experimental_createMCPClient).mockResolvedValue({
       tools: vi.fn().mockResolvedValue(mockGitbookTools),
       close: mockClose,

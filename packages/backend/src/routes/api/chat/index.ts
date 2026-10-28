@@ -1,4 +1,3 @@
-import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp'
 import {
   getActiveTraceId,
   observe,
@@ -24,6 +23,11 @@ import {
   buildSupportFormUrl,
   SUPPORT_FORM_URL_PLACEHOLDER,
 } from '@/helpers/ai/build-support-form-url'
+import {
+  closeQuietly,
+  connectGitbookMcp,
+  type GitbookMcpClient,
+} from '@/helpers/ai/connect-gitbook-mcp'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import {
   AI_CHAT_GENERIC_ERROR_MESSAGE,
@@ -192,21 +196,15 @@ const handleChatStream = observe(
       }
       const allMessages = [systemMessage, ...messages]
 
-      let mcpClient: Awaited<ReturnType<typeof createMCPClient>> | null = null
+      let mcpClient: GitbookMcpClient | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
 
       try {
-        mcpClient = await createMCPClient({
-          transport: {
-            type: 'http',
-            url: 'https://guide.plumber.gov.sg/~gitbook/mcp',
-          },
-        })
+        const gitbook = await connectGitbookMcp()
+        mcpClient = gitbook.client
         gitbookTools = wrapMcpToolsWithUsageLogs(
           // oxlint-disable-next-line typescript/no-explicit-any
-          (await mcpClient.tools()) as Parameters<
-            typeof streamText
-          >[0]['tools'],
+          gitbook.tools as Parameters<typeof streamText>[0]['tools'],
           {
             source: 'gitbook',
             traceId,
@@ -399,16 +397,9 @@ const handleChatStream = observe(
                   data: { isChatReady: false, error: workflowError },
                 })
               } finally {
-                try {
-                  await mcpClient?.close()
-                } catch (closeError) {
-                  logger.warn('Failed to close GitBook MCP client', {
-                    traceId,
-                    error:
-                      closeError instanceof Error
-                        ? closeError.message
-                        : String(closeError),
-                  })
+                // IMPORTANT: awaiting close() holds the finished reply open while GitBook is unresponsive.
+                if (mcpClient) {
+                  closeQuietly(mcpClient)
                 }
 
                 // Manually end the span since we're streaming
@@ -416,7 +407,9 @@ const handleChatStream = observe(
               }
             },
             onError: ({ error }) => {
-              void mcpClient?.close()
+              if (mcpClient) {
+                closeQuietly(mcpClient)
+              }
               mcpClient = null
               const errorMessage =
                 error instanceof Error ? error.message : String(error)
