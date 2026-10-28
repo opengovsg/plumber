@@ -15,7 +15,7 @@ vi.mock('@/helpers/redis-app-data', () => ({
 }))
 
 const REDIS_CLIENTS = {
-  jobsRedis: { zrange: vi.fn(), hmget: vi.fn() },
+  jobsRedis: { zrange: vi.fn(), hmget: vi.fn(), zcount: vi.fn() },
   markerRedis: { set: vi.fn() },
 }
 
@@ -24,10 +24,13 @@ describe('createReconcilerChecks', () => {
     vi.unstubAllEnvs()
   })
 
-  it('includes the schedule check', () => {
+  it('includes the schedule and delayed jobs checks', () => {
     const checks = createReconcilerChecks(REDIS_CLIENTS)
 
-    expect(checks).toEqual([{ name: 'schedules', run: expect.any(Function) }])
+    expect(checks).toEqual([
+      { name: 'schedules', run: expect.any(Function) },
+      { name: 'delayed-jobs', run: expect.any(Function) },
+    ])
   })
 
   it('fails fast on an invalid grace period', () => {
