@@ -265,7 +265,7 @@ const handleChatStream = observe(
                     // Plain metadata (non-special key) so RUM traces can still be
                     // correlated with Langfuse without driving session grouping.
                     ddRumSessionId: rumSessionId || undefined,
-                    userId: context.currentUser.id,
+                    userId: context.currentUser.email,
                     environment: appConfig.appEnv,
                     promptName: chatPromptName,
                     promptVersion: version,

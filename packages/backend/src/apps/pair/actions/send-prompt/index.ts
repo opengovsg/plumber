@@ -134,7 +134,7 @@ const action: IRawAction = {
       { distinctId: $.user.id, aiSessionId: $.execution.id },
       () =>
         generateObject(convertedPrompt, dynamicSchema, {
-          userId: $.user.id,
+          userId: $.user.email,
           flowId: $.flow.id,
           stepId: $.step.id,
           executionId: $.execution.id,
