@@ -1,4 +1,4 @@
-import { dirname, join } from 'path'
+import { join } from 'path'
 
 import express, { Application } from 'express'
 
@@ -9,13 +9,11 @@ const webUIHandler = async (app: Application) => {
     return
   }
 
-  const webBuildPath = join(
-    dirname(require.main.filename),
-    '..',
-    '..',
-    'frontend',
-    'dist',
-  )
+  if (!require.main) {
+    throw new Error('webUIHandler: require.main is not set')
+  }
+
+  const webBuildPath = join(__dirname, '..', '..', '..', 'frontend', 'dist')
   const indexHtml = join(webBuildPath, 'index.html')
 
   app.use(express.static(webBuildPath))

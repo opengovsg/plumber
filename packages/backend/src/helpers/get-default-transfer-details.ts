@@ -22,14 +22,19 @@ export function getEmptyConnectionDetails(
 async function getDefaultTransferDetails(
   $: IGlobalVariable,
 ): Promise<ITransferDetails | null> {
+  const step = $.step
+  if (!step) {
+    throw new Error('getDefaultTransferDetails requires $.step to be set')
+  }
+
   const screenName = $.auth.data?.screenName as string
   // either auth data could be empty or screenName does not exist
   if (Object.keys($.auth.data ?? {}).length === 0 || !screenName) {
-    return getEmptyConnectionDetails($.step.position, $.app.name)
+    return getEmptyConnectionDetails(step.position, $.app.name)
   }
 
   return {
-    position: $.step.position,
+    position: step.position,
     appName: $.app.name,
     connectionName: screenName,
   }
