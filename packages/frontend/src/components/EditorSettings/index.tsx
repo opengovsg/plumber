@@ -124,7 +124,10 @@ export default function EditorSettingsLayout(
   }
 
   // navigate user to invalid page if flow does not belong to the user
-  if (error instanceof ApolloError && parseGraphqlError(error).code === NOT_FOUND) {
+  if (
+    error instanceof ApolloError &&
+    parseGraphqlError(error).code === NOT_FOUND
+  ) {
     return <InvalidEditorPage />
   }
 

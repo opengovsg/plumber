@@ -167,7 +167,10 @@ export default function EditorLayout() {
   useCaptureAiBuilderFlow(flow)
 
   // navigate user to not found page if flow does not belong to the user
-  if (error instanceof ApolloError && parseGraphqlError(error).code === NOT_FOUND) {
+  if (
+    error instanceof ApolloError &&
+    parseGraphqlError(error).code === NOT_FOUND
+  ) {
     return <InvalidEditorPage />
   }
 
