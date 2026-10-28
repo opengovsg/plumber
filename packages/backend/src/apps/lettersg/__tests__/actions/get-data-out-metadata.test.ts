@@ -36,9 +36,9 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.attachment.label).toEqual('Attachment')
-    expect(testMetadata.attachment.type).toEqual('file')
-    expect(testMetadata.attachment.displayedValue).toEqual(mockS3ObjectName)
+    expect(testMetadata!.attachment.label).toEqual('Attachment')
+    expect(testMetadata!.attachment.type).toEqual('file')
+    expect(testMetadata!.attachment.displayedValue).toEqual(mockS3ObjectName)
   })
 
   it('default keys remain untouched', async () => {
@@ -48,6 +48,6 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.publicId.label).toEqual('publicId')
+    expect(testMetadata!.publicId.label).toEqual('publicId')
   })
 })

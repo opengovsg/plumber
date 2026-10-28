@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
+import type {
+  BlockScopedStep,
+  ConditionalExecutionRecord,
+} from '../../common/block-execution'
 import {
   didConditionalStepSkip,
   getParentConditionalSteps,
 } from '../../common/block-execution'
+
+interface SkipCase {
+  label: string
+  step: BlockScopedStep
+  executionStep: ConditionalExecutionRecord | undefined
+}
 
 const trigger = { id: 'trigger', position: 1, appKey: 'formsg', key: 'newSub' }
 
@@ -186,7 +196,7 @@ describe('getParentConditionalSteps', () => {
 })
 
 describe('didConditionalStepSkip', () => {
-  it.each([
+  it.each<SkipCase>([
     {
       label: 'an if-then whose condition was not met',
       step: ifThenV2('if-then', 2, 'child'),
@@ -201,7 +211,7 @@ describe('didConditionalStepSkip', () => {
     expect(didConditionalStepSkip(step, executionStep)).toBe(true)
   })
 
-  it.each([
+  it.each<SkipCase>([
     {
       label: 'an if-then whose condition was met',
       step: ifThenV2('if-then', 2, 'child'),
