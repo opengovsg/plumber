@@ -3,6 +3,7 @@ import { isEmpty } from 'lodash'
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
+import { omitCopiedStepConfig } from '@/helpers/omit-copied-step-config'
 import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
 import Flow from '@/models/flow'
@@ -58,7 +59,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       const shouldDuplicateConnection =
         isOwner && oldStep.connection?.userId != null
 
-      const prevStepConfig = {
+      const prevStepConfig = omitCopiedStepConfig({
         ...oldStep.config,
         ...(oldStep.config?.approval && {
           approval: {
@@ -66,11 +67,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
             stepId: oldToNewStepIdsMap[oldStep.config.approval.stepId],
           },
         }),
-      }
-
-      delete prevStepConfig['templateConfig']
-      delete prevStepConfig['adminOverride']
-      delete prevStepConfig['aiBuilderConfig']
+      })
 
       const duplicatedStep = await duplicatedFlow
         .$relatedQuery('steps', trx)

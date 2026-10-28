@@ -2,11 +2,12 @@ import type { IApp, IJSONObject, ITemplateStep } from '@plumber/types'
 import get from 'lodash.get'
 
 import apps from '@/apps'
+import { isMrfSubmissionStep } from '@/apps/toolbox/common/constants'
+import { validateEndStepWrite } from '@/apps/toolbox/common/validate-end-step'
 import { TEMPLATES } from '@/db/storage'
 import {
   STEP_ID_KEY,
-  TILE_COL_DATA_KEY,
-  TILE_ID_KEY,
+  STEP_ID_PLACEHOLDER,
   USER_EMAIL_KEY,
 } from '@/db/storage/constants'
 import type {
@@ -15,12 +16,13 @@ import type {
 } from '@/graphql/__generated__/types.generated'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Flow from '@/models/flow'
-import { getTableOperations } from '@/models/tiles/factory'
 import User from '@/models/user'
 
 import logger from './logger'
+import { getTemplateDataHandler } from './template-data'
+import { remapTemplateStepConfig } from './template-step-config'
 
-// e.g. <<user_email>>, <<tile_col_data.Email>> to avoid clashes with {{step.}}
+// e.g. <<user_email>>, <<tile_col_data_2.Email>> to avoid clashes with {{step.}}
 const PLACEHOLDER_REGEX = /<<([a-zA-Z0-9_.? ]+)>>/g
 const FORM_ID_LENGTH = 24
 const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) => {
@@ -42,39 +44,25 @@ function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
     }
   }
 
+  if (step.templateData) {
+    const handler = getTemplateDataHandler(appKey, eventKey)
+    if (!handler?.schema.safeParse(step.templateData).success) {
+      throw new Error(
+        `Invalid template data for ${templateName} template at step ${position}`,
+      )
+    }
+  }
+
   if (eventKey) {
-    const event = app?.triggers
-      ? app?.triggers.find((trigger) => trigger.key === eventKey)
-      : app?.actions.find((action) => action.key === eventKey)
+    // Matches createFlowFromTemplate, which makes position 1 the trigger.
+    const events = position === 1 ? app?.triggers : app?.actions
+    const event = events?.find((event) => event.key === eventKey)
     if (!event) {
       throw new Error(
         `Invalid event key for ${templateName} template at step ${position}`,
       )
     }
   }
-}
-
-// This replaces the keys of columns which are names to the column ids for row data
-// e.g. { Rating: 5 } --> { column_id: 5 }
-function replaceColumnNamesWithIds(
-  rowData: IJSONObject[],
-  columnNameToIdMap: Record<string, string>,
-) {
-  const replacedRowData: IJSONObject[] = []
-  for (const row of rowData) {
-    const newRow: IJSONObject = {}
-    for (const key in row) {
-      if (!columnNameToIdMap[key]) {
-        throw new Error(
-          `Unable to find tiles column id for specified column name: ${key} when inserting row data`,
-        )
-      }
-      const newKey = columnNameToIdMap[key]
-      newRow[newKey] = row[key]
-    }
-    replacedRowData.push(newRow)
-  }
-  return replacedRowData
 }
 
 /**
@@ -84,8 +72,8 @@ function replaceColumnNamesWithIds(
  * Placeholder replacement map:
  * {
  *  user_email: test@open.gov.sg,
- *  tile_table_id: '123',
- *  tile_col_data: {
+ *  tile_table_id_2: '123',
+ *  tile_col_data_2: {
  *    name: 'jack',
  *    email: 'jack@open.gov.sg',
  *  }
@@ -93,8 +81,8 @@ function replaceColumnNamesWithIds(
  *
  * Parameters before:
  * {
- *  body: This is my email: <<user_email>>, this is my table id: <<tile_table_id>>
- *  body2: Row name: <<tile_col_data.name>>, row email: <<tile_col_data.email>>
+ *  body: This is my email: <<user_email>>, this is my table id: <<tile_table_id_2>>
+ *  body2: Row name: <<tile_col_data_2.name>>, row email: <<tile_col_data_2.email>>
  * }
  *
  * Parameters after replacement:
@@ -144,8 +132,10 @@ function replaceAllPlaceholdersInValue(
  * IMPORTANT:
  * Right now, some parameters have to be replaced dynamically.
  * 1. <<user_email>> will be replaced with the actual user email
- * 2. <<tile_col_data.col_name>>, the column name value will be replaced with the col id.
- * 3. <<tile_table_id>> will be replaced with the tile id if created
+ * 2. <<tile_col_data_N.col_name>>, the column name value will be replaced with the col id
+ *    of the tile created by the step at position N.
+ * 3. <<tile_table_id_N>> will be replaced with the id of the tile created by the step at position N
+ *    <<tile_col_pos_N.i>> works like 2., but refers to the column at index i.
  * 4. <<step_id_position>>, this will be replaced by one of the newly created template step id
  *
  * To create a new placeholder in the template:
@@ -154,10 +144,11 @@ function replaceAllPlaceholdersInValue(
  *  - Add a new placeholder based on the key in i.e. <<user_email>>
  *
  * In this function:
- *  - Add data for this key in the `placeholderReplacementMap`
+ *  - Add data for this key in the `placeholderReplacementMap`, or return it
+ *    from a template data handler in ./template-data
  *
  * Note: A nested placeholder would be needed if data is nested
- * Refer to <<tile_col_data.col_name>> for an example.
+ * Refer to <<tile_col_data_N.col_name>> for an example.
  */
 export async function createFlowFromTemplate(
   templateId: string,
@@ -169,61 +160,32 @@ export async function createFlowFromTemplate(
     throw new Error('Invalid template id input')
   }
 
-  const { name: flowName, steps, tileTemplateData } = template
+  const { name: flowName, steps } = template
+  // IMPORTANT: validate before handling template data, whose writes may be outside trx.
+  for (const templateStep of steps) {
+    validateAppAndEventKey(templateStep, flowName)
+  }
 
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
-    // create a tile with its columns and rows first if template uses tiles
-    let tableId: string | undefined
-    const columnNameToIdMap: Record<string, string> = {}
-    if (tileTemplateData) {
-      const { name, columns, rowData } = tileTemplateData
-
-      try {
-        // Takes the format of { name: colName, position: index }
-        const columnsToInsert = columns.map((column, index) => ({
-          name: column,
-          position: index,
-        }))
-
-        // Inside trx so a failed Postgres table creation rolls back the metadata.
-        const table = await user.$relatedQuery('tables', trx).insertGraph({
-          name,
-          role: 'owner',
-          db: 'pg',
-          columns: columnsToInsert,
-        })
-
-        tableId = table.id
-
-        // obtain a map of column name to the column id for easy replacement
-        for (const tableColumn of table.columns) {
-          columnNameToIdMap[tableColumn.name] = tableColumn.id
-        }
-
-        // replace column names with column ids for each row data and create table rows
-        const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
-
-        const tableOperations = getTableOperations('pg')
-        await tableOperations.createTable(
-          tableId,
-          table.columns.map((column) => column.id),
-        )
-        await tableOperations.createTableRows({
-          tableId,
-          dataArray: newRowData,
-        })
-      } catch (e) {
-        logger.error(e)
-        throw new Error('Creation of tile ran into an issue')
-      }
-    }
-
-    // prepare placeholder map for replacement
     const placeholderReplacementMap: IJSONObject = {
       [USER_EMAIL_KEY]: user.email,
-      [TILE_ID_KEY]: tableId,
-      [TILE_COL_DATA_KEY]: columnNameToIdMap,
+    }
+
+    // Handle all template data before inserting steps, since any step may
+    // reference resources created for a later step.
+    let dataTemplateConfig: Partial<FlowConfig['templateConfig']> = {}
+    for (const { position, appKey, eventKey, templateData } of steps) {
+      if (!templateData) {
+        continue
+      }
+      const { placeholders, templateConfig } = await getTemplateDataHandler(
+        appKey,
+        eventKey,
+      ).create({ user, templateData, position, trx })
+      Object.assign(placeholderReplacementMap, placeholders)
+      // The first step to set a key wins.
+      dataTemplateConfig = { ...templateConfig, ...dataTemplateConfig }
     }
 
     const formUrl = steps[0]?.sampleUrl ?? ''
@@ -232,21 +194,20 @@ export async function createFlowFromTemplate(
       name: flowName,
       config: {
         templateConfig: {
+          ...dataTemplateConfig,
           templateId,
           ...(formId && {
             formId,
-          }),
-          ...(tableId && {
-            tileId: tableId,
           }),
         },
       } satisfies FlowConfig,
     })
 
+    const templateStepIdMap: Record<string, string> = {}
+
     // step could have app or event key to be null due to if-then
     for (const templateStep of steps) {
       const { position, appKey, eventKey, parameters } = templateStep
-      validateAppAndEventKey(templateStep, flowName)
 
       // replace all placeholder parameters in action steps only
       const updatedParameters = replacePlaceholdersInParameters(
@@ -268,10 +229,43 @@ export async function createFlowFromTemplate(
           templateConfig: {
             appEventKey,
           },
+          ...structuredClone(templateStep.config ?? {}),
         } satisfies StepConfig,
       })
 
       placeholderReplacementMap[STEP_ID_KEY(position)] = step.id
+      templateStepIdMap[STEP_ID_PLACEHOLDER(position)] = step.id
+    }
+
+    // Block boundaries can reference later steps or the block itself.
+    const flowSteps = await flow
+      .$relatedQuery('steps', trx)
+      .orderBy('position', 'asc')
+    for (const step of flowSteps) {
+      step.config = remapTemplateStepConfig(step.config, templateStepIdMap)
+    }
+    for (const step of flowSteps) {
+      if (step.config.approval) {
+        const owner = flowSteps.find(
+          (candidate) => candidate.id === step.config.approval.stepId,
+        )
+        if (!isMrfSubmissionStep(owner)) {
+          throw new Error(
+            'Template rejection branch must reference an MRF step',
+          )
+        }
+      }
+      if (step.config.endStepId !== undefined) {
+        validateEndStepWrite({
+          flowSteps,
+          ifThenStepId: step.id,
+          endStepId: step.config.endStepId,
+          flowId: flow.id,
+        })
+      }
+      if (step.config.endStepId !== undefined || step.config.approval) {
+        await step.$query(trx).patch({ config: step.config })
+      }
     }
 
     logger.info('Flow created from template', {
