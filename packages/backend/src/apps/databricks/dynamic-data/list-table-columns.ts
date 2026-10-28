@@ -4,10 +4,10 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
+import { resolveDatabricksWorkspace } from '../auth/resolve-workspace' // pragma: allowlist secret
 import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickColumnRes } from '../common/types'
 
@@ -25,11 +25,13 @@ const dynamicData: IDynamicData = {
         },
       }
     }
+    // oxfmt-ignore
+    const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
     const { session, endSession } = await createSession($)
     try {
       const operation = await session.getColumns({
         tableName: $.step.parameters.tableName as string,
-        catalogName: databricksConfig.catalog,
+        catalogName: credentials.catalog,
         schemaName: constructSchemaName($),
       })
       const columns = (await operation.fetchAll({

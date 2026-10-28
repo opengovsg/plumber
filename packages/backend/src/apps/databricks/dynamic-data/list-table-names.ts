@@ -4,10 +4,10 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
+import { resolveDatabricksWorkspace } from '../auth/resolve-workspace' // pragma: allowlist secret
 import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickTableRes } from '../common/types'
 
@@ -16,10 +16,12 @@ const dynamicData: IDynamicData = {
   key: 'databricks-list-table-names',
 
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
+    // oxfmt-ignore
+    const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
     const { session, endSession } = await createSession($)
     try {
       const operation = await session.getTables({
-        catalogName: databricksConfig.catalog,
+        catalogName: credentials.catalog,
         schemaName: constructSchemaName($),
         tableTypes: ['TABLE'],
       })
