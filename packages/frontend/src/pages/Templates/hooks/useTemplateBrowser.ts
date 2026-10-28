@@ -6,6 +6,8 @@ import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { useTemplateSearch } from '@/hooks/useTemplateSearch'
 
+import { getSearchResults } from '../helpers/get-search-results'
+
 const TEMPLATES_COUNT = 9
 const SEARCH_RESULTS_COUNT = 5
 
@@ -39,11 +41,11 @@ export function useTemplateBrowser() {
     error: searchError,
   } = useTemplateSearch(searchQuery)
 
-  // Ranking runs over every template, so drop the ones this user cannot see
-  // before taking the top results.
-  const matchedTemplates = matchedTemplateIds
-    .flatMap((id) => templates.find((template) => template.id === id) ?? [])
-    .slice(0, SEARCH_RESULTS_COUNT)
+  const matchedTemplates = getSearchResults({
+    matchedTemplateIds,
+    templates,
+    limit: SEARCH_RESULTS_COUNT,
+  })
 
   return {
     templates,

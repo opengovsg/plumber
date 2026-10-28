@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
+import { COMMUNITY_TEMPLATES_EARLY_ACCESS_FLAG } from '@/config/flags'
+import { TEMPLATES } from '@/db/storage'
 import { getUserVisibleTemplates } from '@/helpers/get-user-visible-templates'
 import logger from '@/helpers/logger'
+import { isPostHogFlagEnabled } from '@/helpers/posthog'
 import {
   searchTemplates,
   TemplateSearchNotConfiguredError,
@@ -27,11 +30,17 @@ router.post('/search', rateLimitApi, async (req, res) => {
   }
 
   try {
+    const userId = getAuthenticatedContext(req).currentUser.id
+    // Community templates stay out of the AI request until the user opts in.
+    const hasCommunityTemplates = await isPostHogFlagEnabled(
+      COMMUNITY_TEMPLATES_EARLY_ACCESS_FLAG,
+      userId,
+    )
     const templateIds = await searchTemplates({
       query: parsed.data.query,
-      templates: await getUserVisibleTemplates(
-        getAuthenticatedContext(req).currentUser.id,
-      ),
+      templates: hasCommunityTemplates
+        ? await getUserVisibleTemplates(userId)
+        : TEMPLATES,
     })
     res.json({ data: { templateIds } })
   } catch (error) {

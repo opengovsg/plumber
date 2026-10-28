@@ -10,13 +10,13 @@ import type { IApp, ITemplate } from '@plumber/types'
 import { useEffect } from 'react'
 
 import BackButton from '@/components/FlowStepConfigurationModal/BackButton'
-import { TemplateIcon } from '@/helpers/flow-templates'
+import { getTemplateIconName, TemplateIcon } from '@/helpers/flow-templates'
 
 import { useCreateTemplatedFlow } from '../hooks/useCreateTemplatedFlow'
 import TemplateBody from './TemplateBody'
 
 interface TemplatePreviewProps {
-  template: ITemplate
+  template: ITemplate & { isBuiltIn?: boolean }
   apps: IApp[]
   /** Shows the Back and close buttons. Omit when the modal has its own route. */
   onBack?: () => void
@@ -35,7 +35,7 @@ interface TemplatePreviewProps {
 export default function TemplatePreview(props: TemplatePreviewProps) {
   const { template, apps, onBack, onDismiss, replaceOnCreate, onBusyChange } =
     props
-  const { name, description, iconName, steps } = template
+  const { id, name, description, iconName, steps, isBuiltIn } = template
   const { createFromTemplate, loading } = useCreateTemplatedFlow(
     template,
     onDismiss,
@@ -104,7 +104,9 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
 
       <Flex alignItems="center" columnGap={4} px={8}>
         <Box bg="primary.50" color="primary.500" p={2} borderRadius="base">
-          <TemplateIcon iconName={iconName} />
+          <TemplateIcon
+            iconName={getTemplateIconName({ id, iconName, isBuiltIn })}
+          />
         </Box>
         <Flex flexDir="column" flexGrow={1} rowGap={0.5}>
           <ModalHeader p={0} textStyle="subhead-1">

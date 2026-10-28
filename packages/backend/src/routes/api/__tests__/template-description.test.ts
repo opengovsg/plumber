@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   withAccessibleFlows: vi.fn(),
   generate: vi.fn(),
   logError: vi.fn(),
+  isPlumPro: vi.fn(),
 }))
 vi.mock('@/config/redis', () => ({
   createRedisClient: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('@/helpers/generate-template-description', () => ({
   generateTemplateDescription: mocks.generate,
 }))
 vi.mock('@/helpers/logger', () => ({ default: { error: mocks.logError } }))
+vi.mock('@/helpers/plumpro', () => ({ isPlumPro: mocks.isPlumPro }))
 // The real middleware loads every app, which this unit test does not need.
 vi.mock('../middleware/authentication', () => ({
   getAuthenticatedContext: (req: { context: unknown }) => req.context,
@@ -59,6 +61,7 @@ async function request(body: unknown) {
 describe('template description endpoint', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.isPlumPro.mockResolvedValue(true)
     mocks.consume.mockResolvedValue(undefined)
     mocks.withAccessibleFlows.mockReturnValue({
       withGraphFetched: mocks.withGraphFetched,
@@ -169,6 +172,14 @@ describe('template description endpoint', () => {
       mocks.generate.mockRejectedValue(z.string().min(1).safeParse('').error)
       await request({ flowId })
       expect(loggedFailure()).toMatchObject({ category: 'invalid-output' })
+    })
+
+    it('logs a failed PlumPro check', async () => {
+      mocks.isPlumPro.mockRejectedValue(new Error(SECRET))
+      const res = await request({ flowId })
+      expect(res.status).toHaveBeenCalledWith(503)
+      expect(loggedFailure()).toMatchObject({ category: 'access-check-failed' })
+      expect(mocks.consume).not.toHaveBeenCalled()
     })
 
     it('logs an unavailable rate limiter', async () => {

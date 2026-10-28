@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getUserVisibleTemplates: vi.fn(),
+  isPostHogFlagEnabled: vi.fn(),
   searchTemplates: vi.fn(),
+}))
+vi.mock('@/db/storage', () => ({ TEMPLATES: [] }))
+vi.mock('@/helpers/posthog', () => ({
+  isPostHogFlagEnabled: mocks.isPostHogFlagEnabled,
 }))
 vi.mock('@/helpers/get-user-visible-templates', () => ({
   getUserVisibleTemplates: mocks.getUserVisibleTemplates,
@@ -35,7 +40,8 @@ describe('template search endpoint', () => {
     vi.clearAllMocks()
   })
 
-  it("searches the current user's personal templates", async () => {
+  it("searches the current user's personal templates once they opt in", async () => {
+    mocks.isPostHogFlagEnabled.mockResolvedValue(true)
     const templates = [{ id: 'personal-template-id' }]
     mocks.getUserVisibleTemplates.mockResolvedValue(templates)
     mocks.searchTemplates.mockResolvedValue(['personal-template-id'])
