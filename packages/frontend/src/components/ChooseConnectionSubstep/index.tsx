@@ -14,7 +14,7 @@ import { NON_EDITABLE_APP_CONNECTIONS } from '../Editor/constants'
 import {
   type ConnectionDropdownOption,
   optionGenerator,
-} from '../FlowStepConfigurationModal/ChooseAndAddConnection'
+} from '../FlowStepConfigurationModal/ChooseAndAddConnection/option-generator'
 import {
   APP_ALLOWING_EMPTY_CONNECTION,
   DATABRICKS_APP_KEY,
