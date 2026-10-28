@@ -3,15 +3,18 @@ import axios from 'axios'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import logger from '@/helpers/logger'
 
+import { type DatabricksGeneration } from '../common/connection-generation'
 import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
 
 const redisClient = createRedisClient(REDIS_DB_INDEX.APP_DATA)
 
 const DATABRICKS_AUTH_TOKEN_REDIS_PREFIX = 'databricks:authToken:'
 
-export async function getDatabricksToken(): Promise<string> {
+export async function getDatabricksToken(
+  generation: DatabricksGeneration,
+): Promise<string> {
   // oxfmt-ignore
-  const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
+  const credentials = resolveDatabricksWorkspace(generation) // pragma: allowlist secret
   const redisKey =
     DATABRICKS_AUTH_TOKEN_REDIS_PREFIX + credentials.serverHostname
   try {

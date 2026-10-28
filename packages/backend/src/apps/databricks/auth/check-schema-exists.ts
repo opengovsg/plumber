@@ -2,15 +2,20 @@ import { IGlobalVariable } from '@plumber/types'
 
 import logger from '@/helpers/logger'
 
+import { parseDatabricksGeneration } from '../common/connection-generation'
 import { createSession } from './create-client'
 import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
 
 export async function checkSchemaExists($: IGlobalVariable): Promise<boolean> {
   // Open the session without an initialSchema; getSchemas() would fail against
   // a schema that doesn't exist yet.
+  const generation = parseDatabricksGeneration($.auth.data?.generation)
   // oxfmt-ignore
-  const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
-  const { session, endSession } = await createSession($, { skipSchema: true })
+  const credentials = resolveDatabricksWorkspace(generation) // pragma: allowlist secret
+  const { session, endSession } = await createSession($, {
+    skipSchema: true,
+    generation,
+  })
 
   try {
     const { screenName } = $.auth.data
