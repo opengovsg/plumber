@@ -4,6 +4,7 @@ import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
+import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
 import logger from '@/helpers/logger'
 import { imageModel, structuredOutputProviderOptions } from '@/helpers/pair'
 import Step from '@/models/step'
@@ -118,30 +119,32 @@ const action: IRawAction = {
 
       const content = await getImageContent(image[0], $.flow.id)
 
-      const { object } = await generateObject({
-        model: imageModel,
-        schema: responseSchema,
-        providerOptions: structuredOutputProviderOptions,
-        messages: [
-          {
-            role: 'user',
-            content,
-          },
-        ],
-        experimental_telemetry: {
-          isEnabled: true,
-          functionId: 'pair-action-process-image',
-          metadata: {
-            '$ai_session_id': $.execution.id,
-            'posthog.distinct_id': $.user.id,
-            userId: $.user.id,
-            executionId: $.execution.id,
-            flowId: $.flow.id,
-            stepId: $.step.id,
-            tags: ['pair', 'action', 'process-image'],
-          },
-        },
-      })
+      const { object } = await withAiTelemetryContext(
+        { distinctId: $.user.id, aiSessionId: $.execution.id },
+        () =>
+          generateObject({
+            model: imageModel,
+            schema: responseSchema,
+            providerOptions: structuredOutputProviderOptions,
+            messages: [
+              {
+                role: 'user',
+                content,
+              },
+            ],
+            experimental_telemetry: {
+              isEnabled: true,
+              functionId: 'pair-action-process-image',
+              metadata: {
+                userId: $.user.id,
+                executionId: $.execution.id,
+                flowId: $.flow.id,
+                stepId: $.step.id,
+                tags: ['pair', 'action', 'process-image'],
+              },
+            },
+          }),
+      )
 
       $.setActionItem({
         raw: { ...object } as IJSONObject,
