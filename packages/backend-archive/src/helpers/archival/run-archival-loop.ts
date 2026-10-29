@@ -30,9 +30,11 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   let cursor: string | null = null
   let totalArchived = 0
   let totalSkipped = 0
+  // IMPORTANT: store counts, not IDs. A flow can own 100k+ executions, and logging every ID
+  // produced multi-MB lines that stdout could not flush before the process exited.
   const archivedByFlow = new Map<
     string,
-    { executionIds: string[]; testExecutionIds: string[] }
+    { executionsCount: number; testExecutionsCount: number }
   >()
   // SGT date (yyyy-MM-dd) -> appKey -> key -> count
   const stepCounts = new Map<string, Map<string, Map<string, number>>>()
@@ -235,13 +237,13 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       if (outcome === 'archived') {
         batchArchived++
         const entry = archivedByFlow.get(execution.flowId) ?? {
-          executionIds: [],
-          testExecutionIds: [],
+          executionsCount: 0,
+          testExecutionsCount: 0,
         }
         if (execution.testRun) {
-          entry.testExecutionIds.push(execution.id)
+          entry.testExecutionsCount++
         } else {
-          entry.executionIds.push(execution.id)
+          entry.executionsCount++
         }
         archivedByFlow.set(execution.flowId, entry)
 
@@ -289,15 +291,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     }
   }
 
-  for (const [flowId, { executionIds, testExecutionIds }] of archivedByFlow) {
-    logger.info({
-      event: 'archival.flow.archived',
-      flowId,
-      executionIds,
-      testExecutionIds,
-      executionsCount: executionIds.length,
-      testExecutionsCount: testExecutionIds.length,
-    })
+  for (const [flowId, counts] of archivedByFlow) {
+    logger.info({ event: 'archival.flow.archived', flowId, ...counts })
   }
 
   logger.info({
