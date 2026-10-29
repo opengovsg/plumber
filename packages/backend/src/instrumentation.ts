@@ -1,4 +1,5 @@
 import { LangfuseSpanProcessor } from '@langfuse/otel'
+import { diag, DiagLogLevel } from '@opentelemetry/api'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { PostHogSpanProcessor, PostHogTraceExporter } from '@posthog/ai/otel'
@@ -6,6 +7,21 @@ import { PostHogSpanProcessor, PostHogTraceExporter } from '@posthog/ai/otel'
 import appConfig from '@/config/app'
 import { posthogClient } from '@/helpers/ai/posthog-client'
 import { ByteLimitedPostHogSpanExporter } from '@/helpers/ai/posthog-span-exporter'
+import logger from '@/helpers/logger'
+
+// Without a diag logger, rejected trace exports (e.g. PostHog's HTTP 413) are dropped silently.
+diag.setLogger(
+  {
+    error: (message, ...args) =>
+      logger.error(`OpenTelemetry: ${message}`, { args }),
+    warn: (message, ...args) =>
+      logger.warn(`OpenTelemetry: ${message}`, { args }),
+    info: () => undefined,
+    debug: () => undefined,
+    verbose: () => undefined,
+  },
+  DiagLogLevel.WARN,
+)
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
 

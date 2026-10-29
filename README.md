@@ -65,6 +65,7 @@ PostHog receives AI Builder and PAIR action traces, including prompts, responses
 Base64 images and files are redacted from PostHog's copy. Rome retains the original content.
 PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
 Exports split into requests below 3.5 MB, measured with the transport's JSON serializer.
+`OTEL_BSP_MAX_EXPORT_BATCH_SIZE=50` caps the span count.
 If a single span exceeds 3.5 MB, PostHog receives its IDs, timing, and key metadata with content-omission notices.
 The span includes `posthog.content_omitted` and `posthog.original_payload_bytes` properties.
 PostHog identifies users by their Plumber user ID.
