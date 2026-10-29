@@ -1382,7 +1382,8 @@ describe('processResponsesV4', () => {
         answerArray: [],
       })
       expect(byId('addr')?.answerArray).toEqual(['', '', '', '', '', ''])
-      expect(byId('kids')?.answer).toEqual({ child: [], childFields: [] })
+      // Matches an empty children answer, which flattens to no variables.
+      expect(result.some((field) => field.fieldType === 'children')).toBe(false)
     })
   })
 })
