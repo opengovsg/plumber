@@ -73,7 +73,7 @@ const missingPostHogConfig = !posthogProjectToken
     : undefined
 
 if (missingPostHogConfig && appConfig.isDev) {
-  throw new Error(
+  console.warn(
     `${missingPostHogConfig} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingPostHogConfig} is configured`,
   )
 }
