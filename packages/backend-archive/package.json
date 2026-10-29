@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "prebuild": "rimraf ./dist && pnpm run build:deps",
-    "build": "tsc && tsc-alias",
+    "build": "tsc && tsc-alias && node ../../scripts/assert-no-dynamic-import.mjs dist",
     "build:deps": "pnpm --filter \"backend-archive^...\" run build",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "test:unit": "vitest --config ./vitest.config.ts",
