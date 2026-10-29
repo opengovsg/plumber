@@ -69,7 +69,7 @@ The script logs structured JSON to stdout. Key events to look for:
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `archival.run.start`      | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                            |
 | `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.                                                                     |
-| `archival.flow.archived`  | All executions for a flow have been processed — lists IDs.                                                                                 |
+| `archival.flow.archived`  | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.         |
 | `archival.run.complete`   | Final summary — `executions_archived` (real), `test_executions_archived`, `total_executions_archived`, `executions_skipped`, `durationMs`. |
 
 ### 4. Verify S3 contents
