@@ -10,6 +10,7 @@ import Container from '@/components/Container'
 import EditableInput from '@/components/EditableInput'
 import Editor from '@/components/Editor'
 import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
+import { useSurvey } from '@/components/Survey/SurveyProvider'
 import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorProvider } from '@/contexts/Editor'
@@ -20,7 +21,6 @@ import { useCaptureAiBuilderFlow } from '@/hooks/useCaptureAiBuilderFlow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
-import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
 import UnpublishConfirmationDialog from './UnpublishConfirmationDialog'
@@ -59,6 +59,7 @@ export default function EditorLayout() {
     variables: { id: flowId },
   })
   const flow: IFlow = data?.getFlow
+  const { requestSurvey, queueAbandonedSeq, clearAbandonedSeq } = useSurvey()
 
   const handleClose = useCallback(() => {
     searchParams.delete('showDemo')
@@ -91,8 +92,21 @@ export default function EditorLayout() {
           },
         },
       })
+      if (active && flowId) {
+        clearAbandonedSeq(flowId)
+        requestSurvey({
+          isPausePoint: false,
+          seqCandidate: { flow: 'pipe', type: 'completion' },
+        })
+      }
     },
-    [flow?.updatedAt, flowId, updateFlowStatus],
+    [
+      flow?.updatedAt,
+      flowId,
+      updateFlowStatus,
+      clearAbandonedSeq,
+      requestSurvey,
+    ],
   )
 
   const handleUnpublish = useCallback(async () => {
@@ -163,6 +177,18 @@ export default function EditorLayout() {
   }, [shouldWarnOnLeave, onWarningOpen])
 
   useCaptureAiBuilderFlow(flow)
+
+  // Leaving an unpublished pipe counts as an abandon. beforeunload is
+  // unreliable, so only in-app navigation away from the editor is detected.
+  const isAbandonableRef = useRef(false)
+  isAbandonableRef.current = !!flow && !flow.active && flow.role !== 'viewer'
+  useEffect(() => {
+    return () => {
+      if (isAbandonableRef.current && flowId) {
+        queueAbandonedSeq({ flow: 'regular', refId: flowId })
+      }
+    }
+  }, [flowId, queueAbandonedSeq])
 
   // navigate user to not found page if flow does not belong to the user
   if (
@@ -255,7 +281,6 @@ export default function EditorLayout() {
           overflowY="auto"
         >
           <Editor />
-          {flow?.active && flow?.role !== 'viewer' && <ConfettiSurvey />}
         </Container>
       </Flex>
 
