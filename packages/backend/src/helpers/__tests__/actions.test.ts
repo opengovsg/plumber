@@ -16,8 +16,8 @@ import RetriableError from '@/errors/retriable-error'
 import StepError, { getStepErrorKind } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import Step from '@/models/step'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../test/utils/make-http-error'
 import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
 
 const mocks = vi.hoisted(() => ({

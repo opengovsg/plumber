@@ -12,9 +12,9 @@ import RetriableError from '@/errors/retriable-error'
 import StepError, { getStepErrorKind } from '@/errors/step'
 import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
+import { makeHttpError } from '@/test/make-http-error'
 
 import app from '../..'
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import makeRequestAction from '../../actions/http-request'
 
 const mocks = vi.hoisted(() => ({

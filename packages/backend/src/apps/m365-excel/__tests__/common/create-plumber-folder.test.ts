@@ -2,8 +2,8 @@ import { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import { createPlumberFolder } from '../../common/create-plumber-folder'
 
 const mocks = vi.hoisted(() => ({

@@ -2,9 +2,9 @@ import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import logger from '@/helpers/logger'
+import { makeHttpError } from '@/test/make-http-error'
 
 import app from '../../..'
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import getCaseDetailsAction from '../../actions/get-case-details'
 
 const mocks = vi.hoisted(() => ({

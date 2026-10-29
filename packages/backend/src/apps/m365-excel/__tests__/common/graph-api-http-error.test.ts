@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { makeHttpError } from '@/../test/utils/make-http-error'
 import StepError from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
 import {
   rethrowHttpErrorAsStepError,

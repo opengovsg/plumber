@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
 import app from '../..'
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import makeRequestAction from '../../actions/http-request'
 import {
   CUSTOM_API_TIMEOUT,

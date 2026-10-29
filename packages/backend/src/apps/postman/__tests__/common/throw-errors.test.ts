@@ -14,8 +14,8 @@ import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import {
   getSesErrorStatus,
   throwPostmanStepError,

@@ -2,7 +2,7 @@ import type { InternalAxiosRequestConfig } from 'axios'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '@/../test/utils/make-http-error'
+import { makeHttpError } from '@/test/make-http-error'
 
 import HttpError, { isNetworkError, isNetworkErrorCode } from '../http'
 

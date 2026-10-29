@@ -10,8 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError, { getStepErrorKind } from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../test/utils/make-http-error'
 import { handleFailedStepAndThrow } from '../actions'
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
 

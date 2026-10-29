@@ -1,7 +1,8 @@
 import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
+import { makeHttpError } from '@/test/make-http-error'
+
 import { processAttachments } from '../../common/attachment'
 
 const mocks = vi.hoisted(() => ({
