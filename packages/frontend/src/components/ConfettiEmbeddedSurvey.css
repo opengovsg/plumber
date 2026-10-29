@@ -1,33 +1,89 @@
 .confetti-embedded-survey {
-  --confetti-rating-active-bg-color: #cf1a68;
-  --confetti-indicator-active-bg-color: #cf1a68;
+  --confetti-rating-active-bg-color: var(
+    --chakra-colors-base-content-brand,
+    #cf1a68
+  );
+  --confetti-indicator-active-bg-color: var(
+    --chakra-colors-base-content-brand,
+    #cf1a68
+  );
 }
 
 .confetti-embedded-survey .confetti {
-  gap: 20px;
+  gap: 24px;
 }
 
-.confetti-embedded-survey .cf-rating-section {
+.confetti-embedded-survey .confetti .cf-question {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.confetti-embedded-survey .cf-title {
+.confetti-embedded-survey .confetti .cf-header {
+  margin: 0;
+}
+
+.confetti-embedded-survey .confetti .cf-title {
   font-weight: 500;
   font-size: 0.875rem;
   line-height: 1.25rem;
   letter-spacing: 0;
-  color: #666c7a;
+  color: var(--chakra-colors-base-content-default, #454953);
 }
 
-.confetti-embedded-survey .cf-rating-display-star {
+/* Confetti marks optional questions, so any title without that mark is required. */
+.confetti-embedded-survey
+  .confetti
+  .cf-title:not(:has(.cf-label-optional))::after {
+  content: ' *' / '';
+  color: var(--chakra-colors-utility-feedback-critical, #c03434);
+}
+
+.confetti-embedded-survey .confetti .cf-label-optional {
+  font-weight: 400;
+  color: var(--chakra-colors-base-content-medium, #666c7a);
+}
+
+.confetti-embedded-survey .confetti .cf-rating-section {
+  gap: 8px;
+}
+
+.confetti-embedded-survey .confetti .cf-rating-number,
+.confetti-embedded-survey .confetti .cf-rating-number span {
+  font-weight: 500;
+}
+
+.confetti-embedded-survey .confetti .cf-rating-text {
+  font-weight: 400;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--chakra-colors-base-content-medium, #666c7a);
+}
+
+.confetti-embedded-survey .confetti .cf-rating-display-star {
   justify-content: start;
 }
 
-/* Confetti hides the per-question error slot, which leaves nothing to tell the
-   user which required question is holding up their exit. */
-.confetti-embedded-survey .confetti .cf-question .cf-error {
-  display: block;
-  color: #c03434;
+.confetti-embedded-survey .confetti .cf-textarea {
+  min-height: 80px;
   font-size: 0.875rem;
   line-height: 1.25rem;
+  color: var(--chakra-colors-base-content-default, #454953);
+}
+
+.confetti-embedded-survey .confetti .cf-textarea::placeholder {
+  color: var(--chakra-colors-interaction-support-placeholder, #a0a4ad);
+}
+
+/* The asterisk marks the required question, so the error text stays for
+   screen readers only. */
+.confetti-embedded-survey .confetti .cf-question .cf-error {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

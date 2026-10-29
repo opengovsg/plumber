@@ -34,6 +34,8 @@ export interface ConfettiEmbeddedSurveyRef {
    * on the survey.
    */
   submitIfComplete: () => boolean
+  /** Whether the survey rendered, as opposed to timing out unseen. */
+  hasLoaded: () => boolean
 }
 
 interface ConfettiEmbeddedSurveyProps {
@@ -110,6 +112,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
     }, [hasLoadTimedOut, isLoaded, onReadyToSubmitChange])
 
     useImperativeHandle(ref, () => ({
+      hasLoaded: () => isLoaded,
       submitIfComplete: () => {
         const decision = decideSubmit({
           completeness: completenessRef.current,

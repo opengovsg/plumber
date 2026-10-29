@@ -8,6 +8,7 @@ import { RouterProvider } from 'react-router-dom'
 
 import ApolloProvider from '@/components/ApolloProvider'
 import router from '@/components/Router'
+import { SurveyProvider } from '@/components/Survey/SurveyProvider'
 import ThemeProvider from '@/components/ThemeProvider'
 import TimezoneProvider from '@/components/TimezoneProvider'
 import appConfig from '@/config/app'
@@ -51,7 +52,9 @@ root.render(
         <AuthenticationProvider>
           <TimezoneProvider>
             <LaunchDarklyProvider>
-              <RouterProvider router={router} />
+              <SurveyProvider>
+                <RouterProvider router={router} />
+              </SurveyProvider>
             </LaunchDarklyProvider>
           </TimezoneProvider>
         </AuthenticationProvider>
