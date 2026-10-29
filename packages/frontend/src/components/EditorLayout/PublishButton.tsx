@@ -1,11 +1,11 @@
 import { Skeleton, Spinner, Text } from '@chakra-ui/react'
 import { Button, TouchableTooltip } from '@opengovsg/design-system-react'
+import { usePostHog } from 'posthog-js/react'
 import { useContext, useMemo } from 'react'
 
 import { hasEmptyIfThenV2Block } from '@/components/Editor/helpers/steps-utils'
 import { EditorContext } from '@/contexts/Editor'
 import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 const unpublishButtonStyles = {
   bg: 'base.content.strong',
@@ -40,6 +40,7 @@ export default function PublishButton({
   onUnpublish: () => void
   setShouldWarnOnPublish: (shouldWarnOnPublish: boolean) => void
 }) {
+  const posthog = usePostHog()
   const {
     flow,
     hasFlowTransfer,
@@ -94,15 +95,11 @@ export default function PublishButton({
         {...(flow?.active ? unpublishButtonStyles : {})}
         onClick={(e) => {
           if (flow.active) {
-            if (isPostHogConfigured) {
-              posthog.capture('flow_unpublished')
-            }
+            posthog.capture('flow_unpublished')
             onUnpublish()
             return
           }
-          if (isPostHogConfigured) {
-            posthog.capture('flow_published')
-          }
+          posthog.capture('flow_published')
           if (shouldWarnOnLeave) {
             setShouldWarnOnPublish(true)
             handleWarnOnLeave(e)
