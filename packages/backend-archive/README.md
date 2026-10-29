@@ -65,12 +65,12 @@ S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
 
 The script logs structured JSON to stdout. Key events to look for:
 
-| Event                     | Meaning                                                                          |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `archival.run.start`      | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                  |
-| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.           |
-| `archival.flow.archived`  | All executions for a flow have been processed — lists IDs.                       |
-| `archival.run.complete`   | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
+| Event                     | Meaning                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `archival.run.start`      | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                            |
+| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.                                                                     |
+| `archival.flow.archived`  | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.         |
+| `archival.run.complete`   | Final summary — `executions_archived` (real), `test_executions_archived`, `total_executions_archived`, `executions_skipped`, `durationMs`. |
 
 ### 4. Verify S3 contents
 
@@ -198,7 +198,11 @@ Dates are keyed by the step's `created_at`, converted to SGT (not the archival r
 
 `nullStepCount` in the same object captures steps where `appKey` or `key` could not be resolved (pre-denormalisation rows).
 
-> **Note:** only non-test-run executions (`test_run = false`) contribute to `stepCounts`. Test executions are archived and counted in `executionsArchived` but their steps are excluded from the breakdown.
+> **Note:** only non-test-run executions (`test_run = false`) contribute to `stepCounts`. Test executions are archived but their steps are excluded from the breakdown.
+
+The execution counts are split three ways. `executionsArchived` counts real executions. `testExecutionsArchived` counts test executions. `totalExecutionsArchived` counts both.
+
+> **IMPORTANT:** meta files written before `totalExecutionsArchived` existed use `executionsArchived` for the combined total.
 
 ### Aggregate across all runs (local)
 
