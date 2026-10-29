@@ -1,0 +1,96 @@
+name: Scheduled draft release
+
+on:
+  schedule:
+    # 17:00 Singapore time (UTC+8, no DST) = 09:00 UTC, every Tuesday and Thursday
+    - cron: '0 9 * * 2,4'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  draft-release:
+    name: Draft release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_BRANCH: develop-v2
+      # #plumber
+      SLACK_CHANNEL_ID: C04HTHMP7N0
+    steps:
+      - name: Create draft release
+        id: draft
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # A draft is already waiting for review: do not pile up another one.
+          existing_draft="$(gh release list --limit 100 --json tagName,isDraft --jq '[.[] | select(.isDraft)] | length')"
+          if [ "${existing_draft}" != "0" ]; then
+            echo "A draft release already exists, skipping." | tee -a "${GITHUB_STEP_SUMMARY}"
+            echo "created=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Latest published (non-draft, non-prerelease) release.
+          latest_tag="$(gh api "repos/${GH_REPO}/releases/latest" --jq .tag_name)"
+          if ! [[ "${latest_tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Latest release tag '${latest_tag}' is not in vX.Y.Z format"
+            exit 1
+          fi
+          next_tag="v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))"
+
+          # Nothing new on the release branch since the latest release: skip.
+          commit_count="$(gh api "repos/${GH_REPO}/compare/${latest_tag}...${RELEASE_BRANCH}" --jq .ahead_by)"
+          if [ "${commit_count}" = "0" ]; then
+            echo "No commits on ${RELEASE_BRANCH} since ${latest_tag}, skipping." | tee -a "${GITHUB_STEP_SUMMARY}"
+            echo "created=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Build notes in the existing style: "- <PR title> (#<PR number>)".
+          # generate-notes returns "* <title> by @<user> in <PR url>" lines.
+          gh api "repos/${GH_REPO}/releases/generate-notes" \
+            -f tag_name="${next_tag}" \
+            -f target_commitish="${RELEASE_BRANCH}" \
+            -f previous_tag_name="${latest_tag}" \
+            --jq .body > generated-notes.md
+          sed -nE 's#^\* (.*) by @[^ ]+ in https://github\.com/[^ ]+/pull/([0-9]+)$#- \1 (\#\2)#p' \
+            generated-notes.md > notes.md
+          if [ ! -s notes.md ]; then
+            # Only direct commits (no PRs) since the last release.
+            echo "- Changes since ${latest_tag} (${commit_count} commits): ${GITHUB_SERVER_URL}/${GH_REPO}/compare/${latest_tag}...${RELEASE_BRANCH}" > notes.md
+          fi
+
+          url="$(gh release create "${next_tag}" \
+            --draft \
+            --target "${RELEASE_BRANCH}" \
+            --title "${next_tag}" \
+            --notes-file notes.md)"
+
+          {
+            echo "created=true"
+            echo "tag=${next_tag}"
+            echo "url=${url}"
+            echo "commit-count=${commit_count}"
+          } >> "${GITHUB_OUTPUT}"
+          echo "Created draft release ${next_tag}: ${url}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Notify Slack
+        if: steps.draft.outputs.created == 'true'
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ env.SLACK_CHANNEL_ID }}"
+            username: "Plumber Release Drafter"
+            text: ":package: Draft release *${{ steps.draft.outputs.tag }}* is ready for review (${{ steps.draft.outputs.commit-count }} commits on `${{ env.RELEASE_BRANCH }}` since the last release): ${{ steps.draft.outputs.url }}"
