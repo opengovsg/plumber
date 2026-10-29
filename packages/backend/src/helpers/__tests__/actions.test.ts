@@ -10,8 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import Step from '@/models/step'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../test/utils/make-http-error'
 import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
 
 const mocks = vi.hoisted(() => ({
