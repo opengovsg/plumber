@@ -65,6 +65,7 @@ Ensure the task execution role can read both parameters and decrypt the token's 
 PostHog receives AI Builder and PAIR action traces, including prompts, responses, and tool calls.
 Base64 images and files are redacted from PostHog's copy. Rome retains the original content.
 PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
+`OTEL_BSP_MAX_EXPORT_BATCH_SIZE=50` caps the span count.
 PostHog identifies users by their Plumber user ID.
 It groups AI Builder turns by `chatId` and PAIR action calls by execution ID.
 `withAiTelemetryContext` in `packages/backend/src/helpers/ai/posthog-client.ts` sets both values.
