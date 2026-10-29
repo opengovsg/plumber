@@ -5,6 +5,7 @@ import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
+import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
 import logger from '@/helpers/logger'
 import { engineProvider } from '@/helpers/pair'
 import Step from '@/models/step'
@@ -121,27 +122,31 @@ const action: IRawAction = {
 
       const content = await getImageContent(image[0], $.flow.id)
 
-      const { object } = await generateObject({
-        model,
-        schema: responseSchema,
-        messages: [
-          {
-            role: 'user',
-            content,
-          },
-        ],
-        experimental_telemetry: {
-          isEnabled: true,
-          functionId: 'pair-action-process-image',
-          metadata: {
-            userId: $.user.email,
-            executionId: $.execution.id,
-            flowId: $.flow.id,
-            stepId: $.step.id,
-            tags: ['pair', 'action', 'process-image'],
-          },
-        },
-      })
+      const { object } = await withAiTelemetryContext(
+        { distinctId: $.user.id, aiSessionId: $.execution.id },
+        () =>
+          generateObject({
+            model,
+            schema: responseSchema,
+            messages: [
+              {
+                role: 'user',
+                content,
+              },
+            ],
+            experimental_telemetry: {
+              isEnabled: true,
+              functionId: 'pair-action-process-image',
+              metadata: {
+                userId: $.user.email,
+                executionId: $.execution.id,
+                flowId: $.flow.id,
+                stepId: $.step.id,
+                tags: ['pair', 'action', 'process-image'],
+              },
+            },
+          }),
+      )
 
       $.setActionItem({
         raw: { ...object } as IJSONObject,

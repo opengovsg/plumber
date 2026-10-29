@@ -1,13 +1,34 @@
 import { LangfuseSpanProcessor } from '@langfuse/otel'
+import { diag, DiagLogLevel } from '@opentelemetry/api'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { PostHogSpanProcessor, PostHogTraceExporter } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
-import {
-  createPostHogSpanProcessor,
-  PAIR_ACTION_RESOURCE_NAMES,
-} from '@/helpers/ai/posthog-telemetry'
+import { posthogClient } from '@/helpers/ai/posthog-client'
+import { ByteLimitedPostHogSpanExporter } from '@/helpers/ai/posthog-span-exporter'
+import logger from '@/helpers/logger'
+
+// Without a diag logger, rejected trace exports (e.g. PostHog's HTTP 413) are dropped silently.
+diag.setLogger(
+  {
+    error: (message, ...args) =>
+      logger.error(`OpenTelemetry: ${message}`, { args }),
+    warn: (message, ...args) =>
+      logger.warn(`OpenTelemetry: ${message}`, { args }),
+    info: () => undefined,
+    debug: () => undefined,
+    verbose: () => undefined,
+  },
+  DiagLogLevel.WARN,
+)
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
+
+const PAIR_ACTION_RESOURCE_NAMES = [
+  'pair-action-generate-object',
+  'pair-action-process-image',
+]
 
 const BASE_CONFIG = {
   baseUrl: appConfig.pair.rome.baseUrl,
@@ -59,10 +80,38 @@ const pairActionSpanProcessor = new LangfuseSpanProcessor({
   },
 })
 
-const posthogSpanProcessor = createPostHogSpanProcessor(
-  appConfig.posthog,
-  appConfig.appEnv,
-)
+const { projectToken: posthogProjectToken, host: posthogHost } =
+  appConfig.posthog
+const missingPostHogConfig = !posthogProjectToken
+  ? 'POSTHOG_PROJECT_TOKEN'
+  : !posthogHost
+    ? 'POSTHOG_HOST'
+    : undefined
+
+if (missingPostHogConfig && appConfig.isDev) {
+  console.warn(
+    `${missingPostHogConfig} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingPostHogConfig} is configured`,
+  )
+}
+
+const posthogSpanProcessor = missingPostHogConfig
+  ? undefined
+  : new PostHogSpanProcessor({
+      projectToken: posthogProjectToken,
+      host: posthogHost,
+      client: posthogClient,
+      privacyMode: false,
+      // IMPORTANT: `_spanProcessor` is @internal. It is the only way to bound export bytes,
+      // because PostHog rejects exports over 4 MB and the library batches by span count.
+      _spanProcessor: new BatchSpanProcessor(
+        new ByteLimitedPostHogSpanExporter(
+          new PostHogTraceExporter({
+            projectToken: posthogProjectToken,
+            host: posthogHost,
+          }),
+        ),
+      ),
+    })
 
 const sdk = new NodeSDK({
   spanProcessors: [

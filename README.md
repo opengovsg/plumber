@@ -55,29 +55,27 @@ Leaving either variable empty disables PostHog export.
 Rome still receives traces regardless of whether PostHog export is enabled.
 
 ECS injects these settings from SSM Parameter Store through `ecs/env.json`.
-Before deploying, create `plumber-posthog-project-token` and `plumber-posthog-host` in each deployment account.
-These shared parameter names apply to every environment.
+Before deploying, create `plumber-<ENVIRONMENT>-posthog-project-token` and `plumber-<ENVIRONMENT>-posthog-host` for each environment.
 Store the project token as a `SecureString` parameter.
 The host can use a `String` parameter.
 Both parameters must exist for ECS to start the task, even when PostHog export is disabled in application configuration.
 Ensure the task execution role can read both parameters and decrypt the token's KMS key.
 
-PostHog receives AI Builder traces, including prompts, responses, and tool calls.
-PAIR action traces continue to export only to Rome.
-PostHog identifies users by their Plumber user ID and groups chat turns by `chatId`.
+PostHog receives AI Builder and PAIR action traces, including prompts, responses, and tool calls.
+Base64 images and files are redacted from PostHog's copy. Rome retains the original content.
+PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
+Exports split into requests below 3.5 MB, measured with the transport's JSON serializer.
+`OTEL_BSP_MAX_EXPORT_BATCH_SIZE=50` caps the span count.
+If a single span exceeds 3.5 MB, PostHog receives its IDs, timing, and key metadata with content-omission notices.
+The span includes `posthog.content_omitted` and `posthog.original_payload_bytes` properties.
+PostHog identifies users by their Plumber user ID.
+It groups AI Builder turns by `chatId` and PAIR action calls by execution ID.
+`withAiTelemetryContext` in `packages/backend/src/helpers/ai/posthog-client.ts` sets both values.
 Both destinations retain the OpenTelemetry trace ID.
-PostHog receives cache-read token counts when PAIR reports `prompt_tokens_details.cached_tokens`.
-Input token totals include cache reads. PostHog uses the separate cache-read count to calculate the breakdown.
-Missing cache usage remains unknown. The current OpenAI-compatible SDK does not expose cache-write counts.
 The server flushes both destinations after draining HTTP requests during graceful shutdown.
 
 In staging, send a chat that calls a tool and compare both trace timelines.
 Confirm matching trace IDs, tool spans, token usage, and PostHog user attribution.
-Exports use the transport's JSON serializer to split batches below 3.5 MB, leaving room below PostHog's 4 MB limit.
-Splitting batches preserves span content, IDs, timestamps, and trace relationships.
-If a single span exceeds 3.5 MB, PostHog receives its IDs, timing, and key metadata with content-omission notices.
-The span includes `posthog.content_omitted` and `posthog.original_payload_bytes` properties.
-Rome retains the original span content.
 See [PostHog's OpenTelemetry documentation](https://posthog.com/docs/ai-observability/installation/opentelemetry).
 
 ## Acknowledgements

@@ -11,6 +11,7 @@ const CONTENT_OMITTED_NOTICE =
 
 const METADATA_KEYS = [
   'posthog.distinct_id',
+  '$ai_session_id',
   'gen_ai.conversation.id',
   'gen_ai.agent.name',
   'gen_ai.operation.name',
