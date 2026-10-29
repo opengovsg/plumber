@@ -93,7 +93,7 @@ describe('Chat Route Handler', () => {
   // Load the router outside the 5s test timeout. Parallel workers make the
   // first import of this graph slow enough to flake in CI.
   beforeAll(async () => {
-    const chatModule = await import('../chat')
+    const chatModule = await import('../chat/index.js')
     const handler = (chatModule.default as any).stack.find(
       (layer: any) => layer.route?.methods?.post,
     )?.route?.stack[0]?.handle

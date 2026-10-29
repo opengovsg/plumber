@@ -1,7 +1,8 @@
 import type { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '../../../../test/utils/make-http-error'
+import { makeHttpError } from '@/test/make-http-error'
+
 import isStillVerified from '../auth/is-still-verified'
 import verifyCredentials from '../auth/verify-credentials'
 import { PostmanEnv } from '../common/constants'

@@ -2,8 +2,8 @@ import { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendMessageAction from '../../actions/send-message'
 
 const mocks = vi.hoisted(() => ({

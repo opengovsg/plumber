@@ -59,6 +59,7 @@ GraphQL schema and resolvers also live here ([packages/backend/src/graphql/](../
 ## Conventions
 
 - **Tests**: try to add unit tests (`*.test.ts`) for any new code.
+- **Dynamic imports**: never use `import()` outside tests. Under `nodenext` it compiles to a native ESM import. Computed paths then fail at runtime. The build rejects it.
 - **APIs**: prefer adding REST endpoints over new root GraphQL fields (queries/mutations) when exposing new functionality.
 - **Axios errors**: never re-throw or log an axios error. It carries the request URL, request headers and response body, which can hold credentials or other sensitive data. Convert it to a new `Error` naming only the HTTP status code and `error.message`. Do not attach the original as `cause`, since loggers serialise the whole chain. For the pattern, see `sanitiseError` in [packages/backend/src/apps/formsg/auth/download-encrypted-attachment.ts](../../packages/backend/src/apps/formsg/auth/download-encrypted-attachment.ts).
 
