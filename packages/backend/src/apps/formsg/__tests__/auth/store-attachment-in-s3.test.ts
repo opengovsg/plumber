@@ -1,6 +1,5 @@
-import type { IGlobalVariable } from '@plumber/types'
-
 import type { FormField } from '@opengovsg/formsg-sdk/dist/types'
+import type { IGlobalVariable } from '@plumber/types'
 import { describe, expect, it, vi } from 'vitest'
 
 import storeAttachmentInS3 from '../../auth/helpers/store-attachment-in-s3'
