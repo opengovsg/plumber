@@ -4,6 +4,7 @@ import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { engineProvider } from '@/helpers/pair'
@@ -93,6 +94,10 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     const validatedParameters = schema.safeParse($.step.parameters)
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
@@ -168,7 +173,11 @@ const action: IRawAction = {
        * here. litellm's error message is a long, noisy string with repeated
        * fallback-attempt details tacked on.
        */
-      throw new StepError('Failed to process image', 'Please try again.', error)
+      throw new StepError(
+        'Failed to process image',
+        'Please try again.',
+        error instanceof HttpError ? error : undefined,
+      )
     }
   },
 }

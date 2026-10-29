@@ -89,9 +89,19 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       result = compareNumbers(field, condition, value)
       break
     case 'contains':
+      if (field === null || value === null) {
+        throw new Error(
+          'Cannot use "contains" condition with a null field or value',
+        )
+      }
       result = field.toString().includes(value.toString())
       break
     case 'begins':
+      if (field === null || value === null) {
+        throw new Error(
+          'Cannot use "begins" condition with a null field or value',
+        )
+      }
       result = field.toString().startsWith(value.toString())
       break
     case 'empty':
