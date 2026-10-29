@@ -28,15 +28,15 @@ class Step extends Base {
   appKey?: string
   type!: IStep['type']
   connectionId?: string
-  status: 'incomplete' | 'completed'
+  status!: 'incomplete' | 'completed'
   position!: number
-  parameters: IJSONObject
+  parameters!: IJSONObject
   connection?: Connection
-  flow: Flow
-  executionSteps: ExecutionStep[]
-  config: IStepConfig
+  flow!: Flow
+  executionSteps!: ExecutionStep[]
+  config!: IStepConfig
   updatedBy?: string
-  version: number
+  version!: number
 
   static tableName = 'steps'
 
@@ -103,6 +103,7 @@ class Step extends Base {
 
   get webhookUrl() {
     if (
+      !this.appKey ||
       !['webhook', 'formsg', 'gathersg'].includes(this.appKey) ||
       this.type === 'action'
     ) {
@@ -152,7 +153,10 @@ class Step extends Base {
       query.andWhere('execution_id', executionId)
     }
     if (additionalFilter) {
-      additionalFilter(query)
+      // Objection's query builder generics can't express the exact shape of
+      // `query` after chaining orderBy/limit/where/first(), so this is a
+      // trusted-caller escape hatch rather than a real null/undefined case.
+      additionalFilter(query as unknown as RelatedQueryBuilder<ExecutionStep>)
     }
     if (iteration) {
       query.andWhere(
@@ -224,7 +228,9 @@ class Step extends Base {
       return null
     }
 
-    const command = apps[appKey].triggers.find((trigger) => trigger.key === key)
+    const command = apps[appKey].triggers?.find(
+      (trigger) => trigger.key === key,
+    )
 
     return command
   }
@@ -235,7 +241,7 @@ class Step extends Base {
       return null
     }
 
-    const command = apps[appKey].actions.find((action) => action.key === key)
+    const command = apps[appKey].actions?.find((action) => action.key === key)
 
     return command
   }
@@ -320,6 +326,9 @@ class Step extends Base {
    * This approach allows zero-downtime migrations without database updates.
    */
   async $afterFind(): Promise<void> {
+    if (!this.appKey) {
+      return
+    }
     const app = apps[this.appKey]
     if (app?.stepTransformer && this.key && this.parameters) {
       this.parameters = app.stepTransformer.transformStepParameters(
