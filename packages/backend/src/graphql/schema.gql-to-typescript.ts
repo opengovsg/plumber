@@ -1,3 +1,5 @@
+import type { ITemplate } from '@plumber/types'
+
 import paginate from '@/helpers/pagination'
 import App from '@/models/app'
 import Execution from '@/models/execution'
@@ -12,6 +14,8 @@ export type ExecutionStepGraphQLType = ExecutionStep
 export type FlowCollaboratorGraphQLType = FlowCollaborator
 export type TableMetadataGraphQLType = TableMetadata
 export type FlowTransferGraphQLType = FlowTransfer
+// isBuiltIn comes from the Template field resolver.
+export type TemplateGraphQLType = ITemplate
 
 // TODO: check if there is a better way to express connections
 export type ExecutionStepConnectionGraphQLType = ReturnType<
