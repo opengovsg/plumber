@@ -1,0 +1,126 @@
+name: Scheduled release
+
+# Creates a DRAFT release for a human to review and publish.
+# Nothing is pushed to develop-v2. A draft needs no tag until it is published.
+
+on:
+  schedule:
+    # 17:00 Singapore time (UTC+8, no DST) = 09:00 UTC, every Tuesday and Thursday
+    - cron: '0 9 * * 2,4'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version part to bump (scheduled runs always use minor)'
+        type: choice
+        options:
+          - minor
+          - patch
+          - major
+        default: minor
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  draft-release:
+    name: Draft release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_BRANCH: develop-v2
+      # Scheduled runs have no inputs, so they fall back to minor.
+      BUMP: ${{ inputs.bump || 'minor' }}
+      # #plumber
+      SLACK_CHANNEL_ID: C04HTHMP7N0
+    steps:
+      - name: Create draft release
+        id: draft
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # A draft is already waiting for review: do not pile up another one.
+          existing_draft="$(gh release list --limit 100 --json isDraft --jq '[.[] | select(.isDraft)] | length')"
+          if [ "${existing_draft}" != "0" ]; then
+            echo "A draft release already exists, skipping." | tee -a "${GITHUB_STEP_SUMMARY}"
+            echo "created=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Latest published (non-draft, non-prerelease) release.
+          latest_tag="$(gh api "repos/${GH_REPO}/releases/latest" --jq .tag_name)"
+
+          # Nothing new on the release branch since the latest release: skip.
+          commit_count="$(gh api "repos/${GH_REPO}/compare/${latest_tag}...${RELEASE_BRANCH}" --jq .ahead_by)"
+          if [ "${commit_count}" = "0" ]; then
+            echo "No commits on ${RELEASE_BRANCH} since ${latest_tag}, skipping." | tee -a "${GITHUB_STEP_SUMMARY}"
+            echo "created=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # The version in the root package.json is the source of truth, as in
+          # .claude/skills/publish-release.
+          current="$(gh api -H 'Accept: application/vnd.github.raw+json' \
+            "repos/${GH_REPO}/contents/package.json?ref=${RELEASE_BRANCH}" | jq -r .version)"
+          if ! [[ "${current}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Version '${current}' in package.json is not in X.Y.Z format"
+            exit 1
+          fi
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          case "${BUMP}" in
+            major) next_tag="v$((major + 1)).0.0" ;;
+            minor) next_tag="v${major}.$((minor + 1)).0" ;;
+            patch) next_tag="v${major}.${minor}.$((patch + 1))" ;;
+            *)
+              echo "::error::Unknown bump '${BUMP}'"
+              exit 1
+              ;;
+          esac
+
+          # Build notes in the existing style: "- <PR title> (#<PR number>)".
+          # generate-notes returns "* <title> by @<user> in <PR url>" lines.
+          gh api "repos/${GH_REPO}/releases/generate-notes" \
+            -f tag_name="${next_tag}" \
+            -f target_commitish="${RELEASE_BRANCH}" \
+            -f previous_tag_name="${latest_tag}" \
+            --jq .body > generated-notes.md
+          sed -nE 's#^\* (.*) by @[^ ]+ in https://github\.com/[^ ]+/pull/([0-9]+)$#- \1 (\#\2)#p' \
+            generated-notes.md > notes.md
+          if [ ! -s notes.md ]; then
+            # Only direct commits (no PRs) since the last release.
+            echo "- Changes since ${latest_tag}: ${GITHUB_SERVER_URL}/${GH_REPO}/compare/${latest_tag}...${RELEASE_BRANCH}" > notes.md
+          fi
+
+          url="$(gh release create "${next_tag}" \
+            --draft \
+            --target "${RELEASE_BRANCH}" \
+            --title "${next_tag}" \
+            --notes-file notes.md)"
+
+          {
+            echo "created=true"
+            echo "tag=${next_tag}"
+            echo "url=${url}"
+            echo "commit-count=${commit_count}"
+          } >> "${GITHUB_OUTPUT}"
+          echo "Draft release ${next_tag} (${BUMP} bump): ${url}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Notify Slack
+        if: steps.draft.outputs.created == 'true'
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ env.SLACK_CHANNEL_ID }}"
+            username: "Plumber Release Drafter"
+            text: ":package: Draft release *${{ steps.draft.outputs.tag }}* is ready for review (${{ steps.draft.outputs.commit-count }} commits on `${{ env.RELEASE_BRANCH }}` since the last release): ${{ steps.draft.outputs.url }}"
