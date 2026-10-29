@@ -19,4 +19,5 @@ export class DynamoDBTableOperations implements TableOperations {
   deleteTableColumns = noOp
 
   createTable = noOp
+  deleteTable = noOp
 }
