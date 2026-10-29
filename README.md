@@ -14,7 +14,7 @@ Plumber is a no-code solution that helps public officers automate their repetiti
    1. [Codegraph](https://github.com/colbymchenry/codegraph)
 4. Install the [1Password desktop app](https://1password.com/downloads) and sign in
 5. In 1Password, turn on Settings > Developer > Integrate with other apps. Turn on Touch ID (or Windows Hello) under Settings > Security so you can answer the prompt
-6. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your three environment ids. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
+6. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your environment ids. The `e2e` id is the shared E2E environment, needed only for E2E tests. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
    - `inheritedEnvironments` is optional. List environment ids there to load common team-level env vars before your own. Your own environment's variables override theirs
 7. Setup services `pnpm run setup`
 8. Run `pnpm run migrate` (only for first time setup). When prompted (see [Running DB migrations](#running-db-migrations)), choose "Local dev"
@@ -42,3 +42,7 @@ See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup ste
 ## Acknowledgements
 
 Plumber is a fork of the open source project [Automatisch](https://github.com/automatisch/automatisch). We would like to thank the team for their contributions to the open source community. Please refer to the license files [[1](./LICENSE.md),[2](./LICENSE.agpl)] for more information.
+
+## End-to-end tests
+
+See [the E2E workspace](packages/e2e/README.md) for staging tests, configuration, and the repository migration rollout.
