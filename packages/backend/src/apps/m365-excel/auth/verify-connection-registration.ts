@@ -7,6 +7,10 @@ const verifyConnectionRegistration: NonNullable<
 > = async function ($) {
   const authData = $.auth.data as AuthData
 
+  if (!$.user) {
+    throw new Error('Connection is missing an owner')
+  }
+
   if (authData.folderId) {
     return {
       registrationVerified: true,

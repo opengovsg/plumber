@@ -12,7 +12,10 @@ const isStillVerified: NonNullable<IAuth['isStillVerified']> = async function (
   if (!tenantKey || !isM365TenantKey(tenantKey)) {
     return false
   }
-  return (await getEligibleTenantKeys($.user?.email)).has(tenantKey)
+  if (!$.user) {
+    throw new Error('Connection is missing an owner')
+  }
+  return (await getEligibleTenantKeys($.user.email)).has(tenantKey)
 }
 
 export default isStillVerified

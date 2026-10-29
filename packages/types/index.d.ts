@@ -544,7 +544,7 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
-type IFieldMultiRowMultiColSubField = IField & {
+export type IFieldMultiRowMultiColSubField = IField & {
   customStyle?: Record<string, string | number>
 }
 
@@ -1410,7 +1410,7 @@ export interface IRequest extends Request {
 
 export interface IVerifyConnectionRegistrationOutput {
   registrationVerified: boolean
-  message: string
+  message: string | null
 }
 
 export interface ITestConnectionOutput extends Partial<IVerifyConnectionRegistrationOutput> {

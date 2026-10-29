@@ -35,11 +35,16 @@ export async function getSessionIdFromRedis(
 ): Promise<string | null> {
   const key = `${makeRedisKeyPrefix(tenant, fileId)}session:id`
 
-  const [[getErr, sessionId], [expireErr]] = await redisAppDataClient
+  const results = await redisAppDataClient
     .multi()
     .get(key)
     .expire(key, SESSION_ID_EXPIRY_SECONDS)
     .exec()
+
+  if (!results) {
+    throw new Error('Redis transaction was aborted')
+  }
+  const [[getErr, sessionId], [expireErr]] = results
 
   if (getErr) {
     throw getErr
