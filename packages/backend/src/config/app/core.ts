@@ -52,6 +52,10 @@ export type CoreConfig = {
   s3CommonBucket: string
   adminUserEmail: string
   requestBodySizeLimit: string
+  posthog: {
+    projectToken: string
+    host: string
+  }
   postman: {
     apiKey: string
     fromAddress: string
@@ -161,6 +165,10 @@ const coreConfig: CoreConfig = {
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
   s3CommonBucket: requireEnv('S3_COMMON_BUCKET', process.env.S3_COMMON_BUCKET),
   requestBodySizeLimit: '1mb',
+  posthog: {
+    projectToken: process.env.POSTHOG_PROJECT_TOKEN?.trim() || '',
+    host: process.env.POSTHOG_HOST?.trim() || '',
+  },
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename ?? ''),
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
