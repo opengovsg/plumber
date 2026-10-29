@@ -16,6 +16,12 @@ export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
  */
 export const APP_FLAG_REGEX = /^app_.*$/
 
+/** Server keys the chat route can connect. Add a key when a new connector ships. */
+export const GITBOOK_MCP_SERVER = 'gitbook' as const
+export const MCP_SERVER_NAMES = [GITBOOK_MCP_SERVER] as const
+
+export type McpServerName = (typeof MCP_SERVER_NAMES)[number]
+
 /**
  * Feature flag fallbacks
  */
@@ -25,5 +31,6 @@ export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
     chatPromptName: 'chat',
     chatSummaryPromptName: 'chat-summary',
     version: 'production',
+    disabledMcpServers: [] as McpServerName[],
   },
 }

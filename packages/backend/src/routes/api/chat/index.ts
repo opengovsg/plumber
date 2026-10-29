@@ -18,6 +18,7 @@ import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
+import { GITBOOK_MCP_SERVER } from '@/config/flags'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   buildSupportFormUrl,
@@ -113,8 +114,13 @@ const handleChatStream = observe(
     // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
     const restrictedApps = getRestrictedAppKeys(allLdFlags)
 
-    const { chatPromptName, chatSummaryPromptName, version } =
-      aiBuilderFlag.config
+    const {
+      chatPromptName,
+      chatSummaryPromptName,
+      version,
+      disabledMcpServers,
+    } = aiBuilderFlag.config
+    const disabledMcpServerSet = new Set(disabledMcpServers)
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -175,6 +181,7 @@ const handleChatStream = observe(
         ddRumSessionId: rumSessionId,
         userId: context.currentUser.email,
         model: MODEL_TYPE,
+        disabledMcpServers,
       })
 
       // Re-derived fresh every turn from the raw message text and verified
@@ -199,25 +206,27 @@ const handleChatStream = observe(
       let mcpClient: GitbookMcpClient | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
 
-      try {
-        const gitbook = await connectGitbookMcp()
-        mcpClient = gitbook.client
-        gitbookTools = wrapMcpToolsWithUsageLogs(
-          // oxlint-disable-next-line typescript/no-explicit-any
-          gitbook.tools as Parameters<typeof streamText>[0]['tools'],
-          {
-            source: 'gitbook',
+      if (!disabledMcpServerSet.has(GITBOOK_MCP_SERVER)) {
+        try {
+          const gitbook = await connectGitbookMcp()
+          mcpClient = gitbook.client
+          gitbookTools = wrapMcpToolsWithUsageLogs(
+            // oxlint-disable-next-line typescript/no-explicit-any
+            gitbook.tools as Parameters<typeof streamText>[0]['tools'],
+            {
+              source: 'gitbook',
+              traceId,
+              userId: context.currentUser.email,
+            },
+          )
+        } catch (error) {
+          await mcpClient?.close()
+          mcpClient = null
+          logger.error('Failed to connect to GitBook MCP server', {
             traceId,
-            userId: context.currentUser.email,
-          },
-        )
-      } catch (error) {
-        await mcpClient?.close()
-        mcpClient = null
-        logger.error('Failed to connect to GitBook MCP server', {
-          traceId,
-          error: error instanceof Error ? error.message : String(error),
-        })
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
       }
 
       const workflowError = 'Unable to generate the workflow.'
