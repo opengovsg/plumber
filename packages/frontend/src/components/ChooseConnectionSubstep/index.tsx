@@ -20,6 +20,7 @@ import {
   DATABRICKS_APP_KEY,
   EXCEL_APP_KEY,
 } from '../FlowStepConfigurationModal/constants'
+import { databricksWorkspaceUrl } from './databricks-workspace-url' // pragma: allowlist secret
 
 type ChooseConnectionSubstepProps = {
   step: IStep
@@ -66,25 +67,6 @@ const excelFolderLinkGenerator = (
   }
   const { tenantName, encodedSiteName } = site
   return `https://${tenantName}-my.sharepoint.com/shared?id=%2Fsites%2F${encodedSiteName}%2FShared%20Documents%2F${userEmail}&listurl=https%3A%2F%2F${tenantName}%2Esharepoint%2Ecom%2Fsites%2F${encodedSiteName}%2FShared%20Documents`
-}
-
-const databricksWorkspaceLinkGenerator = (
-  connectionOption: ConnectionDropdownOption,
-) => {
-  const { env, label } = connectionOption
-
-  try {
-    const { hostname, catalog } = JSON.parse(env ?? '{}') as {
-      hostname: string
-      catalog: string
-    }
-    if (!hostname || !catalog) {
-      return null
-    }
-    return `https://${hostname}/explore/data/${catalog}/${label}`
-  } catch {
-    return null
-  }
 }
 
 function ChooseConnectionSubstep(
@@ -178,8 +160,14 @@ function ChooseConnectionSubstep(
           text: '(View folder)',
         }
       } else if (application.key === DATABRICKS_APP_KEY) {
+        const screenName = connection.formattedData?.screenName
+        // oxfmt-ignore
+        const exploreUrl =
+          typeof screenName === 'string'
+            ? databricksWorkspaceUrl(screenName, connectionOption.env) // pragma: allowlist secret
+            : null
         connectionLink = {
-          url: databricksWorkspaceLinkGenerator(connectionOption) ?? '',
+          url: exploreUrl ?? '',
           text: '(View workspace)',
         }
       }
