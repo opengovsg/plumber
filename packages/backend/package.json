@@ -7,7 +7,7 @@
     "dev": "pnpm run build:watch --exec \"tsx src/server.ts\"",
     "worker": "pnpm run build:watch --exec \"tsx src/worker.ts\"",
     "prebuild": "rimraf ./dist",
-    "build": "tsc -p tsconfig.build.json && pnpm run copy-statics && tsc-alias -p tsconfig.build.json && node scripts/assert-dist-entries.mjs",
+    "build": "tsc -p tsconfig.build.json && pnpm run copy-statics && tsc-alias -p tsconfig.build.json && node scripts/assert-dist-entries.mjs && node ../../scripts/assert-no-dynamic-import.mjs dist",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",

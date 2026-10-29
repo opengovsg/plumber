@@ -108,6 +108,10 @@ jobs:
         env:
           VITE_MODE: test
         run: pnpm run build
+      - name: Build frontend library
+        env:
+          VITE_MODE: test
+        run: pnpm --filter frontend run build:lib
       - run: echo "✅ Build check passed."
 
   test-backend-unit:
