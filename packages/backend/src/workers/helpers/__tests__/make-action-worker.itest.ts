@@ -1,5 +1,4 @@
 import type { IActionJobData } from '@plumber/types'
-
 import type { JobPro } from '@taskforcesh/bullmq-pro'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -143,9 +142,7 @@ describe('action worker: tiles frozen for migration', () => {
       await ExecutionStep.query().where('execution_id', execution.id),
     ).toHaveLength(0)
 
-    await TableMetadata.query()
-      .patch({ config: {} })
-      .where({ id: table.id })
+    await TableMetadata.query().patch({ config: {} }).where({ id: table.id })
     await delayed.promote()
 
     await waitFor(async () => (await job.getState()) === 'completed')

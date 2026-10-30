@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import tableMetadataResolver from '@/graphql/custom-resolvers/table-metadata'
