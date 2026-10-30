@@ -136,6 +136,24 @@ test('reads a file at main with its trailing newline', () => {
   })
 })
 
+test('finds main after the first push to an empty prompts repo', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'prompts-'))
+  try {
+    const origin = join(dir, 'origin.git')
+    const clone = join(dir, 'clone')
+    run(dir, 'init', '--bare', '--initial-branch=main', origin)
+    run(dir, 'clone', origin, clone)
+    assert.throws(() => mainRef(clone), /one-time migration/)
+    writeFileSync(join(clone, 'README.md'), 'prompts\n')
+    run(clone, 'add', '.')
+    run(clone, 'commit', '-m', 'import')
+    run(clone, 'push', 'origin', 'HEAD:main')
+    assert.equal(mainRef(clone), 'origin/main')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('detects conflict markers only at line start', () => {
   assert.equal(hasConflictMarkers('a\n<<<<<<< local\nb'), true)
   assert.equal(hasConflictMarkers('a <<<<<<< b'), false)

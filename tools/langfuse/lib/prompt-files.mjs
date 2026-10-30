@@ -121,7 +121,20 @@ export function assertPromptsRepo(root = PROMPTS_DIR) {
 }
 
 export function mainRef(root = PROMPTS_DIR) {
-  return git(['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], root)
+  const args = ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD']
+  try {
+    return git(args, root)
+  } catch {
+    // A clone of an empty repo never learns origin's default branch.
+  }
+  try {
+    git(['remote', 'set-head', 'origin', '--auto'], root)
+    return git(args, root)
+  } catch {
+    throw new Error(
+      'The prompts repo has no default branch yet. Finish the one-time migration in PROMPTS.md first.',
+    )
+  }
 }
 
 export function hasUncommittedChanges(path, root = PROMPTS_DIR) {
