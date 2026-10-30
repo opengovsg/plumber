@@ -1,33 +1,52 @@
 import assert from 'node:assert/strict'
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
 import {
+  assertPromptsRepo,
   devLabel,
-  getPullBlocker,
   getPushBlocker,
   hasConflictMarkers,
-  listLocalPrompts,
+  hasUncommittedChanges,
+  listPrompts,
+  mainRef,
   parseArgs,
-  promptPaths,
-  readLocalPrompt,
-  threeWayMerge,
-  writeLocalPrompt,
+  promptPath,
+  readAtRef,
 } from './prompt-files.mjs'
 
-const meta = {
-  name: 'chat',
-  project: 'aiBuilder',
-  label: 'production',
-  baseVersion: 188,
+function run(cwd, ...args) {
+  execFileSync(
+    'git',
+    ['-c', 'user.email=dev@example.com', '-c', 'user.name=Dev', ...args],
+    { cwd, stdio: 'ignore' },
+  )
+}
+
+/**
+ * Creates a bare origin with one commit on main and a clone of it.
+ */
+function withPromptsRepo(fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'prompts-'))
+  try {
+    const origin = join(dir, 'origin.git')
+    const seed = join(dir, 'seed')
+    const clone = join(dir, 'clone')
+    run(dir, 'init', '--bare', '--initial-branch=main', origin)
+    run(dir, 'clone', origin, seed)
+    mkdirSync(join(seed, 'aiBuilder'))
+    writeFileSync(join(seed, 'aiBuilder/chat.md'), 'main text\n')
+    run(seed, 'add', '.')
+    run(seed, 'commit', '-m', 'seed')
+    run(seed, 'push', 'origin', 'HEAD:main')
+    run(dir, 'clone', origin, clone)
+    fn(clone)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 }
 
 test('parses flags, -m and the prompt name', () => {
@@ -42,6 +61,7 @@ test('parses flags, -m and the prompt name', () => {
   assert.equal(args.name, 'chat')
   assert.equal(args.message, 'Tighten tone')
   assert.equal(args.project, 'pairAction')
+  assert.equal(args.label, 'production')
 })
 
 test('defaults to the aiBuilder project and rejects unknown ones', () => {
@@ -53,158 +73,104 @@ test('accepts value flags with = or a space and rejects missing values', () => {
   const spaced = parseArgs(['pull', 'chat', '--label', 'staging'])
   assert.equal(spaced.name, 'chat')
   assert.equal(spaced.label, 'staging')
-  assert.equal(
-    parseArgs(['diff', 'chat', '--against=latest']).against,
-    'latest',
-  )
+  assert.equal(parseArgs(['pull', 'chat', '--label=latest']).label, 'latest')
   assert.throws(() => parseArgs(['pull', 'chat', '--label']), /--label/)
   assert.throws(() => parseArgs(['pull', 'chat', '--label=']), /--label/)
-  assert.throws(() => parseArgs(['diff', 'chat', '--against', '--force']))
+  assert.throws(() => parseArgs(['pull', 'chat', '--label', '--force']))
 })
 
 test('keeps Langfuse folders in the path and rejects escapes', () => {
-  const paths = promptPaths('aiBuilder', 'folder/chat', '/root')
-  assert.equal(paths.local, '/root/aiBuilder/folder/chat.md')
-  assert.equal(paths.base, '/root/aiBuilder/folder/chat.base.md')
-  assert.equal(paths.meta, '/root/aiBuilder/folder/chat.meta.json')
-  assert.throws(() => promptPaths('aiBuilder', '../../etc/passwd', '/root'))
-})
-
-test('round-trips local files and lists them by name', () => {
-  const root = mkdtempSync(join(tmpdir(), 'prompts-'))
-  try {
-    const paths = promptPaths('aiBuilder', 'folder/chat', root)
-    writeLocalPrompt(paths, { meta, base: 'base', local: 'edited' })
-    assert.deepEqual(readLocalPrompt(paths), {
-      meta,
-      base: 'base',
-      local: 'edited',
-    })
-    assert.deepEqual(listLocalPrompts(root), [
-      { project: 'aiBuilder', name: 'folder/chat' },
-    ])
-  } finally {
-    rmSync(root, { recursive: true, force: true })
-  }
-})
-
-test('rejects prompt names that collide with saved bases', () => {
-  for (const name of ['chat.base', 'folder/chat.base', 'chat.base.base']) {
-    assert.throws(() => promptPaths('aiBuilder', name, '/root'), /reserved/)
-  }
   assert.equal(
-    promptPaths('aiBuilder', 'folder.base/chat', '/root').local,
-    '/root/aiBuilder/folder.base/chat.md',
+    promptPath('aiBuilder', 'folder/chat', '/root'),
+    '/root/aiBuilder/folder/chat.md',
   )
+  assert.throws(() => promptPath('aiBuilder', '../../etc/passwd', '/root'))
 })
 
-test('blocks pulling over a working copy without metadata, including empty files', () => {
-  const root = mkdtempSync(join(tmpdir(), 'prompts-'))
+test('lists prompts by project and name', () => {
+  withPromptsRepo((repo) => {
+    mkdirSync(join(repo, 'pairAction/folder'), { recursive: true })
+    writeFileSync(join(repo, 'pairAction/folder/action.md'), 'text')
+    writeFileSync(join(repo, 'README.md'), 'not a prompt')
+    assert.deepEqual(listPrompts(repo), [
+      { project: 'aiBuilder', name: 'chat' },
+      { project: 'pairAction', name: 'folder/action' },
+    ])
+  })
+})
+
+test('accepts only the root of a prompts clone', () => {
+  withPromptsRepo((repo) => {
+    assert.doesNotThrow(() => assertPromptsRepo(repo))
+    assert.throws(() => assertPromptsRepo(join(repo, 'aiBuilder')), /clone/)
+  })
+  const plain = mkdtempSync(join(tmpdir(), 'plain-'))
   try {
-    const paths = promptPaths('aiBuilder', 'chat', root)
-    mkdirSync(join(root, 'aiBuilder'))
-    assert.equal(getPullBlocker(paths, readLocalPrompt(paths)), null)
-    for (const local of ['handwritten prompt', '']) {
-      writeFileSync(paths.local, local)
-      assert.equal(readLocalPrompt(paths), null)
-      assert.match(getPullBlocker(paths, readLocalPrompt(paths)), /--force/)
-      assert.equal(readFileSync(paths.local, 'utf-8'), local)
-    }
+    assert.throws(() => assertPromptsRepo(plain), /prompts:clone/)
+    assert.throws(() => assertPromptsRepo(join(plain, 'missing')))
   } finally {
-    rmSync(root, { recursive: true, force: true })
+    rmSync(plain, { recursive: true, force: true })
   }
 })
 
-test('blocks edited copies after metadata loss and permits clean or missing copies', () => {
-  const root = mkdtempSync(join(tmpdir(), 'prompts-'))
-  try {
-    const paths = promptPaths('aiBuilder', 'chat', root)
-    writeLocalPrompt(paths, { meta, base: 'base', local: 'base' })
-    assert.equal(getPullBlocker(paths, readLocalPrompt(paths)), null)
-    writeFileSync(paths.local, 'edited')
-    assert.match(getPullBlocker(paths, readLocalPrompt(paths)), /--merge/)
-    rmSync(paths.meta)
-    assert.match(getPullBlocker(paths, readLocalPrompt(paths)), /--force/)
-    assert.equal(readFileSync(paths.local, 'utf-8'), 'edited')
-    writeLocalPrompt(paths, { meta, base: 'base', local: 'base' })
-    rmSync(paths.local)
-    assert.equal(getPullBlocker(paths, readLocalPrompt(paths)), null)
-  } finally {
-    rmSync(root, { recursive: true, force: true })
-  }
+test('detects modified and untracked prompt files', () => {
+  withPromptsRepo((repo) => {
+    const chat = join(repo, 'aiBuilder/chat.md')
+    const summary = join(repo, 'aiBuilder/chat-summary.md')
+    assert.equal(hasUncommittedChanges(chat, repo), false)
+    assert.equal(hasUncommittedChanges(summary, repo), false)
+    writeFileSync(chat, 'edited\n')
+    writeFileSync(summary, 'handwritten\n')
+    assert.equal(hasUncommittedChanges(chat, repo), true)
+    assert.equal(hasUncommittedChanges(summary, repo), true)
+  })
+})
+
+test('reads a file at main with its trailing newline', () => {
+  withPromptsRepo((repo) => {
+    const main = mainRef(repo)
+    assert.equal(main, 'origin/main')
+    const chat = join(repo, 'aiBuilder/chat.md')
+    assert.equal(readAtRef(main, chat, repo), 'main text\n')
+    assert.equal(readAtRef(main, join(repo, 'aiBuilder/x.md'), repo), null)
+  })
 })
 
 test('detects conflict markers only at line start', () => {
   assert.equal(hasConflictMarkers('a\n<<<<<<< local\nb'), true)
-  assert.equal(hasConflictMarkers('a\n=======\nb'), true)
-  assert.equal(hasConflictMarkers('use <<<<<<< inline'), false)
+  assert.equal(hasConflictMarkers('a <<<<<<< b'), false)
 })
 
-test('blocks a push when the base label moved', () => {
-  const blocker = getPushBlocker({
-    local: 'new',
-    base: 'old',
-    meta,
-    currentVersion: 189,
-  })
-  assert.match(blocker, /moved from v188 to v189/)
-  assert.match(blocker, /--merge/)
+const pushable = {
+  text: 'new',
+  productionText: 'old',
+  uncommitted: false,
+  containsMain: true,
+  main: 'origin/main',
+}
+
+test('allows a committed change on top of main', () => {
+  assert.equal(getPushBlocker(pushable), null)
 })
 
-test('blocks a push with no changes or conflict markers', () => {
+test('blocks a push that could revert or lose a change', () => {
+  assert.match(getPushBlocker({ ...pushable, text: null }), /does not exist/)
+  assert.match(getPushBlocker({ ...pushable, uncommitted: true }), /Commit/)
   assert.match(
-    getPushBlocker({ local: 'same', base: 'same', meta, currentVersion: 188 }),
-    /no changes/,
+    getPushBlocker({ ...pushable, text: '<<<<<<< HEAD\nnew' }),
+    /conflict/,
   )
   assert.match(
-    getPushBlocker({
-      local: '<<<<<<< local\nx',
-      base: 'old',
-      meta,
-      currentVersion: 188,
-    }),
-    /conflict markers/,
+    getPushBlocker({ ...pushable, containsMain: false }),
+    /origin\/main/,
   )
   assert.match(
-    getPushBlocker({ local: null, base: 'old', meta, currentVersion: 188 }),
-    /missing/,
-  )
-})
-
-test('allows a push on top of the current base version', () => {
-  assert.equal(
-    getPushBlocker({ local: 'new', base: 'old', meta, currentVersion: 188 }),
-    null,
+    getPushBlocker({ ...pushable, productionText: 'new' }),
+    /nothing to push/,
   )
 })
 
 test('derives the dev label from the git email', () => {
   assert.equal(devLabel('Kevin.Kim@open.gov.sg'), 'dev-kevin-kim')
   assert.throws(() => devLabel(''))
-})
-
-test('merges non-overlapping edits cleanly', () => {
-  const { text, conflicts } = threeWayMerge({
-    base: 'one\ntwo\nthree\n',
-    local: 'ONE\ntwo\nthree\n',
-    theirs: 'one\ntwo\nTHREE\n',
-    theirsName: 'production v189',
-  })
-  assert.equal(conflicts, 0)
-  assert.equal(text, 'ONE\ntwo\nTHREE\n')
-})
-
-test('marks overlapping edits as conflicts', () => {
-  const { text, conflicts } = threeWayMerge({
-    base: 'one\n',
-    local: 'mine\n',
-    theirs: 'theirs\n',
-    theirsName: 'production v189',
-  })
-  assert.equal(conflicts, 1)
-  assert.match(
-    text,
-    /<<<<<<< local\nmine\n=======\ntheirs\n>>>>>>> production v189/,
-  )
-  assert.equal(hasConflictMarkers(text), true)
 })

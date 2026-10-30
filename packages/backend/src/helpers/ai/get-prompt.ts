@@ -48,7 +48,7 @@ async function getLocalPrompt(
       throw error
     }
     logger.warn(
-      `No local prompt at ${promptPath}. Falling back to Langfuse. Run "pnpm run prompt pull ${promptName} --project=${project}" to edit it locally.`,
+      `No local prompt at ${promptPath}. Falling back to Langfuse. Run "pnpm run prompts:clone" to read prompts from the prompts repo.`,
       { promptName, project },
     )
     return null
