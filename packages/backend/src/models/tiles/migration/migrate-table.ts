@@ -1,6 +1,7 @@
-import type { Knex } from 'knex'
 import { performance } from 'perf_hooks'
 import { setTimeout as sleep } from 'timers/promises'
+
+import type { Knex } from 'knex'
 
 import { client } from '@/config/database'
 import { tilesClient } from '@/config/tiles-database'
