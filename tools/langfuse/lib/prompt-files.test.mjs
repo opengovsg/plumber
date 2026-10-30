@@ -49,6 +49,19 @@ test('defaults to the aiBuilder project and rejects unknown ones', () => {
   assert.throws(() => parseArgs(['pull', 'chat', '--project=other']))
 })
 
+test('accepts value flags with = or a space and rejects missing values', () => {
+  const spaced = parseArgs(['pull', 'chat', '--label', 'staging'])
+  assert.equal(spaced.name, 'chat')
+  assert.equal(spaced.label, 'staging')
+  assert.equal(
+    parseArgs(['diff', 'chat', '--against=latest']).against,
+    'latest',
+  )
+  assert.throws(() => parseArgs(['pull', 'chat', '--label']), /--label/)
+  assert.throws(() => parseArgs(['pull', 'chat', '--label=']), /--label/)
+  assert.throws(() => parseArgs(['diff', 'chat', '--against', '--force']))
+})
+
 test('keeps Langfuse folders in the path and rejects escapes', () => {
   const paths = promptPaths('aiBuilder', 'folder/chat', '/root')
   assert.equal(paths.local, '/root/aiBuilder/folder/chat.md')

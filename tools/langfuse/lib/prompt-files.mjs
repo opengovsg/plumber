@@ -22,6 +22,8 @@ export const DEFAULT_LABEL = 'production'
 
 const PROJECTS = ['aiBuilder', 'pairAction']
 
+const VALUE_FLAGS = ['label', 'against', 'project']
+
 export function parseArgs(argv) {
   const [command, ...rest] = argv
   const positionals = []
@@ -33,11 +35,25 @@ export function parseArgs(argv) {
       continue
     }
     const match = /^--([^=]+)(?:=(.*))?$/.exec(arg)
-    if (match) {
-      flags[match[1]] = match[2] ?? true
-    } else {
+    if (!match) {
       positionals.push(arg)
+      continue
     }
+    const [, key, value] = match
+    if (!VALUE_FLAGS.includes(key)) {
+      flags[key] = value ?? true
+      continue
+    }
+    let flagValue = value
+    const next = rest[i + 1]
+    if (flagValue === undefined && next && !next.startsWith('-')) {
+      flagValue = next
+      i++
+    }
+    if (!flagValue) {
+      throw new Error(`--${key} requires a value: --${key}=<value>`)
+    }
+    flags[key] = flagValue
   }
 
   const project = flags.project ?? 'aiBuilder'
@@ -48,7 +64,7 @@ export function parseArgs(argv) {
     command,
     name: positionals[0],
     project,
-    label: typeof flags.label === 'string' ? flags.label : undefined,
+    label: flags.label,
     message: flags.message,
     force: flags.force === true,
     merge: flags.merge === true,
