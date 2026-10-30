@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import Step from '@/models/step'
 
 import { makeHttpError } from '../../../test/utils/make-http-error'
@@ -335,6 +336,53 @@ describe('action helper functions', () => {
             },
           }),
         ).toThrow(error)
+      })
+    })
+
+    describe('attempt accounting with re-queues', () => {
+      const stepError = () =>
+        new RetriableError({
+          error: 'test error',
+          delayInMs: 100,
+          delayType: 'step',
+        })
+
+      // One real attempt left under the cap, plus 10 no-attempt re-queues.
+      const attemptsStarted = MAXIMUM_JOB_ATTEMPTS - 1 + 10
+
+      it('ignores re-queues that used no attempt', () => {
+        const error = stepError()
+        expect(() =>
+          handleFailedStepAndThrow({
+            errorDetails: {},
+            executionError: error,
+            context: {
+              ...MOCK_CONTEXT,
+              job: {
+                attemptsMade: 1,
+                attemptsStarted,
+                data: { requeuesWithoutAttempt: 10 },
+              } as unknown as JobPro<IActionJobData>,
+            },
+          }),
+        ).toThrow(error)
+      })
+
+      it('fails permanently when started attempts reach the cap', () => {
+        expect(() =>
+          handleFailedStepAndThrow({
+            errorDetails: {},
+            executionError: stepError(),
+            context: {
+              ...MOCK_CONTEXT,
+              job: {
+                attemptsMade: 1,
+                attemptsStarted,
+                data: {},
+              } as unknown as JobPro<IActionJobData>,
+            },
+          }),
+        ).toThrow(UnrecoverableError)
       })
     })
 

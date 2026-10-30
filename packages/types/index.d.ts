@@ -789,6 +789,15 @@ export interface IAppQueue {
   getLockKey?($: IGlobalVariable): Promise<string | null>
 
   /**
+   * Resolved at execution time from the fully built `$`, before the action
+   * runs. Return a delay in ms to re-queue the job without using an attempt,
+   * or `null` to run it now.
+   *
+   * Unlike `getLockKey`, this may run one cheap DB query.
+   */
+  getRequeueDelayMs?($: IGlobalVariable): Promise<number | null>
+
+  /**
    * Set per-group concurrency or rate limits. This is mutually exclusive
    * because BullMQ Pro does not support using both together.
    *
@@ -1139,6 +1148,11 @@ export interface IActionJobData {
    * of the job's original (potentially very stale) enqueue time.
    */
   retryTimestamp?: number
+  /**
+   * Re-queues that used no attempt. BullMQ still counts each one in
+   * `attemptsStarted`, so the attempt cap subtracts this.
+   */
+  requeuesWithoutAttempt?: number
 }
 
 export interface IActionRunResult {
