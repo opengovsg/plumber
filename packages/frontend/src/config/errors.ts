@@ -13,3 +13,5 @@ export const NOT_FOUND = 'NOT_FOUND'
 export const RATE_LIMITED = 'RATE_LIMITED'
 
 export const FORBIDDEN = 'FORBIDDEN'
+
+export const TILE_MIGRATING = 'TILE_MIGRATING'

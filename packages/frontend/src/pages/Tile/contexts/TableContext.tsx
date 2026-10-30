@@ -7,6 +7,7 @@ import React, {
   createContext,
   MutableRefObject,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -32,6 +33,7 @@ interface TableContextProps {
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
   role?: string
+  isMigrating: boolean
   isFetching: boolean
   isThroughputError: boolean
   refetch: () => Promise<void>
@@ -61,6 +63,7 @@ interface TableContextProviderProps {
   collaborators?: ITableCollaborator[]
   // If null, the tile is accessed by a shareable link
   role?: string
+  isMigrating?: boolean
   isFetching: boolean
   isThroughputError: boolean
   refetch: () => Promise<void>
@@ -77,6 +80,7 @@ export const TableContextProvider = ({
   viewOnlyKey,
   collaborators,
   role,
+  isMigrating = false,
   isFetching,
   isThroughputError,
   refetch,
@@ -84,10 +88,15 @@ export const TableContextProvider = ({
   const flattenedData = useMemo(() => flattenRows(tableRows), [tableRows])
   const filteredDataRef = useRef<GenericRowData[]>([])
   const allDataRef = useRef<GenericRowData[]>(flattenedData)
-  const hasEditPermission = role === 'editor' || role === 'owner'
+  const hasEditPermission =
+    (role === 'editor' || role === 'owner') && !isMigrating
   const [mode, setMode] = useState<EditMode>(
     hasEditPermission ? 'edit' : 'view',
   )
+
+  useEffect(() => {
+    setMode(hasEditPermission ? 'edit' : 'view')
+  }, [hasEditPermission])
   return (
     <TableContext.Provider
       value={{
@@ -105,6 +114,7 @@ export const TableContextProvider = ({
         viewOnlyKey,
         collaborators,
         role,
+        isMigrating,
         isFetching,
         isThroughputError,
         refetch,
