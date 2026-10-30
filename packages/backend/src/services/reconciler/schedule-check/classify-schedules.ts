@@ -41,17 +41,16 @@ export function classifySchedules({
   graceSeconds,
 }: ClassifySchedulesInput): ScheduleClassification {
   const overdueBeforeMillis = nowMillis - graceSeconds * 1000
-  const missingFlowIds: string[] = []
-  const overdueFlowIds: string[] = []
 
-  for (const flowId of publishedFlowIds) {
+  const missingFlowIds = publishedFlowIds.filter(
+    (flowId) => !nextRunTimeByFlowId.has(flowId),
+  )
+  const overdueFlowIds = publishedFlowIds.filter((flowId) => {
     const nextRunTimeMillis = nextRunTimeByFlowId.get(flowId)
-    if (nextRunTimeMillis === undefined) {
-      missingFlowIds.push(flowId)
-    } else if (nextRunTimeMillis < overdueBeforeMillis) {
-      overdueFlowIds.push(flowId)
-    }
-  }
+    return (
+      nextRunTimeMillis !== undefined && nextRunTimeMillis < overdueBeforeMillis
+    )
+  })
 
   return { missingFlowIds, overdueFlowIds }
 }
