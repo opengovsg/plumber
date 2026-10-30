@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import createLink, { TILE_MIGRATING_EVENT } from '../link'
 
 const QUERY = gql`
-  mutation CreateRow {
+  mutation TileMigratingLinkTest {
     createRow
   }
 `
