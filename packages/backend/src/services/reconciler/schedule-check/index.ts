@@ -32,7 +32,7 @@ export function createScheduleCheck({
 
       const { missingFlowIds, overdueFlowIds } = classifySchedules({
         publishedFlowIds: publishedPipes.map((pipe) => pipe.flowId),
-        nextRunTimeByFlowId: parseScheduleEntries(zrangeWithScores),
+        scheduleEntryByFlowId: parseScheduleEntries(zrangeWithScores),
         nowMillis: Date.now(),
         graceSeconds: config.missedRunGraceSeconds,
       })
