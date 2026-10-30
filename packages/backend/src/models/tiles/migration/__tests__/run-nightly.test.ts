@@ -16,6 +16,24 @@ vi.mock('@/helpers/launch-darkly', () => ({
   getLdFlagValue: mocks.getLdFlagValue,
 }))
 
+// The tile loop is covered by run-nightly.itest.ts. Here it finds no tiles.
+vi.mock('@/models/tiles/migration/migrate-table', () => ({
+  migrateTable: vi.fn(),
+}))
+vi.mock('@/models/table-metadata', () => {
+  const chain = {
+    select: () => chain,
+    where: () => chain,
+    whereRaw: () => chain,
+    modify: () => chain,
+    orderBy: () => chain,
+    // Resolves as an empty page when awaited.
+    limit: async (): Promise<unknown[]> => [],
+    resultSize: async () => 0,
+  }
+  return { default: { query: () => chain } }
+})
+
 function mockFlags(flags: { mode: string; ignoreWindow?: boolean }) {
   mocks.getLdFlagValue.mockImplementation(
     async (flag: string, _email: string | null, fallback: unknown) => {
