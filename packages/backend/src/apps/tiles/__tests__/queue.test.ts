@@ -79,7 +79,7 @@ describe('Queue config', () => {
     const makeGlobalVariable = (key: string) =>
       ({
         step: { key, parameters: { tableId: 'mock-table-id' } },
-      } as unknown as IGlobalVariable)
+      }) as unknown as IGlobalVariable
 
     it.each(['createTileRow', 'updateSingleRow'])(
       'returns a 60 to 90 s delay for %s on a frozen tile',

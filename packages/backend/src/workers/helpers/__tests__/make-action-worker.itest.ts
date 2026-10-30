@@ -1,5 +1,4 @@
 import type { IActionJobData } from '@plumber/types'
-
 import type { JobPro } from '@taskforcesh/bullmq-pro'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
