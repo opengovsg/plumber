@@ -1487,6 +1487,7 @@ export interface ITableMetadata {
   collaborators?: ITableCollaborator[]
   isPasswordProtected: boolean
   role?: ITableCollabRole
+  isMigrating: boolean
 }
 
 export interface ITableCollaborator {
