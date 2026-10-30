@@ -1,14 +1,5 @@
-import { execFileSync, spawnSync } from 'node:child_process'
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
-import { tmpdir } from 'node:os'
+import { execFileSync } from 'node:child_process'
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -22,7 +13,7 @@ export const DEFAULT_LABEL = 'production'
 
 const PROJECTS = ['aiBuilder', 'pairAction']
 
-const VALUE_FLAGS = ['label', 'against', 'project']
+const VALUE_FLAGS = ['label', 'project']
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -64,61 +55,25 @@ export function parseArgs(argv) {
     command,
     name: positionals[0],
     project,
-    label: flags.label,
+    label: flags.label ?? DEFAULT_LABEL,
     message: flags.message,
     force: flags.force === true,
-    merge: flags.merge === true,
-    against: flags.against ?? 'base',
   }
 }
 
 /**
  * Prompt names may contain "/" because Langfuse supports folders.
  */
-export function promptPaths(project, name, root = PROMPTS_DIR) {
+export function promptPath(project, name, root = PROMPTS_DIR) {
   const projectDir = resolve(root, project)
-  const local = resolve(projectDir, `${name}.md`)
-  if (!local.startsWith(projectDir + sep)) {
+  const path = resolve(projectDir, `${name}.md`)
+  if (!path.startsWith(projectDir + sep)) {
     throw new Error(`Invalid prompt name: ${name}`)
   }
-  const stem = local.slice(0, -'.md'.length)
-  if (stem.endsWith('.base')) {
-    throw new Error(
-      `Invalid prompt name: ${name}. The .base suffix is reserved.`,
-    )
-  }
-  return { local, base: `${stem}.base.md`, meta: `${stem}.meta.json` }
+  return path
 }
 
-export function getPullBlocker(paths, existing) {
-  if (!existing && existsSync(paths.local)) {
-    return 'The local prompt has no metadata. Back it up, then use --force to discard it.'
-  }
-  if (existing && existing.local !== null && existing.local !== existing.base) {
-    return 'The local prompt has edits. Use --merge to keep them, or --force to discard them.'
-  }
-  return null
-}
-
-export function readLocalPrompt(paths) {
-  if (!existsSync(paths.meta)) {
-    return null
-  }
-  return {
-    meta: JSON.parse(readFileSync(paths.meta, 'utf-8')),
-    base: readFileSync(paths.base, 'utf-8'),
-    local: existsSync(paths.local) ? readFileSync(paths.local, 'utf-8') : null,
-  }
-}
-
-export function writeLocalPrompt(paths, { meta, base, local }) {
-  mkdirSync(dirname(paths.local), { recursive: true })
-  writeFileSync(paths.base, base, 'utf-8')
-  writeFileSync(paths.local, local, 'utf-8')
-  writeFileSync(paths.meta, `${JSON.stringify(meta, null, 2)}\n`, 'utf-8')
-}
-
-export function listLocalPrompts(root = PROMPTS_DIR) {
+export function listPrompts(root = PROMPTS_DIR) {
   const found = []
   for (const project of PROJECTS) {
     const projectDir = join(root, project)
@@ -127,16 +82,59 @@ export function listLocalPrompts(root = PROMPTS_DIR) {
     }
     for (const entry of readdirSync(projectDir, { recursive: true })) {
       const file = String(entry)
-      if (file.endsWith('.meta.json')) {
-        const name = relative(projectDir, join(projectDir, file))
-          .slice(0, -'.meta.json'.length)
-          .split(sep)
-          .join('/')
+      if (file.endsWith('.md')) {
+        const name = file.slice(0, -'.md'.length).split(sep).join('/')
         found.push({ project, name })
       }
     }
   }
-  return found
+  return found.sort((a, b) =>
+    `${a.project}/${a.name}`.localeCompare(`${b.project}/${b.name}`),
+  )
+}
+
+function gitRaw(args, cwd) {
+  return execFileSync('git', args, {
+    cwd,
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+}
+
+export function git(args, cwd = PROMPTS_DIR) {
+  return gitRaw(args, cwd).trim()
+}
+
+export function assertPromptsRepo(root = PROMPTS_DIR) {
+  let isRepoRoot = false
+  try {
+    isRepoRoot =
+      git(['rev-parse', '--show-toplevel'], root) === realpathSync(root)
+  } catch {
+    // A missing folder or a non-repo folder gets the same fix.
+  }
+  if (!isRepoRoot) {
+    throw new Error(
+      `${root} is not a clone of the prompts repo. Run "pnpm run prompts:clone".`,
+    )
+  }
+}
+
+export function mainRef(root = PROMPTS_DIR) {
+  return git(['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], root)
+}
+
+export function hasUncommittedChanges(path, root = PROMPTS_DIR) {
+  return git(['status', '--porcelain', '--', path], root) !== ''
+}
+
+export function readAtRef(ref, path, root = PROMPTS_DIR) {
+  try {
+    // Untrimmed so it compares equal to the file and to Langfuse text.
+    return gitRaw(['show', `${ref}:${relative(root, path)}`], root)
+  } catch {
+    return null
+  }
 }
 
 export function hasConflictMarkers(text) {
@@ -144,23 +142,36 @@ export function hasConflictMarkers(text) {
 }
 
 /**
- * Keeps every pushed version on top of what the base label currently serves,
- * so promoting it never reverts another dev's promoted change.
+ * Keeps every pushed version on top of main. Promoting it then never reverts
+ * a change another dev already merged.
  */
-export function getPushBlocker({ local, base, meta, currentVersion }) {
-  if (local === null) {
-    return 'The local prompt file is missing. Pull it again.'
+export function getPushBlocker({
+  text,
+  productionText,
+  uncommitted,
+  containsMain,
+  main,
+}) {
+  if (text === null) {
+    return 'The prompt file does not exist.'
   }
-  if (hasConflictMarkers(local)) {
-    return 'The local prompt has merge conflict markers. Resolve them first.'
+  if (uncommitted) {
+    return 'The prompt file has uncommitted changes. Commit them in the prompts repo first.'
   }
-  if (local === base) {
-    return 'The local prompt has no changes to push.'
+  if (hasConflictMarkers(text)) {
+    return 'The prompt file has merge conflict markers. Resolve them first.'
   }
-  if (currentVersion !== meta.baseVersion) {
-    return `"${meta.label}" moved from v${meta.baseVersion} to v${currentVersion} since you pulled. Run "pnpm run prompt pull ${meta.name} --project=${meta.project} --merge" first.`
+  if (!containsMain) {
+    return `Your branch does not contain ${main}. Merge or rebase onto it first.`
+  }
+  if (text === productionText) {
+    return `The prompt matches "${DEFAULT_LABEL}". There is nothing to push.`
   }
   return null
+}
+
+export function readPrompt(path) {
+  return existsSync(path) ? readFileSync(path, 'utf-8') : null
 }
 
 export function devLabel(email) {
@@ -177,48 +188,8 @@ export function devLabel(email) {
 
 export function gitEmail() {
   try {
-    return execFileSync('git', ['config', 'user.email'], {
-      encoding: 'utf-8',
-    }).trim()
+    return git(['config', 'user.email'], process.cwd())
   } catch {
     return ''
-  }
-}
-
-export function threeWayMerge({ local, base, theirs, theirsName }) {
-  const dir = mkdtempSync(join(tmpdir(), 'prompt-merge-'))
-  try {
-    const files = {
-      local: join(dir, 'local'),
-      base: join(dir, 'base'),
-      theirs: join(dir, 'theirs'),
-    }
-    writeFileSync(files.local, local)
-    writeFileSync(files.base, base)
-    writeFileSync(files.theirs, theirs)
-    const result = spawnSync(
-      'git',
-      [
-        'merge-file',
-        '-p',
-        '-L',
-        'local',
-        '-L',
-        'base',
-        '-L',
-        theirsName,
-        files.local,
-        files.base,
-        files.theirs,
-      ],
-      { encoding: 'utf-8' },
-    )
-    // git merge-file exits with the conflict count (max 127). A negative code on error wraps above 127.
-    if (result.error || result.status === null || result.status > 127) {
-      throw new Error(`git merge-file failed: ${result.stderr || result.error}`)
-    }
-    return { text: result.stdout, conflicts: result.status }
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
   }
 }

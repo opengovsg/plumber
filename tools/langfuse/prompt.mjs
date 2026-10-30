@@ -1,42 +1,42 @@
 /**
- * Keeps a local working copy of a Langfuse text prompt for the local backend to read.
- * See PROMPTS.md for the workflow.
+ * Syncs AI Builder prompts between the prompts repo and Langfuse.
+ * The prompts repo is the source of truth. See PROMPTS.md for the workflow.
  *
  * Credentials come from the dev 1Password environment, so run it through pnpm:
- *   pnpm run prompt pull <name> [--label=production] [--project=aiBuilder] [--force | --merge]
+ *   pnpm run prompt import [--label=production] [--project=aiBuilder] [--force]
+ *   pnpm run prompt pull <name> [--label=production] [--project=aiBuilder] [--force]
  *   pnpm run prompt status
- *   pnpm run prompt diff <name> [--against=base | --against=<label>]
  *   pnpm run prompt push <name> -m "<commit message>"
  */
-import { spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join, relative } from 'node:path'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, relative } from 'node:path'
 
 import { buildLangfuseClient } from './lib/client.mjs'
 import {
+  assertPromptsRepo,
   DEFAULT_LABEL,
   devLabel,
-  getPullBlocker,
   getPushBlocker,
+  git,
   gitEmail,
-  listLocalPrompts,
+  hasUncommittedChanges,
+  listPrompts,
+  mainRef,
   parseArgs,
-  promptPaths,
+  promptPath,
   PROMPTS_DIR,
-  readLocalPrompt,
-  threeWayMerge,
-  writeLocalPrompt,
+  readAtRef,
+  readPrompt,
 } from './lib/prompt-files.mjs'
 
 const USAGE = `Usage:
-  pnpm run prompt pull <name> [--label=${DEFAULT_LABEL}] [--project=aiBuilder] [--force | --merge]
+  pnpm run prompt import [--label=${DEFAULT_LABEL}] [--project=aiBuilder] [--force]
+  pnpm run prompt pull <name> [--label=${DEFAULT_LABEL}] [--project=aiBuilder] [--force]
   pnpm run prompt status
-  pnpm run prompt diff <name> [--against=base | --against=<label>]
   pnpm run prompt push <name> -m "<commit message>"`
 
 async function fetchByLabel(client, name, label) {
-  // The push check must see the label's current version, not a cached one.
+  // Status and push must see the label's current version, not a cached one.
   const prompt = await client.prompt.get(name, {
     label,
     type: 'text',
@@ -50,158 +50,105 @@ async function fetchByLabel(client, name, label) {
   return prompt
 }
 
-function toMeta(prompt, project, label) {
-  return {
-    name: prompt.name,
-    project,
-    label,
-    baseVersion: prompt.version,
-    config: prompt.config,
-    tags: prompt.tags,
-    pulledAt: new Date().toISOString(),
-  }
-}
-
 function displayPath(path) {
   return relative(process.cwd(), path)
 }
 
 async function pull(args) {
-  const { name, project, force, merge } = args
-  const paths = promptPaths(project, name)
-  const existing = readLocalPrompt(paths)
+  const { name, project, label, force } = args
+  assertPromptsRepo()
+  const path = promptPath(project, name)
+  if (hasUncommittedChanges(path) && !force) {
+    throw new Error(
+      `${displayPath(
+        path,
+      )} has uncommitted changes. Commit or stash them, or use --force to discard them.`,
+    )
+  }
+
   const client = buildLangfuseClient(project, process.env)
-
-  if (merge) {
-    if (!existing) {
-      throw new Error(
-        `No local copy of "${name}" to merge. Run pull without --merge.`,
-      )
-    }
-    const label = args.label ?? existing.meta.label
-    const theirs = await fetchByLabel(client, name, label)
-    if (
-      theirs.version === existing.meta.baseVersion &&
-      label === existing.meta.label
-    ) {
-      console.log(
-        `Already based on ${label} v${theirs.version}. Nothing to merge.`,
-      )
-      return
-    }
-    const { text, conflicts } = threeWayMerge({
-      local: existing.local ?? existing.base,
-      base: existing.base,
-      theirs: theirs.prompt,
-      theirsName: `${label} v${theirs.version}`,
-    })
-    writeLocalPrompt(paths, {
-      meta: toMeta(theirs, project, label),
-      base: theirs.prompt,
-      local: text,
-    })
-    if (conflicts > 0) {
-      console.log(
-        `Merged ${label} v${theirs.version} with ${conflicts} conflict(s).`,
-      )
-      console.log(
-        `Resolve the conflict markers in ${displayPath(
-          paths.local,
-        )} before pushing.`,
-      )
-    } else {
-      console.log(
-        `Merged ${label} v${theirs.version} into ${displayPath(
-          paths.local,
-        )} cleanly.`,
-      )
-    }
-    return
-  }
-
-  const blocker = getPullBlocker(paths, existing)
-  if (blocker && !force) {
-    throw new Error(`${displayPath(paths.local)}: ${blocker}`)
-  }
-
-  const label = args.label ?? DEFAULT_LABEL
   const prompt = await fetchByLabel(client, name, label)
-  writeLocalPrompt(paths, {
-    meta: toMeta(prompt, project, label),
-    base: prompt.prompt,
-    local: prompt.prompt,
-  })
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, prompt.prompt, 'utf-8')
+  console.log(`Saved ${label} v${prompt.version} to ${displayPath(path)}.`)
+  console.log('Review it with "git diff", then commit it in the prompts repo.')
+}
+
+async function listNamesWithLabel(client, label) {
+  const names = []
+  for (let page = 1; ; page++) {
+    const { data, meta } = await client.api.prompts.list({
+      label,
+      page,
+      limit: 100,
+    })
+    for (const prompt of data) {
+      if (prompt.type === 'text') {
+        names.push(prompt.name)
+      } else {
+        console.warn(`Skipped "${prompt.name}". It is a ${prompt.type} prompt.`)
+      }
+    }
+    if (page >= meta.totalPages) {
+      return names
+    }
+  }
+}
+
+/**
+ * Copies every prompt that carries the label from Langfuse into the prompts repo.
+ */
+async function importAll(args) {
+  const { project, label, force } = args
+  assertPromptsRepo()
+  const client = buildLangfuseClient(project, process.env)
+  const names = await listNamesWithLabel(client, label)
+
+  // Check every file first so a refusal never leaves a half-finished import.
+  const blocked = names
+    .map((name) => promptPath(project, name))
+    .filter((path) => hasUncommittedChanges(path))
+  if (blocked.length > 0 && !force) {
+    throw new Error(
+      `These files have uncommitted changes. Commit or stash them, or use --force to discard them:\n${blocked
+        .map(displayPath)
+        .join('\n')}`,
+    )
+  }
+
+  for (const name of names) {
+    const path = promptPath(project, name)
+    const prompt = await fetchByLabel(client, name, label)
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, prompt.prompt, 'utf-8')
+    console.log(`Saved ${label} v${prompt.version} to ${displayPath(path)}.`)
+  }
   console.log(
-    `Saved ${label} v${prompt.version} to ${displayPath(paths.local)}`,
-  )
-  console.log(
-    'The local backend now reads this file on every AI Builder request.',
+    `Imported ${names.length} ${project} prompt(s). Review them with "git status", then commit them in the prompts repo.`,
   )
 }
 
 async function status() {
-  const prompts = listLocalPrompts()
+  assertPromptsRepo()
+  git(['fetch', '--quiet', 'origin'])
+  const main = mainRef()
+  const prompts = listPrompts()
   if (prompts.length === 0) {
-    console.log(
-      `No local prompts in ${displayPath(
-        PROMPTS_DIR,
-      )}. Run "pnpm run prompt pull <name>".`,
-    )
+    console.log(`No prompts in ${displayPath(PROMPTS_DIR)}.`)
     return
   }
   for (const { project, name } of prompts) {
-    const paths = promptPaths(project, name)
-    const { meta, base, local } = readLocalPrompt(paths)
+    const path = promptPath(project, name)
     const client = buildLangfuseClient(project, process.env)
-    const current = await fetchByLabel(client, name, meta.label)
-    const state =
-      local === null ? 'missing' : local === base ? 'clean' : 'edited'
-    const action =
-      current.version !== meta.baseVersion
-        ? `run "pnpm run prompt pull ${name} --project=${project} --merge"`
-        : state === 'edited'
-        ? 'ready to push'
-        : 'up to date'
+    const production = await fetchByLabel(client, name, DEFAULT_LABEL)
+    const local = hasUncommittedChanges(path) ? 'uncommitted changes' : 'clean'
+    const sync =
+      production.prompt === readAtRef(main, path)
+        ? `matches ${main}`
+        : `differs from ${main}. Promote the merged version, or commit what ${DEFAULT_LABEL} serves`
     console.log(
-      `${project}/${name}: ${state}, based on ${meta.label} v${meta.baseVersion}, ${meta.label} is now v${current.version}. ${action}.`,
+      `${project}/${name}: ${local}. ${DEFAULT_LABEL} v${production.version} ${sync}.`,
     )
-  }
-}
-
-async function diff(args) {
-  const { name, project, against } = args
-  const paths = promptPaths(project, name)
-  const existing = readLocalPrompt(paths)
-  if (!existing) {
-    throw new Error(
-      `No local copy of "${name}". Run "pnpm run prompt pull ${name}" first.`,
-    )
-  }
-
-  const dir = mkdtempSync(join(tmpdir(), 'prompt-diff-'))
-  try {
-    let otherPath = paths.base
-    if (against !== 'base') {
-      const client = buildLangfuseClient(project, process.env)
-      const other = await fetchByLabel(client, name, against)
-      otherPath = join(dir, `${against}-v${other.version}.md`)
-      writeFileSync(otherPath, other.prompt)
-    }
-    spawnSync(
-      'git',
-      [
-        'diff',
-        '--no-index',
-        '--',
-        displayPath(otherPath),
-        displayPath(paths.local),
-      ],
-      {
-        stdio: 'inherit',
-      },
-    )
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
   }
 }
 
@@ -210,45 +157,42 @@ async function push(args) {
   if (!message) {
     throw new Error('Add a commit message with -m "<message>".')
   }
-  const paths = promptPaths(project, name)
-  const existing = readLocalPrompt(paths)
-  if (!existing) {
-    throw new Error(
-      `No local copy of "${name}". Run "pnpm run prompt pull ${name}" first.`,
-    )
+  assertPromptsRepo()
+  git(['fetch', '--quiet', 'origin'])
+  const path = promptPath(project, name)
+  const main = mainRef()
+  let containsMain = true
+  try {
+    git(['merge-base', '--is-ancestor', main, 'HEAD'])
+  } catch {
+    containsMain = false
   }
-  const { meta, base, local } = existing
-  const label = devLabel(gitEmail())
-  const client = buildLangfuseClient(project, process.env)
 
-  const before = await fetchByLabel(client, name, meta.label)
+  const client = buildLangfuseClient(project, process.env)
+  const production = await fetchByLabel(client, name, DEFAULT_LABEL)
+  const text = readPrompt(path)
   const blocker = getPushBlocker({
-    local,
-    base,
-    meta,
-    currentVersion: before.version,
+    text,
+    productionText: production.prompt,
+    uncommitted: hasUncommittedChanges(path),
+    containsMain,
+    main,
   })
   if (blocker) {
-    throw new Error(blocker)
+    throw new Error(`${displayPath(path)}: ${blocker}`)
   }
 
+  const commit = git(['rev-parse', '--short', 'HEAD'])
+  const label = devLabel(gitEmail())
   const created = await client.prompt.create({
     name,
     type: 'text',
-    prompt: local,
-    config: meta.config,
-    tags: meta.tags,
+    prompt: text,
+    config: production.config,
+    tags: production.tags,
     labels: [label],
-    commitMessage: message,
+    commitMessage: `${message} (plumber-prompts ${commit})`,
   })
-
-  // Langfuse has no conditional create, so another promotion can land between the check and the create.
-  const after = await fetchByLabel(client, name, meta.label)
-  if (after.version !== meta.baseVersion) {
-    console.warn(
-      `WARNING: "${meta.label}" moved to v${after.version} while you pushed. v${created.version} may not include it. Run pull --merge and push again.`,
-    )
-  }
 
   console.log(`Created ${name} v${created.version} with label "${label}".`)
   if (project === 'aiBuilder') {
@@ -256,22 +200,24 @@ async function push(args) {
       'The "Latest" variation of the ai-builder LaunchDarkly flag now serves this version.',
     )
   }
-  console.log(`Promote it to "${DEFAULT_LABEL}" in the Langfuse UI.`)
+  console.log(
+    `Merge ${commit} into ${main} through a prompts repo PR. Then promote v${created.version} to "${DEFAULT_LABEL}" in the Langfuse UI.`,
+  )
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const needsName = ['pull', 'diff', 'push'].includes(args.command)
+  const needsName = ['pull', 'push'].includes(args.command)
   if (needsName && !args.name) {
     throw new Error(USAGE)
   }
   switch (args.command) {
+    case 'import':
+      return importAll(args)
     case 'pull':
       return pull(args)
     case 'status':
       return status()
-    case 'diff':
-      return diff(args)
     case 'push':
       return push(args)
     default:

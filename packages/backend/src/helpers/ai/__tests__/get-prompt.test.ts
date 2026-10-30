@@ -71,7 +71,7 @@ describe('getPrompt', () => {
       label: 'production',
     })
     expect(mocks.warn).toHaveBeenCalledWith(
-      expect.stringContaining('pnpm run prompt pull chat-summary'),
+      expect.stringContaining('pnpm run prompts:clone'),
       expect.anything(),
     )
   })

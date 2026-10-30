@@ -18,7 +18,7 @@ export function buildLangfuseClient(project, env) {
 
   if (!credentials.publicKey || !credentials.secretKey) {
     throw new Error(
-      `Missing Langfuse credentials for project "${project}". Run this through "pnpm run get-prompt" so 1Password injects them.`,
+      `Missing Langfuse credentials for project "${project}". Run this through "pnpm run prompt" so 1Password injects them.`,
     )
   }
 
