@@ -1,10 +1,10 @@
 ---
 name: langfuse-prompts
 description: >
-  Help a developer edit, test and push an AI Builder prompt from the
-  plumber-prompts repo to Langfuse. Use when asked to change, improve or test
-  the AI Builder system prompt (chat, chat-summary), push a prompt to
-  Langfuse, or migrate prompts from Langfuse into the prompts repo.
+  Help a developer improve an AI Builder Langfuse prompt. Drafts a new version
+  in the plumber-prompts repo, tests it locally and pushes it to Langfuse.
+  Use when asked to change, improve or test the AI Builder system prompt (chat,
+  chat-summary), push a prompt to Langfuse, or sync prompts from Langfuse.
 ---
 
 # Langfuse prompts
@@ -13,17 +13,19 @@ The workflow and commands live in [tools/langfuse/PROMPTS.md](../../../tools/lan
 
 ## Rules
 
-- **Never commit prompt text to plumber.** Prompt text lives in the private prompts repo at `tools/langfuse/prompts/`. Never paste prompt text into a plumber commit, PR or tracked file.
-- **Commands that reach Langfuse need 1Password.** `pnpm run prompt ...` prompts for biometrics. If this session cannot answer that prompt, give the developer the exact command and wait. `pnpm run prompts:clone` needs no 1Password.
-- **Never promote.** Promotion to `production` happens in the Langfuse UI only.
-- **Draft, do not decide.** Propose each prompt edit with the reason. The developer confirms before you write it.
+- Run every command from the plumber repo root.
+- `pnpm run prompt` commands need 1Password biometrics. If you cannot run one, give the developer the exact command and wait.
+- Edit only the draft, which is the newest `vN.md`. Never edit older version files.
+- Push only when the developer asks.
+- Never promote a version or change the LaunchDarkly flag.
+- Never copy prompt text into plumber files, commits or PRs. Plumber is public.
 
 ## Steps
 
-1. **Find the prompts repo.** Check that `tools/langfuse/prompts/` is a git repo. If not, run `pnpm run prompts:clone`.
-2. **Branch.** In `tools/langfuse/prompts/`, create a branch from an up-to-date `origin/main`.
-3. **Edit.** Read `tools/langfuse/prompts/<project>/<name>.md`. Propose targeted edits. Write them after the developer confirms.
-4. **Test.** The local backend reads the file on every request. Ask the developer to try the change in the local AI Builder and report what happened.
-5. **Commit.** Show `git -C tools/langfuse/prompts diff`, then commit in the prompts repo with a message that states what changed and why.
-6. **Push.** Give the developer `pnpm run prompt push <name> -m "<message>"`. Report the version and `dev-<name>` label it prints.
-7. **Merge.** Remind the developer to open a PR in the prompts repo and promote the version only after it merges.
+1. **Set up.** Run `pnpm run prompts:clone`, then `pnpm run prompt new <name>`. The draft is `tools/langfuse/prompts/<project>/<name>/v<N>.md`.
+2. **Understand the problem.** Ask what behaviour to change. Ask for an example conversation that shows it.
+3. **Edit.** Read the draft. Propose small, targeted edits, each with its reason. Write an edit only after the developer agrees.
+4. **Test.** The local backend serves the draft on every request. Ask the developer to test it in the local AI Builder and report what happened. Repeat steps 3 and 4 until the developer is satisfied.
+5. **Review.** Run `pnpm run prompt diff <name>` and summarise the change.
+6. **Push.** Give the developer `pnpm run prompt push <name> -m "<what changed and why>"`.
+7. **Handle a rejected push.** If push asks for `--renumber`, run it. Then run `diff`, fold the other change into the draft, test again and push.

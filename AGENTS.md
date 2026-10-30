@@ -119,7 +119,7 @@ There are two kinds of skills, distinguished by whether they are listed in the s
 
 In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat).
 
-In-repo skill `langfuse-prompts`: edit, test and push AI Builder prompts from the private `plumber-prompts` repo. See [tools/langfuse/PROMPTS.md](tools/langfuse/PROMPTS.md).
+In-repo skill `langfuse-prompts`: draft, test and push AI Builder prompt versions through the private `plumber-prompts` repo. See [tools/langfuse/PROMPTS.md](tools/langfuse/PROMPTS.md).
 
 ### Skill overrides
 

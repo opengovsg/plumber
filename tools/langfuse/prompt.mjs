@@ -1,223 +1,433 @@
 /**
- * Syncs AI Builder prompts between the prompts repo and Langfuse.
- * The prompts repo is the source of truth. See PROMPTS.md for the workflow.
+ * Keeps the plumber-prompts repo and Langfuse on the same prompt versions.
+ * Each Langfuse version is one file. See PROMPTS.md for the workflow.
  *
  * Credentials come from the dev 1Password environment, so run it through pnpm:
- *   pnpm run prompt import [--label=production] [--project=aiBuilder] [--force]
- *   pnpm run prompt pull <name> [--label=production] [--project=aiBuilder] [--force]
- *   pnpm run prompt status
- *   pnpm run prompt push <name> -m "<commit message>"
+ *   pnpm run prompt sync [--project=aiBuilder]
+ *   pnpm run prompt status [--project=aiBuilder]
+ *   pnpm run prompt new <name> [--project=aiBuilder]
+ *   pnpm run prompt diff <name> [--project=aiBuilder]
+ *   pnpm run prompt push <name> -m "<commit message>" [--project=aiBuilder] [--renumber]
  */
-import { mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, relative } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from 'node:fs'
+import { relative } from 'node:path'
 
 import { buildLangfuseClient } from './lib/client.mjs'
 import {
   assertPromptsRepo,
-  DEFAULT_LABEL,
-  devLabel,
+  changedFiles,
+  compareVersions,
+  formatContent,
+  formatMeta,
   getPushBlocker,
   git,
-  gitEmail,
-  hasUncommittedChanges,
+  gitSucceeds,
   listPrompts,
+  listVersions,
+  listVersionsAtRef,
   mainRef,
   parseArgs,
-  promptPath,
+  PROJECTS,
+  promptDir,
   PROMPTS_DIR,
-  readAtRef,
-  readPrompt,
+  readMeta,
+  versionPaths,
 } from './lib/prompt-files.mjs'
 
 const USAGE = `Usage:
-  pnpm run prompt import [--label=${DEFAULT_LABEL}] [--project=aiBuilder] [--force]
-  pnpm run prompt pull <name> [--label=${DEFAULT_LABEL}] [--project=aiBuilder] [--force]
-  pnpm run prompt status
-  pnpm run prompt push <name> -m "<commit message>"`
+  pnpm run prompt sync [--project=aiBuilder]
+  pnpm run prompt status [--project=aiBuilder]
+  pnpm run prompt new <name> [--project=aiBuilder]
+  pnpm run prompt diff <name> [--project=aiBuilder]
+  pnpm run prompt push <name> -m "<commit message>" [--project=aiBuilder] [--renumber]`
 
-async function fetchByLabel(client, name, label) {
-  // Status and push must see the label's current version, not a cached one.
-  const prompt = await client.prompt.get(name, {
-    label,
-    type: 'text',
-    cacheTtlSeconds: 0,
-  })
-  if (prompt.type !== 'text') {
-    throw new Error(
-      `"${name}" is a ${prompt.type} prompt. Only text prompts are supported.`,
-    )
-  }
-  return prompt
-}
+const FETCH_CONCURRENCY = 5
 
 function displayPath(path) {
   return relative(process.cwd(), path)
 }
 
-async function pull(args) {
-  const { name, project, label, force } = args
-  assertPromptsRepo()
-  const path = promptPath(project, name)
-  if (hasUncommittedChanges(path) && !force) {
-    throw new Error(
-      `${displayPath(
-        path,
-      )} has uncommitted changes. Commit or stash them, or use --force to discard them.`,
-    )
-  }
-
-  const client = buildLangfuseClient(project, process.env)
-  const prompt = await fetchByLabel(client, name, label)
-  mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, prompt.prompt, 'utf-8')
-  console.log(`Saved ${label} v${prompt.version} to ${displayPath(path)}.`)
-  console.log('Review it with "git diff", then commit it in the prompts repo.')
-}
-
-async function listNamesWithLabel(client, label) {
-  const names = []
+async function listLangfusePrompts(client, name) {
+  const prompts = []
   for (let page = 1; ; page++) {
     const { data, meta } = await client.api.prompts.list({
-      label,
+      name,
       page,
       limit: 100,
     })
-    for (const prompt of data) {
-      if (prompt.type === 'text') {
-        names.push(prompt.name)
-      } else {
-        console.warn(`Skipped "${prompt.name}". It is a ${prompt.type} prompt.`)
-      }
-    }
+    prompts.push(...data)
     if (page >= meta.totalPages) {
-      return names
+      return prompts
     }
   }
+}
+
+async function mapWithConcurrency(items, fn) {
+  const queue = [...items]
+  const workers = Array.from({ length: FETCH_CONCURRENCY }, async () => {
+    while (queue.length > 0) {
+      await fn(queue.shift())
+    }
+  })
+  await Promise.all(workers)
+}
+
+function fetchMain() {
+  git(['fetch', '--quiet', 'origin'])
+  return mainRef()
 }
 
 /**
- * Copies every prompt that carries the label from Langfuse into the prompts repo.
+ * Writes every Langfuse version that the repo is missing. Never overwrites a file.
  */
-async function importAll(args) {
-  const { project, label, force } = args
+async function sync(args) {
   assertPromptsRepo()
-  const client = buildLangfuseClient(project, process.env)
-  const names = await listNamesWithLabel(client, label)
-
-  // Check every file first so a refusal never leaves a half-finished import.
-  const blocked = names
-    .map((name) => promptPath(project, name))
-    .filter((path) => hasUncommittedChanges(path))
-  if (blocked.length > 0 && !force) {
-    throw new Error(
-      `These files have uncommitted changes. Commit or stash them, or use --force to discard them:\n${blocked
-        .map(displayPath)
-        .join('\n')}`,
+  const projects = args.project ? [args.project] : PROJECTS
+  let written = 0
+  for (const project of projects) {
+    const client = buildLangfuseClient(project, process.env)
+    const prompts = await listLangfusePrompts(client)
+    // Compares against committed files, because a local draft can share a number with a UI version.
+    const missing = prompts.flatMap((prompt) => {
+      const dir = promptDir(project, prompt.name)
+      const nextFree = Math.max(...prompt.versions) + 1
+      return compareVersions(
+        listVersionsAtRef('HEAD', dir),
+        prompt.versions,
+      ).missingInRepo.map((version) => ({
+        name: prompt.name,
+        dir,
+        version,
+        nextFree,
+      }))
+    })
+    await mapWithConcurrency(
+      missing,
+      async ({ name, dir, version, nextFree }) => {
+        const prompt = await client.api.prompts.get(name, { version })
+        const paths = versionPaths(dir, version, prompt.type)
+        const content = formatContent(prompt)
+        if (
+          existsSync(paths.content) &&
+          readFileSync(paths.content, 'utf-8') !== content
+        ) {
+          const moved = versionPaths(dir, nextFree, prompt.type)
+          renameSync(paths.content, moved.content)
+          if (existsSync(paths.meta)) {
+            renameSync(paths.meta, moved.meta)
+          }
+          console.warn(
+            `${project}/${name}: Langfuse already has v${version}, so your draft moved to v${nextFree}. Fold v${version}'s changes into it before you push.`,
+          )
+        }
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(paths.content, content, 'utf-8')
+        writeFileSync(paths.meta, formatMeta(prompt), 'utf-8')
+        written++
+      },
+    )
+    console.log(`${project}: wrote ${missing.length} missing version(s).`)
+  }
+  if (written > 0) {
+    console.log(
+      `Review the files in ${displayPath(
+        PROMPTS_DIR,
+      )}, then commit and push them to main.`,
     )
   }
+}
 
-  for (const name of names) {
-    const path = promptPath(project, name)
-    const prompt = await fetchByLabel(client, name, label)
-    mkdirSync(dirname(path), { recursive: true })
-    writeFileSync(path, prompt.prompt, 'utf-8')
-    console.log(`Saved ${label} v${prompt.version} to ${displayPath(path)}.`)
+async function status(args) {
+  assertPromptsRepo()
+  const main = fetchMain()
+  const projects = args.project ? [args.project] : PROJECTS
+  let outOfSync = 0
+  for (const project of projects) {
+    const client = buildLangfuseClient(project, process.env)
+    const prompts = await listLangfusePrompts(client)
+    const names = new Set(prompts.map((prompt) => prompt.name))
+    for (const prompt of prompts) {
+      const dir = promptDir(project, prompt.name)
+      const { missingInRepo, missingInLangfuse } = compareVersions(
+        listVersionsAtRef(main, dir),
+        prompt.versions,
+      )
+      const problems = []
+      if (missingInRepo.length > 0) {
+        problems.push(
+          `missing on ${main}: v${missingInRepo.join(
+            ', v',
+          )}. Run "pnpm run prompt sync"`,
+        )
+      }
+      if (missingInLangfuse.length > 0) {
+        problems.push(
+          `missing in Langfuse: v${missingInLangfuse.join(
+            ', v',
+          )}. Run "pnpm run prompt push ${
+            prompt.name
+          } --project=${project}" to finish the push`,
+        )
+      }
+      if (problems.length > 0) {
+        outOfSync++
+        console.log(`${project}/${prompt.name}: ${problems.join('. ')}.`)
+      }
+    }
+    for (const { name } of listPrompts(PROMPTS_DIR, [project])) {
+      if (!names.has(name)) {
+        outOfSync++
+        console.log(
+          `${project}/${name}: exists in the repo but not in Langfuse.`,
+        )
+      }
+    }
   }
   console.log(
-    `Imported ${names.length} ${project} prompt(s). Review them with "git status", then commit them in the prompts repo.`,
+    outOfSync === 0
+      ? 'Every prompt is in sync.'
+      : `${outOfSync} prompt(s) out of sync.`,
   )
 }
 
-async function status() {
+function newDraft(args) {
+  const { name } = args
+  const project = args.project ?? 'aiBuilder'
   assertPromptsRepo()
-  git(['fetch', '--quiet', 'origin'])
-  const main = mainRef()
-  const prompts = listPrompts()
-  if (prompts.length === 0) {
-    console.log(`No prompts in ${displayPath(PROMPTS_DIR)}.`)
-    return
-  }
-  for (const { project, name } of prompts) {
-    const path = promptPath(project, name)
-    const client = buildLangfuseClient(project, process.env)
-    const production = await fetchByLabel(client, name, DEFAULT_LABEL)
-    const local = hasUncommittedChanges(path) ? 'uncommitted changes' : 'clean'
-    const sync =
-      production.prompt === readAtRef(main, path)
-        ? `matches ${main}`
-        : `differs from ${main}. Promote the merged version, or commit what ${DEFAULT_LABEL} serves`
-    console.log(
-      `${project}/${name}: ${local}. ${DEFAULT_LABEL} v${production.version} ${sync}.`,
+  const main = fetchMain()
+  if (!gitSucceeds(['merge-base', '--is-ancestor', main, 'HEAD'])) {
+    throw new Error(
+      `Your clone is behind ${main}. Run "pnpm run prompts:clone" first.`,
     )
   }
+  const dir = promptDir(project, name)
+  const latest = listVersions(dir).at(-1)
+  if (!latest) {
+    throw new Error(
+      `No versions of "${name}" in ${displayPath(
+        dir,
+      )}. Run "pnpm run prompt sync" first.`,
+    )
+  }
+  if (latest.type !== 'text') {
+    throw new Error('Only text prompts can have drafts.')
+  }
+  const from = versionPaths(dir, latest.version)
+  if (changedFiles(from.content).length > 0) {
+    throw new Error(
+      `${displayPath(from.content)} is already a draft. Edit it instead.`,
+    )
+  }
+
+  const to = versionPaths(dir, latest.version + 1)
+  copyFileSync(from.content, to.content)
+  writeFileSync(
+    to.meta,
+    formatMeta({ config: readMeta(from.meta).config }),
+    'utf-8',
+  )
+  console.log(`Created ${displayPath(to.content)} from v${latest.version}.`)
+  console.log('The local backend now serves this draft. Edit it, then test.')
 }
 
+function diff(args) {
+  const { name } = args
+  const project = args.project ?? 'aiBuilder'
+  const dir = promptDir(project, name)
+  const versions = listVersions(dir)
+  if (versions.length < 2) {
+    throw new Error(`"${name}" has fewer than two versions to compare.`)
+  }
+  const [previous, latest] = versions.slice(-2)
+  spawnSync(
+    'git',
+    [
+      'diff',
+      '--no-index',
+      '--',
+      displayPath(versionPaths(dir, previous.version, previous.type).content),
+      displayPath(versionPaths(dir, latest.version, latest.type).content),
+    ],
+    { stdio: 'inherit' },
+  )
+}
+
+async function createLangfuseVersion({ client, name, dir, version }) {
+  const paths = versionPaths(dir, version)
+  const meta = readMeta(paths.meta)
+  let created
+  try {
+    created = await client.prompt.create({
+      name,
+      type: 'text',
+      prompt: readFileSync(paths.content, 'utf-8'),
+      config: meta.config ?? {},
+      commitMessage: meta.commitMessage,
+    })
+  } catch (error) {
+    throw new Error(
+      `v${version} is on main, but Langfuse did not create it. Run "pnpm run prompt push ${name}" again to finish. ${error.message}`,
+    )
+  }
+  if (created.version !== version) {
+    throw new Error(
+      `Langfuse created v${created.version}, but the repo holds it as v${version}. Someone created a version outside this tool. Rename the v${version} files to v${created.version}, then commit and push them.`,
+    )
+  }
+  console.log(`Created ${name} v${version} in Langfuse and on main.`)
+  console.log(
+    'Promote it in the Langfuse UI or the ai-builder LaunchDarkly flag.',
+  )
+}
+
+/**
+ * Pushes to git before Langfuse. Git rejects a stale push, so a concurrent
+ * push stops before it creates a Langfuse version.
+ */
 async function push(args) {
-  const { name, project, message } = args
+  const { name, message, renumber } = args
+  const project = args.project ?? 'aiBuilder'
+  assertPromptsRepo()
+  const main = fetchMain()
+  const branch = main.replace(/^origin\//, '')
+  if (git(['rev-list', '--count', `${main}..HEAD`]) !== '0') {
+    throw new Error(
+      `Your clone has commits that are not on ${main}. push publishes only the draft. Push or drop those commits first.`,
+    )
+  }
+
+  const dir = promptDir(project, name)
+  const client = buildLangfuseClient(project, process.env)
+  const langfuse = (await listLangfusePrompts(client, name)).find(
+    (prompt) => prompt.name === name,
+  )
+  const langfuseLatest = Math.max(0, ...(langfuse?.versions ?? []))
+  const mainLatest = Math.max(0, ...listVersionsAtRef(main, dir))
+
+  const latest = listVersions(dir).at(-1)
+  const draft =
+    latest &&
+    !gitSucceeds([
+      'cat-file',
+      '-e',
+      `HEAD:${relative(
+        PROMPTS_DIR,
+        versionPaths(dir, latest.version, latest.type).content,
+      )}`,
+    ])
+      ? latest
+      : null
+
+  // Stops after renumbering so the dev folds in the versions that landed first.
+  if (draft && renumber && draft.version !== mainLatest + 1) {
+    const from = versionPaths(dir, draft.version)
+    const to = versionPaths(dir, mainLatest + 1)
+    renameSync(from.content, to.content)
+    if (existsSync(from.meta)) {
+      renameSync(from.meta, to.meta)
+    }
+    if (!gitSucceeds(['merge', '--ff-only', '--quiet', main])) {
+      throw new Error(
+        `Renumbered your draft, but could not fast-forward to ${main}.`,
+      )
+    }
+    const landed =
+      draft.version === mainLatest
+        ? `v${mainLatest}`
+        : `v${draft.version} to v${mainLatest}`
+    throw new Error(
+      `Renumbered your draft from v${draft.version} to v${
+        mainLatest + 1
+      }. ${landed} landed first, and your draft does not include it. Run "pnpm run prompt diff ${name}", fold those changes into v${
+        mainLatest + 1
+      }, test, then push again.`,
+    )
+  }
+
+  if (!gitSucceeds(['merge', '--ff-only', '--quiet', main])) {
+    throw new Error(
+      `Could not fast-forward to ${main}. It may already hold your draft's version number. Retry with --renumber.`,
+    )
+  }
+
+  // An earlier push reached git but not Langfuse.
+  if (!draft && mainLatest === langfuseLatest + 1) {
+    return createLangfuseVersion({ client, name, dir, version: mainLatest })
+  }
+
+  const draftPaths = draft ? versionPaths(dir, draft.version) : null
+  const changedPushedFiles = changedFiles(dir)
+    .filter((path) => path !== draftPaths?.content && path !== draftPaths?.meta)
+    .map(displayPath)
+  const blocker = getPushBlocker({
+    draft,
+    langfuseLatest,
+    mainLatest,
+    changedPushedFiles,
+  })
+  if (blocker) {
+    throw new Error(blocker)
+  }
   if (!message) {
     throw new Error('Add a commit message with -m "<message>".')
   }
-  assertPromptsRepo()
-  git(['fetch', '--quiet', 'origin'])
-  const path = promptPath(project, name)
-  const main = mainRef()
-  let containsMain = true
-  try {
-    git(['merge-base', '--is-ancestor', main, 'HEAD'])
-  } catch {
-    containsMain = false
-  }
 
-  const client = buildLangfuseClient(project, process.env)
-  const production = await fetchByLabel(client, name, DEFAULT_LABEL)
-  const text = readPrompt(path)
-  const blocker = getPushBlocker({
-    text,
-    productionText: production.prompt,
-    uncommitted: hasUncommittedChanges(path),
-    containsMain,
-    main,
-  })
-  if (blocker) {
-    throw new Error(`${displayPath(path)}: ${blocker}`)
-  }
-
-  const commit = git(['rev-parse', '--short', 'HEAD'])
-  const label = devLabel(gitEmail())
-  const created = await client.prompt.create({
-    name,
-    type: 'text',
-    prompt: text,
-    config: production.config,
-    tags: production.tags,
-    labels: [label],
-    commitMessage: `${message} (plumber-prompts ${commit})`,
-  })
-
-  console.log(`Created ${name} v${created.version} with label "${label}".`)
-  if (project === 'aiBuilder') {
-    console.log(
-      'The "Latest" variation of the ai-builder LaunchDarkly flag now serves this version.',
+  // A draft made by hand has no meta file, so it inherits the previous config.
+  const meta = readMeta(
+    existsSync(draftPaths.meta)
+      ? draftPaths.meta
+      : versionPaths(dir, draft.version - 1).meta,
+  )
+  writeFileSync(
+    draftPaths.meta,
+    formatMeta({ config: meta.config, commitMessage: message }),
+    'utf-8',
+  )
+  git(['add', '--', draftPaths.content, draftPaths.meta])
+  git([
+    'commit',
+    '--quiet',
+    '-m',
+    `${project}/${name} v${draft.version}: ${message}`,
+    '--',
+    draftPaths.content,
+    draftPaths.meta,
+  ])
+  if (
+    !gitSucceeds(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`])
+  ) {
+    git(['reset', '--soft', 'HEAD~1'])
+    throw new Error(
+      `Someone pushed to ${main} first. Nothing was created in Langfuse. Retry the push. Add --renumber if they pushed "${name}".`,
     )
   }
-  console.log(
-    `Merge ${commit} into ${main} through a prompts repo PR. Then promote v${created.version} to "${DEFAULT_LABEL}" in the Langfuse UI.`,
-  )
+
+  await createLangfuseVersion({ client, name, dir, version: draft.version })
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const needsName = ['pull', 'push'].includes(args.command)
+  const needsName = ['new', 'diff', 'push'].includes(args.command)
   if (needsName && !args.name) {
     throw new Error(USAGE)
   }
   switch (args.command) {
-    case 'import':
-      return importAll(args)
-    case 'pull':
-      return pull(args)
+    case 'sync':
+      return sync(args)
     case 'status':
-      return status()
+      return status(args)
+    case 'new':
+      return newDraft(args)
+    case 'diff':
+      return diff(args)
     case 'push':
       return push(args)
     default:

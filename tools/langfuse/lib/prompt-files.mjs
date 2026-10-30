@@ -1,5 +1,11 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+} from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,11 +15,12 @@ export const PROMPTS_DIR = join(
   '../prompts',
 )
 
-export const DEFAULT_LABEL = 'production'
+export const PROJECTS = ['aiBuilder', 'pairAction']
 
-const PROJECTS = ['aiBuilder', 'pairAction']
+const VALUE_FLAGS = ['project']
 
-const VALUE_FLAGS = ['label', 'project']
+// IMPORTANT: get-prompt.ts matches the same pattern to find the newest version.
+const VERSION_FILE = /^v(\d+)\.(md|json)$/
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -47,43 +54,68 @@ export function parseArgs(argv) {
     flags[key] = flagValue
   }
 
-  const project = flags.project ?? 'aiBuilder'
-  if (!PROJECTS.includes(project)) {
+  if (flags.project && !PROJECTS.includes(flags.project)) {
     throw new Error(`--project must be one of: ${PROJECTS.join(', ')}`)
   }
   return {
     command,
     name: positionals[0],
-    project,
-    label: flags.label ?? DEFAULT_LABEL,
+    // Commands on one prompt default to aiBuilder. Repo-wide commands cover every project.
+    project: flags.project,
     message: flags.message,
-    force: flags.force === true,
+    renumber: flags.renumber === true,
   }
 }
 
 /**
  * Prompt names may contain "/" because Langfuse supports folders.
  */
-export function promptPath(project, name, root = PROMPTS_DIR) {
+export function promptDir(project, name, root = PROMPTS_DIR) {
   const projectDir = resolve(root, project)
-  const path = resolve(projectDir, `${name}.md`)
-  if (!path.startsWith(projectDir + sep)) {
+  const dir = resolve(projectDir, name)
+  if (!dir.startsWith(projectDir + sep)) {
     throw new Error(`Invalid prompt name: ${name}`)
   }
-  return path
+  return dir
 }
 
-export function listPrompts(root = PROMPTS_DIR) {
+export function versionPaths(dir, version, type = 'text') {
+  return {
+    content: join(dir, `v${version}.${type === 'chat' ? 'json' : 'md'}`),
+    meta: join(dir, `v${version}.meta.json`),
+  }
+}
+
+/**
+ * Returns the versions stored in a prompt folder, oldest first.
+ */
+export function listVersions(dir) {
+  if (!existsSync(dir)) {
+    return []
+  }
+  return readdirSync(dir)
+    .map((file) => VERSION_FILE.exec(file))
+    .filter(Boolean)
+    .map((match) => ({
+      version: Number(match[1]),
+      type: match[2] === 'json' ? 'chat' : 'text',
+    }))
+    .sort((a, b) => a.version - b.version)
+}
+
+export function listPrompts(root = PROMPTS_DIR, projects = PROJECTS) {
   const found = []
-  for (const project of PROJECTS) {
+  for (const project of projects) {
     const projectDir = join(root, project)
     if (!existsSync(projectDir)) {
       continue
     }
-    for (const entry of readdirSync(projectDir, { recursive: true })) {
-      const file = String(entry)
-      if (file.endsWith('.md')) {
-        const name = file.slice(0, -'.md'.length).split(sep).join('/')
+    const dirs = readdirSync(projectDir, { recursive: true })
+      .map((entry) => join(projectDir, String(entry)))
+      .filter((path) => statSync(path).isDirectory())
+    for (const dir of dirs) {
+      if (listVersions(dir).length > 0) {
+        const name = relative(projectDir, dir).split(sep).join('/')
         found.push({ project, name })
       }
     }
@@ -91,6 +123,78 @@ export function listPrompts(root = PROMPTS_DIR) {
   return found.sort((a, b) =>
     `${a.project}/${a.name}`.localeCompare(`${b.project}/${b.name}`),
   )
+}
+
+export function formatContent(prompt) {
+  return prompt.type === 'chat'
+    ? `${JSON.stringify(prompt.prompt, null, 2)}\n`
+    : prompt.prompt
+}
+
+export function formatMeta(prompt) {
+  return `${JSON.stringify(
+    { config: prompt.config ?? {}, commitMessage: prompt.commitMessage ?? '' },
+    null,
+    2,
+  )}\n`
+}
+
+export function readMeta(path) {
+  const meta = JSON.parse(readFileSync(path, 'utf-8'))
+  if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) {
+    throw new Error(`${path} must hold a JSON object.`)
+  }
+  return meta
+}
+
+/**
+ * Lists the version numbers that exist on only one side.
+ */
+export function compareVersions(repoVersions, langfuseVersions) {
+  const repo = new Set(repoVersions)
+  const langfuse = new Set(langfuseVersions)
+  return {
+    missingInRepo: [...langfuse]
+      .filter((v) => !repo.has(v))
+      .sort((a, b) => a - b),
+    missingInLangfuse: [...repo]
+      .filter((v) => !langfuse.has(v))
+      .sort((a, b) => a - b),
+  }
+}
+
+/**
+ * Keeps the repo and Langfuse on the same version numbers. A draft must be
+ * the next number after both the newest Langfuse version and the newest
+ * version on main.
+ */
+export function getPushBlocker({
+  draft,
+  langfuseLatest,
+  mainLatest,
+  changedPushedFiles,
+}) {
+  if (!draft) {
+    return 'There is no draft. Run "pnpm run prompt new <name>" first.'
+  }
+  if (draft.type !== 'text') {
+    return 'Only text prompts can be pushed.'
+  }
+  if (mainLatest < langfuseLatest) {
+    return `Langfuse has v${langfuseLatest} but main stops at v${mainLatest}. Run "pnpm run prompt sync", commit and push the files, then retry.`
+  }
+  if (mainLatest > langfuseLatest) {
+    return `main has v${mainLatest} but Langfuse stops at v${langfuseLatest}. Move your draft out of the folder, then run push again to finish the earlier push.`
+  }
+  if (changedPushedFiles.length > 0) {
+    return `Pushed versions are read-only. Revert your changes to: ${changedPushedFiles.join(
+      ', ',
+    )}`
+  }
+  if (draft.version !== mainLatest + 1) {
+    return `v${draft.version} is not the next version. main is at v${mainLatest}. Retry with --renumber.`
+  }
+  return null
 }
 
 function gitRaw(args, cwd) {
@@ -103,6 +207,15 @@ function gitRaw(args, cwd) {
 
 export function git(args, cwd = PROMPTS_DIR) {
   return gitRaw(args, cwd).trim()
+}
+
+export function gitSucceeds(args, cwd = PROMPTS_DIR) {
+  try {
+    gitRaw(args, cwd)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function assertPromptsRepo(root = PROMPTS_DIR) {
@@ -132,77 +245,42 @@ export function mainRef(root = PROMPTS_DIR) {
     return git(args, root)
   } catch {
     throw new Error(
-      'The prompts repo has no default branch yet. Finish the one-time migration in PROMPTS.md first.',
+      'The prompts repo has no default branch yet. Push its first commit, then retry.',
     )
   }
 }
 
-export function hasUncommittedChanges(path, root = PROMPTS_DIR) {
-  return git(['status', '--porcelain', '--', path], root) !== ''
-}
-
-export function readAtRef(ref, path, root = PROMPTS_DIR) {
-  try {
-    // Untrimmed so it compares equal to the file and to Langfuse text.
-    return gitRaw(['show', `${ref}:${relative(root, path)}`], root)
-  } catch {
-    return null
-  }
-}
-
-export function hasConflictMarkers(text) {
-  return /^(<{7}|={7}|>{7})( |$)/m.test(text)
+/**
+ * Returns paths with uncommitted changes, including untracked files.
+ */
+export function changedFiles(path, root = PROMPTS_DIR) {
+  const output = gitRaw(
+    ['status', '--porcelain', '--untracked-files=all', '-z', '--', path],
+    root,
+  )
+  return output
+    .split('\0')
+    .filter(Boolean)
+    .map((entry) => resolve(root, entry.slice(3)))
 }
 
 /**
- * Keeps every pushed version on top of main. Promoting it then never reverts
- * a change another dev already merged.
+ * Lists the versions of one prompt folder on a git ref.
  */
-export function getPushBlocker({
-  text,
-  productionText,
-  uncommitted,
-  containsMain,
-  main,
-}) {
-  if (text === null) {
-    return 'The prompt file does not exist.'
-  }
-  if (uncommitted) {
-    return 'The prompt file has uncommitted changes. Commit them in the prompts repo first.'
-  }
-  if (hasConflictMarkers(text)) {
-    return 'The prompt file has merge conflict markers. Resolve them first.'
-  }
-  if (!containsMain) {
-    return `Your branch does not contain ${main}. Merge or rebase onto it first.`
-  }
-  if (text === productionText) {
-    return `The prompt matches "${DEFAULT_LABEL}". There is nothing to push.`
-  }
-  return null
-}
-
-export function readPrompt(path) {
-  return existsSync(path) ? readFileSync(path, 'utf-8') : null
-}
-
-export function devLabel(email) {
-  const user = (email ?? '')
-    .split('@')[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  if (!user) {
-    throw new Error('Set "git config user.email" so push can name your label.')
-  }
-  return `dev-${user}`
-}
-
-export function gitEmail() {
+export function listVersionsAtRef(ref, dir, root = PROMPTS_DIR) {
+  let output
   try {
-    return git(['config', 'user.email'], process.cwd())
+    output = git(
+      ['ls-tree', '--name-only', `${ref}:${relative(root, dir)}`],
+      root,
+    )
   } catch {
-    return ''
+    return []
   }
+  return output
+    .split('\n')
+    .map((file) => VERSION_FILE.exec(file))
+    .filter(Boolean)
+    .map((match) => Number(match[1]))
+    .sort((a, b) => a - b)
 }

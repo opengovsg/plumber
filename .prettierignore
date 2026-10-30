@@ -1,0 +1,2 @@
+# Prompt text must stay byte-identical to Langfuse.
+tools/langfuse/prompts/

@@ -7,15 +7,18 @@ import test from 'node:test'
 
 import {
   assertPromptsRepo,
-  devLabel,
+  changedFiles,
+  compareVersions,
+  formatContent,
+  formatMeta,
   getPushBlocker,
-  hasConflictMarkers,
-  hasUncommittedChanges,
   listPrompts,
+  listVersions,
+  listVersionsAtRef,
   mainRef,
   parseArgs,
-  promptPath,
-  readAtRef,
+  promptDir,
+  versionPaths,
 } from './prompt-files.mjs'
 
 function run(cwd, ...args) {
@@ -27,7 +30,7 @@ function run(cwd, ...args) {
 }
 
 /**
- * Creates a bare origin with one commit on main and a clone of it.
+ * Creates a bare origin with chat v1 and v2 on main, and a clone of it.
  */
 function withPromptsRepo(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'prompts-'))
@@ -37,8 +40,14 @@ function withPromptsRepo(fn) {
     const clone = join(dir, 'clone')
     run(dir, 'init', '--bare', '--initial-branch=main', origin)
     run(dir, 'clone', origin, seed)
-    mkdirSync(join(seed, 'aiBuilder'))
-    writeFileSync(join(seed, 'aiBuilder/chat.md'), 'main text\n')
+    mkdirSync(join(seed, 'aiBuilder/chat'), { recursive: true })
+    for (const version of [1, 2]) {
+      writeFileSync(
+        join(seed, `aiBuilder/chat/v${version}.md`),
+        `v${version}\n`,
+      )
+      writeFileSync(join(seed, `aiBuilder/chat/v${version}.meta.json`), '{}\n')
+    }
     run(seed, 'add', '.')
     run(seed, 'commit', '-m', 'seed')
     run(seed, 'push', 'origin', 'HEAD:main')
@@ -55,48 +64,116 @@ test('parses flags, -m and the prompt name', () => {
     'chat',
     '-m',
     'Tighten tone',
-    '--project=pairAction',
+    '--project',
+    'pairAction',
+    '--renumber',
   ])
   assert.equal(args.command, 'push')
   assert.equal(args.name, 'chat')
   assert.equal(args.message, 'Tighten tone')
   assert.equal(args.project, 'pairAction')
-  assert.equal(args.label, 'production')
+  assert.equal(args.renumber, true)
 })
 
-test('defaults to the aiBuilder project and rejects unknown ones', () => {
-  assert.equal(parseArgs(['pull', 'chat']).project, 'aiBuilder')
-  assert.throws(() => parseArgs(['pull', 'chat', '--project=other']))
-})
-
-test('accepts value flags with = or a space and rejects missing values', () => {
-  const spaced = parseArgs(['pull', 'chat', '--label', 'staging'])
-  assert.equal(spaced.name, 'chat')
-  assert.equal(spaced.label, 'staging')
-  assert.equal(parseArgs(['pull', 'chat', '--label=latest']).label, 'latest')
-  assert.throws(() => parseArgs(['pull', 'chat', '--label']), /--label/)
-  assert.throws(() => parseArgs(['pull', 'chat', '--label=']), /--label/)
-  assert.throws(() => parseArgs(['pull', 'chat', '--label', '--force']))
+test('leaves the project unset when omitted and rejects unknown ones', () => {
+  assert.equal(parseArgs(['status']).project, undefined)
+  assert.throws(() => parseArgs(['sync', '--project=other']))
+  assert.throws(() => parseArgs(['sync', '--project']), /--project/)
 })
 
 test('keeps Langfuse folders in the path and rejects escapes', () => {
   assert.equal(
-    promptPath('aiBuilder', 'folder/chat', '/root'),
-    '/root/aiBuilder/folder/chat.md',
+    promptDir('aiBuilder', 'skills/form', '/root'),
+    '/root/aiBuilder/skills/form',
   )
-  assert.throws(() => promptPath('aiBuilder', '../../etc/passwd', '/root'))
+  assert.throws(() => promptDir('aiBuilder', '../../etc', '/root'))
+  assert.deepEqual(versionPaths('/p', 3, 'chat'), {
+    content: '/p/v3.json',
+    meta: '/p/v3.meta.json',
+  })
 })
 
-test('lists prompts by project and name', () => {
-  withPromptsRepo((repo) => {
-    mkdirSync(join(repo, 'pairAction/folder'), { recursive: true })
-    writeFileSync(join(repo, 'pairAction/folder/action.md'), 'text')
-    writeFileSync(join(repo, 'README.md'), 'not a prompt')
-    assert.deepEqual(listPrompts(repo), [
-      { project: 'aiBuilder', name: 'chat' },
-      { project: 'pairAction', name: 'folder/action' },
+test('lists versions numerically and prompts inside Langfuse folders', () => {
+  const root = mkdtempSync(join(tmpdir(), 'prompts-'))
+  try {
+    const chat = join(root, 'aiBuilder/chat')
+    const harness = join(root, 'aiBuilder/chat-eval-harness')
+    const skill = join(root, 'aiBuilder/skills/form')
+    for (const dir of [chat, harness, skill]) {
+      mkdirSync(dir, { recursive: true })
+    }
+    for (const file of ['v10.md', 'v9.md', 'v10.meta.json', 'notes.txt']) {
+      writeFileSync(join(chat, file), '')
+    }
+    writeFileSync(join(harness, 'v1.json'), '[]')
+    writeFileSync(join(skill, 'v1.md'), '')
+
+    assert.deepEqual(listVersions(chat), [
+      { version: 9, type: 'text' },
+      { version: 10, type: 'text' },
     ])
+    assert.deepEqual(listVersions(harness), [{ version: 1, type: 'chat' }])
+    assert.deepEqual(listVersions(join(root, 'missing')), [])
+    assert.deepEqual(listPrompts(root), [
+      { project: 'aiBuilder', name: 'chat' },
+      { project: 'aiBuilder', name: 'chat-eval-harness' },
+      { project: 'aiBuilder', name: 'skills/form' },
+    ])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('formats text, chat and metadata files', () => {
+  assert.equal(formatContent({ type: 'text', prompt: 'hi' }), 'hi')
+  assert.equal(
+    formatContent({ type: 'chat', prompt: [{ role: 'system', content: 'x' }] }),
+    '[\n  {\n    "role": "system",\n    "content": "x"\n  }\n]\n',
+  )
+  assert.equal(
+    formatMeta({ config: { t: 1 }, commitMessage: 'why', labels: ['x'] }),
+    '{\n  "config": {\n    "t": 1\n  },\n  "commitMessage": "why"\n}\n',
+  )
+  assert.equal(formatMeta({}), '{\n  "config": {},\n  "commitMessage": ""\n}\n')
+})
+
+test('compares version lists in both directions', () => {
+  assert.deepEqual(compareVersions([1, 2, 4], [3, 2, 1]), {
+    missingInRepo: [3],
+    missingInLangfuse: [4],
   })
+})
+
+const ready = {
+  draft: { version: 3, type: 'text' },
+  langfuseLatest: 2,
+  mainLatest: 2,
+  changedPushedFiles: [],
+}
+
+test('allows a draft that is the next version on both sides', () => {
+  assert.equal(getPushBlocker(ready), null)
+})
+
+test('blocks a push that would overwrite or desync versions', () => {
+  assert.match(
+    getPushBlocker({ ...ready, changedPushedFiles: ['v2.md'] }),
+    /read-only/,
+  )
+  assert.match(getPushBlocker({ ...ready, draft: null }), /prompt new/)
+  assert.match(
+    getPushBlocker({ ...ready, draft: { version: 3, type: 'chat' } }),
+    /text/,
+  )
+  assert.match(getPushBlocker({ ...ready, langfuseLatest: 3 }), /prompt sync/)
+  assert.match(
+    getPushBlocker({ ...ready, langfuseLatest: 1 }),
+    /finish the earlier push/,
+  )
+  assert.match(
+    getPushBlocker({ ...ready, draft: { version: 5, type: 'text' } }),
+    /--renumber/,
+  )
 })
 
 test('accepts only the root of a prompts clone', () => {
@@ -107,32 +184,29 @@ test('accepts only the root of a prompts clone', () => {
   const plain = mkdtempSync(join(tmpdir(), 'plain-'))
   try {
     assert.throws(() => assertPromptsRepo(plain), /prompts:clone/)
-    assert.throws(() => assertPromptsRepo(join(plain, 'missing')))
   } finally {
     rmSync(plain, { recursive: true, force: true })
   }
 })
 
-test('detects modified and untracked prompt files', () => {
+test('lists versions on main and changed files in a prompt folder', () => {
   withPromptsRepo((repo) => {
-    const chat = join(repo, 'aiBuilder/chat.md')
-    const summary = join(repo, 'aiBuilder/chat-summary.md')
-    assert.equal(hasUncommittedChanges(chat, repo), false)
-    assert.equal(hasUncommittedChanges(summary, repo), false)
-    writeFileSync(chat, 'edited\n')
-    writeFileSync(summary, 'handwritten\n')
-    assert.equal(hasUncommittedChanges(chat, repo), true)
-    assert.equal(hasUncommittedChanges(summary, repo), true)
-  })
-})
-
-test('reads a file at main with its trailing newline', () => {
-  withPromptsRepo((repo) => {
+    const chat = join(repo, 'aiBuilder/chat')
     const main = mainRef(repo)
     assert.equal(main, 'origin/main')
-    const chat = join(repo, 'aiBuilder/chat.md')
-    assert.equal(readAtRef(main, chat, repo), 'main text\n')
-    assert.equal(readAtRef(main, join(repo, 'aiBuilder/x.md'), repo), null)
+    assert.deepEqual(listVersionsAtRef(main, chat, repo), [1, 2])
+    assert.deepEqual(
+      listVersionsAtRef(main, join(repo, 'aiBuilder/x'), repo),
+      [],
+    )
+
+    assert.deepEqual(changedFiles(chat, repo), [])
+    writeFileSync(join(chat, 'v2.md'), 'edited\n')
+    writeFileSync(join(chat, 'v3.md'), 'draft\n')
+    assert.deepEqual(changedFiles(chat, repo).sort(), [
+      join(chat, 'v2.md'),
+      join(chat, 'v3.md'),
+    ])
   })
 })
 
@@ -143,52 +217,13 @@ test('finds main after the first push to an empty prompts repo', () => {
     const clone = join(dir, 'clone')
     run(dir, 'init', '--bare', '--initial-branch=main', origin)
     run(dir, 'clone', origin, clone)
-    assert.throws(() => mainRef(clone), /one-time migration/)
+    assert.throws(() => mainRef(clone), /first commit/)
     writeFileSync(join(clone, 'README.md'), 'prompts\n')
     run(clone, 'add', '.')
-    run(clone, 'commit', '-m', 'import')
+    run(clone, 'commit', '-m', 'init')
     run(clone, 'push', 'origin', 'HEAD:main')
     assert.equal(mainRef(clone), 'origin/main')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
-})
-
-test('detects conflict markers only at line start', () => {
-  assert.equal(hasConflictMarkers('a\n<<<<<<< local\nb'), true)
-  assert.equal(hasConflictMarkers('a <<<<<<< b'), false)
-})
-
-const pushable = {
-  text: 'new',
-  productionText: 'old',
-  uncommitted: false,
-  containsMain: true,
-  main: 'origin/main',
-}
-
-test('allows a committed change on top of main', () => {
-  assert.equal(getPushBlocker(pushable), null)
-})
-
-test('blocks a push that could revert or lose a change', () => {
-  assert.match(getPushBlocker({ ...pushable, text: null }), /does not exist/)
-  assert.match(getPushBlocker({ ...pushable, uncommitted: true }), /Commit/)
-  assert.match(
-    getPushBlocker({ ...pushable, text: '<<<<<<< HEAD\nnew' }),
-    /conflict/,
-  )
-  assert.match(
-    getPushBlocker({ ...pushable, containsMain: false }),
-    /origin\/main/,
-  )
-  assert.match(
-    getPushBlocker({ ...pushable, productionText: 'new' }),
-    /nothing to push/,
-  )
-})
-
-test('derives the dev label from the git email', () => {
-  assert.equal(devLabel('Kevin.Kim@open.gov.sg'), 'dev-kevin-kim')
-  assert.throws(() => devLabel(''))
 })
