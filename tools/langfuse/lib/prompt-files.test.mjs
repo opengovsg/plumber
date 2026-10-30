@@ -73,9 +73,6 @@ test('parses flags, -m and the prompt name', () => {
   assert.equal(args.message, 'Tighten tone')
   assert.equal(args.project, 'pairAction')
   assert.equal(args.renumber, true)
-})
-
-test('leaves the project unset when omitted and rejects unknown ones', () => {
   assert.equal(parseArgs(['status']).project, undefined)
   assert.throws(() => parseArgs(['sync', '--project=other']))
   assert.throws(() => parseArgs(['sync', '--project']), /--project/)
@@ -151,11 +148,8 @@ const ready = {
   changedPushedFiles: [],
 }
 
-test('allows a draft that is the next version on both sides', () => {
+test('allows only a draft that is the next version on both sides', () => {
   assert.equal(getPushBlocker(ready), null)
-})
-
-test('blocks a push that would overwrite or desync versions', () => {
   assert.match(
     getPushBlocker({ ...ready, changedPushedFiles: ['v2.md'] }),
     /read-only/,
@@ -176,27 +170,15 @@ test('blocks a push that would overwrite or desync versions', () => {
   )
 })
 
-test('accepts only the root of a prompts clone', () => {
-  withPromptsRepo((repo) => {
-    assert.doesNotThrow(() => assertPromptsRepo(repo))
-    assert.throws(() => assertPromptsRepo(join(repo, 'aiBuilder')), /clone/)
-  })
-  const plain = mkdtempSync(join(tmpdir(), 'plain-'))
-  try {
-    assert.throws(() => assertPromptsRepo(plain), /prompts:clone/)
-  } finally {
-    rmSync(plain, { recursive: true, force: true })
-  }
-})
-
-test('lists versions on main and changed files in a prompt folder', () => {
+test('reads versions and changes from a prompts clone', () => {
   withPromptsRepo((repo) => {
     const chat = join(repo, 'aiBuilder/chat')
-    const main = mainRef(repo)
-    assert.equal(main, 'origin/main')
-    assert.deepEqual(listVersionsAtRef(main, chat, repo), [1, 2])
+    assert.doesNotThrow(() => assertPromptsRepo(repo))
+    assert.throws(() => assertPromptsRepo(chat), /clone/)
+
+    assert.deepEqual(listVersionsAtRef('origin/main', chat, repo), [1, 2])
     assert.deepEqual(
-      listVersionsAtRef(main, join(repo, 'aiBuilder/x'), repo),
+      listVersionsAtRef('origin/main', join(repo, 'x'), repo),
       [],
     )
 
@@ -210,11 +192,12 @@ test('lists versions on main and changed files in a prompt folder', () => {
   })
 })
 
-test('finds main after the first push to an empty prompts repo', () => {
+test('rejects a plain folder and finds main after the first push', () => {
   const dir = mkdtempSync(join(tmpdir(), 'prompts-'))
   try {
     const origin = join(dir, 'origin.git')
     const clone = join(dir, 'clone')
+    assert.throws(() => assertPromptsRepo(dir), /prompts:clone/)
     run(dir, 'init', '--bare', '--initial-branch=main', origin)
     run(dir, 'clone', origin, clone)
     assert.throws(() => mainRef(clone), /first commit/)
