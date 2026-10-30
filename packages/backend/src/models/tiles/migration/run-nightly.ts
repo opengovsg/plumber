@@ -1,11 +1,17 @@
 import { DateTime } from 'luxon'
+import pLimit from 'p-limit'
 
 import appConfig from '@/config/app'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import TableMetadata from '@/models/table-metadata'
+
+import { migrateTable, type MigrateTableOptions } from './migrate-table'
 
 const NIGHTLY_WINDOW_START_HOUR = 1
 const NIGHTLY_WINDOW_END_HOUR = 5
+const CANDIDATE_PAGE_SIZE = 50
+const MIGRATION_CONCURRENCY = 2
 
 export type RunNightlyResult = 'flag-off' | 'outside-window' | 'ran'
 
@@ -31,8 +37,74 @@ async function readFlag<T extends string | boolean>(
   }
 }
 
-export async function runNightly(): Promise<RunNightlyResult> {
-  const mode = await readFlag<string>('tiles-ddb-migration', 'off')
+function readMode(): Promise<string> {
+  return readFlag<string>('tiles-ddb-migration', 'off')
+}
+
+async function isFlagOn(): Promise<boolean> {
+  return (await readMode()) === 'migrate'
+}
+
+async function migrateAll(
+  canStart: () => Promise<boolean>,
+  drain: MigrateTableOptions['drain'],
+): Promise<void> {
+  const counts = { migrated: 0, skipped: 0, aborted: 0, failed: 0 }
+  const limit = pLimit(MIGRATION_CONCURRENCY)
+  const runs: Promise<void>[] = []
+  let stopped = false
+  let lastId = ''
+  while (!stopped) {
+    const ids = (
+      await TableMetadata.query()
+        .select('id')
+        .where({ db: 'ddb' })
+        .modify((query) => {
+          if (lastId) {
+            query.where('id', '>', lastId)
+          }
+        })
+        .orderBy('id')
+        .limit(CANDIDATE_PAGE_SIZE)
+    ).map((table) => table.id)
+    if (!ids.length) {
+      break
+    }
+    lastId = ids[ids.length - 1]
+    for (const tableId of ids) {
+      runs.push(
+        limit(async () => {
+          // IMPORTANT: a callback can wait in pLimit past 05:00 or a flag change.
+          if (stopped || !(await canStart())) {
+            stopped = true
+            return
+          }
+          try {
+            counts[await migrateTable(tableId, { isFlagOn, drain })]++
+          } catch (err) {
+            counts.failed++
+            logger.error('tiles-migration.table.failed', {
+              tableId,
+              err: (err as Error).message,
+            })
+          }
+        }),
+      )
+    }
+  }
+  await Promise.all(runs)
+
+  const remaining = await TableMetadata.query()
+    .where({ db: 'ddb' })
+    .whereRaw(`(config->>'ddbMigrationExcluded') IS DISTINCT FROM 'true'`)
+    .resultSize()
+  logger.info('tiles-migration.run.completed', { ...counts, remaining })
+}
+
+export async function runNightly({
+  drain,
+}: Pick<MigrateTableOptions, 'drain'> = {}): Promise<RunNightlyResult> {
+  const mode = await readMode()
   if (mode !== 'migrate') {
     logger.info('tiles-migration.run.skipped', { reason: 'flag-off', mode })
     return 'flag-off'
@@ -41,10 +113,12 @@ export async function runNightly(): Promise<RunNightlyResult> {
   const ignoreWindow = appConfig.isProd
     ? false
     : await readFlag('tiles-ddb-migration-ignore-window', appConfig.isDev)
-  if (!ignoreWindow && !isWithinNightlyWindow(new Date())) {
+  const isWindowOpen = () => ignoreWindow || isWithinNightlyWindow(new Date())
+  if (!isWindowOpen()) {
     logger.info('tiles-migration.run.skipped', { reason: 'outside-window' })
     return 'outside-window'
   }
 
+  await migrateAll(async () => isWindowOpen() && (await isFlagOn()), drain)
   return 'ran'
 }
