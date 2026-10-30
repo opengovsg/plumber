@@ -20,6 +20,9 @@ vi.mock('@/helpers/launch-darkly', () => ({
 vi.mock('@/models/tiles/migration/migrate-table', () => ({
   migrateTable: vi.fn(),
 }))
+vi.mock('@/models/tiles/migration/report-email', () => ({
+  sendReportEmail: vi.fn(),
+}))
 vi.mock('@/models/table-metadata', () => {
   const chain = {
     select: () => chain,

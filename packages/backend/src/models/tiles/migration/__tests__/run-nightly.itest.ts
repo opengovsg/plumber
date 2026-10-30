@@ -117,6 +117,8 @@ describe('runNightly tile loop', () => {
       aborted: 0,
       failed: 0,
       remaining: 1,
+      failedTableIds: [],
+      abortedTableIds: [],
     })
     expect((await readTable(tableIds[0])).db).toBe('pg')
     expect((await readTable(tableIds[1])).db).toBe('pg')
@@ -146,6 +148,8 @@ describe('runNightly tile loop', () => {
       aborted: 2,
       failed: 0,
       remaining: 3,
+      failedTableIds: [],
+      abortedTableIds: expect.arrayContaining(tableIds.slice(0, 2)),
     })
     for (const tableId of tableIds) {
       expect(await readTable(tableId)).toEqual({
