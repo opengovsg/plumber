@@ -281,7 +281,10 @@ jobs:
 
       - name: (Reconciler) Merge env.json and replace variables
         run: |
-          # Skip env.json names the container sets, so its DD_PROFILING_ENABLED=false wins.
+          # Import env vars from env.json except for ones explicitly defined in
+          # reconciler-task-definition.json.
+          # e.g. This task has no Datadog agent, so its own DD_* values must win
+          # over env.json's.
           jq --argjson environment "$(jq -c '.environment' ecs/env.json)" \
              --argjson secrets "$(jq -c '.secrets' ecs/env.json)" \
             '(.containerDefinitions[] | select(.name == "reconciler")) |=
