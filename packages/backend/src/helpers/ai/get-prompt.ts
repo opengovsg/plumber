@@ -1,6 +1,7 @@
-import { TextPromptClient } from '@langfuse/client'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+
+import { TextPromptClient } from '@langfuse/client'
 
 import appConfig from '@/config/app'
 import { getLangfuseClient, LangfuseProject } from '@/helpers/langfuse'
