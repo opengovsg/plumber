@@ -102,6 +102,7 @@ describe('runNightly tile loop', () => {
   })
 
   it('finishes active migrations at 05:00 and claims no new tile', async () => {
+    const infoSpy = vi.spyOn(logger, 'info')
     const { drain, bothDraining, release } = makeDrainGate()
     const run = runNightly({ drain })
 
@@ -116,6 +117,10 @@ describe('runNightly tile loop', () => {
       db: 'ddb',
       migration_started_at: null,
     })
+    expect(infoSpy).toHaveBeenCalledWith(
+      'tiles-migration.run.completed',
+      expect.objectContaining({ migrated: 2, failed: 0, aborted: 0 }),
+    )
   })
 
   it('aborts active migrations and claims no new tile after the flag turns off', async () => {

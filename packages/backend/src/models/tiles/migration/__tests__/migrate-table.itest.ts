@@ -101,11 +101,12 @@ describe('migrateTable', () => {
       createdAt,
       data,
     })
+    const emptyRow = row(base + 10, {})
     await _batchCreate([
       row(base + 20, { [c0]: 42, [c1]: 'twenty' }),
       row(base, { [c0]: 'first', 'deleted-column': 'dead' }),
       row(tiedAt, { [c0]: 'tie a' }),
-      row(base + 10, {}),
+      emptyRow,
       row(tiedAt, { [c0]: 'tie b' }),
       row(tiedAt, { [c0]: 'tie c', [c2]: 3.5 }),
       row(tiedAt, { [c0]: 'tie d' }),
@@ -138,7 +139,12 @@ describe('migrateTable', () => {
     expect(byFirstCell['42'][c1]).toBe('twenty')
     expect(byFirstCell['tie c'][c2]).toBe('3.5')
     expect(byFirstCell.first).not.toHaveProperty('deleted-column')
-    expect(byFirstCell[null as unknown as string]).toBeDefined()
+    const migratedEmptyRow = pgRows.find((r) => r.rowId === emptyRow.rowId)
+    expect(columnIds.map((id) => migratedEmptyRow[id])).toEqual([
+      null,
+      null,
+      null,
+    ])
     expect(Object.keys(pgRows[0]).sort()).toEqual(
       [...columnIds, 'rowId', 'createdAt', 'updatedAt'].sort(),
     )
