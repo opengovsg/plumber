@@ -16,6 +16,7 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs'
 import { relative } from 'node:path'
@@ -85,13 +86,45 @@ function fetchMain() {
   return mainRef()
 }
 
+function fastForwardToMain(main) {
+  if (git(['rev-list', '--count', `${main}..HEAD`]) !== '0') {
+    throw new Error(
+      `Your clone has commits that are not on ${main}. Push or drop those commits first.`,
+    )
+  }
+  if (!gitSucceeds(['merge', '--ff-only', '--quiet', main])) {
+    throw new Error(
+      `Could not fast-forward to ${main}. It may already hold your draft's version number. Retry with --renumber.`,
+    )
+  }
+}
+
+/**
+ * Pushes only the given files, so a dev's other uncommitted work stays local.
+ */
+function commitAndPush({ main, paths, message }) {
+  const branch = main.replace(/^origin\//, '')
+  git(['add', '--', ...paths])
+  git(['commit', '--quiet', '-m', message, '--', ...paths])
+  if (
+    !gitSucceeds(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`])
+  ) {
+    git(['reset', '--soft', 'HEAD~1'])
+    throw new Error(
+      `Someone pushed to ${main} first. Nothing was created in Langfuse. Run the command again.`,
+    )
+  }
+}
+
 /**
  * Writes every Langfuse version that the repo is missing. Never overwrites a file.
  */
 async function sync(args) {
   assertPromptsRepo()
+  const main = fetchMain()
+  fastForwardToMain(main)
   const projects = args.project ? [args.project] : PROJECTS
-  let written = 0
+  const written = []
   for (const project of projects) {
     const client = buildLangfuseClient(project, process.env)
     const prompts = await listLangfusePrompts(client)
@@ -131,18 +164,30 @@ async function sync(args) {
         mkdirSync(dir, { recursive: true })
         writeFileSync(paths.content, content, 'utf-8')
         writeFileSync(paths.meta, formatMeta(prompt), 'utf-8')
-        written++
+        written.push(paths.content, paths.meta)
       },
     )
     console.log(`${project}: wrote ${missing.length} missing version(s).`)
   }
-  if (written > 0) {
-    console.log(
-      `Review the files in ${displayPath(
-        PROMPTS_DIR,
-      )}, then commit and push them to main.`,
-    )
+  if (written.length === 0) {
+    return
   }
+  const versionCount = written.length / 2
+  try {
+    commitAndPush({
+      main,
+      paths: written,
+      message: `Sync ${versionCount} version(s) from Langfuse`,
+    })
+  } catch (error) {
+    // The files come from Langfuse, so a rerun can rewrite them on top of the new main.
+    git(['reset', '--quiet', '--', ...written])
+    for (const path of written) {
+      rmSync(path, { force: true })
+    }
+    throw error
+  }
+  console.log(`Committed and pushed ${versionCount} version(s) to ${main}.`)
 }
 
 async function status(args) {
@@ -297,7 +342,6 @@ async function push(args) {
   const project = args.project ?? 'aiBuilder'
   assertPromptsRepo()
   const main = fetchMain()
-  const branch = main.replace(/^origin\//, '')
   if (git(['rev-list', '--count', `${main}..HEAD`]) !== '0') {
     throw new Error(
       `Your clone has commits that are not on ${main}. push publishes only the draft. Push or drop those commits first.`,
@@ -352,11 +396,7 @@ async function push(args) {
     )
   }
 
-  if (!gitSucceeds(['merge', '--ff-only', '--quiet', main])) {
-    throw new Error(
-      `Could not fast-forward to ${main}. It may already hold your draft's version number. Retry with --renumber.`,
-    )
-  }
+  fastForwardToMain(main)
 
   // An earlier push reached git but not Langfuse.
   if (!draft && mainLatest === langfuseLatest + 1) {
@@ -391,24 +431,11 @@ async function push(args) {
     formatMeta({ config: meta.config, commitMessage: message }),
     'utf-8',
   )
-  git(['add', '--', draftPaths.content, draftPaths.meta])
-  git([
-    'commit',
-    '--quiet',
-    '-m',
-    `${project}/${name} v${draft.version}: ${message}`,
-    '--',
-    draftPaths.content,
-    draftPaths.meta,
-  ])
-  if (
-    !gitSucceeds(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`])
-  ) {
-    git(['reset', '--soft', 'HEAD~1'])
-    throw new Error(
-      `Someone pushed to ${main} first. Nothing was created in Langfuse. Retry the push. Add --renumber if they pushed "${name}".`,
-    )
-  }
+  commitAndPush({
+    main,
+    paths: [draftPaths.content, draftPaths.meta],
+    message: `${project}/${name} v${draft.version}: ${message}`,
+  })
 
   await createLangfuseVersion({ client, name, dir, version: draft.version })
 }
