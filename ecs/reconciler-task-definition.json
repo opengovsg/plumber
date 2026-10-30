@@ -1,0 +1,32 @@
+{
+  "family": "plumber-<ENVIRONMENT>-reconciler",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-reconciler-task-exec-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-reconciler-task-role",
+  "containerDefinitions": [
+    {
+      "name": "reconciler",
+      "image": "plumber",
+      "essential": true,
+      "command": ["node", "packages/backend/dist/reconciler.js"],
+      "environment": [
+        { "name": "NODE_OPTIONS", "value": "--max-old-space-size=768" },
+        { "name": "DD_TRACE_ENABLED", "value": "false" },
+        { "name": "DD_PROFILING_ENABLED", "value": "false" }
+      ],
+      "stopTimeout": 30,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/reconciler",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs",
+          "mode": "blocking"
+        }
+      }
+    }
+  ]
+}

@@ -278,3 +278,35 @@ jobs:
         env:
           TASK_DEF_FILE: ${{ steps.archival-task-def.outputs.task-definition }}
         run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"
+
+      - name: (Reconciler) Merge env.json and replace variables
+        run: |
+          # Import env vars from env.json except for ones explicitly defined in
+          # reconciler-task-definition.json.
+          # e.g. This task has no Datadog agent, so its own DD_* values must win
+          # over env.json's.
+          jq --argjson environment "$(jq -c '.environment' ecs/env.json)" \
+             --argjson secrets "$(jq -c '.secrets' ecs/env.json)" \
+            '(.containerDefinitions[] | select(.name == "reconciler")) |=
+               ([.environment[].name] as $own
+                | .environment += ($environment | map(select(.name as $n | $own | index($n) | not)))
+                | .secrets += $secrets)' \
+            ecs/reconciler-task-definition.json > ecs-reconciler-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-reconciler-task-definition.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-reconciler-task-definition.json
+        env:
+          INPUTS_AWS_ACCOUNT_ID: ${{ inputs.aws-account-id }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+
+      - name: (Reconciler) Fill in the new image ID in the Amazon ECS task definition
+        id: reconciler-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        with:
+          task-definition: ecs-reconciler-task-definition.json
+          container-name: reconciler
+          image: ${{ steps.ecr-image-uri.outputs.image }}
+
+      - name: (Reconciler) Register task definition
+        env:
+          TASK_DEF_FILE: ${{ steps.reconciler-task-def.outputs.task-definition }}
+        run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"
