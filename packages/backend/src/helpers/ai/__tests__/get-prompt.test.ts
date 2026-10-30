@@ -1,4 +1,5 @@
 import path from 'node:path'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getPrompt, LOCAL_PROMPTS_DIR } from '../get-prompt'
