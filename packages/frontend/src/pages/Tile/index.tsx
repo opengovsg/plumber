@@ -188,10 +188,12 @@ export default function Tile(): JSX.Element | null {
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
       </Helmet>
+      {/* The table fills the space under the banner, which can appear while the page is open. */}
       <Flex
-        flexDir={{ base: 'column' }}
-        justifyContent="space-between"
+        flexDir="column"
         alignItems="stretch"
+        h="100vh"
+        sx={{ '@supports (height: 100dvh)': { h: '100dvh' } }}
       >
         <TableBanner />
         <Table />
