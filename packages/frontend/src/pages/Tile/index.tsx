@@ -12,6 +12,7 @@ import {
   NOT_FOUND,
 } from '@/config/errors'
 import * as URLS from '@/config/urls'
+import { TILE_MIGRATING_EVENT } from '@/graphql/link'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 
@@ -50,6 +51,8 @@ export default function Tile(): JSX.Element | null {
     error: getTableError,
     called: isGetTableCalled,
     refetch: refetchTable,
+    startPolling,
+    stopPolling,
   } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
@@ -64,6 +67,7 @@ export default function Tile(): JSX.Element | null {
   })
   const ownRole = getTableData?.getTable?.role
   const loadedTableId = getTableData?.getTable?.id
+  const isMigrating = getTableData?.getTable?.isMigrating ?? false
   const refetchRowsRef = useRef(refetch)
   refetchRowsRef.current = refetch
 
@@ -74,6 +78,27 @@ export default function Tile(): JSX.Element | null {
       void refetchRowsRef.current()
     }
   }, [loadedTableId, viewToken, urlViewOnlyKey])
+
+  // Polling only while frozen lets the editor unlock without a reload.
+  useEffect(() => {
+    if (isMigrating) {
+      startPolling(15_000)
+    } else {
+      stopPolling()
+    }
+  }, [isMigrating, startPolling, stopPolling])
+
+  // A mutation can hit a freeze that started after GET_TABLE loaded.
+  // The rows refetch recovers from a DynamoDB cursor rejected after the flip.
+  useEffect(() => {
+    const onTileMigrating = () => {
+      void refetchTable()
+      void refetchRowsRef.current()
+    }
+    window.addEventListener(TILE_MIGRATING_EVENT, onTileMigrating)
+    return () =>
+      window.removeEventListener(TILE_MIGRATING_EVENT, onTileMigrating)
+  }, [refetchTable])
 
   // Refetch table data when view token changes (e.g. after password verification)
   useEffect(() => {
@@ -150,6 +175,7 @@ export default function Tile(): JSX.Element | null {
       isPasswordProtected={isPasswordProtected}
       collaborators={collaborators}
       role={ownRole}
+      isMigrating={isMigrating}
       isFetching={isFetching}
       isThroughputError={isThroughputError}
       refetch={refetch}
