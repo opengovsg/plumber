@@ -20,6 +20,12 @@ fi
 
 cd "${PROMPTS_DIR}"
 git fetch origin
+# A clone of an empty repo never learns origin's default branch.
+if ! git symbolic-ref -q refs/remotes/origin/HEAD > /dev/null \
+    && ! git remote set-head origin --auto > /dev/null 2>&1; then
+    echo "Fetched. The prompts repo has no commits yet. See the one-time migration in PROMPTS.md."
+    exit 0
+fi
 DEFAULT_BRANCH=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
 CURRENT_BRANCH=$(git symbolic-ref --short -q HEAD || true)
 
