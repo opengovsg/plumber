@@ -256,7 +256,17 @@ describe('processAction - tile frozen for migration', () => {
       databaseType: 'ddb',
     })
     tableId = table.id
-    mocks.computeParameters.mockReturnValue({ tableId, rowData: [] })
+    computeParameters.mockReturnValue({ tableId, rowData: [] })
+    vi.spyOn(computeParametersModule, 'default').mockImplementation(
+      computeParameters as never,
+    )
+    vi.spyOn(getForEachMetadataModule, 'default').mockImplementation(
+      getForEachMetadata as never,
+    )
+    vi.spyOn(actionQueueModule, 'enqueueActionJob').mockImplementation(
+      enqueueActionJob as never,
+    )
+    spyOnLogger()
 
     flow = await Flow.query().insertGraphAndFetch({
       userId: user.id,
@@ -283,6 +293,10 @@ describe('processAction - tile frozen for migration', () => {
       flowId: flow.id,
       testRun: false,
     })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   async function freeze(startedAt: Date | null) {
