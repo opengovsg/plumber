@@ -4,6 +4,7 @@ import { createScheduleCheck, SCHEDULE_ENTRIES_KEY } from '..'
 
 const mocks = vi.hoisted(() => ({
   fetchPublishedScheduledPipes: vi.fn(),
+  fetchLatestExecutionTimes: vi.fn(),
   gauge: vi.fn(),
   increment: vi.fn(),
   logInfo: vi.fn(),
@@ -12,6 +13,15 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../fetch-published-scheduled-pipes', () => ({
   fetchPublishedScheduledPipes: mocks.fetchPublishedScheduledPipes,
+}))
+
+vi.mock('../fetch-latest-execution-times', () => ({
+  fetchLatestExecutionTimes: mocks.fetchLatestExecutionTimes,
+}))
+
+// The real module connects to Redis on import.
+vi.mock('@/helpers/redis-app-data', () => ({
+  makeRedisAppDataKey: (app: string, key: string) => `${app}:${key}`,
 }))
 
 vi.mock('@/helpers/tracer', () => ({
@@ -29,32 +39,39 @@ const FLOW_OVERDUE = '1c8e8b7d-4b0d-4b44-8a28-1e5e2e1b2b22'
 const FLOW_MISSING = '2d7d7c6c-3a9c-4a33-9b17-2d4d1d2c3c33'
 
 const NOW = Date.UTC(2026, 9, 20, 4, 0, 0)
+const HOUR = 3_600_000
 
 function pipe(flowId: string) {
   return {
     flowId,
     publishedAt: '2026-01-01T00:00:00.000Z',
     triggerKey: 'everyHour',
-    triggerParameters: {},
+    triggerParameters: { triggersOnWeekend: true },
   }
 }
 
 describe('createScheduleCheck', () => {
   const zrange = vi.fn()
+  const hmget = vi.fn()
+  const set = vi.fn()
 
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(NOW)
+    hmget.mockResolvedValue([null, null])
+    set.mockResolvedValue('OK')
+    mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   function makeCheck() {
     return createScheduleCheck({
-      jobsRedis: { zrange },
+      jobsRedis: { zrange, hmget },
+      markerRedis: { set },
       config: { missedRunGraceSeconds: 900 },
     })
   }
@@ -122,6 +139,64 @@ describe('createScheduleCheck', () => {
     mocks.fetchPublishedScheduledPipes.mockRejectedValue(new Error('pg down'))
 
     await expect(makeCheck().run()).rejects.toThrow('pg down')
+    expect(mocks.logInfo).not.toHaveBeenCalled()
+    expect(mocks.logWarn).not.toHaveBeenCalled()
+  })
+
+  it('counts missed runs of overdue and missing pipes', async () => {
+    mocks.fetchPublishedScheduledPipes.mockResolvedValue([
+      pipe(FLOW_OVERDUE),
+      pipe(FLOW_MISSING),
+    ])
+    zrange.mockResolvedValue([`flow-${FLOW_OVERDUE}`, String(NOW - 2 * HOUR)])
+    hmget.mockResolvedValue(['1', null])
+    mocks.fetchLatestExecutionTimes.mockResolvedValue(
+      new Map([[FLOW_MISSING, NOW - HOUR - 60_000]]),
+    )
+
+    await makeCheck().run()
+
+    expect(set).toHaveBeenCalledTimes(3)
+    expect(set).toHaveBeenCalledWith(
+      `scheduler:missed-run:${FLOW_MISSING}:${NOW - HOUR}`,
+      '1',
+      'EX',
+      604800,
+      'NX',
+    )
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      expect.objectContaining({
+        event: 'reconciler-missed-run',
+        reason: 'late',
+      }),
+    )
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      expect.objectContaining({
+        event: 'reconciler-missed-run',
+        reason: 'stale-timestamp',
+      }),
+    )
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      expect.objectContaining({
+        event: 'reconciler-missed-run',
+        reason: 'no-redis-entry',
+      }),
+    )
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check found problem pipes',
+      expect.objectContaining({ newlyCountedMissedRunCount: 3 }),
+    )
+  })
+
+  it('logs no heartbeat when writing a marker fails', async () => {
+    mocks.fetchPublishedScheduledPipes.mockResolvedValue([pipe(FLOW_OVERDUE)])
+    zrange.mockResolvedValue([`flow-${FLOW_OVERDUE}`, String(NOW - 2 * HOUR)])
+    set.mockRejectedValue(new Error('redis down'))
+
+    await expect(makeCheck().run()).rejects.toThrow('redis down')
     expect(mocks.logInfo).not.toHaveBeenCalled()
     expect(mocks.logWarn).not.toHaveBeenCalled()
   })
