@@ -7,24 +7,17 @@ import logger from '@/helpers/logger'
 import TableMetadata from '@/models/table-metadata'
 
 import { migrateTable, type MigrateTableOptions } from './migrate-table'
+import { type RunReport, sendReportEmail } from './report-email'
 
 const NIGHTLY_WINDOW_START_HOUR = 1
 const NIGHTLY_WINDOW_END_HOUR = 5
 const CANDIDATE_PAGE_SIZE = 50
 const MIGRATION_CONCURRENCY = 2
 
-export interface RunCounts {
-  migrated: number
-  skipped: number
-  aborted: number
-  failed: number
-  remaining: number
-}
-
 // Returned as the BullMQ job result, so bull-board shows each run's counts.
 export type RunNightlyResult =
   | { status: 'flag-off' | 'outside-window' }
-  | ({ status: 'ran' } & RunCounts)
+  | ({ status: 'ran' } & RunReport)
 
 export function isWithinNightlyWindow(now: Date): boolean {
   // IMPORTANT: set the zone explicitly. The Luxon default zone depends on config/app loading first.
@@ -59,8 +52,10 @@ async function isFlagOn(): Promise<boolean> {
 async function migrateAll(
   canStart: () => Promise<boolean>,
   drain: MigrateTableOptions['drain'],
-): Promise<RunCounts> {
+): Promise<RunReport> {
   const counts = { migrated: 0, skipped: 0, aborted: 0, failed: 0 }
+  const failedTableIds: string[] = []
+  const abortedTableIds: string[] = []
   const limit = pLimit(MIGRATION_CONCURRENCY)
   const runs: Promise<void>[] = []
   let stopped = false
@@ -91,9 +86,16 @@ async function migrateAll(
             return
           }
           try {
-            counts[await migrateTable(tableId, { isFlagOn, drain })]++
+            const result = await migrateTable(tableId, { isFlagOn, drain })
+            counts[result]++
+            if (result === 'failed') {
+              failedTableIds.push(tableId)
+            } else if (result === 'aborted') {
+              abortedTableIds.push(tableId)
+            }
           } catch (err) {
             counts.failed++
+            failedTableIds.push(tableId)
             logger.error('tiles-migration.table.failed', {
               tableId,
               err: (err as Error).message,
@@ -110,7 +112,7 @@ async function migrateAll(
     .whereRaw(`(config->>'ddbMigrationExcluded') IS DISTINCT FROM 'true'`)
     .resultSize()
   logger.info('tiles-migration.run.completed', { ...counts, remaining })
-  return { ...counts, remaining }
+  return { ...counts, remaining, failedTableIds, abortedTableIds }
 }
 
 export async function runNightly({
@@ -131,9 +133,10 @@ export async function runNightly({
     return { status: 'outside-window' }
   }
 
-  const counts = await migrateAll(
+  const report = await migrateAll(
     async () => isWindowOpen() && (await isFlagOn()),
     drain,
   )
-  return { status: 'ran', ...counts }
+  await sendReportEmail(report)
+  return { status: 'ran', ...report }
 }
