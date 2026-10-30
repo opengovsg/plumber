@@ -13,7 +13,18 @@ const NIGHTLY_WINDOW_END_HOUR = 5
 const CANDIDATE_PAGE_SIZE = 50
 const MIGRATION_CONCURRENCY = 2
 
-export type RunNightlyResult = 'flag-off' | 'outside-window' | 'ran'
+export interface RunCounts {
+  migrated: number
+  skipped: number
+  aborted: number
+  failed: number
+  remaining: number
+}
+
+// Returned as the BullMQ job result, so bull-board shows each run's counts.
+export type RunNightlyResult =
+  | { status: 'flag-off' | 'outside-window' }
+  | ({ status: 'ran' } & RunCounts)
 
 export function isWithinNightlyWindow(now: Date): boolean {
   // IMPORTANT: set the zone explicitly. The Luxon default zone depends on config/app loading first.
@@ -48,7 +59,7 @@ async function isFlagOn(): Promise<boolean> {
 async function migrateAll(
   canStart: () => Promise<boolean>,
   drain: MigrateTableOptions['drain'],
-): Promise<void> {
+): Promise<RunCounts> {
   const counts = { migrated: 0, skipped: 0, aborted: 0, failed: 0 }
   const limit = pLimit(MIGRATION_CONCURRENCY)
   const runs: Promise<void>[] = []
@@ -99,6 +110,7 @@ async function migrateAll(
     .whereRaw(`(config->>'ddbMigrationExcluded') IS DISTINCT FROM 'true'`)
     .resultSize()
   logger.info('tiles-migration.run.completed', { ...counts, remaining })
+  return { ...counts, remaining }
 }
 
 export async function runNightly({
@@ -107,7 +119,7 @@ export async function runNightly({
   const mode = await readMode()
   if (mode !== 'migrate') {
     logger.info('tiles-migration.run.skipped', { reason: 'flag-off', mode })
-    return 'flag-off'
+    return { status: 'flag-off' }
   }
 
   const ignoreWindow = appConfig.isProd
@@ -116,9 +128,12 @@ export async function runNightly({
   const isWindowOpen = () => ignoreWindow || isWithinNightlyWindow(new Date())
   if (!isWindowOpen()) {
     logger.info('tiles-migration.run.skipped', { reason: 'outside-window' })
-    return 'outside-window'
+    return { status: 'outside-window' }
   }
 
-  await migrateAll(async () => isWindowOpen() && (await isFlagOn()), drain)
-  return 'ran'
+  const counts = await migrateAll(
+    async () => isWindowOpen() && (await isFlagOn()),
+    drain,
+  )
+  return { status: 'ran', ...counts }
 }

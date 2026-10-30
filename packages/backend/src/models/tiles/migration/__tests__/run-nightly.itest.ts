@@ -110,7 +110,14 @@ describe('runNightly tile loop', () => {
     vi.setSystemTime(windowEnd)
     release()
 
-    await expect(run).resolves.toBe('ran')
+    await expect(run).resolves.toEqual({
+      status: 'ran',
+      migrated: 2,
+      skipped: 0,
+      aborted: 0,
+      failed: 0,
+      remaining: 1,
+    })
     expect((await readTable(tableIds[0])).db).toBe('pg')
     expect((await readTable(tableIds[1])).db).toBe('pg')
     expect(await readTable(tableIds[2])).toEqual({
@@ -132,7 +139,14 @@ describe('runNightly tile loop', () => {
     flags.mode = 'off'
     release()
 
-    await expect(run).resolves.toBe('ran')
+    await expect(run).resolves.toEqual({
+      status: 'ran',
+      migrated: 0,
+      skipped: 0,
+      aborted: 2,
+      failed: 0,
+      remaining: 3,
+    })
     for (const tableId of tableIds) {
       expect(await readTable(tableId)).toEqual({
         db: 'ddb',
