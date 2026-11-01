@@ -157,6 +157,28 @@ describe('new submission trigger', () => {
       })
     })
 
+    it('throws a config StepError when no connection is chosen', async () => {
+      await expect(
+        trigger.testRun({ ...$, auth: {} } as unknown as IGlobalVariable, {
+          preferMock: true,
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Missing FormSG connection"'),
+        kind: 'config',
+      })
+    })
+
+    it('throws an internal StepError when test run metadata is invalid', async () => {
+      await expect(
+        trigger.testRun($, { preferMock: 'yes' } as unknown as {
+          preferMock: boolean
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Something went wrong"'),
+        kind: 'internal',
+      })
+    })
+
     it('should use mock data if preferMock is true and there is no past submission', async () => {
       getLastExecutionStepMock.mockResolvedValue(null)
       await trigger.testRun($, { preferMock: true })
@@ -367,18 +389,24 @@ describe('new submission trigger', () => {
         mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
         mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
-          'Error syncing MRF steps',
-        )
+        await expect(
+          trigger.testRun($, { preferMock: true }),
+        ).rejects.toMatchObject({
+          message: expect.stringContaining('"name":"Error syncing MRF steps"'),
+          kind: 'internal',
+        })
       })
 
       it('should throw StepError when removeMrfSteps fails', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
         mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
-          'Error removing MRF steps',
-        )
+        await expect(
+          trigger.testRun($, { preferMock: true }),
+        ).rejects.toMatchObject({
+          message: expect.stringContaining('"name":"Error removing MRF steps"'),
+          kind: 'internal',
+        })
       })
 
       it('should call removeMrfSteps for multirespondent forms with empty workflow', async () => {
