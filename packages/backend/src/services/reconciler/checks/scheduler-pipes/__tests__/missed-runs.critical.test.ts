@@ -47,9 +47,13 @@ describe('findOverduePipeMissedRuns', () => {
       {
         flowId: FLOW_ID,
         runTimeMillis: NOW - 2 * HOUR,
-        reason: 'stale-timestamp',
+        reason: 'stuck-at-earlier-timestamp',
       },
-      { flowId: FLOW_ID, runTimeMillis: NOW - HOUR, reason: 'stale-timestamp' },
+      {
+        flowId: FLOW_ID,
+        runTimeMillis: NOW - HOUR,
+        reason: 'stuck-at-earlier-timestamp',
+      },
     ])
   })
 
@@ -65,7 +69,11 @@ describe('findOverduePipeMissedRuns', () => {
 
     expect(missedRuns).toEqual([
       { flowId: FLOW_ID, runTimeMillis: NOW - 2 * HOUR, reason: 'overdue' },
-      { flowId: FLOW_ID, runTimeMillis: NOW - HOUR, reason: 'stale-timestamp' },
+      {
+        flowId: FLOW_ID,
+        runTimeMillis: NOW - HOUR,
+        reason: 'stuck-at-earlier-timestamp',
+      },
     ])
   })
 
@@ -80,7 +88,11 @@ describe('findOverduePipeMissedRuns', () => {
     })
 
     expect(missedRuns).toEqual([
-      { flowId: FLOW_ID, runTimeMillis: NOW, reason: 'stale-timestamp' },
+      {
+        flowId: FLOW_ID,
+        runTimeMillis: NOW,
+        reason: 'stuck-at-earlier-timestamp',
+      },
     ])
   })
 
@@ -112,7 +124,7 @@ describe('findOverduePipeMissedRuns', () => {
     expect(missedRuns[0]).toEqual({
       flowId: FLOW_ID,
       runTimeMillis: NOW - capMillis,
-      reason: 'stale-timestamp',
+      reason: 'stuck-at-earlier-timestamp',
     })
     expect(missedRuns.at(-1)?.runTimeMillis).toBe(NOW - HOUR)
   })

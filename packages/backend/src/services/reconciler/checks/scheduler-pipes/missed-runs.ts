@@ -11,7 +11,16 @@ const LOOK_BACK_CAP_SECONDS = MISSED_RUN_MARKER_TTL_SECONDS
 // BullMQ computes run times in the container time zone.
 const SCHEDULE_TIME_ZONE = 'Asia/Singapore'
 
-export type MissedRunReason = 'overdue' | 'stale-timestamp' | 'no-redis-entry'
+/**
+ * Example: an hourly pipe's schedule entry is stuck at 09:00. It is now 12:10 and the grace period is 5 minutes.
+ * - 09:00 is `overdue` if its job is still pending. It runs later.
+ * - 10:00, 11:00 and 12:00 are `stuck-at-earlier-timestamp`. They never get a job.
+ * - A pipe with no schedule entry gets `no-redis-entry` for each run time.
+ */
+export type MissedRunReason =
+  | 'overdue'
+  | 'stuck-at-earlier-timestamp'
+  | 'no-redis-entry'
 
 export interface MissedRun {
   flowId: string
@@ -112,7 +121,11 @@ export function findOverduePipeMissedRuns({
     nextRunTimeMillis,
     window,
   )) {
-    missedRuns.push({ flowId, runTimeMillis, reason: 'stale-timestamp' })
+    missedRuns.push({
+      flowId,
+      runTimeMillis,
+      reason: 'stuck-at-earlier-timestamp',
+    })
   }
 
   return missedRuns
