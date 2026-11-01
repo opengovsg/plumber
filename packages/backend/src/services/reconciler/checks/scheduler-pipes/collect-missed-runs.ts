@@ -9,6 +9,7 @@ import { isRunTimeJobPending } from './is-run-time-job-pending'
 import {
   findMissingPipeMissedRuns,
   findOverduePipeMissedRuns,
+  getLookBackStartMillis,
   getSchedulePattern,
   type MissedRun,
 } from './missed-runs'
@@ -85,8 +86,10 @@ export async function collectMissedRuns({
     return missedRuns
   }
 
-  const latestExecutionMillisByFlowId =
-    await fetchLatestExecutionTimes(missingFlowIds)
+  const latestExecutionMillisByFlowId = await fetchLatestExecutionTimes(
+    missingFlowIds,
+    getLookBackStartMillis(nowMillis),
+  )
   for (const flowId of missingFlowIds) {
     const pipe = pipeByFlowId.get(flowId)
     if (!pipe) {

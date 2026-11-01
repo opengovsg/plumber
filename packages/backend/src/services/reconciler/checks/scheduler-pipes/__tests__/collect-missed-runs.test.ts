@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { collectMissedRuns } from '../collect-missed-runs'
+import { MISSED_RUN_MARKER_TTL_SECONDS } from '../missed-runs'
 
 const mocks = vi.hoisted(() => ({
   fetchLatestExecutionTimes: vi.fn(),
@@ -72,7 +73,10 @@ describe('collectMissedRuns', () => {
       'timestamp',
       'processedOn',
     )
-    expect(mocks.fetchLatestExecutionTimes).toHaveBeenCalledWith([FLOW_MISSING])
+    expect(mocks.fetchLatestExecutionTimes).toHaveBeenCalledWith(
+      [FLOW_MISSING],
+      NOW - MISSED_RUN_MARKER_TTL_SECONDS * 1000,
+    )
     expect(missedRuns).toEqual([
       { flowId: FLOW_OVERDUE, runTimeMillis: NOW - 2 * HOUR, reason: 'late' },
       {
