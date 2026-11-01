@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import StepError from '@/errors/step'
+
 import conditionIsTrue from '../../common/condition-is-true'
 
 describe('Condition is true', () => {
@@ -7,12 +9,15 @@ describe('Condition is true', () => {
     { text: 'abc', expectedResult: true },
     { text: 'def', expectedResult: false },
   ])('supports equals', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: 'abc',
-      is: 'is',
-      condition: 'equals',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: 'abc',
+        is: 'is',
+        condition: 'equals',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -22,12 +27,15 @@ describe('Condition is true', () => {
     { text: 10, expectedResult: true },
     { text: 11, expectedResult: false },
   ])('supports >=', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: 10,
-      is: 'is',
-      condition: 'gte',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: 10,
+        is: 'is',
+        condition: 'gte',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -37,12 +45,15 @@ describe('Condition is true', () => {
     { text: 10, expectedResult: false },
     { text: 11, expectedResult: false },
   ])('supports >', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: 10,
-      is: 'is',
-      condition: 'gt',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: 10,
+        is: 'is',
+        condition: 'gt',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -52,12 +63,15 @@ describe('Condition is true', () => {
     { text: 10, expectedResult: true },
     { text: 11, expectedResult: true },
   ])('supports <=', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: 10,
-      is: 'is',
-      condition: 'lte',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: 10,
+        is: 'is',
+        condition: 'lte',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -67,12 +81,15 @@ describe('Condition is true', () => {
     { text: -10, expectedResult: false },
     { text: 11, expectedResult: true },
   ])('supports <', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: -10,
-      is: 'is',
-      condition: 'lt',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: -10,
+        is: 'is',
+        condition: 'lt',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -84,12 +101,15 @@ describe('Condition is true', () => {
     { field: '9.9', text: 9, expectedResult: true },
     { field: '9.9', text: 1, expectedResult: false },
   ])('supports contains', ({ field, text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field,
-      is: 'is',
-      condition: 'contains',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field,
+        is: 'is',
+        condition: 'contains',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -101,12 +121,15 @@ describe('Condition is true', () => {
     { field: '9.9', text: 9, expectedResult: true },
     { field: '9.9', text: 1, expectedResult: false },
   ])('supports begins', ({ field, text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field,
-      is: 'is',
-      condition: 'begins',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field,
+        is: 'is',
+        condition: 'begins',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -118,12 +141,15 @@ describe('Condition is true', () => {
     { text: '05 Nov 2024', expectedResult: true }, // 'dd LLL yyyy'
     { text: '03 November 2024', expectedResult: false }, // 'dd LLLL yyyy'
   ])('supports before', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: '04 Nov 2024',
-      is: 'is',
-      condition: 'before',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: '04 Nov 2024',
+        is: 'is',
+        condition: 'before',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -133,12 +159,15 @@ describe('Condition is true', () => {
     { text: '04 Nov 2024 12:01 AM', expectedResult: false }, // 'dd LLL yyyy hh:mm a'
     { text: '03 Nov 2024 11:59:59 PM', expectedResult: true }, // 'dd LLL yyyy hh:mm:ss a'
   ])('supports after', ({ text, expectedResult }) => {
-    const result = conditionIsTrue({
-      field: '04 Nov 2024',
-      is: 'is',
-      condition: 'after',
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field: '04 Nov 2024',
+        is: 'is',
+        condition: 'after',
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -192,12 +221,15 @@ describe('Condition is true', () => {
   ])(
     'accepts both single-padded and double-padded date input',
     ({ field, text, expectedResult }) => {
-      const result = conditionIsTrue({
-        field,
-        is: 'is',
-        condition: 'before',
-        text,
-      })
+      const result = conditionIsTrue(
+        {
+          field,
+          is: 'is',
+          condition: 'before',
+          text,
+        },
+        1,
+      )
 
       expect(result).toEqual(expectedResult)
     },
@@ -208,12 +240,15 @@ describe('Condition is true', () => {
     { field: 10, text: 10, condition: 'gte', expectedResult: false },
     { field: 1, text: -100, condition: 'lt', expectedResult: true },
   ])('supports negation', ({ field, text, condition, expectedResult }) => {
-    const result = conditionIsTrue({
-      field,
-      is: 'not',
-      condition,
-      text,
-    })
+    const result = conditionIsTrue(
+      {
+        field,
+        is: 'not',
+        condition,
+        text,
+      },
+      1,
+    )
 
     expect(result).toEqual(expectedResult)
   })
@@ -234,43 +269,123 @@ describe('Condition is true', () => {
   ])(
     'supports empty ($expectedResult for $field)',
     ({ field, expectedResult }) => {
-      const result = conditionIsTrue({
-        field,
-        is: 'is',
-        condition: 'empty',
-        text: null,
-      })
+      const result = conditionIsTrue(
+        {
+          field,
+          is: 'is',
+          condition: 'empty',
+          text: null,
+        },
+        1,
+      )
       expect(result).toEqual(expectedResult)
     },
   )
 
-  it.each([
-    { field: 10, condition: 'gte', text: 'abc' },
-    { field: 'abc', condition: 'lt', text: 10 },
-    { field: '04 Sep 2024', condition: 'before', text: 'abc' },
-    { field: '123', condition: 'before', text: '04 Nov 2024' },
-  ])(
-    'throws an error for invalid field or value for comparison',
-    ({ field, condition, text }) => {
-      expect(() =>
-        conditionIsTrue({
-          field,
-          is: 'is',
-          condition,
-          text,
-        }),
-      ).toThrow()
-    },
-  )
+  describe('errors', () => {
+    function catchStepError(fn: () => unknown): StepError {
+      try {
+        fn()
+      } catch (err) {
+        if (err instanceof StepError) {
+          return err
+        }
+        throw err
+      }
+      throw new Error('Expected a StepError')
+    }
 
-  it('throws an error for unsupported conditions', () => {
-    expect(() =>
-      conditionIsTrue({
+    function nameOf(err: StepError): string {
+      return JSON.parse(err.message).name
+    }
+
+    it.each([
+      {
+        field: 'abc',
+        condition: 'lt',
+        text: 10,
+        name: 'Error in condition group 2: Non-number used in field for comparison',
+      },
+      {
         field: 10,
-        is: 'is',
-        condition: 'herp derp',
-        text: 11,
-      }),
-    ).toThrow('Conditional logic block contains an unknown operator: herp derp')
+        condition: 'gte',
+        text: 'abc',
+        name: 'Error in condition group 2: Non-number used in value for comparison',
+      },
+      {
+        field: '123',
+        condition: 'before',
+        text: '04 Nov 2024',
+        name: 'Error in condition group 2: Invalid date used in field for comparison',
+      },
+      {
+        field: '',
+        condition: 'after',
+        text: '04 Nov 2024',
+        name: 'Error in condition group 2: Invalid date used in field for comparison',
+      },
+      {
+        field: '04 Sep 2024',
+        condition: 'before',
+        text: 'abc',
+        name: 'Error in condition group 2: Invalid date used in value for comparison',
+      },
+      {
+        field: '04 Sep 2024',
+        condition: 'after',
+        text: '',
+        name: 'Error in condition group 2: Invalid date used in value for comparison',
+      },
+    ])(
+      'marks a bad $condition operand as config ($name)',
+      ({ field, condition, text, name }) => {
+        const err = catchStepError(() =>
+          conditionIsTrue({ field, is: 'is', condition, text }, 2),
+        )
+
+        expect(err.kind).toBe('config')
+        expect(nameOf(err)).toBe(name)
+        expect(JSON.parse(err.message).solution).toBe(
+          'Check that the condition has been configured properly.',
+        )
+      },
+    )
+
+    it.each([
+      {
+        field: '2026-11-02T18:00:00.000+08:00',
+        text: '04 Nov 2024',
+        name: 'Error in condition group 1: Invalid date used in field for comparison',
+      },
+      {
+        field: '04 Nov 2024',
+        text: '2026-11-02T10:00:00Z',
+        name: 'Error in condition group 1: Invalid date used in value for comparison',
+      },
+    ])(
+      'marks an ISO 8601 date the parser rejects as internal ($name)',
+      ({ field, text, name }) => {
+        const err = catchStepError(() =>
+          conditionIsTrue({ field, is: 'is', condition: 'before', text }, 1),
+        )
+
+        expect(err.kind).toBe('internal')
+        expect(nameOf(err)).toBe(name)
+      },
+    )
+
+    it('marks an unknown operator as internal', () => {
+      const err = catchStepError(() =>
+        conditionIsTrue(
+          { field: 10, is: 'is', condition: 'herp derp', text: 11 },
+          3,
+        ),
+      )
+
+      expect(err.kind).toBe('internal')
+      expect(nameOf(err)).toBe(
+        'Error in condition group 3: Conditional logic block contains an unknown operator: herp derp',
+      )
+    })
   })
 })
