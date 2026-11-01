@@ -140,8 +140,34 @@ describe('perform calculation', () => {
           expect(err.message).toEqual(
             expect.stringContaining('Configuration problem: '),
           )
+          expect(err.kind).toBe('config')
         }
       }
     },
   )
+
+  it('treats a Big.js error as config', async () => {
+    // Big.js caps decimal places at 1e6, which the field schema does not check.
+    $.step.parameters = {
+      value: '1.5',
+      op: 'roundOff',
+      toDecimalPlaces: '1000001',
+    }
+    await expect(roundtoDecimalPlacesAction.run($)).rejects.toMatchObject({
+      message: expect.stringContaining(
+        "Error performing rounding: 'Invalid decimal places'",
+      ),
+      kind: 'config',
+    })
+  })
+
+  it('treats a thrown non-Error value as internal', async () => {
+    $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw 'not an Error'
+    })
+    await expect(roundtoDecimalPlacesAction.run($)).rejects.toMatchObject({
+      kind: 'internal',
+    })
+  })
 })
