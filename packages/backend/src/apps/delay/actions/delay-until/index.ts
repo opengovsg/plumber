@@ -110,10 +110,11 @@ const action: IRawAction = {
     }
 
     if (isNaN(delayTimestamp)) {
-      throw new StepError(
-        'Incorrect date or time format',
-        `* Date must be in DD MMM YYYY and time in HH:MM format.\n* If you're using a variable, make sure it returns values in these formats.`,
-      )
+      throw new StepError({
+        name: 'Incorrect date or time format',
+        solution: `* Date must be in DD MMM YYYY and time in HH:MM format.\n* If you're using a variable, make sure it returns values in these formats.`,
+        kind: 'config',
+      })
     }
 
     /**
@@ -131,11 +132,17 @@ const action: IRawAction = {
           delayUntilTime: dateTimeNow.toPlumberFormat('HH:mm'),
         }
       } else {
+        // A target that passed mid-execution means Plumber reached this step late.
+        const wasPastAtExecutionStart =
+          $.execution.createdAt !== undefined &&
+          delayTimestamp < new Date($.execution.createdAt).getTime()
         // Update in `useExecutionStepStatus.ts` if the error name changes
-        throw new StepError(
-          'Delay until timestamp entered is in the past',
-          'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
-        )
+        throw new StepError({
+          name: 'Delay until timestamp entered is in the past',
+          solution:
+            'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
+          kind: wasPastAtExecutionStart ? 'config' : 'internal',
+        })
       }
     }
 
