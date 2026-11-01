@@ -1,7 +1,6 @@
 import { type IGlobalVariable } from '@plumber/types'
 import z from 'zod'
 
-import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
 import WorkbookSession from './workbook-session'
@@ -65,58 +64,42 @@ export async function getTopNTableRows(
   tableId: string,
   n: number,
 ): Promise<GetTopNTableRowsResult> {
-  try {
-    const rangeParseResult = msGraphRangeResponseSchema.safeParse(
-      (
-        await session.request(
-          `/tables/:tableId/range?$select=values,rowCount,rowIndex`,
-          'get',
-          {
-            urlPathParams: {
-              tableId,
-            },
+  const rangeParseResult = msGraphRangeResponseSchema.safeParse(
+    (
+      await session.request(
+        `/tables/:tableId/range?$select=values,rowCount,rowIndex`,
+        'get',
+        {
+          urlPathParams: {
+            tableId,
           },
-        )
-      ).data,
+        },
+      )
+    ).data,
+  )
+
+  if (rangeParseResult.success === false) {
+    throw new StepError(
+      'Could not read table headers.',
+      'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
     )
+  }
 
-    if (rangeParseResult.success === false) {
-      throw new StepError(
-        'Could not read table headers.',
-        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
-      )
-    }
+  const { rowCount, headerSheetRowIndex, headerRowValues, rowValues } =
+    rangeParseResult.data
 
-    const { rowCount, headerSheetRowIndex, headerRowValues, rowValues } =
-      rangeParseResult.data
+  // rowCount includes the header row
+  if (rowCount > n + 1) {
+    throw new StepError(
+      `Your Excel table has more than ${n.toLocaleString()} rows.`,
+      `Reduce the number of rows and try again.`,
+    )
+  }
 
-    // rowCount includes the header row
-    if (rowCount > n + 1) {
-      throw new StepError(
-        `Your Excel table has more than ${n.toLocaleString()} rows.`,
-        `Reduce the number of rows and try again.`,
-      )
-    }
-
-    return {
-      columns: headerRowValues,
-      rows: rowValues,
-      headerSheetRowIndex,
-    }
-  } catch (error) {
-    if (error instanceof HttpError) {
-      if (
-        error.response.status === 400 &&
-        error.response.data.error.code === 'RangeExceedsLimit'
-      ) {
-        throw new StepError(
-          'Your Excel table is too large',
-          'Reduce the number of rows or columns and try again.',
-          error,
-        )
-      }
-    }
-    throw error
+  return {
+    columns: headerRowValues,
+    rows: rowValues,
+    headerSheetRowIndex,
   }
 }
 

@@ -8,6 +8,7 @@ import {
 import logger from '@/helpers/logger'
 
 import { AuthData } from './auth-data'
+import { rethrowAsGraphStepError } from './graph-http-error'
 
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0#roles-property-values
 const sharePointRolesSchema = z.array(z.enum(['read', 'write', 'owner']))
@@ -106,15 +107,17 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
   // More info on siteUser.loginName:
   // - https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
   // - https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
-  const sharePointFilePermissionsResponse = await http.get(
-    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
-    {
-      urlPathParams: {
-        fileId,
-        sharePointSiteId: tenant.sharePointSiteId,
+  const sharePointFilePermissionsResponse = await http
+    .get(
+      `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
       },
-    },
-  )
+    )
+    .catch(rethrowAsGraphStepError)
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
   )
@@ -229,15 +232,17 @@ async function queryFilePrivacyInfo(
   fileId: string,
   http: IHttpClient,
 ): Promise<z.infer<typeof fileInfoResponseSchema>> {
-  const response = await http.get(
-    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/?$select=sensitivityLabel,parentReference&$expand=permissions`,
-    {
-      urlPathParams: {
-        fileId,
-        sharePointSiteId: tenant.sharePointSiteId,
+  const response = await http
+    .get(
+      `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/?$select=sensitivityLabel,parentReference&$expand=permissions`,
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
       },
-    },
-  )
+    )
+    .catch(rethrowAsGraphStepError)
   return fileInfoResponseSchema.parse(response.data)
 }
 
