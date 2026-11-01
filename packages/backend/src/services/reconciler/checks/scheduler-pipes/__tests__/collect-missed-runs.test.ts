@@ -158,7 +158,7 @@ describe('collectMissedRuns', () => {
       },
     ])
     expect(mocks.logError).toHaveBeenCalledWith(
-      'Schedule check could not read a pipe schedule',
+      'Scheduler pipes check could not read a pipe schedule',
       expect.objectContaining({ flowId: FLOW_BROKEN }),
     )
   })
@@ -179,7 +179,7 @@ describe('collectMissedRuns', () => {
 
     expect(missedRuns).toEqual([])
     expect(mocks.logError).toHaveBeenCalledWith(
-      'Schedule check could not read a pipe schedule',
+      'Scheduler pipes check could not read a pipe schedule',
       expect.objectContaining({ flowId: FLOW_BROKEN }),
     )
   })
