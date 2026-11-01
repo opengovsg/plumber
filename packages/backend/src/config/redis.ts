@@ -2,7 +2,7 @@ import ioRedis, { type RedisOptions } from 'ioredis'
 
 import logger from '@/helpers/logger'
 
-import appConfig from './app'
+import redisConfig from './app/redis'
 import { integrationTestIsolation } from './integration-test-isolation'
 
 const { REDIS_DB_OFFSET: redisDbOffset, REDIS_APP_DATA_DB: redisAppDataDb } =
@@ -46,20 +46,20 @@ export const createRedisClient = (
   db = REDIS_DB_INDEX.JOBS,
   extraOptions: Partial<RedisOptions> = {},
 ) =>
-  appConfig.redisClusterMode
+  redisConfig.redisClusterMode
     ? new ioRedis.Cluster(
         [
           {
-            host: appConfig.redisHost,
-            port: appConfig.redisPort,
+            host: redisConfig.redisHost,
+            port: redisConfig.redisPort,
           },
         ],
         {
           dnsLookup: (address, callback) => callback(null, address),
           redisOptions: {
-            tls: appConfig.redisTls ? {} : undefined,
-            username: appConfig.redisUsername,
-            password: appConfig.redisPassword,
+            tls: redisConfig.redisTls ? {} : undefined,
+            username: redisConfig.redisUsername,
+            password: redisConfig.redisPassword,
             db,
             reconnectOnError,
             ...extraOptions,
@@ -67,11 +67,11 @@ export const createRedisClient = (
         },
       )
     : new ioRedis({
-        host: appConfig.redisHost,
-        port: appConfig.redisPort,
-        tls: appConfig.redisTls ? {} : undefined,
-        username: appConfig.redisUsername,
-        password: appConfig.redisPassword,
+        host: redisConfig.redisHost,
+        port: redisConfig.redisPort,
+        tls: redisConfig.redisTls ? {} : undefined,
+        username: redisConfig.redisUsername,
+        password: redisConfig.redisPassword,
         enableReadyCheck: false,
         maxRetriesPerRequest: null, // commands wait forever until the connection is alive again.
         db,

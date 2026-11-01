@@ -1,5 +1,6 @@
 // dd-trace must load before pg and ioredis to instrument them.
 import '@/helpers/tracer'
+import '@/config/datetime'
 import '@/config/orm'
 import { client as knexClient } from '@/config/database'
 import logger from '@/helpers/logger'
