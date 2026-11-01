@@ -1,8 +1,8 @@
 /**
  * Business rules (user decisions), quoted verbatim:
  *
- * - "Must not run inside the worker. A stalled or backlogged worker would
- *   stall it too, when it is needed most."
+ * - "Prevent the reconciler from processing jobs by preventing importing
+ *   worker code."
  * - "`src/reconciler.ts` must not import `workers/*` (only `worker.ts` may)."
  */
 import fs from 'fs'
