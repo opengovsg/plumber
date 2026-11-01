@@ -167,7 +167,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
           appKey: appKey,
           actionKey: key,
           jobName: job.name,
-          // A retry runs on demand, so the old scheduled time would read as late.
+          // Omit scheduledAt on manual retry, otherwise this is counted towards SLO. (manual retries are out of scope for SLO)
           jobData: omit(job.data, 'scheduledAt'),
           jobOptions: DEFAULT_JOB_OPTIONS,
         })
