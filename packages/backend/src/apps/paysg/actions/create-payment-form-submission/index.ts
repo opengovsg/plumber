@@ -1,9 +1,9 @@
 import type { IRawAction } from '@plumber/types'
-import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 
+import { rethrowAsPaySgStepError } from '../../common/paysg-http-error'
 import { requestSchema } from './schema'
 
 const action: IRawAction = {
@@ -114,10 +114,19 @@ const action: IRawAction = {
   async run($) {
     const paymentServiceId = $.auth.data.paymentServiceId as string
 
-    try {
-      const { formId, ...body } = requestSchema.parse($.step.parameters)
+    const request = requestSchema.safeParse($.step.parameters)
+    if (!request.success) {
+      const firstError = fromZodError(request.error).details[0]
+      throw new StepError({
+        name: `${firstError.message} under set up step`,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
+    }
 
-      await $.http.post(
+    const { formId, ...body } = request.data
+    await $.http
+      .post(
         `/v1/payment-services/:paymentServiceId/forms/:formId/submissions`,
         body,
         {
@@ -127,19 +136,8 @@ const action: IRawAction = {
           },
         },
       )
-      $.setActionItem({ raw: { success: true } })
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const firstError = fromZodError(error).details[0]
-
-        throw new StepError(
-          `${firstError.message} under set up step`,
-          GenericSolution.ReconfigureInvalidField,
-        )
-      }
-
-      throw error
-    }
+      .catch(rethrowAsPaySgStepError)
+    $.setActionItem({ raw: { success: true } })
   },
 }
 
