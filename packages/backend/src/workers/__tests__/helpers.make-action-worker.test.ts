@@ -1,4 +1,7 @@
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import StepError from '@/errors/step'
 
 import { makeActionWorker } from '../helpers/make-action-worker'
 
@@ -14,6 +17,8 @@ const mocks = vi.hoisted(() => {
 
     // Misc mocks
     processOn: vi.fn(),
+    tracerWrap: vi.fn((_name: string, processor: unknown) => processor),
+    processAction: vi.fn(),
   }
 })
 
@@ -22,7 +27,8 @@ vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
 }))
 
-vi.mock('@taskforcesh/bullmq-pro', () => ({
+vi.mock('@taskforcesh/bullmq-pro', async (importActual) => ({
+  ...(await importActual<typeof import('@taskforcesh/bullmq-pro')>()),
   WorkerPro: mocks.workerConstructor,
 }))
 
@@ -43,8 +49,17 @@ vi.mock('@/config/redis', async (importActual) => ({
 
 vi.mock('@/helpers/tracer', () => ({
   default: {
-    wrap: vi.fn(() => ({})),
+    wrap: mocks.tracerWrap,
+    scope: () => ({ active: (): null => null }),
   },
+}))
+
+vi.mock('@/models/step', () => ({
+  default: { query: () => ({ findById: vi.fn() }) },
+}))
+
+vi.mock('@/services/action', () => ({
+  processAction: mocks.processAction,
 }))
 
 vi.mock('@/apps', () => ({
@@ -188,4 +203,28 @@ describe('makeActionWorker', () => {
       )
     },
   )
+
+  it('keeps a StepError as the hidden cause when processAction fails', async () => {
+    makeActionWorker({
+      appKey: 'test-app',
+      queueName: '{test-app-queue}',
+      queueConfig: { isQueueDelayable: false, workerType: 'action' },
+    })
+    const processor = (
+      mocks.workerConstructor.mock.calls[0] as unknown[]
+    )[1] as (job: unknown) => Promise<unknown>
+    const stepError = new StepError({
+      name: 'n',
+      solution: 's',
+      kind: 'config',
+    })
+    mocks.processAction.mockRejectedValueOnce(stepError)
+
+    const thrown = (await processor({ id: 'job-id', data: {} }).catch(
+      (error) => error,
+    )) as Error
+
+    expect(thrown).toBeInstanceOf(UnrecoverableError)
+    expect(thrown.cause).toBe(stepError)
+  })
 })
