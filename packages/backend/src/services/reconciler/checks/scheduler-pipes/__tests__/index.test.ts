@@ -171,7 +171,7 @@ describe('createSchedulerPipesCheck', () => {
       'Scheduler pipes check counted a missed run',
       expect.objectContaining({
         event: 'reconciler-missed-run',
-        reason: 'late',
+        reason: 'overdue',
       }),
     )
     expect(mocks.logWarn).toHaveBeenCalledWith(

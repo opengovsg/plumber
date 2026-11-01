@@ -32,7 +32,7 @@ const RUN_TIME = NOW - 3 * HOUR
 const WEEK_MILLIS = 604800 * 1000
 
 const MISSED_RUNS: MissedRun[] = [
-  { flowId: FLOW_ID, runTimeMillis: RUN_TIME, reason: 'late' },
+  { flowId: FLOW_ID, runTimeMillis: RUN_TIME, reason: 'overdue' },
   {
     flowId: FLOW_ID,
     runTimeMillis: RUN_TIME + HOUR,
@@ -68,7 +68,7 @@ describe('countMissedRuns', () => {
 
     expect(count).toBe(3)
     expect(mocks.logWarn.mock.calls).toEqual([
-      missedRunLine('late'),
+      missedRunLine('overdue'),
       missedRunLine('stale-timestamp'),
       missedRunLine('stale-timestamp'),
     ])
