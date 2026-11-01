@@ -38,17 +38,6 @@ export async function throwSendMessageError(
     })
   }
 
-  /**
-   * TODO: Temporary error handling since I cant find a way to catch the ETIMEDOUT error
-   */
-  if (errorDetails === '{"error": "Error"}') {
-    throw new RetriableError({
-      error: 'Timeout error. Telegram may be experiencing issues.',
-      delayInMs: 'default',
-      delayType: 'step',
-    })
-  }
-
   // catch telegram errors with proper http error format
   switch (err.response.status) {
     case 400:
@@ -56,11 +45,13 @@ export async function throwSendMessageError(
       // oxlint-disable-next-line no-case-declarations
       const errorString = JSON.stringify(get(err, 'details.description', ''))
       if (errorString.includes('not enough rights')) {
-        throw new StepError(
-          'No permission for bot',
-          'Please give permission for your bot in telegram to send messages in the group chat used in your action.',
-          err,
-        )
+        throw new StepError({
+          name: 'No permission for bot',
+          solution:
+            'Please give permission for your bot in telegram to send messages in the group chat used in your action.',
+          kind: 'config',
+          cause: err,
+        })
       } else if (errorString.includes('supergroup')) {
         // SPECIAL CASE: fix chat id for user if pipe is published
         if (!testRun) {
@@ -95,46 +86,84 @@ export async function throwSendMessageError(
           })
         }
         // for test runs, still throw back stepError
-        throw new StepError(
-          'Supergroup chat upgrade',
-          'Please re-connect the chat ID because chat ID changes when your group gets upgraded to a supergroup chat.',
-          err,
-        )
+        throw new StepError({
+          name: 'Supergroup chat upgrade',
+          solution:
+            'Please re-connect the chat ID because chat ID changes when your group gets upgraded to a supergroup chat.',
+          kind: 'config',
+          cause: err,
+        })
       } else if (errorString.includes('chat not found')) {
-        throw new StepError(
-          'Incorrect bot configuration',
-          'Check that a valid chat ID is used. Otherwise, remove and re-add the bot into the group. Make sure that you send a message to the bot before the bot can send messages to you.',
-          err,
-        )
+        throw new StepError({
+          name: 'Incorrect bot configuration',
+          solution:
+            'Check that a valid chat ID is used. Otherwise, remove and re-add the bot into the group. Make sure that you send a message to the bot before the bot can send messages to you.',
+          kind: 'config',
+          cause: err,
+        })
       } else if (errorString.includes('message thread not found')) {
-        throw new StepError(
-          'Incorrect topic configuration',
-          'Check that a valid topic ID is used.',
-          err,
-        )
+        throw new StepError({
+          name: 'Incorrect topic configuration',
+          solution: 'Check that a valid topic ID is used.',
+          kind: 'config',
+          cause: err,
+        })
+      } else if (errorString.includes('message is too long')) {
+        throw new StepError({
+          name: 'Message too long',
+          solution:
+            'Shorten the message text to 4096 characters or fewer, especially if variables are used.',
+          kind: 'config',
+          cause: err,
+        })
       } else {
         // return original error since uncaught
         throw err
       }
     case 403:
-      throw new StepError(
-        'Forbidden',
-        'Check that the bot is added in the group chat used in your action.',
-        err,
-      )
+      throw new StepError({
+        name: 'Forbidden',
+        solution:
+          'Check that the bot is added in the group chat used in your action.',
+        kind: 'config',
+        cause: err,
+      })
     case 429:
-      throw new StepError(
-        'Rate limit exceeded',
-        'Too many messages are being sent. Please wait for a minute before retrying and avoid sending more than 20 messages per minute to the same group.',
-        err,
-      )
+      throw new StepError({
+        name: 'Rate limit exceeded',
+        solution:
+          'Too many messages are being sent. Please wait for a minute before retrying and avoid sending more than 20 messages per minute to the same group.',
+        kind: 'internal',
+        cause: err,
+      })
     case 504:
       throw new RetriableError({
         error: 'Timeout error. Telegram may be experiencing issues.',
         delayInMs: 'default',
         delayType: 'step',
       })
+    case 401:
+      throw new StepError({
+        name: 'Invalid bot token',
+        solution:
+          'Reconnect your Telegram bot with a valid bot token. The token may have been revoked.',
+        kind: 'config',
+        cause: err,
+      })
     default:
+      // Axios also sets a code on 4xx responses, so a code means a network error only without a status.
+      if (
+        err.response.status >= 500 ||
+        (err.response.status === undefined && err.code)
+      ) {
+        throw new StepError({
+          name: 'Telegram unavailable',
+          solution:
+            'Telegram may be experiencing issues. Please try again later.',
+          kind: 'third-party',
+          cause: err,
+        })
+      }
       // return original error since uncaught
       throw err
   }
