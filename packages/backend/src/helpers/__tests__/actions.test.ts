@@ -213,16 +213,14 @@ describe('action helper functions', () => {
         ).toThrow(RetriableError)
       })
 
-      it.each([
-        { details: { error: 'read ECONNRESET' } },
-        { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-      ])(
-        'retries errors with retriable messages ($details.error)',
-        (errorDetails: IJSONObject) => {
+      it.each(['read ECONNRESET', 'connect ETIMEDOUT 1.2.3.4:123'])(
+        'retries errors with retriable messages (%s)',
+        (message) => {
+          const error = makeHttpError({ message })
           expect(() =>
             handleFailedStepAndThrow({
-              errorDetails: errorDetails,
-              executionError: EMPTY_HTTP_ERROR,
+              errorDetails: { details: error.details },
+              executionError: error,
               context: MOCK_CONTEXT,
             }),
           ).toThrow(RetriableError)

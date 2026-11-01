@@ -90,48 +90,47 @@ const RETRIABLE_STATUS_CODES = [
   429, // Some 429s may not have Retry-After
 ]
 
+/**
+ * Lets a thrower pick its `kind` knowing whether `handleHttpError` will retry.
+ */
+export function isRetriableHttpError(error: HttpError): boolean {
+  const retryAfterMs = parseRetryAfterToMs(
+    error.response?.headers?.['retry-after'],
+  )
+  if (retryAfterMs !== null) {
+    return retryAfterMs <= RETRY_AFTER_LIMIT_MS
+  }
+
+  if (RETRIABLE_STATUS_CODES.includes(error.response?.status)) {
+    return true
+  }
+
+  const errorString = JSON.stringify(get(error, 'details.error', ''))
+  return RETRIABLE_ERROR_SUBSTRINGS.some((substring) =>
+    errorString.includes(substring),
+  )
+}
+
 function handleHttpError(
   executionError: HttpError,
   errorDetails: HandleFailedStepAndThrowParams['errorDetails'],
 ): never {
-  // Handle reasonable Retry-After responses.
   const retryAfterMs = parseRetryAfterToMs(
     executionError.response?.headers?.['retry-after'],
   )
 
-  if (retryAfterMs !== null) {
-    if (retryAfterMs <= RETRY_AFTER_LIMIT_MS) {
-      throw new RetriableError({
-        error: errorDetails,
-        delayInMs: retryAfterMs,
-        delayType: 'step',
-      })
-    }
-    throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
-  }
-
-  // Handle retriable status codes
-  if (RETRIABLE_STATUS_CODES.includes(executionError.response?.status)) {
+  if (isRetriableHttpError(executionError)) {
     throw new RetriableError({
       error: errorDetails,
-      delayInMs: 'default',
+      delayInMs: retryAfterMs ?? 'default',
       delayType: 'step',
     })
   }
 
-  // Handle retriable errors (identified by message substring)
-  const errorString = JSON.stringify(get(errorDetails, 'details.error', ''))
-  for (const errorSubstring of RETRIABLE_ERROR_SUBSTRINGS) {
-    if (errorString.includes(errorSubstring)) {
-      throw new RetriableError({
-        error: errorDetails,
-        delayInMs: 'default',
-        delayType: 'step',
-      })
-    }
+  if (retryAfterMs !== null) {
+    throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
   }
 
-  // All other HTTP errors are un-retriable
   throw new UnrecoverableError(JSON.stringify(errorDetails))
 }
 
@@ -163,8 +162,15 @@ export function handleFailedStepAndThrow(
 
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
-    // Retrying cannot fix the user's own configuration.
-    if (getStepErrorKind(params.executionError) === 'config') {
+    // Retrying cannot fix the user's configuration, but a transient HTTP
+    // failure behind it may clear.
+    if (
+      getStepErrorKind(params.executionError) === 'config' &&
+      !(
+        executionError instanceof HttpError &&
+        isRetriableHttpError(executionError)
+      )
+    ) {
       throw new UnrecoverableError(JSON.stringify(errorDetails))
     }
     if (executionError instanceof RetriableError) {
