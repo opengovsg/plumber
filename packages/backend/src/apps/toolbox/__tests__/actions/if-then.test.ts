@@ -354,6 +354,25 @@ describe('If-then', () => {
       await expect(ifThenAction.run($)).rejects.toThrow(
         `Conditional logic block contains an unknown operator: ${invalidCondition}`,
       )
+      await expect(ifThenAction.run($)).rejects.toMatchObject({
+        kind: 'internal',
+      })
+    })
+
+    it('marks an invalid date in the field as a config error', async () => {
+      $.step.parameters.conditions = singleGroup({
+        field: '',
+        is: 'is',
+        condition: 'before',
+        text: '04 Nov 2024',
+      })
+
+      await expect(ifThenAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+        message: expect.stringContaining(
+          'Error in condition group 1: Invalid date used in field for comparison',
+        ),
+      })
     })
   })
 
