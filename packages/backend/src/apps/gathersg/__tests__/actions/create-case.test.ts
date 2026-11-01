@@ -105,9 +105,7 @@ describe('create case', () => {
 
     await expect(createCaseAction.run($)).rejects.toMatchObject({
       kind: 'config',
-      message: expect.stringContaining(
-        'Invalid or missing values for: Email',
-      ),
+      message: expect.stringContaining('Invalid or missing values for: Email'),
     })
   })
 

@@ -55,7 +55,8 @@ const action: IRawAction = {
         if (error instanceof HttpError && error.response?.status === 404) {
           throw new StepError({
             name: `Invalid case uuid: ${caseUuid}`,
-            solution: 'Please check that you have configured your step correctly',
+            solution:
+              'Please check that you have configured your step correctly',
             kind: 'config',
             cause: error,
           })
