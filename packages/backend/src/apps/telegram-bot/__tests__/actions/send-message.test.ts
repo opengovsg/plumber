@@ -1,7 +1,10 @@
 import { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
+import { isRetriableHttpError } from '@/helpers/actions'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendMessageAction from '../../actions/send-message'
@@ -79,6 +82,9 @@ describe('send message', () => {
     $.step.parameters.disableNotification = null
 
     await expect(sendMessageAction.run($)).rejects.toThrow('Empty message text')
+    await expect(sendMessageAction.run($)).rejects.toMatchObject({
+      kind: 'config',
+    })
   })
 
   it('should throw step error if message text is filled with new lines only', async () => {
@@ -129,6 +135,10 @@ describe('send message', () => {
       errorDescription: 'Bad Request: message thread not found',
       stepErrorName: 'Incorrect topic configuration',
     },
+    {
+      errorDescription: 'Bad Request: message is too long',
+      stepErrorName: 'Message too long',
+    },
   ])(
     'should throw step error for 400 error codes',
     async ({ errorDescription, stepErrorName }) => {
@@ -144,8 +154,11 @@ describe('send message', () => {
         statusText: 'Bad request',
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrow(stepErrorName)
+      await expect(sendMessageAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(stepErrorName),
+        kind: 'config',
+        cause: httpError,
+      })
     },
   )
 
@@ -177,33 +190,89 @@ describe('send message', () => {
     await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
   })
 
+  it('should throw config step error for 403 error code', async () => {
+    $.step.parameters.text = 'test message'
+    $.step.parameters.chatId = '123'
+    $.step.parameters.disableNotification = null
+
+    const httpError = makeHttpError({ status: 403 })
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    await expect(sendMessageAction.run($)).rejects.toMatchObject({
+      message: expect.stringContaining('Forbidden'),
+      kind: 'config',
+      cause: httpError,
+    })
+  })
+
+  it('should throw internal step error with a retriable cause for 429 error code', async () => {
+    $.step.parameters.text = 'test message'
+    $.step.parameters.chatId = '123'
+    $.step.parameters.disableNotification = null
+
+    const httpError = makeHttpError({
+      status: 429,
+      headers: { 'retry-after': '60' },
+    })
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    const error = await sendMessageAction.run($).catch((e) => e)
+    expect(error).toBeInstanceOf(StepError)
+    expect(error).toMatchObject({
+      message: expect.stringContaining('Rate limit exceeded'),
+      kind: 'internal',
+    })
+    expect(error.cause).toBe(httpError)
+    expect(isRetriableHttpError(error.cause)).toBe(true)
+  })
+
+  it('should throw config step error for 401 error code', async () => {
+    $.step.parameters.text = 'test message'
+    $.step.parameters.chatId = '123'
+    $.step.parameters.disableNotification = null
+
+    const httpError = makeHttpError({
+      status: 401,
+      code: 'ERR_BAD_REQUEST',
+      data: { ok: false, error_code: 401, description: 'Unauthorized' },
+    })
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    await expect(sendMessageAction.run($)).rejects.toMatchObject({
+      message: expect.stringContaining('Invalid bot token'),
+      kind: 'config',
+      cause: httpError,
+    })
+  })
+
   it.each([
-    { errorStatusCode: 403, stepErrorName: 'Forbidden' },
-    { errorStatusCode: 429, stepErrorName: 'Rate limit exceeded' },
+    { label: '500', status: 500 },
+    { label: '502', status: 502 },
+    { label: '503', status: 503 },
+    { label: 'network error with no status', code: 'ECONNREFUSED' },
   ])(
-    'should throw step error for other recognised error codes',
-    async ({ errorStatusCode, stepErrorName }) => {
+    'should throw third-party step error for $label',
+    async ({ status, code }) => {
       $.step.parameters.text = 'test message'
       $.step.parameters.chatId = '123'
       $.step.parameters.disableNotification = null
 
-      const httpError = makeHttpError({
-        status: errorStatusCode,
-      })
+      const httpError = makeHttpError({ status, code })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrow(stepErrorName)
+      await expect(sendMessageAction.run($)).rejects.toMatchObject({
+        kind: 'third-party',
+        cause: httpError,
+      })
     },
   )
 
   it.each([
-    { errorStatusCode: 500 },
     {
+      label: 'unlisted 400',
       errorStatusCode: 400,
       errorDescription: 'never seen before error description',
     },
+    { label: 'unlisted 4xx', errorStatusCode: 404 },
+    { label: 'no status and no network code' },
   ])(
-    'should throw normal error for uncaught errors',
+    'should rethrow the http error for $label',
     async ({ errorStatusCode, errorDescription }) => {
       $.step.parameters.text = 'test message'
       $.step.parameters.chatId = '123'
@@ -216,8 +285,9 @@ describe('send message', () => {
         status: errorStatusCode,
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      // throw uncaught error
-      await expect(sendMessageAction.run($)).rejects.toThrow()
+      const error = await sendMessageAction.run($).catch((e) => e)
+      expect(error).toBe(httpError)
+      expect(error).toBeInstanceOf(HttpError)
     },
   )
 })
