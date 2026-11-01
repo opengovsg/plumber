@@ -11,7 +11,7 @@ const LOOK_BACK_CAP_SECONDS = MISSED_RUN_MARKER_TTL_SECONDS
 // BullMQ computes run times in the container time zone.
 const SCHEDULE_TIME_ZONE = 'Asia/Singapore'
 
-export type MissedRunReason = 'late' | 'stale-timestamp' | 'no-redis-entry'
+export type MissedRunReason = 'overdue' | 'stale-timestamp' | 'no-redis-entry'
 
 export interface MissedRun {
   flowId: string
@@ -103,7 +103,7 @@ export function findOverduePipeMissedRuns({
     missedRuns.push({
       flowId,
       runTimeMillis: nextRunTimeMillis,
-      reason: 'late',
+      reason: 'overdue',
     })
   }
 

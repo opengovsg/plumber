@@ -53,7 +53,7 @@ describe('findOverduePipeMissedRuns', () => {
     ])
   })
 
-  it('counts T as late when its job has not started', () => {
+  it('counts T as overdue when its job has not started', () => {
     const missedRuns = findOverduePipeMissedRuns({
       flowId: FLOW_ID,
       pattern: HOURLY,
@@ -64,7 +64,7 @@ describe('findOverduePipeMissedRuns', () => {
     })
 
     expect(missedRuns).toEqual([
-      { flowId: FLOW_ID, runTimeMillis: NOW - 2 * HOUR, reason: 'late' },
+      { flowId: FLOW_ID, runTimeMillis: NOW - 2 * HOUR, reason: 'overdue' },
       { flowId: FLOW_ID, runTimeMillis: NOW - HOUR, reason: 'stale-timestamp' },
     ])
   })
