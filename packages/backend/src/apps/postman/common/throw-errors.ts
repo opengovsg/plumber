@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@plumber/types'
+import { IGlobalVariable, StepErrorKind } from '@plumber/types'
 
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
@@ -113,6 +113,18 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
   return 'ERROR'
 }
 
+// Postman 4xx and SES errors reaching the catch-all stem from Plumber's API key or SES setup.
+function getCatchAllKind(error: unknown): StepErrorKind {
+  if (!(error instanceof HttpError)) {
+    return 'internal'
+  }
+  const status = error.response?.status
+  if (status === undefined) {
+    return error.code ? 'third-party' : 'internal'
+  }
+  return status >= 500 ? 'third-party' : 'internal'
+}
+
 function getInvalidAttachmentSolution({
   invalidAttachments,
   showAttachmentsList = true,
@@ -198,12 +210,13 @@ export function throwPostmanStepError({
         throw new PartialStepError({
           name,
           solution,
+          kind: 'config',
           partialRetry: {
             buttonMessage,
           },
         })
       }
-      throw new StepError(name, solution, error)
+      throw new StepError({ name, solution, kind: 'config', cause: error })
     }
     case 'RATE-LIMITED':
       // this will be auto-retried later on
@@ -213,17 +226,19 @@ export function throwPostmanStepError({
         delayType: 'queue',
       })
     case 'INVALID-ATTACHMENT':
-      throw new StepError(
-        'Password-protected attachment(s)',
-        `Check that the attachment(s) are not password-protected.`,
-        error,
-      )
+      throw new StepError({
+        name: 'Password-protected attachment(s)',
+        solution: `Check that the attachment(s) are not password-protected.`,
+        kind: 'config',
+        cause: error,
+      })
     case 'ATTACHMENT-SIZE-EXCEEDED':
-      throw new StepError(
-        'Total attachment size exceeded',
-        'Check that the attachments do not exceed 20MB in total.',
-        error,
-      )
+      throw new StepError({
+        name: 'Total attachment size exceeded',
+        solution: 'Check that the attachments do not exceed 20MB in total.',
+        kind: 'config',
+        cause: error,
+      })
     case 'INTERMITTENT-ERROR':
       throw new RetriableError({
         error: error.details ?? error.message,
@@ -254,19 +269,21 @@ export function throwPostmanStepError({
         // throw StepError for test runs so that user cannot publish the pipe
         // until the error is fixed
         if ($.execution.testRun) {
-          throw new StepError(name, solution, error)
+          throw new StepError({ name, solution, kind: 'config', cause: error })
         }
 
         throw new PartialStepError({
           name,
           solution: invalidAttachmentsSolution,
+          kind: 'config',
           partialRetry: { buttonMessage: '' }, // nothing to retry
         })
       }
-      throw new StepError(
-        'Something went wrong',
-        'Please contact plumber@open.gov.sg for assistance.',
-        error,
-      )
+      throw new StepError({
+        name: 'Something went wrong',
+        solution: 'Please contact plumber@open.gov.sg for assistance.',
+        kind: getCatchAllKind(error),
+        cause: error,
+      })
   }
 }
