@@ -1,3 +1,4 @@
+import StepError from '@/errors/step'
 import { COMMON_S3_BUCKET, getObjectFromS3Id, parseS3Id } from '@/helpers/s3'
 
 function getMimeType(extension: string): string {
@@ -11,7 +12,11 @@ function getMimeType(extension: string): string {
   const normalizedExtension = extension.toLowerCase()
   const mimeType = mimeTypes[normalizedExtension]
   if (!mimeType) {
-    throw new Error(`${extension} files are not supported`)
+    throw new StepError({
+      name: `${extension} files are not supported`,
+      solution: 'Use a JPG, JPEG, PNG, WEBP or PDF file and try again.',
+      kind: 'config',
+    })
   }
   return mimeType
 }
