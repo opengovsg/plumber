@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSchedulerPipesCheck, SCHEDULE_ENTRIES_KEY } from '..'
+import { createFakeMarkerRedis } from './fake-marker-redis'
 
 const mocks = vi.hoisted(() => ({
   fetchPublishedScheduledPipes: vi.fn(),
@@ -53,13 +54,13 @@ function pipe(flowId: string) {
 describe('createSchedulerPipesCheck', () => {
   const zrange = vi.fn()
   const hmget = vi.fn()
-  const set = vi.fn()
+  let markerRedis = createFakeMarkerRedis()
 
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(NOW)
     hmget.mockResolvedValue([null, null])
-    set.mockResolvedValue('OK')
+    markerRedis = createFakeMarkerRedis()
     mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
   })
 
@@ -71,7 +72,7 @@ describe('createSchedulerPipesCheck', () => {
   function makeCheck() {
     return createSchedulerPipesCheck({
       jobsRedis: { zrange, hmget },
-      markerRedis: { set },
+      markerRedis: markerRedis.client,
       config: { missedRunGraceSeconds: 900 },
     })
   }
@@ -159,30 +160,29 @@ describe('createSchedulerPipesCheck', () => {
 
     await makeCheck().run()
 
-    expect(set).toHaveBeenCalledTimes(3)
-    expect(set).toHaveBeenCalledWith(
-      `scheduler:missed-run:${FLOW_MISSING}:${NOW - HOUR}`,
-      '1',
-      'EX',
-      604800,
+    expect(markerRedis.commands).toContainEqual([
+      'zadd',
+      `scheduler:missed-runs:${FLOW_MISSING}`,
       'NX',
-    )
+      NOW - HOUR,
+      String(NOW - HOUR),
+    ])
     expect(mocks.logWarn).toHaveBeenCalledWith(
-      'Schedule check counted a missed run',
+      'Scheduler pipes check counted a missed run',
       expect.objectContaining({
         event: 'reconciler-missed-run',
         reason: 'late',
       }),
     )
     expect(mocks.logWarn).toHaveBeenCalledWith(
-      'Schedule check counted a missed run',
+      'Scheduler pipes check counted a missed run',
       expect.objectContaining({
         event: 'reconciler-missed-run',
         reason: 'stale-timestamp',
       }),
     )
     expect(mocks.logWarn).toHaveBeenCalledWith(
-      'Schedule check counted a missed run',
+      'Scheduler pipes check counted a missed run',
       expect.objectContaining({
         event: 'reconciler-missed-run',
         reason: 'no-redis-entry',
@@ -197,7 +197,7 @@ describe('createSchedulerPipesCheck', () => {
   it('logs no heartbeat when writing a marker fails', async () => {
     mocks.fetchPublishedScheduledPipes.mockResolvedValue([pipe(FLOW_OVERDUE)])
     zrange.mockResolvedValue([`flow-${FLOW_OVERDUE}`, String(NOW - 2 * HOUR)])
-    set.mockRejectedValue(new Error('redis down'))
+    markerRedis.state.failWith = new Error('redis down')
 
     await expect(makeCheck().run()).rejects.toThrow('redis down')
     expect(mocks.logInfo).not.toHaveBeenCalled()

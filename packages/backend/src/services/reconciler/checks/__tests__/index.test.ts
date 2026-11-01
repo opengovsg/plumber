@@ -16,7 +16,7 @@ vi.mock('@/helpers/redis-app-data', () => ({
 
 const REDIS_CLIENTS = {
   jobsRedis: { zrange: vi.fn(), hmget: vi.fn() },
-  markerRedis: { set: vi.fn() },
+  markerRedis: { multi: vi.fn() },
 }
 
 describe('createReconcilerChecks', () => {

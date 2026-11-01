@@ -6,7 +6,7 @@ import { parseSchedulerPipesCheckConfig } from './scheduler-pipes/config'
 
 interface CreateReconcilerChecksInput {
   jobsRedis: Pick<Redis, 'zrange' | 'hmget'>
-  markerRedis: Pick<Redis, 'set'>
+  markerRedis: Pick<Redis, 'multi'>
 }
 
 export function createReconcilerChecks({

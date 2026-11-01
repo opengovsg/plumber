@@ -14,7 +14,7 @@ export const SCHEDULE_ENTRIES_KEY = `${FLOW_QUEUE_KEY_PREFIX}:repeat`
 
 interface CreateSchedulerPipesCheckInput {
   jobsRedis: Pick<Redis, 'zrange' | 'hmget'>
-  markerRedis: Pick<Redis, 'set'>
+  markerRedis: Pick<Redis, 'multi'>
   config: SchedulerPipesCheckConfig
 }
 
@@ -54,9 +54,10 @@ export function createSchedulerPipesCheck({
         nowMillis,
         graceSeconds: config.missedRunGraceSeconds,
       })
-      const newlyCountedMissedRuns = await countMissedRuns({
+      const newlyCountedMissedRunCount = await countMissedRuns({
         markerRedis,
         missedRuns,
+        nowMillis,
       })
 
       // The heartbeat log goes last, so it marks a completed run.
@@ -65,7 +66,7 @@ export function createSchedulerPipesCheck({
         publishedPipeCount: publishedPipes.length,
         missingCount: missingFlowIds.length,
         overdueCount: overdueFlowIds.length,
-        newlyCountedMissedRunCount: newlyCountedMissedRuns.length,
+        newlyCountedMissedRunCount,
       }
       if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
         logger.warn('Scheduler pipes check found problem pipes', logDetails)
