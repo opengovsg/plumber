@@ -40,20 +40,23 @@ const action = {
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new StepError(
-          `Configuration problem: '${firstZodParseError(error)}'`,
-          GenericSolution.ReconfigureInvalidField,
-        )
+        throw new StepError({
+          name: `Configuration problem: '${firstZodParseError(error)}'`,
+          solution: GenericSolution.ReconfigureInvalidField,
+          kind: 'config',
+        })
       } else if (error instanceof Error) {
-        throw new StepError(
-          `Error performing rounding: '${formatBigJsErrorMessage(error)}'`,
-          'Ensure that you have entered valid numbers.',
-        )
+        throw new StepError({
+          name: `Error performing rounding: '${formatBigJsErrorMessage(error)}'`,
+          solution: 'Ensure that you have entered valid numbers.',
+          kind: 'config',
+        })
       } else {
-        throw new StepError(
-          `Error performing rounding`,
-          'Ensure that you have entered valid numbers.',
-        )
+        throw new StepError({
+          name: `Error performing rounding`,
+          solution: 'Ensure that you have entered valid numbers.',
+          kind: 'internal',
+        })
       }
     }
   },
