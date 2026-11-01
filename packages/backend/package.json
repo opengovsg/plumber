@@ -6,7 +6,7 @@
     "teardown": "docker-compose -f docker-compose.dev.yml down",
     "dev": "pnpm run build:watch --exec \"ts-node --swc src/server.ts\"",
     "worker": "pnpm run build:watch --exec \"ts-node --swc src/worker.ts\"",
-    "reconciler": "pnpm run build:watch --exec \"ts-node --swc src/reconciler.ts\"",
+    "reconciler": "ts-node --swc src/reconciler.ts",
     "prebuild": "rimraf ./dist",
     "build": "tsc -p tsconfig.build.json && pnpm run copy-statics && tsc-alias -p tsconfig.build.json && node scripts/assert-dist-entries.mjs",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
