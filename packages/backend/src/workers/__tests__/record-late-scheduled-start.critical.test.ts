@@ -3,8 +3,6 @@
  *
  *   "For delayed jobs, anything that executed later than 5 mins past the
  *   scheduled time should count as failures in our SLA."
- *
- *   "we should count every late step."
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -126,7 +124,7 @@ describe('recordLateScheduledStart', () => {
   function lateCount(groupLimited = false) {
     return mocks.incrementMetric.mock.calls.filter(
       ([name, tags]) =>
-        name === 'plumber.execution_steps.started_late_after_delay' &&
+        name === 'plumber.executions.late_delayed_step_start' &&
         tags.group_limited === String(groupLimited),
     ).length
   }
@@ -172,6 +170,7 @@ describe('recordLateScheduledStart', () => {
     }
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+    expect(mocks.redisStore.has('delay:late-execution:execution-3')).toBe(true)
   })
 
   it('does not count a job without scheduledAt', async () => {
@@ -249,7 +248,7 @@ describe('recordLateScheduledStart', () => {
     expect(lateCount(true)).toBe(1)
   })
 
-  it('counts every late step in the same execution', async () => {
+  it('does not count a second late step in the same execution', async () => {
     const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
     await recordLateScheduledStart({
@@ -263,8 +262,8 @@ describe('recordLateScheduledStart', () => {
       groupLimited: true,
     })
 
+    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
     expect(lateCount()).toBe(1)
-    expect(lateCount(true)).toBe(1)
   })
 })
 

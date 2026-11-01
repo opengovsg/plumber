@@ -58,18 +58,27 @@ describe('recordLateScheduledStart', () => {
     vi.clearAllMocks()
   })
 
-  it('sets only the first-start marker per job', async () => {
+  it('sets the first-start marker per job and the late marker per execution', async () => {
     await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
       groupLimited: false,
     })
 
-    expect(mocks.redisSet).toHaveBeenCalledExactlyOnceWith(
+    expect(mocks.redisSet).toHaveBeenNthCalledWith(
+      1,
       'delay:first-start:{app-actions-slack}:42',
       '1',
       'EX',
       86_400,
+      'NX',
+    )
+    expect(mocks.redisSet).toHaveBeenNthCalledWith(
+      2,
+      'delay:late-execution:execution-1',
+      '1',
+      'EX',
+      2_592_000,
       'NX',
     )
   })
@@ -84,7 +93,7 @@ describe('recordLateScheduledStart', () => {
     expect(mocks.setTag).toHaveBeenCalledWith('delay.lateness_ms', 1_234)
   })
 
-  it('logs a late step with its context', async () => {
+  it('logs a late execution with its context', async () => {
     await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
@@ -94,7 +103,7 @@ describe('recordLateScheduledStart', () => {
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        event: 'step-started-late-after-delay',
+        event: 'late-execution',
         flowId: 'flow-1',
         executionId: 'execution-1',
         stepId: 'step-2',
