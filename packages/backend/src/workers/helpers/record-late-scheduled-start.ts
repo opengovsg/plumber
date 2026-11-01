@@ -33,7 +33,7 @@ export async function recordLateScheduledStart({
   const { flowId, executionId, stepId, scheduledAt, retryTimestamp } = job.data
 
   // Only consider jobs scheduled by a delay action, not jobs delayed by retries or rate limits.
-  // IMPORTANT: a delay action's job that a rate limit holds back still counts as late.
+  // IMPORTANT: a delay action's job that a rate limit holds back still counts as late (e.g. an M365 Excel step after a delay action).
   if (scheduledAt === undefined || retryTimestamp !== undefined) {
     return
   }
