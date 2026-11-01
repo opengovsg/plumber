@@ -1,88 +1,30 @@
-import { IFlowCollabRole, IFlowConfig } from '@plumber/types'
+import { IFlowCollabRole } from '@plumber/types'
 import type { ModelOptions, QueryContext, Transaction } from 'objection'
 import { ValidationError } from 'objection'
 
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { doesActionProcessFiles } from '@/helpers/actions'
 
-import Base from './base'
-import Execution from './execution'
-import FlowCollaborator from './flow-collaborators'
-import FlowConnections from './flow-connections'
-import FlowTransfer from './flow-transfers'
-import ExtendedQueryBuilder from './query-builder'
-import Step from './step'
-import User from './user'
+import Base from '../base'
+import Execution from '../execution'
+import FlowCollaborator from '../flow-collaborators'
+import FlowConnections from '../flow-connections'
+import FlowTransfer from '../flow-transfers'
+import ExtendedQueryBuilder from '../query-builder'
+import Step from '../step'
+import User from '../user'
+import BaseFlow from './base'
 
-class Flow extends Base {
-  id!: string
-  name!: string
-  userId!: string
-  active!: boolean
+class Flow extends BaseFlow {
   steps!: Step[]
-  publishedAt?: string | null
-  remoteWebhookId?: string | null
   executions?: Execution[]
-  testExecutionId?: string | null
   testExecution?: Execution
   user!: User
   collaborators?: FlowCollaborator[]
-  updatedBy?: string
 
   // for typescript support when creating FlowCollaborator row in insertGraph
   role?: IFlowCollabRole
   lastAccessedAt?: string
-
-  /**
-   * Null means to use default config.
-   */
-  config!: IFlowConfig | null
-
-  static tableName = 'flows'
-
-  static jsonSchema = {
-    type: 'object',
-    required: ['name'],
-
-    properties: {
-      id: { type: 'string', format: 'uuid' },
-      name: { type: 'string', minLength: 1 },
-      userId: { type: 'string', format: 'uuid' },
-      remoteWebhookId: { type: 'string' },
-      active: { type: 'boolean' },
-      updatedBy: { type: 'string', format: 'uuid' },
-
-      config: {
-        type: 'object',
-        properties: {
-          maxQps: {
-            type: 'integer',
-          },
-          rejectIfOverMaxQps: {
-            type: 'boolean',
-          },
-          errorConfig: {
-            type: 'object',
-            properties: {
-              notificationFrequency: {
-                type: 'string',
-              },
-              notificationRecipients: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                  enum: ['editor', 'viewer'],
-                },
-              },
-            },
-          },
-          isForceClogged: {
-            type: 'boolean',
-          },
-        },
-      },
-    },
-  }
 
   static relationMappings = () => ({
     steps: {

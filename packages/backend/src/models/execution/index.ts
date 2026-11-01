@@ -1,29 +1,11 @@
-import Base from './base'
-import ExecutionStep from './execution-step'
-import Flow from './flow'
+import Base from '../base'
+import ExecutionStep from '../execution-step'
+import Flow from '../flow'
+import BaseExecution, { type ExecutionStatus } from './base'
 
-type ExecutionStatus = 'success' | 'failure' | null
-class Execution extends Base {
-  id!: string
-  flowId!: string
-  testRun!: boolean
-  internalId?: string | null
+class Execution extends BaseExecution {
   flow!: Flow
   executionSteps!: ExecutionStep[]
-  status!: ExecutionStatus
-
-  static tableName = 'executions'
-
-  static jsonSchema = {
-    type: 'object',
-
-    properties: {
-      id: { type: 'string', format: 'uuid' },
-      flowId: { type: 'string', format: 'uuid' },
-      testRun: { type: 'boolean', default: false },
-      internalId: { type: 'string' },
-    },
-  }
 
   static relationMappings = () => ({
     flow: {
