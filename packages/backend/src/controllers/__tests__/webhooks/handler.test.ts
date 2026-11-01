@@ -2,6 +2,8 @@ import { IRequest } from '@plumber/types'
 import { Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import logger from '@/helpers/logger'
+
 import webhookHandler from '../../webhooks/handler'
 
 const mocks = vi.hoisted(() => {
@@ -14,6 +16,7 @@ const mocks = vi.hoisted(() => {
       sendStatus: vi.fn((code) => code),
     } as unknown as Response,
     flow: {
+      name: 'Test pipe',
       active: false,
       config: {},
       getTriggerStep: vi.fn(() => ({
@@ -186,6 +189,25 @@ describe('webhook handler', () => {
         expect(mocks.response.sendStatus).toHaveReturnedWith(429)
       },
     )
+
+    it('logs the pipe name and max QPS when a pipe is rate limited', async () => {
+      mocks.flow.config = { maxQps: 5 }
+      mocks.rateLimiterRedis.consume.mockImplementation(() => {
+        throw new mocks.rateLimiterRes()
+      })
+
+      await webhookHandler(request, mocks.response)
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Rate limited flow ${FLOW_ID}`,
+        {
+          event: 'webhook-rate-limited',
+          flowId: FLOW_ID,
+          flowName: 'Test pipe',
+          maxQps: 5,
+        },
+      )
+    })
 
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(
       'still executes rate-limited pipes if rejectIfOverMaxQps is false',
