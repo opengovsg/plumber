@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import pLimit from 'p-limit'
+import { z } from 'zod'
 
 import appConfig from '@/config/app'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
@@ -26,7 +27,7 @@ export function isWithinNightlyWindow(now: Date): boolean {
 }
 
 // getLdFlagValue rejects when the LD client cannot initialize, e.g. on .env-example.
-async function readFlag<T extends string | boolean>(
+async function readFlag<T extends string | boolean | number>(
   flag: string,
   fallback: T,
 ): Promise<T> {
@@ -49,9 +50,18 @@ async function isFlagOn(): Promise<boolean> {
   return (await readMode()) === 'migrate'
 }
 
+// Caps tables claimed per night, so the rollout starts small. Unset means no cap.
+async function readMaxTables(): Promise<number> {
+  return z
+    .union([z.number().int().nonnegative(), z.literal(Infinity)])
+    .catch(0)
+    .parse(await readFlag('tiles-ddb-migration-max-tables', Infinity))
+}
+
 async function migrateAll(
   canStart: () => Promise<boolean>,
   drain: MigrateTableOptions['drain'],
+  maxTables: number,
 ): Promise<RunReport> {
   const counts = { migrated: 0, skipped: 0, aborted: 0, failed: 0 }
   const failedTableIds: string[] = []
@@ -59,6 +69,7 @@ async function migrateAll(
   const limit = pLimit(MIGRATION_CONCURRENCY)
   const runs: Promise<void>[] = []
   let stopped = false
+  let claimed = 0
   let lastId = ''
   while (!stopped) {
     const ids = (
@@ -85,9 +96,18 @@ async function migrateAll(
             stopped = true
             return
           }
+          // IMPORTANT: no await between this check and the increment, or concurrent callbacks overshoot.
+          // A skipped tile frees its slot for a later candidate.
+          if (claimed >= maxTables) {
+            return
+          }
+          claimed++
           try {
             const result = await migrateTable(tableId, { isFlagOn, drain })
             counts[result]++
+            if (result === 'skipped') {
+              claimed--
+            }
             if (result === 'failed') {
               failedTableIds.push(tableId)
             } else if (result === 'aborted') {
@@ -136,6 +156,7 @@ export async function runNightly({
   const report = await migrateAll(
     async () => isWindowOpen() && (await isFlagOn()),
     drain,
+    await readMaxTables(),
   )
   await sendReportEmail(report)
   return { status: 'ran', ...report }

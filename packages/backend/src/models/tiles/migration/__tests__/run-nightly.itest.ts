@@ -14,11 +14,25 @@ import logger from '@/helpers/logger'
 import { _batchCreate } from '@/models/tiles/dynamodb/table-row/functions'
 import { runNightly } from '@/models/tiles/migration/run-nightly'
 
-const flags = vi.hoisted(() => ({ mode: 'migrate' }))
+const flags = vi.hoisted(() => ({
+  mode: 'migrate',
+  maxTables: undefined as number | undefined,
+}))
 
 vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: async (flag: string) =>
-    flag === 'tiles-ddb-migration' ? flags.mode : false,
+  getLdFlagValue: async (
+    flag: string,
+    _email: string | null,
+    fallback: unknown,
+  ) => {
+    if (flag === 'tiles-ddb-migration') {
+      return flags.mode
+    }
+    if (flag === 'tiles-ddb-migration-max-tables') {
+      return flags.maxTables ?? fallback
+    }
+    return false
+  },
 }))
 
 async function seedDdbTile(): Promise<string> {
@@ -91,6 +105,7 @@ describe('runNightly tile loop', () => {
 
   beforeEach(async () => {
     flags.mode = 'migrate'
+    flags.maxTables = undefined
     tableIds = [await seedDdbTile(), await seedDdbTile(), await seedDdbTile()]
     tableIds.sort()
     const beforeEnd = nextSgt(4, 59, 59)
@@ -171,5 +186,24 @@ describe('runNightly tile loop', () => {
       'tiles-migration.run.completed',
       expect.objectContaining({ migrated: 0, aborted: 2, remaining: 3 }),
     )
+  })
+
+  it('claims no more tiles than the max tables flag allows', async () => {
+    flags.maxTables = 1
+
+    await expect(runNightly({ drain: async () => {} })).resolves.toEqual({
+      status: 'ran',
+      migrated: 1,
+      skipped: 0,
+      aborted: 0,
+      failed: 0,
+      remaining: 2,
+      failedTableIds: [],
+      abortedTableIds: [],
+    })
+    expect((await readTable(tableIds[0])).db).toBe('pg')
+    for (const tableId of tableIds.slice(1)) {
+      expect((await readTable(tableId)).db).toBe('ddb')
+    }
   })
 })
