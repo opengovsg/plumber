@@ -98,10 +98,11 @@ const action: IRawAction = {
     )
 
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'There was a problem with the input.',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
 
     const { fileId, tableId, filters } = parametersParseResult.data
