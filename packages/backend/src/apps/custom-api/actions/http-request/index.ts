@@ -2,6 +2,7 @@ import { IGlobalVariable, IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import Step from '@/models/step'
 
@@ -38,10 +39,11 @@ async function throwIfStaticSensitiveHeaders($: IGlobalVariable) {
   }
 
   const headerList = sensitiveKeys.map((key) => `"${key}"`).join(', ')
-  throw new StepError(
-    `${SENSITIVE_HEADERS_ERROR}: ${headerList}`,
-    SENSITIVE_HEADERS_SOLUTION,
-  )
+  throw new StepError({
+    name: `${SENSITIVE_HEADERS_ERROR}: ${headerList}`,
+    solution: SENSITIVE_HEADERS_SOLUTION,
+    kind: 'config',
+  })
 }
 
 async function run($: IGlobalVariable) {
@@ -90,7 +92,12 @@ async function run($: IGlobalVariable) {
      */
     if (REDIRECT_STATUS_CODES.includes(response.status)) {
       if (!response.headers?.location) {
-        throw new Error('No location header')
+        throw new StepError({
+          name: 'Status code: No location header ',
+          solution:
+            'Check your custom app based on the status code and retry again.',
+          kind: 'config',
+        })
       }
 
       // ref: https://github.com/follow-redirects/follow-redirects/blob/21ef28a544c5e57f4c34b8476d75f2144609a1eb/index.js#L442
@@ -130,19 +137,25 @@ async function run($: IGlobalVariable) {
 
     $.setActionItem({ raw: { data: responseData } })
   } catch (err) {
+    if (err instanceof StepError) {
+      throw err
+    }
+
     if (err instanceof ZodError) {
       const firstError = fromZodError(err).details[0]
-      throw new StepError(
-        `${firstError.message}`,
-        GenericSolution.ReconfigureInvalidField,
-      )
+      throw new StepError({
+        name: `${firstError.message}`,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
 
     if (err.message === RECURSIVE_WEBHOOK_ERROR) {
-      throw new StepError(
-        RECURSIVE_WEBHOOK_ERROR,
-        'Ensure that you are not redirecting back to a plumber URL.',
-      )
+      throw new StepError({
+        name: RECURSIVE_WEBHOOK_ERROR,
+        solution: 'Ensure that you are not redirecting back to a plumber URL.',
+        kind: 'config',
+      })
     }
 
     if (
@@ -152,30 +165,34 @@ async function run($: IGlobalVariable) {
         INVALID_PROTOCOL_ERROR,
       ].includes(err.message)
     ) {
-      throw new StepError(
-        err.message,
-        'If you think this is a mistake, please contact us.',
-      )
+      throw new StepError({
+        name: err.message,
+        solution: 'If you think this is a mistake, please contact us.',
+        kind: 'config',
+      })
     }
 
     if (err.message === `timeout of ${timeout}ms exceeded`) {
-      throw new StepError(
-        `HTTP request exceeded timeout of ${timeout / 1000}s`,
-        'The request took too long to respond.',
-        err,
-      )
+      throw new StepError({
+        name: `HTTP request exceeded timeout of ${timeout / 1000}s`,
+        solution: 'The request took too long to respond.',
+        kind: 'config',
+        cause: err,
+      })
     }
 
-    // remaining errors are http errors to be caught
-    throw new StepError(
-      `Status code: ${
+    // The user owns the endpoint, so every HTTP failure is theirs, even a retriable 429 or 504.
+    throw new StepError({
+      name: `Status code: ${
         err.response
           ? `${err.response.status} (${err.response.statusText})`
           : err.message
       } `,
-      'Check your custom app based on the status code and retry again.',
-      err,
-    )
+      solution:
+        'Check your custom app based on the status code and retry again.',
+      kind: err instanceof HttpError ? 'config' : 'internal',
+      cause: err,
+    })
   }
 }
 
