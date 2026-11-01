@@ -1,8 +1,8 @@
 import type { Redis } from 'ioredis'
 
 import type { ReconcilerCheck } from '../run-checks'
-import { createScheduleCheck } from '../schedule-check'
-import { parseScheduleCheckConfig } from '../schedule-check/config'
+import { createSchedulerPipesCheck } from './scheduler-pipes'
+import { parseSchedulerPipesCheckConfig } from './scheduler-pipes/config'
 
 interface CreateReconcilerChecksInput {
   jobsRedis: Pick<Redis, 'zrange'>
@@ -12,9 +12,9 @@ export function createReconcilerChecks({
   jobsRedis,
 }: CreateReconcilerChecksInput): ReconcilerCheck[] {
   return [
-    createScheduleCheck({
+    createSchedulerPipesCheck({
       jobsRedis,
-      config: parseScheduleCheckConfig(process.env),
+      config: parseSchedulerPipesCheckConfig(process.env),
     }),
   ]
 }

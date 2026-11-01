@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { classifySchedules, parseScheduleEntries } from '../classify-schedules'
-import { parseScheduleCheckConfig } from '../config'
+import { parseSchedulerPipesCheckConfig } from '../config'
 
 const FLOW_A = '0b9f9a8e-5c1e-4c55-9a39-0f6f3f0a1a11'
 const FLOW_B = '1c8e8b7d-4b0d-4b44-8a28-1e5e2e1b2b22'
@@ -134,21 +134,24 @@ describe('parseScheduleEntries', () => {
   })
 })
 
-describe('parseScheduleCheckConfig', () => {
+describe('parseSchedulerPipesCheckConfig', () => {
   it('defaults G to 15 minutes', () => {
-    expect(parseScheduleCheckConfig({}).missedRunGraceSeconds).toBe(900)
+    expect(parseSchedulerPipesCheckConfig({}).missedRunGraceSeconds).toBe(900)
   })
 
   it('accepts G up to 1 hour', () => {
     expect(
-      parseScheduleCheckConfig({ SCHEDULE_MISSED_RUN_GRACE_SECONDS: '3600' })
-        .missedRunGraceSeconds,
+      parseSchedulerPipesCheckConfig({
+        SCHEDULE_MISSED_RUN_GRACE_SECONDS: '3600',
+      }).missedRunGraceSeconds,
     ).toBe(3600)
   })
 
   it('rejects G above 1 hour', () => {
     expect(() =>
-      parseScheduleCheckConfig({ SCHEDULE_MISSED_RUN_GRACE_SECONDS: '3601' }),
+      parseSchedulerPipesCheckConfig({
+        SCHEDULE_MISSED_RUN_GRACE_SECONDS: '3601',
+      }),
     ).toThrow()
   })
 })

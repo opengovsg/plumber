@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createReconcilerChecks } from '../checks'
+import { createReconcilerChecks } from '..'
 
-vi.mock('../schedule-check/fetch-published-scheduled-pipes', () => ({
+vi.mock('../scheduler-pipes/fetch-published-scheduled-pipes', () => ({
   fetchPublishedScheduledPipes: vi.fn(),
 }))
 
@@ -11,10 +11,12 @@ describe('createReconcilerChecks', () => {
     vi.unstubAllEnvs()
   })
 
-  it('includes the schedule check', () => {
+  it('includes the scheduler pipes check', () => {
     const checks = createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } })
 
-    expect(checks).toEqual([{ name: 'schedules', run: expect.any(Function) }])
+    expect(checks).toEqual([
+      { name: 'scheduler-pipes', run: expect.any(Function) },
+    ])
   })
 
   it('fails fast on an invalid grace period', () => {

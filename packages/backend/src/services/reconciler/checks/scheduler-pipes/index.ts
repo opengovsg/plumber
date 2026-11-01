@@ -2,24 +2,24 @@ import type { Redis } from 'ioredis'
 
 import logger from '@/helpers/logger'
 
-import type { ReconcilerCheck } from '../run-checks'
+import type { ReconcilerCheck } from '../../run-checks'
 import { classifySchedules, parseScheduleEntries } from './classify-schedules'
-import type { ScheduleCheckConfig } from './config'
+import type { SchedulerPipesCheckConfig } from './config'
 import { fetchPublishedScheduledPipes } from './fetch-published-scheduled-pipes'
 
 export const SCHEDULE_ENTRIES_KEY = '{flowQ}:flow:repeat'
 
-interface CreateScheduleCheckInput {
+interface CreateSchedulerPipesCheckInput {
   jobsRedis: Pick<Redis, 'zrange'>
-  config: ScheduleCheckConfig
+  config: SchedulerPipesCheckConfig
 }
 
-export function createScheduleCheck({
+export function createSchedulerPipesCheck({
   jobsRedis,
   config,
-}: CreateScheduleCheckInput): ReconcilerCheck {
+}: CreateSchedulerPipesCheckInput): ReconcilerCheck {
   return {
-    name: 'schedules',
+    name: 'scheduler-pipes',
     run: async () => {
       // Postgres first: publishing writes the schedule entry before its transaction commits.
       const publishedPipes = await fetchPublishedScheduledPipes()
@@ -39,15 +39,15 @@ export function createScheduleCheck({
 
       // The heartbeat log goes last, so it marks a completed run.
       const logDetails = {
-        event: 'reconciler-schedule-check',
+        event: 'reconciler-scheduler-pipes-check',
         publishedPipeCount: publishedPipes.length,
         missingCount: missingFlowIds.length,
         overdueCount: overdueFlowIds.length,
       }
       if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
-        logger.warn('Schedule check found problem pipes', logDetails)
+        logger.warn('Scheduler pipes check found problem pipes', logDetails)
       } else {
-        logger.info('Schedule check found no problem pipes', logDetails)
+        logger.info('Scheduler pipes check found no problem pipes', logDetails)
       }
     },
   }

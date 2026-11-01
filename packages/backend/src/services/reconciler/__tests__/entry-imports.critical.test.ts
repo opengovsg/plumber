@@ -36,7 +36,7 @@ describe('reconciler entry imports', () => {
     expect(reached).toContain(
       path.join(
         SRC_DIR,
-        'services/reconciler/schedule-check/fetch-published-scheduled-pipes.ts',
+        'services/reconciler/checks/scheduler-pipes/fetch-published-scheduled-pipes.ts',
       ),
     )
     expect([...reached].filter(isForbidden)).toEqual([])

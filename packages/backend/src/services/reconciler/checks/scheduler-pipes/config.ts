@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const MAX_MISSED_RUN_GRACE_SECONDS = 3600
 
-const scheduleCheckEnvSchema = z.object({
+const schedulerPipesCheckEnvSchema = z.object({
   SCHEDULE_MISSED_RUN_GRACE_SECONDS: z.coerce
     .number()
     .int()
@@ -11,14 +11,14 @@ const scheduleCheckEnvSchema = z.object({
     .default(900),
 })
 
-export interface ScheduleCheckConfig {
+export interface SchedulerPipesCheckConfig {
   missedRunGraceSeconds: number
 }
 
-export function parseScheduleCheckConfig(
+export function parseSchedulerPipesCheckConfig(
   env: Record<string, string | undefined>,
-): ScheduleCheckConfig {
-  const parsed = scheduleCheckEnvSchema.parse(env)
+): SchedulerPipesCheckConfig {
+  const parsed = schedulerPipesCheckEnvSchema.parse(env)
   return {
     missedRunGraceSeconds: parsed.SCHEDULE_MISSED_RUN_GRACE_SECONDS,
   }

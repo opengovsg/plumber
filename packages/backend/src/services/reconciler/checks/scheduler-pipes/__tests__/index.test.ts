@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createScheduleCheck, SCHEDULE_ENTRIES_KEY } from '..'
+import { createSchedulerPipesCheck, SCHEDULE_ENTRIES_KEY } from '..'
 
 const mocks = vi.hoisted(() => ({
   fetchPublishedScheduledPipes: vi.fn(),
@@ -39,7 +39,7 @@ function pipe(flowId: string) {
   }
 }
 
-describe('createScheduleCheck', () => {
+describe('createSchedulerPipesCheck', () => {
   const zrange = vi.fn()
 
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe('createScheduleCheck', () => {
   })
 
   function makeCheck() {
-    return createScheduleCheck({
+    return createSchedulerPipesCheck({
       jobsRedis: { zrange },
       config: { missedRunGraceSeconds: 900 },
     })
@@ -81,9 +81,9 @@ describe('createScheduleCheck', () => {
       'WITHSCORES',
     )
     expect(mocks.logWarn).toHaveBeenCalledWith(
-      'Schedule check found problem pipes',
+      'Scheduler pipes check found problem pipes',
       {
-        event: 'reconciler-schedule-check',
+        event: 'reconciler-scheduler-pipes-check',
         publishedPipeCount: 3,
         missingCount: 1,
         overdueCount: 1,
@@ -99,9 +99,9 @@ describe('createScheduleCheck', () => {
 
     expect(mocks.logWarn).not.toHaveBeenCalled()
     expect(mocks.logInfo).toHaveBeenCalledWith(
-      'Schedule check found no problem pipes',
+      'Scheduler pipes check found no problem pipes',
       {
-        event: 'reconciler-schedule-check',
+        event: 'reconciler-scheduler-pipes-check',
         publishedPipeCount: 1,
         missingCount: 0,
         overdueCount: 0,
