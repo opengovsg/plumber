@@ -125,7 +125,7 @@ export async function advanceAfterStep({
       ...DEFAULT_JOB_OPTIONS,
       delay,
     }
-    // Marks only user-scheduled starts as SLA-measurable, unlike retry or stagger delays.
+    // Used to check if the step after a delay step started late, for SLO purposes.
     jobPayload.scheduledAt = Date.now() + Math.max(delay, 0)
   }
 
