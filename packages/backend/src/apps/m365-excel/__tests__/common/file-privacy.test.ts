@@ -43,7 +43,7 @@ describe('getWriteAccessEmailCandidates', () => {
 })
 
 describe('validateCanAccessFile', () => {
-  const authData = { tenantKey: 'tenant', folderId: 'FOLDER' }
+  const authData = { tenantKey: 'local-dev' as const, folderId: 'FOLDER' }
   const get = vi.fn()
   const http = { get } as unknown as IHttpClient
 
