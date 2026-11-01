@@ -1,12 +1,15 @@
 import type { IExecutionStep } from '@plumber/types'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { describe, expect, it, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({
+  stepParameters: {} as Record<string, unknown>,
+}))
 
 vi.mock('@/models/step', () => ({
   default: {
     query: vi.fn(() => ({
       findById: vi.fn(() => ({
-        throwIfNotFound: vi.fn(() => ({ parameters: {} })),
+        throwIfNotFound: vi.fn(() => ({ parameters: mocks.stepParameters })),
       })),
     })),
   },
@@ -70,6 +73,10 @@ function createExecutionStep(
 }
 
 describe('getDataOutMetadata - deleted questions', () => {
+  beforeEach(() => {
+    mocks.stepParameters = {}
+  })
+
   it('hides answers to questions absent from formFieldIds', async () => {
     const result = await getDataOutMetadata(
       createExecutionStep({
@@ -90,6 +97,26 @@ describe('getDataOutMetadata - deleted questions', () => {
     )
 
     expect(result.fields[LATER_FIELD_ID].question.label).toEqual('Question 2')
+  })
+
+  it('hides a deleted children parent that an MRF step still lists', async () => {
+    mocks.stepParameters = {
+      mrf: {
+        defaultStepName: 'Step 2',
+        formWorkflowStepId: 'wf-step-002',
+        type: 'static',
+        fields: [EXISTING_FIELD_ID, DELETED_FIELD_ID],
+      },
+    }
+
+    const result = await getDataOutMetadata(
+      createExecutionStep({
+        formFieldIds: [EXISTING_FIELD_ID],
+      }),
+    )
+
+    expect(result.fields[DELETED_CHILD_FIELD_KEY]).toEqual({ isHidden: true })
+    expect(result.fields[CHILD_FIELD_KEY].isHidden).toBeUndefined()
   })
 
   it('shows every answer when the trigger recorded no field IDs', async () => {

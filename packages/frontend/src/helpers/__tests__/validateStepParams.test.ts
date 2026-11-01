@@ -1,5 +1,4 @@
 import type { IExecutionStep, IStep, ISubstep } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { validateStepParams } from '../validateStepParams'
@@ -191,6 +190,119 @@ describe('validateStepParams', () => {
       [
         buildExecutionStep(TRIGGER_STEP_ID, 1, {
           formFieldIds: ['cccccccccccccccccccccccc'],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(true)
+  })
+
+  it('does not flag a children subfield MyInfo added after the v2 schema', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.childrenbirthrecords_${EXISTING_FIELD_ID}_childtype_1.answer}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 1, {
+          formFieldIds: [EXISTING_FIELD_ID],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(false)
+  })
+
+  it('flags a deleted question carrying a table variable modifier', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${DELETED_FIELD_ID}.answer|7c1f}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 1, {
+          formFieldIds: [EXISTING_FIELD_ID],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(true)
+  })
+
+  it('does not flag an existing question carrying a table variable modifier', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${EXISTING_FIELD_ID}.answer|7c1f}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 1, {
+          formFieldIds: [EXISTING_FIELD_ID],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(false)
+  })
+
+  it.each([
+    ['an empty string', ''],
+    ['null', null],
+    ['zero', 0],
+    ['false', false],
+    ['an empty array', []],
+  ])(
+    'does not flag an existing question whose submission answered %s',
+    (_label, answer) => {
+      const executionStep = buildExecutionStep(TRIGGER_STEP_ID, 1, {
+        formFieldIds: [EXISTING_FIELD_ID],
+      })
+      executionStep.dataOut = {
+        fields: { [EXISTING_FIELD_ID]: { answer } },
+      } as IExecutionStep['dataOut']
+
+      const { shouldTestStepAgain } = validateStepParams(
+        buildActionStep({
+          body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${EXISTING_FIELD_ID}.answer}}`,
+        }),
+        [executionStep, buildExecutionStep(ACTION_STEP_ID, 2)],
+        SUBSTEPS,
+      )
+
+      expect(shouldTestStepAgain).toEqual(false)
+    },
+  )
+
+  it('does not flag an existing question that the submission omitted entirely', () => {
+    const executionStep = buildExecutionStep(TRIGGER_STEP_ID, 1, {
+      formFieldIds: [EXISTING_FIELD_ID],
+    })
+    executionStep.dataOut = { fields: {} } as IExecutionStep['dataOut']
+
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${EXISTING_FIELD_ID}.answer}}`,
+      }),
+      [executionStep, buildExecutionStep(ACTION_STEP_ID, 2)],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(false)
+  })
+
+  it('flags a reference to a step that was reordered below this one', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${EXISTING_FIELD_ID}.answer}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 3, {
+          formFieldIds: [EXISTING_FIELD_ID],
         }),
         buildExecutionStep(ACTION_STEP_ID, 2),
       ],
