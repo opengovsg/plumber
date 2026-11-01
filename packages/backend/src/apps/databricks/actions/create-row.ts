@@ -101,13 +101,18 @@ const createRowAction: IRawAction = {
   async run($: IGlobalVariable) {
     const parametersParseResult = insertRowSchema.safeParse($.step.parameters)
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'Ensure your values are correct',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'Ensure your values are correct',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
     const { session, endSession } = await createSession($).catch((e) => {
-      throw new StepError('Failed to create session', e.message)
+      throw new StepError({
+        name: 'Failed to create session',
+        solution: e.message,
+        kind: 'third-party',
+      })
     })
     try {
       const { tableName, rowData } = parametersParseResult.data
@@ -141,7 +146,11 @@ const createRowAction: IRawAction = {
         testRun: $.execution?.testRun,
         error: e,
       })
-      throw new StepError('Failed to create row', e.message)
+      throw new StepError({
+        name: 'Failed to create row',
+        solution: e.message,
+        kind: 'third-party',
+      })
     } finally {
       await endSession()
     }
