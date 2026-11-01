@@ -2,7 +2,7 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import logger from '@/helpers/logger'
 
 /**
- * Avoids `@/queues/flow`, whose exit-on-refused handler would kill the process during a Redis outage.
+ * Avoids `@/queues/flow`, whose exit-on-refused handler exits 0 during a Redis outage, so the run looks successful.
  */
 export function createReconcilerRedisClient(): ReturnType<
   typeof createRedisClient

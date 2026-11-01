@@ -97,7 +97,7 @@
       }
     },
     {
-      // The reconciler must keep running when the worker or web server stalls.
+      // The reconciler must still run when the worker or web server stalls.
       "files": [
         "packages/backend/src/reconciler.ts",
         "packages/backend/src/services/reconciler/**/*.ts"
