@@ -1,7 +1,7 @@
 import type { IActionJobData } from '@plumber/types'
 import type { JobPro } from '@taskforcesh/bullmq-pro'
 
-import { OVERDUE_DELAY_STEP_THRESHOLD_SECONDS } from '@/config/workers'
+import { DELAY_STEP_GRACE_SECONDS } from '@/config/workers'
 import logger from '@/helpers/logger'
 import { incrementMetric } from '@/helpers/metrics'
 import {
@@ -13,15 +13,15 @@ import { makeActionJobId } from '@/queues/action'
 
 const FIRST_START_MARKER_TTL_SECONDS = 24 * 60 * 60
 // Matches the 30-day SLO window.
-const OVERDUE_EXECUTION_MARKER_TTL_SECONDS = 30 * 24 * 60 * 60
+const LATE_EXECUTION_MARKER_TTL_SECONDS = 30 * 24 * 60 * 60
 
 /**
- * Counts an execution as overdue when a step after a delay step starts too
- * late.
+ * Counts an execution as late when a job starts more than the grace period
+ * after its scheduled time.
  *
  * IMPORTANT: never throws, so a metric failure cannot fail the step.
  */
-export async function recordOverdueExecution({
+export async function recordLateScheduledStart({
   job,
   queueName,
   groupLimited,
@@ -56,27 +56,27 @@ export async function recordOverdueExecution({
     const latenessMs = Date.now() - scheduledAt
     tracer.scope().active()?.setTag('delay.lateness_ms', latenessMs)
 
-    if (latenessMs <= OVERDUE_DELAY_STEP_THRESHOLD_SECONDS * 1000) {
+    if (latenessMs <= DELAY_STEP_GRACE_SECONDS * 1000) {
       return
     }
 
-    // The SLA counts executions, so later overdue steps in the same execution do not count again.
-    const isFirstOverdueStep = await redisAppDataClient.set(
-      makeRedisAppDataKey('delay', `overdue-execution:${executionId}`),
+    // The SLA counts executions, so a second late step in the same execution does not count again.
+    const isFirstLateStep = await redisAppDataClient.set(
+      makeRedisAppDataKey('delay', `late-execution:${executionId}`),
       '1',
       'EX',
-      OVERDUE_EXECUTION_MARKER_TTL_SECONDS,
+      LATE_EXECUTION_MARKER_TTL_SECONDS,
       'NX',
     )
-    if (isFirstOverdueStep !== 'OK') {
+    if (isFirstLateStep !== 'OK') {
       return
     }
 
-    incrementMetric('plumber.executions.overdue', {
+    incrementMetric('plumber.executions.late', {
       group_limited: String(groupLimited),
     })
     logger.warn('Step after a delay step started late', {
-      event: 'overdue-execution',
+      event: 'late-execution',
       flowId,
       executionId,
       stepId,
@@ -85,8 +85,8 @@ export async function recordOverdueExecution({
       latenessMs,
     })
   } catch (err) {
-    logger.error('Failed to record overdue execution', {
-      event: 'overdue-execution-record-failed',
+    logger.error('Failed to record late execution', {
+      event: 'late-execution-record-failed',
       err,
       flowId,
       executionId,

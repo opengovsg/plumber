@@ -34,7 +34,7 @@ import {
 import { advanceAfterStep } from './advance-after-step'
 import { handleFailedJob } from './handle-failed-job'
 import { getJobQueueTimingTags } from './job-queue-timing'
-import { recordOverdueExecution } from './record-overdue-execution'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { fileLockRequeueDelayMs } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -630,7 +630,7 @@ async function processBatch(ctx: BatchContext): Promise<void> {
   // Batch workers always cap group concurrency.
   await Promise.all(
     batchJobs.map((batchJob) =>
-      recordOverdueExecution({
+      recordLateScheduledStart({
         job: batchJob,
         queueName: ctx.queueName,
         groupLimited: true,

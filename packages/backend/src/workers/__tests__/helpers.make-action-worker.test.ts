@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => {
     findStepById: vi.fn(),
     processAction: vi.fn(),
     advanceAfterStep: vi.fn(),
-    recordOverdueExecution: vi.fn(),
+    recordLateScheduledStart: vi.fn(),
   }
 })
 
@@ -35,8 +35,8 @@ vi.mock('@/workers/helpers/advance-after-step', () => ({
   advanceAfterStep: mocks.advanceAfterStep,
 }))
 
-vi.mock('@/workers/helpers/record-overdue-execution', () => ({
-  recordOverdueExecution: mocks.recordOverdueExecution,
+vi.mock('@/workers/helpers/record-late-scheduled-start', () => ({
+  recordLateScheduledStart: mocks.recordLateScheduledStart,
 }))
 
 vi.mock('@/queues/action', () => ({
@@ -246,7 +246,7 @@ describe('makeActionWorker', () => {
         groupLimited: true,
       },
     ])(
-      'records overdue executions before running the step (groupLimited: $groupLimited)',
+      'records late scheduled starts before running the step (groupLimited: $groupLimited)',
       async ({ queueConfig, groupLimited }) => {
         mocks.processAction.mockResolvedValueOnce({})
         makeActionWorker({
@@ -257,12 +257,12 @@ describe('makeActionWorker', () => {
 
         await getProcessor()(job)
 
-        expect(mocks.recordOverdueExecution).toHaveBeenCalledWith({
+        expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
           job,
           queueName: '{test-app-queue}',
           groupLimited,
         })
-        expect(mocks.recordOverdueExecution).toHaveBeenCalledBefore(
+        expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
           mocks.processAction,
         )
       },

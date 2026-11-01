@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => {
       return { on: vi.fn(), close: vi.fn() }
     }),
     globalVariable: vi.fn(),
-    recordOverdueExecution: vi.fn(),
+    recordLateScheduledStart: vi.fn(),
   }
 })
 
@@ -68,8 +68,8 @@ vi.mock('@/workers/helpers/worker-event-handlers', () => ({
   registerWorkerEventHandlers: vi.fn(),
 }))
 
-vi.mock('@/workers/helpers/record-overdue-execution', () => ({
-  recordOverdueExecution: mocks.recordOverdueExecution,
+vi.mock('@/workers/helpers/record-late-scheduled-start', () => ({
+  recordLateScheduledStart: mocks.recordLateScheduledStart,
 }))
 
 describe('makeSubTriggerWorker processor', () => {
@@ -77,7 +77,7 @@ describe('makeSubTriggerWorker processor', () => {
     vi.clearAllMocks()
   })
 
-  it('records overdue executions before running the sub-trigger', async () => {
+  it('records late scheduled starts before running the sub-trigger', async () => {
     const job = {
       id: '1',
       data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
@@ -95,12 +95,12 @@ describe('makeSubTriggerWorker processor', () => {
 
     await expect(calls.at(-1)[1](job)).rejects.toThrow('stop here')
 
-    expect(mocks.recordOverdueExecution).toHaveBeenCalledWith({
+    expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
       job,
       queueName: '{app-actions-formsg}',
       groupLimited: false,
     })
-    expect(mocks.recordOverdueExecution).toHaveBeenCalledBefore(
+    expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
       mocks.globalVariable,
     )
   })

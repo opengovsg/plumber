@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { recordOverdueExecution } from '../record-overdue-execution'
+import { recordLateScheduledStart } from '../record-late-scheduled-start'
 
 const NOW = new Date('2026-10-20T00:00:00.000Z').getTime()
 
@@ -46,7 +46,7 @@ function makeJob(latenessMs: number) {
   } as never
 }
 
-describe('recordOverdueExecution', () => {
+describe('recordLateScheduledStart', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(NOW)
@@ -58,8 +58,8 @@ describe('recordOverdueExecution', () => {
     vi.clearAllMocks()
   })
 
-  it('sets the first-start marker per job and the overdue marker per execution', async () => {
-    await recordOverdueExecution({
+  it('sets the first-start marker per job and the late marker per execution', async () => {
+    await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
       groupLimited: false,
@@ -75,7 +75,7 @@ describe('recordOverdueExecution', () => {
     )
     expect(mocks.redisSet).toHaveBeenNthCalledWith(
       2,
-      'delay:overdue-execution:execution-1',
+      'delay:late-execution:execution-1',
       '1',
       'EX',
       2_592_000,
@@ -84,7 +84,7 @@ describe('recordOverdueExecution', () => {
   })
 
   it('tags the active span with the lateness of an on-time start', async () => {
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob(1_234),
       queueName: '{app-actions-slack}',
       groupLimited: false,
@@ -93,8 +93,8 @@ describe('recordOverdueExecution', () => {
     expect(mocks.setTag).toHaveBeenCalledWith('delay.lateness_ms', 1_234)
   })
 
-  it('logs an overdue execution with its context', async () => {
-    await recordOverdueExecution({
+  it('logs a late execution with its context', async () => {
+    await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
       groupLimited: true,
@@ -103,7 +103,7 @@ describe('recordOverdueExecution', () => {
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        event: 'overdue-execution',
+        event: 'late-execution',
         flowId: 'flow-1',
         executionId: 'execution-1',
         stepId: 'step-2',
@@ -118,7 +118,7 @@ describe('recordOverdueExecution', () => {
     mocks.redisSet.mockRejectedValueOnce(new Error('connection lost'))
 
     await expect(
-      recordOverdueExecution({
+      recordLateScheduledStart({
         job: makeJob(400_000),
         queueName: '{app-actions-slack}',
         groupLimited: false,

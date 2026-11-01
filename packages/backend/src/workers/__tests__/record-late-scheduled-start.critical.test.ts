@@ -1,5 +1,5 @@
 /**
- * Business-critical: overdue delayed jobs count against the SLA.
+ * Business-critical: late starts after a delay step count against the SLA.
  *
  *   "For delayed jobs, anything that executed later than 5 mins past the
  *   scheduled time should count as failures in our SLA."
@@ -87,15 +87,15 @@ afterEach(() => {
   mocks.redisStore.clear()
 })
 
-describe('recordOverdueExecution', () => {
+describe('recordLateScheduledStart', () => {
   const QUEUE_NAME = '{app-actions-slack}'
 
-  async function loadRecordOverdueExecution(thresholdSeconds?: string) {
-    vi.stubEnv('OVERDUE_DELAY_STEP_THRESHOLD_SECONDS', thresholdSeconds)
+  async function loadRecordLateScheduledStart(graceSeconds?: string) {
+    vi.stubEnv('DELAY_STEP_GRACE_SECONDS', graceSeconds)
     vi.resetModules()
-    const { recordOverdueExecution } =
-      await import('../helpers/record-overdue-execution')
-    return recordOverdueExecution
+    const { recordLateScheduledStart } =
+      await import('../helpers/record-late-scheduled-start')
+    return recordLateScheduledStart
   }
 
   function makeJob({
@@ -121,31 +121,31 @@ describe('recordOverdueExecution', () => {
     } as never
   }
 
-  function overdueCount(groupLimited = false) {
+  function lateCount(groupLimited = false) {
     return mocks.incrementMetric.mock.calls.filter(
       ([name, tags]) =>
-        name === 'plumber.executions.overdue' &&
+        name === 'plumber.executions.late' &&
         tags.group_limited === String(groupLimited),
     ).length
   }
 
   it('counts a job starting 300,001 ms after scheduledAt once', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({ latenessMs: 300_001 }),
       queueName: QUEUE_NAME,
       groupLimited: false,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
-    expect(overdueCount()).toBe(1)
+    expect(lateCount()).toBe(1)
   })
 
   it('does not count a job starting exactly 300,000 ms after scheduledAt', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({ latenessMs: 300_000 }),
       queueName: QUEUE_NAME,
       groupLimited: false,
@@ -154,15 +154,15 @@ describe('recordOverdueExecution', () => {
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
   })
 
-  it('moves both bounds when the threshold changes', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution('600')
+  it('moves both bounds when the grace period changes', async () => {
+    const recordLateScheduledStart = await loadRecordLateScheduledStart('600')
 
     for (const [executionId, latenessMs] of [
       ['execution-1', 300_001],
       ['execution-2', 600_000],
       ['execution-3', 600_001],
     ] as const) {
-      await recordOverdueExecution({
+      await recordLateScheduledStart({
         job: makeJob({ id: executionId, executionId, latenessMs }),
         queueName: QUEUE_NAME,
         groupLimited: false,
@@ -170,15 +170,13 @@ describe('recordOverdueExecution', () => {
     }
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
-    expect(mocks.redisStore.has('delay:overdue-execution:execution-3')).toBe(
-      true,
-    )
+    expect(mocks.redisStore.has('delay:late-execution:execution-3')).toBe(true)
   })
 
   it('does not count a job without scheduledAt', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({}),
       queueName: QUEUE_NAME,
       groupLimited: false,
@@ -188,9 +186,9 @@ describe('recordOverdueExecution', () => {
   })
 
   it('does not count a job with retryTimestamp', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({ latenessMs: 3_600_000, retryTimestamp: NOW - 1_000 }),
       queueName: QUEUE_NAME,
       groupLimited: false,
@@ -199,17 +197,17 @@ describe('recordOverdueExecution', () => {
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
   })
 
-  it('does not count a second start of the same overdue job', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+  it('does not count a second start of the same late job', async () => {
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
     const job = makeJob({ latenessMs: 400_000 })
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
       groupLimited: false,
     })
     vi.advanceTimersByTime(60_000)
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
       groupLimited: false,
@@ -219,16 +217,16 @@ describe('recordOverdueExecution', () => {
   })
 
   it('does not count a late re-run of a job whose first start was on time', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
     const job = makeJob({ latenessMs: 1_000 })
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
       groupLimited: false,
     })
     vi.advanceTimersByTime(10 * 60_000)
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
       groupLimited: false,
@@ -238,34 +236,34 @@ describe('recordOverdueExecution', () => {
   })
 
   it('counts a late start on a queue with group limits as group_limited:true', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({ latenessMs: 300_001 }),
       queueName: QUEUE_NAME,
       groupLimited: true,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
-    expect(overdueCount(true)).toBe(1)
+    expect(lateCount(true)).toBe(1)
   })
 
-  it('does not count a second overdue step in the same execution', async () => {
-    const recordOverdueExecution = await loadRecordOverdueExecution()
+  it('does not count a second late step in the same execution', async () => {
+    const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({ id: 'job-1', latenessMs: 400_000 }),
       queueName: QUEUE_NAME,
       groupLimited: false,
     })
-    await recordOverdueExecution({
+    await recordLateScheduledStart({
       job: makeJob({ id: 'job-2', latenessMs: 500_000 }),
       queueName: '{app-actions-m365-excel}',
       groupLimited: true,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
-    expect(overdueCount()).toBe(1)
+    expect(lateCount()).toBe(1)
   })
 })
 

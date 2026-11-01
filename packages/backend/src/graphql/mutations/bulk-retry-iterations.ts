@@ -171,7 +171,7 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
           appKey: appKey,
           actionKey: key,
           jobName: job.name,
-          // A retry runs on demand, so the old scheduled time would read as overdue.
+          // A retry runs on demand, so the old scheduled time would read as late.
           jobData: omit(job.data, 'scheduledAt'),
           jobOptions: DEFAULT_JOB_OPTIONS,
         })

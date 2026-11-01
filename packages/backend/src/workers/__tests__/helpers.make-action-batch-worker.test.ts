@@ -23,12 +23,12 @@ const mocks = vi.hoisted(() => {
     processOn: vi.fn(),
     prepareActionExecution: vi.fn(),
     handleFailedJob: vi.fn(),
-    recordOverdueExecution: vi.fn(),
+    recordLateScheduledStart: vi.fn(),
   }
 })
 
-vi.mock('@/workers/helpers/record-overdue-execution', () => ({
-  recordOverdueExecution: mocks.recordOverdueExecution,
+vi.mock('@/workers/helpers/record-late-scheduled-start', () => ({
+  recordLateScheduledStart: mocks.recordLateScheduledStart,
 }))
 
 vi.mock('@/queues/action', () => ({
@@ -188,7 +188,7 @@ describe('makeActionBatchWorker', () => {
       vi.clearAllMocks()
     })
 
-    it('records overdue executions for every member before preparing the batch', async () => {
+    it('records late scheduled starts for every member before preparing the batch', async () => {
       const members = ['1', '2'].map((id) => ({
         id,
         data: {
@@ -209,13 +209,13 @@ describe('makeActionBatchWorker', () => {
       await calls.at(-1)[1]({ getBatch: () => members })
 
       for (const member of members) {
-        expect(mocks.recordOverdueExecution).toHaveBeenCalledWith({
+        expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
           job: member,
           queueName: '{app-actions-m365-excel-batch}',
           groupLimited: true,
         })
       }
-      expect(mocks.recordOverdueExecution).toHaveBeenCalledBefore(
+      expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
         mocks.prepareActionExecution,
       )
     })

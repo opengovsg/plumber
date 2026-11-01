@@ -17,7 +17,7 @@ import { processAction } from '@/services/action'
 
 import { advanceAfterStep } from './advance-after-step'
 import { getJobQueueTimingTags } from './job-queue-timing'
-import { recordOverdueExecution } from './record-overdue-execution'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { requeueOnFileLockContention } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -119,7 +119,7 @@ export function makeActionWorker(
           workerVersion: appConfig.version,
         })
 
-        await recordOverdueExecution({ job, queueName, groupLimited })
+        await recordLateScheduledStart({ job, queueName, groupLimited })
 
         const processResult = await processAction({ ...jobData, jobId }).catch(
           async (err) => {
