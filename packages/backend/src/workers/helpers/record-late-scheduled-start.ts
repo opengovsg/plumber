@@ -73,7 +73,7 @@ export async function recordLateScheduledStart({
       return
     }
 
-    incrementMetric('plumber.executions.late_delayed_step_start', {
+    incrementMetric('plumber.executions.late_after_delay', {
       group_limited: String(groupLimited),
     })
     logger.warn('Step after a delay step started late', {

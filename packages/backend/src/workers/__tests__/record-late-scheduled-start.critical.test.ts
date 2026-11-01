@@ -124,7 +124,7 @@ describe('recordLateScheduledStart', () => {
   function lateCount(groupLimited = false) {
     return mocks.incrementMetric.mock.calls.filter(
       ([name, tags]) =>
-        name === 'plumber.executions.late_delayed_step_start' &&
+        name === 'plumber.executions.late_after_delay' &&
         tags.group_limited === String(groupLimited),
     ).length
   }
