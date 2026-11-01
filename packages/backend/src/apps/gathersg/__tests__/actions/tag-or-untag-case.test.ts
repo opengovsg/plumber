@@ -264,4 +264,60 @@ describe('tag or untag case', () => {
       },
     )
   })
+
+  describe('error kinds', () => {
+    it.each([
+      ['empty tag value', { tagValue: '' }],
+      ['malformed case identifier', { caseUuid: 'invalid-uuid-with-dashes' }],
+    ])('tags a %s as config', async (_label, parameters) => {
+      Object.assign($.step.parameters, parameters)
+
+      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+      expect(mocks.httpPost).not.toHaveBeenCalled()
+    })
+
+    it('tags a response without traceId as third-party', async () => {
+      mocks.httpPost.mockResolvedValueOnce({ data: {} })
+
+      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+        kind: 'third-party',
+      })
+    })
+
+    it('tags a 404 RESOURCE_NOT_FOUND as config', async () => {
+      mocks.httpPost.mockRejectedValueOnce(
+        makeHttpError({
+          status: 404,
+          data: {
+            error: { code: 'RESOURCE_NOT_FOUND', message: 'Case not found' },
+          },
+        }),
+      )
+
+      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('tags a 500 as third-party', async () => {
+      mocks.httpPost.mockRejectedValueOnce(
+        makeHttpError({ status: 500, data: { message: 'Server error' } }),
+      )
+
+      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+        kind: 'third-party',
+      })
+    })
+
+    it('tags an unexpected error as internal', async () => {
+      mocks.httpPost.mockRejectedValueOnce(new Error('boom'))
+
+      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+        kind: 'internal',
+        message: expect.stringContaining("An error occurred: 'boom'"),
+      })
+    })
+  })
 })
