@@ -38,9 +38,13 @@ interface DueWindow {
   graceSeconds: number
 }
 
+export function getLookBackStartMillis(nowMillis: number): number {
+  return nowMillis - LOOK_BACK_CAP_SECONDS * 1000
+}
+
 function getDueRange({ nowMillis, graceSeconds }: DueWindow) {
   return {
-    earliestMillis: nowMillis - LOOK_BACK_CAP_SECONDS * 1000,
+    earliestMillis: getLookBackStartMillis(nowMillis),
     latestMillis: nowMillis - graceSeconds * 1000,
   }
 }

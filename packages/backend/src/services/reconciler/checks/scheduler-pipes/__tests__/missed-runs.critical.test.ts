@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest'
 import {
   findMissingPipeMissedRuns,
   findOverduePipeMissedRuns,
+  getLookBackStartMillis,
   getSchedulePattern,
   MISSED_RUN_MARKER_TTL_SECONDS,
 } from '../missed-runs'
@@ -201,6 +202,26 @@ describe('findMissingPipeMissedRuns', () => {
     expect(missedRuns).toHaveLength(7 * 24)
     expect(missedRuns[0].runTimeMillis).toBe(
       NOW - MISSED_RUN_MARKER_TTL_SECONDS * 1000,
+    )
+  })
+
+  // The latest execution query skips executions before the look-back start.
+  it('ignores a latest execution before the look-back start', () => {
+    const input = {
+      flowId: FLOW_ID,
+      pattern: HOURLY,
+      publishedAtMillis: NOW - 30 * 24 * HOUR,
+      nowMillis: NOW,
+      graceSeconds: GRACE_SECONDS,
+    }
+
+    expect(
+      findMissingPipeMissedRuns({
+        ...input,
+        latestExecutionMillis: getLookBackStartMillis(NOW) - 1,
+      }),
+    ).toEqual(
+      findMissingPipeMissedRuns({ ...input, latestExecutionMillis: undefined }),
     )
   })
 
