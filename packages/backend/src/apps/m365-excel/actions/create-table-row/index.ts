@@ -21,26 +21,6 @@ import batchQueueConfig from '../../queue/batch'
 import getDataOutMetadata from './get-data-out-metadata'
 import { parametersSchema } from './schemas'
 
-// Small wrapper around constructMsGraphValuesArrayForRowWrite which throws
-// StepError. As StepError requires $, this helps avoid $ becoming viral through
-// our codebase.
-//
-// constructMsGraphValuesArrayForRowWrite is a generic helper function and
-// should not be restricted to codepaths with $.
-function buildRowUpdateArgs(
-  _$: IGlobalVariable,
-  ...args: Parameters<typeof constructMsGraphValuesArrayForRowWrite>
-): ReturnType<typeof constructMsGraphValuesArrayForRowWrite> {
-  try {
-    return constructMsGraphValuesArrayForRowWrite(...args)
-  } catch (err) {
-    throw new StepError(
-      `Error creating table row: ${err.message}`,
-      'Double check that your step is configured correctly',
-    )
-  }
-}
-
 interface TableHeaderInfo {
   rowIndex: number
   columnNames: string[] // Ordered
@@ -58,10 +38,11 @@ type ParsedJob = {
 function parseRowParams($: IGlobalVariable) {
   const parametersParseResult = parametersSchema.safeParse($.step.parameters)
   if (parametersParseResult.success === false) {
-    throw new StepError(
-      'There was a problem with the input.',
-      parametersParseResult.error.issues[0].message,
-    )
+    throw new StepError({
+      name: 'There was a problem with the input.',
+      solution: parametersParseResult.error.issues[0].message,
+      kind: 'config',
+    })
   }
   return parametersParseResult.data
 }
@@ -206,10 +187,12 @@ async function runBatch(
   // This occurs when a user selected all the columns and created a table by accident...
   // Reference: https://learn.microsoft.com/en-us/answers/questions/1837007/excel-api-cant-reach-data-on-the-last-column-xfd
   if (!tableHeaderInfoResponse.data.values?.[0]?.length) {
-    throw new StepError(
-      'Could not read table headers.',
-      'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
-    )
+    throw new StepError({
+      name: 'Could not read table headers.',
+      solution:
+        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
+      kind: 'third-party',
+    })
   }
 
   const tableHeaderInfo: TableHeaderInfo = {
@@ -220,18 +203,20 @@ async function runBatch(
   // Build each parsed job's ordered values row INDIVIDUALLY, isolating a per-job
   // build failure (e.g. a `columnName` that doesn't exist in the table) the same
   // way a bad-params job is isolated above - one un-buildable row must not sink
-  // the whole batch. buildRowUpdateArgs throws a StepError, recorded as that
-  // job's failure (and re-thrown on the single-job `run` path). The schema parse
+  // the whole batch. constructMsGraphValuesArrayForRowWrite throws a StepError,
+  // recorded as that job's failure (and re-thrown on the single-job `run`
+  // path). The schema parse
   // above can't catch this: a non-existent column is still a valid non-empty
   // string, so it only fails here, against the table's real columns. We disallow
   // blacklisted formulas and sanitise when necessary.
   const writable: Array<{ index: number; $: IGlobalVariable }> = []
-  const values: Array<ReturnType<typeof buildRowUpdateArgs>> = []
+  const values: Array<
+    ReturnType<typeof constructMsGraphValuesArrayForRowWrite>
+  > = []
   parsed.forEach(({ index, $, params }) => {
     try {
       values.push(
-        buildRowUpdateArgs(
-          $,
+        constructMsGraphValuesArrayForRowWrite(
           tableHeaderInfo.columnNames,
           params.columnValues.map((col) => ({
             columnName: col.columnName,
