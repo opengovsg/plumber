@@ -1,20 +1,22 @@
-import { client as knexClient } from '@/config/database'
+import BaseExecution from '@/models/execution/base'
 
 interface LatestExecutionRow {
-  flow_id: string
-  latest_created_at: string | Date
+  flowId: string
+  latestCreatedAt: string | Date
 }
 
-// Not the Execution model: it imports every app, and some apps open Redis clients at import.
+// BaseExecution, not Execution: Execution imports every app, and some apps open Redis clients at import.
 export function buildLatestExecutionTimesQuery(flowIds: string[]) {
   return (
-    knexClient('executions')
+    BaseExecution.query()
       // A soft-deleted execution still proves its run happened.
-      .select<LatestExecutionRow[]>('flow_id')
+      .withSoftDeleted()
+      .select('flow_id')
       .max('created_at as latest_created_at')
       .whereIn('flow_id', flowIds)
       .where('test_run', false)
       .groupBy('flow_id')
+      .castTo<LatestExecutionRow[]>()
   )
 }
 
@@ -28,6 +30,6 @@ export async function fetchLatestExecutionTimes(
   const rows = await buildLatestExecutionTimesQuery(flowIds)
 
   return new Map(
-    rows.map((row) => [row.flow_id, new Date(row.latest_created_at).getTime()]),
+    rows.map((row) => [row.flowId, new Date(row.latestCreatedAt).getTime()]),
   )
 }
