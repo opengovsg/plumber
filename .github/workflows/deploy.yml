@@ -304,19 +304,9 @@ jobs:
           TASK_DEF_FILE: ${{ steps.archival-task-def.outputs.task-definition }}
         run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"
 
-      - name: (Reconciler) Merge env.json and replace variables
+      - name: (Reconciler) Replace variables in task definition
         run: |
-          # Import env vars from env.json except for ones explicitly defined in
-          # reconciler-task-definition.json.
-          # e.g. This task has no Datadog agent, so its own DD_* values must win
-          # over env.json's.
-          jq --argjson environment "$(jq -c '.environment' ecs/env.json)" \
-             --argjson secrets "$(jq -c '.secrets' ecs/env.json)" \
-            '(.containerDefinitions[] | select(.name == "reconciler")) |=
-               ([.environment[].name] as $own
-                | .environment += ($environment | map(select(.name as $n | $own | index($n) | not)))
-                | .secrets += $secrets)' \
-            ecs/reconciler-task-definition.json > ecs-reconciler-task-definition.json
+          cp ecs/reconciler-task-definition.json ecs-reconciler-task-definition.json
           sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-reconciler-task-definition.json
           sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-reconciler-task-definition.json
         env:
