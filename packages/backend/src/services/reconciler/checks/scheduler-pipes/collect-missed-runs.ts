@@ -25,6 +25,7 @@ interface CollectMissedRunsInput {
 }
 
 // One pipe with a bad schedule must not stop the check for every other pipe.
+// IMPORTANT: Not a try/catch around each loop body, which would also swallow Redis errors that must fail the run.
 function listPipeMissedRuns(
   pipe: PublishedScheduledPipe,
   listMissedRuns: (pattern: string) => MissedRun[],
