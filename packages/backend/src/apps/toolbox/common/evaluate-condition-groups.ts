@@ -2,7 +2,7 @@ import type { IConditionRow, IJSONObject, IMultiRowGroup } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
-import conditionIsTrue from './condition-is-true'
+import conditionIsTrue, { makeConditionGroupError } from './condition-is-true'
 
 /**
  * Evaluates an OR-of-AND condition structure.
@@ -29,17 +29,17 @@ export function evaluateConditionGroups(
     try {
       if (
         groups[i].rows.every((row) =>
-          conditionIsTrue(row as unknown as IJSONObject),
+          conditionIsTrue(row as unknown as IJSONObject, i + 1),
         )
       ) {
         return true
       }
     } catch (err) {
+      if (err instanceof StepError) {
+        throw err
+      }
       // Fail-fast, but name the offending group for the user.
-      throw new StepError(
-        `Error in condition group ${i + 1}: ${err.message}`,
-        'Check that the condition has been configured properly.',
-      )
+      throw makeConditionGroupError(i + 1, err.message, 'internal')
     }
   }
   return false
