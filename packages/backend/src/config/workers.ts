@@ -20,9 +20,9 @@ if (!Number.isInteger(M365_BATCH_SIZE) || M365_BATCH_SIZE < 1) {
   )
 }
 
-export const OVERDUE_DELAY_STEP_THRESHOLD_SECONDS = z.coerce
+export const DELAY_STEP_GRACE_SECONDS = z.coerce
   .number()
   .int()
   .positive()
   .default(300)
-  .parse(process.env.OVERDUE_DELAY_STEP_THRESHOLD_SECONDS)
+  .parse(process.env.DELAY_STEP_GRACE_SECONDS)

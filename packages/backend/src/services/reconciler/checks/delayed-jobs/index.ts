@@ -11,23 +11,23 @@ const DELAYED_SCORE_MULTIPLIER = 0x1000
 interface CreateDelayedJobsCheckInput {
   jobsRedis: Pick<Redis, 'zcount'>
   queues: ActionQueue[]
-  thresholdSeconds: number
+  graceSeconds: number
 }
 
 export function createDelayedJobsCheck({
   jobsRedis,
   queues,
-  thresholdSeconds,
+  graceSeconds,
 }: CreateDelayedJobsCheckInput): ReconcilerCheck {
   return {
     name: 'delayed-jobs',
     run: async () => {
-      const latestPastDueMillis = Date.now() - thresholdSeconds * 1000
+      const overdueBeforeMillis = Date.now() - graceSeconds * 1000
       const exclusiveMaxScore = `(${
-        latestPastDueMillis * DELAYED_SCORE_MULTIPLIER
+        overdueBeforeMillis * DELAYED_SCORE_MULTIPLIER
       }`
 
-      const pastDueCounts = await Promise.all(
+      const overdueCounts = await Promise.all(
         queues.map(({ prefix, name }) =>
           jobsRedis.zcount(
             `${prefix}:${name}:delayed`,
@@ -41,12 +41,12 @@ export function createDelayedJobsCheck({
         const logDetails = {
           event: 'reconciler-delayed-jobs-check',
           queue: name,
-          pastDueCount: pastDueCounts[index],
+          overdueCount: overdueCounts[index],
         }
-        if (pastDueCounts[index] > 0) {
-          logger.warn('Delayed jobs check found past-due jobs', logDetails)
+        if (overdueCounts[index] > 0) {
+          logger.warn('Delayed jobs check found overdue jobs', logDetails)
         } else {
-          logger.info('Delayed jobs check found no past-due jobs', logDetails)
+          logger.info('Delayed jobs check found no overdue jobs', logDetails)
         }
       })
     },

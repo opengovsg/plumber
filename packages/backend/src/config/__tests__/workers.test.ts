@@ -1,11 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-async function loadThreshold(value: string | undefined) {
-  vi.stubEnv('OVERDUE_DELAY_STEP_THRESHOLD_SECONDS', value)
+async function loadGraceSeconds(value: string | undefined) {
+  vi.stubEnv('DELAY_STEP_GRACE_SECONDS', value)
   vi.resetModules()
-  const { OVERDUE_DELAY_STEP_THRESHOLD_SECONDS } =
-    await import('@/config/workers')
-  return OVERDUE_DELAY_STEP_THRESHOLD_SECONDS
+  const { DELAY_STEP_GRACE_SECONDS } = await import('@/config/workers')
+  return DELAY_STEP_GRACE_SECONDS
 }
 
 afterEach(() => {
@@ -13,16 +12,16 @@ afterEach(() => {
   vi.resetModules()
 })
 
-describe('OVERDUE_DELAY_STEP_THRESHOLD_SECONDS', () => {
+describe('DELAY_STEP_GRACE_SECONDS', () => {
   it('defaults to 300 seconds', async () => {
-    await expect(loadThreshold(undefined)).resolves.toBe(300)
+    await expect(loadGraceSeconds(undefined)).resolves.toBe(300)
   })
 
   it('reads the environment variable', async () => {
-    await expect(loadThreshold('600')).resolves.toBe(600)
+    await expect(loadGraceSeconds('600')).resolves.toBe(600)
   })
 
   it.each(['0', '-1', '1.5', 'abc'])('rejects %s', async (value) => {
-    await expect(loadThreshold(value)).rejects.toThrow()
+    await expect(loadGraceSeconds(value)).rejects.toThrow()
   })
 })

@@ -21,11 +21,11 @@ const QUEUES = [
 describe('createDelayedJobsCheck', () => {
   const zcount = vi.fn()
 
-  function createCheck(thresholdSeconds = 300) {
+  function createCheck(graceSeconds = 300) {
     return createDelayedJobsCheck({
       jobsRedis: { zcount },
       queues: QUEUES,
-      thresholdSeconds,
+      graceSeconds,
     })
   }
 
@@ -54,7 +54,7 @@ describe('createDelayedJobsCheck', () => {
     ])
   })
 
-  it('counts only jobs due more than the threshold before now', async () => {
+  it('counts only jobs due more than the grace period before now', async () => {
     zcount.mockResolvedValue(0)
 
     await createCheck().run()
@@ -67,7 +67,7 @@ describe('createDelayedJobsCheck', () => {
     )
   })
 
-  it('moves the bound with the threshold', async () => {
+  it('moves the bound with the grace period', async () => {
     zcount.mockResolvedValue(0)
 
     await createCheck(600).run()
@@ -79,7 +79,7 @@ describe('createDelayedJobsCheck', () => {
     )
   })
 
-  it('logs one line per queue with its past-due count', async () => {
+  it('logs one line per queue with its overdue count', async () => {
     zcount.mockResolvedValueOnce(0).mockResolvedValueOnce(3)
 
     await createCheck().run()
@@ -88,13 +88,13 @@ describe('createDelayedJobsCheck', () => {
     expect(mocks.logInfo).toHaveBeenCalledWith(expect.any(String), {
       event: 'reconciler-delayed-jobs-check',
       queue: 'action',
-      pastDueCount: 0,
+      overdueCount: 0,
     })
     expect(mocks.logWarn).toHaveBeenCalledTimes(1)
     expect(mocks.logWarn).toHaveBeenCalledWith(expect.any(String), {
       event: 'reconciler-delayed-jobs-check',
       queue: '{app-actions-m365-excel}',
-      pastDueCount: 3,
+      overdueCount: 3,
     })
   })
 

@@ -1,6 +1,6 @@
 import type { Redis } from 'ioredis'
 
-import { OVERDUE_DELAY_STEP_THRESHOLD_SECONDS } from '@/config/workers'
+import { DELAY_STEP_GRACE_SECONDS } from '@/config/workers'
 
 import type { ReconcilerCheck } from '../run-checks'
 import { createDelayedJobsCheck } from './delayed-jobs'
@@ -26,7 +26,7 @@ export function createReconcilerChecks({
     createDelayedJobsCheck({
       jobsRedis,
       queues: ACTION_QUEUES,
-      thresholdSeconds: OVERDUE_DELAY_STEP_THRESHOLD_SECONDS,
+      graceSeconds: DELAY_STEP_GRACE_SECONDS,
     }),
   ]
 }
