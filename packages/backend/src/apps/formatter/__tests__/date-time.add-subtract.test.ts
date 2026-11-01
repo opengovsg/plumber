@@ -331,4 +331,51 @@ describe('add / subtract date time', () => {
       raw: { result: '2025-02-28T00:00:00.000+08:00' },
     })
   })
+
+  describe('step error kind', () => {
+    const addOneDay = [{ opType: 'add', timeUnit: 'days', timeAmount: '1' }]
+
+    it('marks an empty time amount as config', async () => {
+      $.step.parameters = {
+        dateTimeFormat: 'formsgDateField',
+        addSubtractDateTimeOps: [
+          { opType: 'add', timeUnit: 'days', timeAmount: '' },
+        ],
+      }
+      await expect(transformData($, '01 Apr 2024')).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it.each([
+      { valueToTransform: '', name: "Error processing dates: '' is not" },
+      {
+        valueToTransform: '27/07/2026',
+        name: "Error processing dates: '27/07/2026' is not",
+      },
+    ])(
+      'marks a value that does not match the format ($valueToTransform) as config',
+      async ({ valueToTransform, name }) => {
+        $.step.parameters = {
+          dateTimeFormat: 'formsgDateField',
+          addSubtractDateTimeOps: addOneDay,
+        }
+        const result = transformData($, valueToTransform)
+        await expect(result).rejects.toMatchObject({ kind: 'config' })
+        await expect(result).rejects.toThrow(name)
+      },
+    )
+
+    it('marks an Excel formatted date output as internal', async () => {
+      $.step.parameters = {
+        dateTimeFormat: 'excelFormattedDate',
+        addSubtractDateTimeOps: addOneDay,
+      }
+      const result = transformData($, '45292')
+      await expect(result).rejects.toMatchObject({ kind: 'internal' })
+      await expect(result).rejects.toThrow(
+        'Excel formatted date is an input-only format',
+      )
+    })
+  })
 })
