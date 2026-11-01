@@ -59,7 +59,7 @@ describe('createScheduleCheck', () => {
     })
   }
 
-  it('logs the heartbeat with the IDs of problem pipes', async () => {
+  it('logs the heartbeat with problem pipe counts, not their IDs', async () => {
     mocks.fetchPublishedScheduledPipes.mockResolvedValue([
       pipe(FLOW_HEALTHY),
       pipe(FLOW_OVERDUE),
@@ -82,11 +82,12 @@ describe('createScheduleCheck', () => {
     )
     expect(mocks.logWarn).toHaveBeenCalledWith(
       'Schedule check found problem pipes',
-      expect.objectContaining({
+      {
         event: 'reconciler-schedule-check',
-        missingFlowIds: [FLOW_MISSING],
-        overdueFlowIds: [FLOW_OVERDUE],
-      }),
+        publishedPipeCount: 3,
+        missingCount: 1,
+        overdueCount: 1,
+      },
     )
   })
 
@@ -99,12 +100,12 @@ describe('createScheduleCheck', () => {
     expect(mocks.logWarn).not.toHaveBeenCalled()
     expect(mocks.logInfo).toHaveBeenCalledWith(
       'Schedule check found no problem pipes',
-      expect.objectContaining({
+      {
         event: 'reconciler-schedule-check',
         publishedPipeCount: 1,
-        missingFlowIds: [],
-        overdueFlowIds: [],
-      }),
+        missingCount: 0,
+        overdueCount: 0,
+      },
     )
   })
 

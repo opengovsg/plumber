@@ -43,8 +43,6 @@ export function createScheduleCheck({
         publishedPipeCount: publishedPipes.length,
         missingCount: missingFlowIds.length,
         overdueCount: overdueFlowIds.length,
-        missingFlowIds,
-        overdueFlowIds,
       }
       if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
         logger.warn('Schedule check found problem pipes', logDetails)
