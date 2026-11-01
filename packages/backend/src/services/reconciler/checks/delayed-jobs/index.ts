@@ -2,7 +2,7 @@ import type { Redis } from 'ioredis'
 
 import logger from '@/helpers/logger'
 
-import type { ReconcilerCheck } from '../run-checks'
+import type { ReconcilerCheck } from '../../run-checks'
 import type { ActionQueue } from './action-queues'
 
 // BullMQ scores a delayed job as its due time in millis times 0x1000, plus a sequence number below 0x1000.

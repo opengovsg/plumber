@@ -2,9 +2,9 @@ import type { Redis } from 'ioredis'
 
 import { OVERDUE_DELAY_STEP_THRESHOLD_SECONDS } from '@/config/workers'
 
-import { createDelayedJobsCheck } from '../delayed-jobs-check'
-import { ACTION_QUEUES } from '../delayed-jobs-check/action-queues'
 import type { ReconcilerCheck } from '../run-checks'
+import { createDelayedJobsCheck } from './delayed-jobs'
+import { ACTION_QUEUES } from './delayed-jobs/action-queues'
 import { createSchedulerPipesCheck } from './scheduler-pipes'
 import { parseSchedulerPipesCheckConfig } from './scheduler-pipes/config'
 
