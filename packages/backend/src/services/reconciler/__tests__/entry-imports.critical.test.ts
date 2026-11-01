@@ -4,6 +4,9 @@
  * - "Prevent the reconciler from processing jobs by preventing importing
  *   worker code."
  * - "`src/reconciler.ts` must not import `workers/*` (only `worker.ts` may)."
+ * - "The reconciler must not load the full app config, so its task declares
+ *   only the env vars it uses."
+ * - "Add a datetime.ts, in case later reconciler code calls into Luxon."
  */
 import fs from 'fs'
 import path from 'path'
@@ -86,5 +89,18 @@ describe('reconciler entry imports', () => {
       path.join(SRC_DIR, 'services/reconciler/run-checks.ts'),
     )
     expect([...reached].filter(isForbidden)).toEqual([])
+  })
+
+  it('never loads the full app config, whose required env vars the task omits', () => {
+    const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
+
+    expect(reached).not.toContain(path.join(SRC_DIR, 'config/app/core.ts'))
+    expect(reached).not.toContain(path.join(SRC_DIR, 'config/app/index.ts'))
+  })
+
+  it('sets up Luxon like the app does', () => {
+    const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
+
+    expect(reached).toContain(path.join(SRC_DIR, 'config/datetime.ts'))
   })
 })
