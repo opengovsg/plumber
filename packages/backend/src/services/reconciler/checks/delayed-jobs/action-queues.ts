@@ -4,6 +4,7 @@ export interface ActionQueue {
 }
 
 // `@/queues/action` derives this from `@/apps`, which creates Redis clients on import.
+// IMPORTANT: `__tests__/action-queues.test.ts` fails when this list drifts from `@/queues/action`.
 export const ACTION_QUEUES: ActionQueue[] = [
   { prefix: '{actionQ}', name: 'action' },
   { prefix: 'bull', name: '{app-actions-formsg}' },

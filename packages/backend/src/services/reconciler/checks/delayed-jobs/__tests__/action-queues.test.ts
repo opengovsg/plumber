@@ -28,6 +28,9 @@ describe('ACTION_QUEUES', () => {
       prefix: params.redisConnectionPrefix ?? 'bull',
       name: params.queueName,
     }))
-    expect(sortByName(ACTION_QUEUES)).toEqual(sortByName(createdQueues))
+    expect(
+      sortByName(ACTION_QUEUES),
+      'Update ACTION_QUEUES in services/reconciler/checks/delayed-jobs/action-queues.ts to match the action queues in @/queues/action',
+    ).toEqual(sortByName(createdQueues))
   })
 })
