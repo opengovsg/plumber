@@ -34,10 +34,12 @@ const rateLimiter = new RateLimiterRedis({
 
 function throwError($?: IGlobalVariable): never {
   if ($) {
-    throw new StepError(
-      'Excel has reached its limit',
-      'There are too many users testing Excel at this moment. Try testing your step again later.',
-    )
+    throw new StepError({
+      name: 'Excel has reached its limit',
+      solution:
+        'There are too many users testing Excel at this moment. Try testing your step again later.',
+      kind: 'internal',
+    })
   } else {
     throw new Error(
       'There are too many users testing Excel at this moment. Try again later.',
