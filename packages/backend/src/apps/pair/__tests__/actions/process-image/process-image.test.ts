@@ -66,7 +66,9 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrowError(StepError)
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) => error instanceof StepError && error.kind === 'config',
+    )
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.getImageContent).not.toHaveBeenCalled()
   })
@@ -78,7 +80,9 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrowError(StepError)
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) => error instanceof StepError && error.kind === 'config',
+    )
     expect(mocks.generateObject).not.toHaveBeenCalled()
   })
 
@@ -162,8 +166,11 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrow(
-      /Image is too large/,
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) =>
+        error instanceof StepError &&
+        /Image is too large/.test(error.message) &&
+        error.kind === 'config',
     )
   })
 
@@ -192,8 +199,66 @@ describe('Process image action', () => {
         expect(error).toBeInstanceOf(StepError)
         expect(error.message).not.toMatch(/RateLimitError|Model Group/)
         expect(error.message).toMatch(/Failed to process image/)
+        expect(error.kind).toBe('internal')
         return true
       },
     )
+  })
+
+  it('throws a third-party StepError when the model gateway fails', async () => {
+    mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: 'Internal server error',
+        url: 'https://litellm.example.com/v1/chat/completions',
+        requestBodyValues: {},
+        statusCode: 500,
+      }),
+    )
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) =>
+        error instanceof StepError &&
+        /Failed to process image/.test(error.message) &&
+        error.kind === 'third-party',
+    )
+  })
+
+  it('throws an internal StepError for an unknown error', async () => {
+    mocks.getImageContent.mockRejectedValue(new Error('boom'))
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) =>
+        error instanceof StepError &&
+        /Failed to process image/.test(error.message) &&
+        error.kind === 'internal',
+    )
+  })
+
+  it('rethrows a StepError from reading the image unchanged', async () => {
+    const stepError = new StepError({
+      name: 'png files are not supported',
+      solution: 'Use another file.',
+      kind: 'config',
+    })
+    mocks.getImageContent.mockRejectedValue(stepError)
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toBe(stepError)
+    expect(mocks.generateObject).not.toHaveBeenCalled()
   })
 })
