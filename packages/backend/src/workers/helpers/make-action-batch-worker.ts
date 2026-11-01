@@ -627,13 +627,13 @@ async function processBatch(ctx: BatchContext): Promise<void> {
   const batchJobs = job.getBatch()
   // groupAffinity puts one group in each batch. The container job has no gid.
   tagBatchStart(ctx, batchJobs, batchJobs[0]?.gid)
-  // Batch workers always cap group concurrency.
   await Promise.all(
     batchJobs.map((batchJob) =>
       recordLateScheduledStart({
         job: batchJob,
         queueName: ctx.queueName,
-        groupLimited: true,
+        // Only grouped jobs wait on the group concurrency cap.
+        groupLimited: batchJob.opts.group !== undefined,
       }),
     ),
   )

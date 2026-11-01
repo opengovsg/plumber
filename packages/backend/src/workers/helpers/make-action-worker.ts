@@ -89,7 +89,7 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
-  const groupLimited = Boolean(params.queueConfig.groupLimits)
+  const queueHasGroupLimits = Boolean(params.queueConfig.groupLimits)
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
     tracer.wrap(
@@ -119,7 +119,12 @@ export function makeActionWorker(
           workerVersion: appConfig.version,
         })
 
-        await recordLateScheduledStart({ job, queueName, groupLimited })
+        await recordLateScheduledStart({
+          job,
+          queueName,
+          // An ungrouped job on a group-limited queue never waits on a group limit.
+          groupLimited: queueHasGroupLimits && job.opts.group !== undefined,
+        })
 
         const processResult = await processAction({ ...jobData, jobId }).catch(
           async (err) => {

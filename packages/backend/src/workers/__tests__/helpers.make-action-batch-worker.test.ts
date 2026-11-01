@@ -165,6 +165,7 @@ describe('makeActionBatchWorker', () => {
     const batchJob = {
       id: 'job-1',
       data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
+      opts: {},
       setAsFailed: vi.fn(),
     }
 
@@ -189,14 +190,17 @@ describe('makeActionBatchWorker', () => {
     })
 
     it('records late scheduled starts for every member before preparing the batch', async () => {
-      const members = ['1', '2'].map((id) => ({
+      const members = [
+        { id: '1', group: { id: 'file-1' } },
+        { id: '2', group: undefined },
+      ].map(({ id, group }) => ({
         id,
         data: {
           flowId: 'flow-1',
           executionId: `execution-${id}`,
           stepId: 'step-1',
         },
-        opts: {},
+        opts: group ? { group } : {},
         setAsFailed: vi.fn(),
       }))
       mocks.prepareActionExecution.mockRejectedValue(new Error('no step'))
@@ -212,7 +216,7 @@ describe('makeActionBatchWorker', () => {
         expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
           job: member,
           queueName: '{app-actions-m365-excel-batch}',
-          groupLimited: true,
+          groupLimited: member.opts.group !== undefined,
         })
       }
       expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(

@@ -217,7 +217,7 @@ describe('makeActionWorker', () => {
       vi.clearAllMocks()
     })
 
-    const job = {
+    const baseJob = {
       id: '1',
       data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
       opts: {},
@@ -231,23 +231,36 @@ describe('makeActionWorker', () => {
       return calls.at(-1)[1]
     }
 
+    const groupLimitedQueueConfig = {
+      isQueueDelayable: false,
+      workerType: 'action' as const,
+      getGroupConfigForJob: vi.fn(),
+      groupLimits: { type: 'concurrency' as const, concurrency: 1 },
+    }
+
     it.each([
       {
+        name: 'a queue without group limits',
         queueConfig: { isQueueDelayable: false, workerType: 'action' as const },
+        group: undefined,
         groupLimited: false,
       },
       {
-        queueConfig: {
-          isQueueDelayable: false,
-          workerType: 'action' as const,
-          getGroupConfigForJob: vi.fn(),
-          groupLimits: { type: 'concurrency' as const, concurrency: 1 },
-        },
+        name: 'a grouped job on a group-limited queue',
+        queueConfig: groupLimitedQueueConfig,
+        group: { id: 'table-1-findSingleRow' },
         groupLimited: true,
       },
+      {
+        name: 'an ungrouped job on a group-limited queue',
+        queueConfig: groupLimitedQueueConfig,
+        group: undefined,
+        groupLimited: false,
+      },
     ])(
-      'records late scheduled starts before running the step (groupLimited: $groupLimited)',
-      async ({ queueConfig, groupLimited }) => {
+      'records late scheduled starts before running the step for $name (groupLimited: $groupLimited)',
+      async ({ queueConfig, group, groupLimited }) => {
+        const job = { ...baseJob, opts: group ? { group } : {} }
         mocks.processAction.mockResolvedValueOnce({})
         makeActionWorker({
           appKey: 'test-app',
