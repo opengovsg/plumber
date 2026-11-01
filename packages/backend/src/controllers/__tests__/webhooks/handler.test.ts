@@ -199,16 +199,13 @@ describe('webhook handler', () => {
 
       await webhookHandler(request, mocks.response)
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        `Rate limited flow ${FLOW_ID}`,
-        {
-          event: 'webhook-rate-limited',
-          flowId: FLOW_ID,
-          flowName: 'Test pipe',
-          ownerEmail: 'owner@example.com',
-          maxQps: 5,
-        },
-      )
+      expect(logger.warn).toHaveBeenCalledWith(`Rate limited flow ${FLOW_ID}`, {
+        event: 'webhook-rate-limited',
+        flowId: FLOW_ID,
+        flowName: 'Test pipe',
+        ownerEmail: 'owner@example.com',
+        maxQps: 5,
+      })
     })
 
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(
