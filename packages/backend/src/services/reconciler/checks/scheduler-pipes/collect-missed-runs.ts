@@ -24,10 +24,15 @@ interface CollectMissedRunsInput {
   graceSeconds: number
 }
 
-// One pipe with bad trigger parameters must not stop the check for every other pipe.
-function readSchedulePattern(pipe: PublishedScheduledPipe): string | null {
+// One pipe with a bad schedule must not stop the check for every other pipe.
+function listPipeMissedRuns(
+  pipe: PublishedScheduledPipe,
+  listMissedRuns: (pattern: string) => MissedRun[],
+): MissedRun[] {
   try {
-    return getSchedulePattern(pipe.triggerKey, pipe.triggerParameters)
+    return listMissedRuns(
+      getSchedulePattern(pipe.triggerKey, pipe.triggerParameters),
+    )
   } catch (error) {
     logger.error('Scheduler pipes check could not read a pipe schedule', {
       event: 'reconciler-schedule-pattern-error',
@@ -35,7 +40,7 @@ function readSchedulePattern(pipe: PublishedScheduledPipe): string | null {
       triggerKey: pipe.triggerKey,
       error,
     })
-    return null
+    return []
   }
 }
 
@@ -59,10 +64,6 @@ export async function collectMissedRuns({
     if (!pipe || !scheduleEntry) {
       continue
     }
-    const pattern = readSchedulePattern(pipe)
-    if (pattern === null) {
-      continue
-    }
 
     const isNextRunJobPending = await isRunTimeJobPending({
       jobsRedis,
@@ -71,14 +72,16 @@ export async function collectMissedRuns({
       runTimeMillis: scheduleEntry.runTimeMillis,
     })
     missedRuns.push(
-      ...findOverduePipeMissedRuns({
-        flowId,
-        pattern,
-        nextRunTimeMillis: scheduleEntry.runTimeMillis,
-        isNextRunJobPending,
-        nowMillis,
-        graceSeconds,
-      }),
+      ...listPipeMissedRuns(pipe, (pattern) =>
+        findOverduePipeMissedRuns({
+          flowId,
+          pattern,
+          nextRunTimeMillis: scheduleEntry.runTimeMillis,
+          isNextRunJobPending,
+          nowMillis,
+          graceSeconds,
+        }),
+      ),
     )
   }
 
@@ -95,22 +98,20 @@ export async function collectMissedRuns({
     if (!pipe) {
       continue
     }
-    const pattern = readSchedulePattern(pipe)
-    if (pattern === null) {
-      continue
-    }
 
     missedRuns.push(
-      ...findMissingPipeMissedRuns({
-        flowId,
-        pattern,
-        publishedAtMillis: pipe.publishedAt
-          ? new Date(pipe.publishedAt).getTime()
-          : 0,
-        latestExecutionMillis: latestExecutionMillisByFlowId.get(flowId),
-        nowMillis,
-        graceSeconds,
-      }),
+      ...listPipeMissedRuns(pipe, (pattern) =>
+        findMissingPipeMissedRuns({
+          flowId,
+          pattern,
+          publishedAtMillis: pipe.publishedAt
+            ? new Date(pipe.publishedAt).getTime()
+            : 0,
+          latestExecutionMillis: latestExecutionMillisByFlowId.get(flowId),
+          nowMillis,
+          graceSeconds,
+        }),
+      ),
     )
   }
 

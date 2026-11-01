@@ -126,6 +126,70 @@ describe('collectMissedRuns', () => {
     )
   })
 
+  it('skips an overdue pipe whose schedule does not parse and counts the rest', async () => {
+    hmget.mockResolvedValue([null, null])
+    mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
+
+    const missedRuns = await collect({
+      publishedPipes: [
+        pipe(FLOW_BROKEN, {
+          triggerKey: 'everyDay',
+          triggerParameters: { triggersOnWeekend: true },
+        }),
+        pipe(FLOW_MISSING, {
+          publishedAt: new Date(NOW - 2 * HOUR).toISOString(),
+        }),
+      ],
+      scheduleEntryByFlowId: new Map([
+        [
+          FLOW_BROKEN,
+          { member: `flow-${FLOW_BROKEN}`, runTimeMillis: NOW - 2 * HOUR },
+        ],
+      ]),
+      overdueFlowIds: [FLOW_BROKEN],
+      missingFlowIds: [FLOW_MISSING],
+    })
+
+    expect(missedRuns).toEqual([
+      {
+        flowId: FLOW_MISSING,
+        runTimeMillis: NOW - HOUR,
+        reason: 'no-redis-entry',
+      },
+    ])
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Schedule check could not read a pipe schedule',
+      expect.objectContaining({ flowId: FLOW_BROKEN }),
+    )
+  })
+
+  it('skips a missing pipe whose schedule does not parse', async () => {
+    mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
+
+    const missedRuns = await collect({
+      publishedPipes: [
+        pipe(FLOW_BROKEN, {
+          triggerKey: 'everyDay',
+          triggerParameters: { triggersOnWeekend: false },
+        }),
+      ],
+      missingFlowIds: [FLOW_BROKEN],
+      overdueFlowIds: [],
+    })
+
+    expect(missedRuns).toEqual([])
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Schedule check could not read a pipe schedule',
+      expect.objectContaining({ flowId: FLOW_BROKEN }),
+    )
+  })
+
+  it('fails the check when Redis fails', async () => {
+    hmget.mockRejectedValue(new Error('redis down'))
+
+    await expect(collect()).rejects.toThrow('redis down')
+  })
+
   it('makes no extra calls when no pipe has a problem', async () => {
     const missedRuns = await collect({ missingFlowIds: [], overdueFlowIds: [] })
 
