@@ -36,12 +36,12 @@ const MISSED_RUNS: MissedRun[] = [
   {
     flowId: FLOW_ID,
     runTimeMillis: RUN_TIME + HOUR,
-    reason: 'stale-timestamp',
+    reason: 'stuck-at-earlier-timestamp',
   },
   {
     flowId: FLOW_ID,
     runTimeMillis: RUN_TIME + 2 * HOUR,
-    reason: 'stale-timestamp',
+    reason: 'stuck-at-earlier-timestamp',
   },
 ]
 
@@ -69,8 +69,8 @@ describe('countMissedRuns', () => {
     expect(count).toBe(3)
     expect(mocks.logWarn.mock.calls).toEqual([
       missedRunLine('overdue'),
-      missedRunLine('stale-timestamp'),
-      missedRunLine('stale-timestamp'),
+      missedRunLine('stuck-at-earlier-timestamp'),
+      missedRunLine('stuck-at-earlier-timestamp'),
     ])
   })
 

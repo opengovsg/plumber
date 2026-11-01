@@ -78,11 +78,15 @@ describe('collectMissedRuns', () => {
       NOW - MISSED_RUN_MARKER_TTL_SECONDS * 1000,
     )
     expect(missedRuns).toEqual([
-      { flowId: FLOW_OVERDUE, runTimeMillis: NOW - 2 * HOUR, reason: 'overdue' },
+      {
+        flowId: FLOW_OVERDUE,
+        runTimeMillis: NOW - 2 * HOUR,
+        reason: 'overdue',
+      },
       {
         flowId: FLOW_OVERDUE,
         runTimeMillis: NOW - HOUR,
-        reason: 'stale-timestamp',
+        reason: 'stuck-at-earlier-timestamp',
       },
       {
         flowId: FLOW_MISSING,
@@ -102,7 +106,7 @@ describe('collectMissedRuns', () => {
       {
         flowId: FLOW_OVERDUE,
         runTimeMillis: NOW - HOUR,
-        reason: 'stale-timestamp',
+        reason: 'stuck-at-earlier-timestamp',
       },
     ])
   })
