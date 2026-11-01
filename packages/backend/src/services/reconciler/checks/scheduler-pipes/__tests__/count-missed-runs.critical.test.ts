@@ -1,10 +1,9 @@
 /**
- * Business rules (user decisions), quoted verbatim:
+ * Business rules (user decisions):
  *
- * - "Count a run time only when `ZADD NX` adds it."
- * - "we don't actually need 1 log line for each missed run; I only care that
- *   the plumber.schedules.missed_runs metric counts the total correctly"
- * - "The counter carries a `reason` tag."
+ * - Count a run time only when `ZADD NX` adds it.
+ * - The `plumber.executions.missed` metric counts each missed run exactly once.
+ * - Each missed run carries a `reason` tag.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
