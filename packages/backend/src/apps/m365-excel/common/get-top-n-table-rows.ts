@@ -5,16 +5,6 @@ import StepError from '@/errors/step'
 
 import WorkbookSession from './workbook-session'
 
-const msGraphResponseSchema = z
-  .object({
-    values: z.array(z.array(z.coerce.string())),
-    rowIndex: z.number(),
-  })
-  .transform((response) => ({
-    values: response.values,
-    headerSheetRowIndex: response.rowIndex,
-  }))
-
 // Can get more info e.g. formulas, numberFormat, text for possible date manipulation but too complex for now
 const msGraphRangeResponseSchema = z
   .object({
@@ -79,10 +69,12 @@ export async function getTopNTableRows(
   )
 
   if (rangeParseResult.success === false) {
-    throw new StepError(
-      'Could not read table headers.',
-      'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
-    )
+    throw new StepError({
+      name: 'Could not read table headers.',
+      solution:
+        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
+      kind: 'third-party',
+    })
   }
 
   const { rowCount, headerSheetRowIndex, headerRowValues, rowValues } =
@@ -90,83 +82,17 @@ export async function getTopNTableRows(
 
   // rowCount includes the header row
   if (rowCount > n + 1) {
-    throw new StepError(
-      `Your Excel table has more than ${n.toLocaleString()} rows.`,
-      `Reduce the number of rows and try again.`,
-    )
+    throw new StepError({
+      name: `Your Excel table has more than ${n.toLocaleString()} rows.`,
+      solution: `Reduce the number of rows and try again.`,
+      kind: 'config',
+    })
   }
 
   return {
     columns: headerRowValues,
     rows: rowValues,
     headerSheetRowIndex,
-  }
-}
-
-/**
- * @deprecated Use getTopNTableRows instead
- */
-// Old method in case we need to rollback fast
-export async function getTopNTableRowsOld(
-  // Typically, we should avoid making $ viral though the codebase, but this is
-  // an exception because getTopNTableRows is not a common helper function.
-  $: IGlobalVariable,
-  session: WorkbookSession,
-  tableId: string,
-  n: number,
-): Promise<GetTopNTableRowsResult> {
-  const tableRowsParseResult = msGraphResponseSchema.safeParse(
-    (
-      await session.request(
-        // This is a little tricky. Each path segment loosely corresponds to a
-        // Graph API function call, and subsequent segments operate on the
-        // output of the previous segment. Breakdown as follows:
-        // * headerRowRange: Grabs the row containing column names
-        // * resizedRange(deltaRows=...,deltaColumns=0): Extends our query
-        //   range down by N + 1 rows (i.e. makes the query include our data
-        //   rows). We fetch 1 more row to check if table is too large.
-        // * usedRange: Tables can have less than N rows; this shrinks our query
-        //   to only rows with data.
-        `/tables/:tableId/headerRowRange/resizedRange(deltaRows=:deltaRows,deltaColumns=0)/usedRange?$select=values,rowIndex`,
-        'get',
-        {
-          urlPathParams: {
-            tableId,
-            deltaRows: n + 1,
-          },
-        },
-      )
-    ).data,
-  )
-
-  if (tableRowsParseResult.success === false) {
-    throw new StepError(
-      'Received invalid table data',
-      'Double check your Excel file and retry the step if needed',
-    )
-  }
-
-  const tableRows = tableRowsParseResult.data
-
-  if (tableRows.values.length === 0) {
-    throw new StepError(
-      'Excel table is missing the header row',
-      'Ensure that your Excel table has a header row',
-    )
-  }
-
-  // +1 for header row
-  if (tableRows.values.length > n + 1) {
-    throw new StepError(
-      `Your Excel table has more than ${n.toLocaleString()} rows.`,
-      `Reduce the number of rows and try again.`,
-    )
-  }
-
-  return {
-    columns: tableRows.values[0],
-    rows: tableRows.values.slice(1),
-    headerSheetRowIndex: tableRows.headerSheetRowIndex,
   }
 }
 
