@@ -1,6 +1,6 @@
 import * as winston from 'winston'
 
-import appEnvConfig from '@/config/app/app-env'
+import appEnvConfig from '@/config/app/load-app-env'
 import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 
 const levels = {

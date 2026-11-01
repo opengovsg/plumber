@@ -1,4 +1,4 @@
-import './load-dev-env'
+import './load-app-env'
 import { requireEnv } from './require-env'
 
 export type DbConfig = {

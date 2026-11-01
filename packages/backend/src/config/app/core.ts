@@ -1,5 +1,5 @@
 import '@/config/datetime'
-import './load-dev-env'
+import './load-app-env'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'

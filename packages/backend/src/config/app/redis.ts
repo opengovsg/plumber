@@ -1,4 +1,4 @@
-import './load-dev-env'
+import './load-app-env'
 
 export type RedisConfig = {
   redisHost: string
