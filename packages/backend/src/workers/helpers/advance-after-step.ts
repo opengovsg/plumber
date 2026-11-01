@@ -126,6 +126,7 @@ export async function advanceAfterStep({
       delay,
     }
     // Used to check if the step after a delay step started late, for SLO purposes.
+    // IMPORTANT: a past delayUntil target gives a negative delay, and BullMQ runs that job at once.
     jobPayload.scheduledAt = Date.now() + Math.max(delay, 0)
   }
 
