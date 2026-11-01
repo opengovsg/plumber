@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
@@ -130,10 +131,11 @@ const action: IRawAction = {
     }
 
     if (!tableId) {
-      throw new StepError(
-        'Tile is required',
-        'Please select a tile to update a row in.',
-      )
+      throw new StepError({
+        name: 'Tile is required',
+        solution: 'Please select a tile to update a row in.',
+        kind: 'internal',
+      })
     }
 
     /**
@@ -144,10 +146,11 @@ const action: IRawAction = {
       .withGraphFetched('columns')
 
     if (!table) {
-      throw new StepError(
-        'Tile not found',
-        'Tile may have been deleted. Please check your tile.',
-      )
+      throw new StepError({
+        name: 'Tile not found',
+        solution: 'Tile may have been deleted. Please check your tile.',
+        kind: 'config',
+      })
     }
 
     const columnIds = table.columns.map((c) => c.id)
@@ -169,10 +172,11 @@ const action: IRawAction = {
 
     function assertNumber(value: string): void {
       if (typeof autoMarshallNumberStrings(value) !== 'number') {
-        throw new StepError(
-          'Unable to update row',
-          'The value to add or subtract by must be a number.',
-        )
+        throw new StepError({
+          name: 'Unable to update row',
+          solution: 'The value to add or subtract by must be a number.',
+          kind: 'config',
+        })
       }
     }
 
@@ -227,6 +231,10 @@ const action: IRawAction = {
         } satisfies UpdateRowOutput,
       })
     } catch (e) {
+      // Lets DynamoDB throughput errors retry instead of failing the step.
+      if (e instanceof RetriableError) {
+        throw e
+      }
       if (e instanceof Error) {
         if (e.message.includes('The conditional request failed')) {
           // This means the corresponding row does not exist for ddb
@@ -246,7 +254,11 @@ const action: IRawAction = {
           })
           return
         }
-        throw new StepError('Failed to update row', e.message)
+        throw new StepError({
+          name: 'Failed to update row',
+          solution: e.message,
+          kind: 'internal',
+        })
       }
       throw e
     }
