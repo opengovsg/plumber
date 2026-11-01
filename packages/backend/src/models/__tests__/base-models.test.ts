@@ -17,8 +17,11 @@ describe.each([
   })
 
   it('defines only column and relation statics', () => {
+    // Objection caches `$$` statics on a class once any query uses it.
     const statics = Object.getOwnPropertyNames(model).filter(
-      (name) => !['length', 'name', 'prototype'].includes(name),
+      (name) =>
+        !['length', 'name', 'prototype'].includes(name) &&
+        !name.startsWith('$$'),
     )
     expect(ALLOWED_STATICS).toEqual(expect.arrayContaining(statics))
   })
