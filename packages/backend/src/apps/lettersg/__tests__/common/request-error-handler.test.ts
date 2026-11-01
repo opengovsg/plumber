@@ -32,8 +32,8 @@ function makeGlobal(
 
 async function catchStepError(promise: Promise<unknown>): Promise<StepError> {
   const error = await promise.then(
-    () => undefined,
-    (err: unknown) => err,
+    (): unknown => undefined,
+    (err: unknown): unknown => err,
   )
   expect(error).toBeInstanceOf(StepError)
   return error as StepError
