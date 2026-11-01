@@ -97,7 +97,7 @@
       }
     },
     {
-      // The reconciler must still run when the worker or web server stalls.
+      // Importing worker code would make the reconciler process jobs.
       "files": [
         "packages/backend/src/reconciler.ts",
         "packages/backend/src/services/reconciler/**/*.ts"
