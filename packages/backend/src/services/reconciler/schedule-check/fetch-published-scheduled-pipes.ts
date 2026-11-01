@@ -10,23 +10,15 @@ export interface PublishedScheduledPipe {
   triggerParameters: IJSONObject
 }
 
-export type PublishedScheduledPipeRow = Pick<
+export type ScheduledTriggerStep = Pick<
   BaseStep,
   'flowId' | 'key' | 'parameters' | 'version'
-> &
-  Pick<BaseStep['flow'], 'publishedAt'>
+> & { flow: Pick<BaseStep['flow'], 'publishedAt'> }
 
 // BaseStep, not Step: Step imports every app, and some apps open Redis clients at import.
 export function buildPublishedScheduledPipesQuery() {
   return BaseStep.query()
-    .joinRelated('flow')
-    .select(
-      'steps.flow_id',
-      'steps.key',
-      'steps.parameters',
-      'steps.version',
-      'flow.published_at',
-    )
+    .withGraphJoined('flow')
     .where('flow.active', true)
     .where('steps.type', 'trigger')
     .where('steps.app_key', schedulerApp.key)
@@ -34,31 +26,30 @@ export function buildPublishedScheduledPipesQuery() {
       'steps.key',
       schedulerApp.triggers.map((trigger) => trigger.key),
     )
-    .castTo<PublishedScheduledPipeRow[]>()
 }
 
 // Step's $afterFind applies the transform, and BaseStep skips it.
 export function toPublishedScheduledPipe(
-  row: PublishedScheduledPipeRow,
+  step: ScheduledTriggerStep,
   stepTransformer = schedulerApp.stepTransformer,
 ): PublishedScheduledPipe {
   return {
-    flowId: row.flowId,
-    publishedAt: row.publishedAt,
-    triggerKey: row.key,
+    flowId: step.flowId,
+    publishedAt: step.flow.publishedAt,
+    triggerKey: step.key,
     triggerParameters: stepTransformer
       ? stepTransformer.transformStepParameters(
-          row.key,
-          row.parameters,
-          row.version,
+          step.key,
+          step.parameters,
+          step.version,
         )
-      : row.parameters,
+      : step.parameters,
   }
 }
 
 export async function fetchPublishedScheduledPipes(): Promise<
   PublishedScheduledPipe[]
 > {
-  const rows = await buildPublishedScheduledPipesQuery()
-  return rows.map((row) => toPublishedScheduledPipe(row))
+  const steps = await buildPublishedScheduledPipesQuery()
+  return steps.map((step) => toPublishedScheduledPipe(step))
 }

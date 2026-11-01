@@ -1,18 +1,29 @@
 import '@/config/orm'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import BaseFlow from '@/models/flow/base'
+import BaseStep from '@/models/step/base'
 
 import {
   buildPublishedScheduledPipesQuery,
-  type PublishedScheduledPipeRow,
+  type ScheduledTriggerStep,
   toPublishedScheduledPipe,
 } from '../fetch-published-scheduled-pipes'
 
+function buildSql() {
+  // withGraphJoined reads each table's columns from Postgres before it runs.
+  vi.spyOn(BaseStep, 'tableMetadata').mockReturnValue({ columns: ['id'] })
+  vi.spyOn(BaseFlow, 'tableMetadata').mockReturnValue({ columns: ['id'] })
+  return buildPublishedScheduledPipesQuery().toKnexQuery().toSQL()
+}
+
 describe('buildPublishedScheduledPipesQuery', () => {
-  const { sql, bindings } = buildPublishedScheduledPipesQuery()
-    .toKnexQuery()
-    .toSQL()
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
   it('selects published pipes with a scheduler trigger', () => {
+    const { sql, bindings } = buildSql()
     expect(sql).toContain('"flow"."active" = ?')
     expect(sql).toContain('"steps"."type" = ?')
     expect(sql).toContain('"steps"."app_key" = ?')
@@ -31,22 +42,23 @@ describe('buildPublishedScheduledPipesQuery', () => {
   })
 
   it('skips soft-deleted steps and pipes', () => {
+    const { sql } = buildSql()
     expect(sql).toContain('"steps"."deleted_at" is null')
     expect(sql).toContain('"flows"."deleted_at" is null')
   })
 })
 
 describe('toPublishedScheduledPipe', () => {
-  const row: PublishedScheduledPipeRow = {
+  const step: ScheduledTriggerStep = {
     flowId: 'flow-1',
     key: 'everyDay',
     parameters: { hour: 9 },
     version: 1,
-    publishedAt: '2026-01-01T00:00:00.000Z',
+    flow: { publishedAt: '2026-01-01T00:00:00.000Z' },
   }
 
   it('returns the stored parameters when the scheduler has no transformer', () => {
-    expect(toPublishedScheduledPipe(row, undefined)).toEqual({
+    expect(toPublishedScheduledPipe(step, undefined)).toEqual({
       flowId: 'flow-1',
       publishedAt: '2026-01-01T00:00:00.000Z',
       triggerKey: 'everyDay',
@@ -57,7 +69,7 @@ describe('toPublishedScheduledPipe', () => {
   it('applies the scheduler step transformer like Step does on read', () => {
     const transformStepParameters = vi.fn().mockReturnValue({ hour: 10 })
 
-    const pipe = toPublishedScheduledPipe(row, {
+    const pipe = toPublishedScheduledPipe(step, {
       transformStepParameters,
       getLatestStepVersion: () => 2,
     })
