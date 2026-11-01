@@ -81,8 +81,9 @@ export default async (request: IRequest, response: Response) => {
       logger.warn(`Rate limited flow ${flowId}`, {
         event: 'webhook-rate-limited',
         flowId,
-        // Lets the rate-limit Datadog workflow fill the user email template.
+        // Lets the rate-limit Datadog workflow email the pipe owner.
         flowName: flow.name,
+        ownerEmail: flow.user.email,
         maxQps,
       })
 

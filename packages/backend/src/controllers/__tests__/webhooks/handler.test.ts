@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
     } as unknown as Response,
     flow: {
       name: 'Test pipe',
+      user: { email: 'owner@example.com' },
       active: false,
       config: {},
       getTriggerStep: vi.fn(() => ({
@@ -190,7 +191,7 @@ describe('webhook handler', () => {
       },
     )
 
-    it('logs the pipe name and max QPS when a pipe is rate limited', async () => {
+    it('logs the pipe name, owner email and max QPS when a pipe is rate limited', async () => {
       mocks.flow.config = { maxQps: 5 }
       mocks.rateLimiterRedis.consume.mockImplementation(() => {
         throw new mocks.rateLimiterRes()
@@ -204,6 +205,7 @@ describe('webhook handler', () => {
           event: 'webhook-rate-limited',
           flowId: FLOW_ID,
           flowName: 'Test pipe',
+          ownerEmail: 'owner@example.com',
           maxQps: 5,
         },
       )
