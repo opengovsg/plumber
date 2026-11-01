@@ -32,7 +32,8 @@ export async function recordLateScheduledStart({
 }): Promise<void> {
   const { flowId, executionId, stepId, scheduledAt, retryTimestamp } = job.data
 
-  // A retry starts on demand, not at the time the user scheduled.
+  // Only consider jobs scheduled by a delay action, not jobs delayed by retries or rate limits.
+  // IMPORTANT: a delay action's job that a rate limit holds back still counts as late.
   if (scheduledAt === undefined || retryTimestamp !== undefined) {
     return
   }
