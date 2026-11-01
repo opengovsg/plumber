@@ -109,10 +109,11 @@ const action: IRawAction = {
 
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
-      throw new StepError(
-        firstError.message,
-        GenericSolution.ReconfigureInvalidField,
-      )
+      throw new StepError({
+        name: firstError.message,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
 
     const { prompt, responseFields } = validatedParameters.data
