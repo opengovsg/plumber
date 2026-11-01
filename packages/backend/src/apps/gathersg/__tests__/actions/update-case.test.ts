@@ -884,7 +884,11 @@ describe('update case', () => {
     it.each([
       [
         'an empty checkbox list',
-        { caseFields: [{ field: 'categories', fieldType: 'checkbox', value: [] }] },
+        {
+          caseFields: [
+            { field: 'categories', fieldType: 'checkbox', value: [] },
+          ],
+        },
       ],
       ['an empty case identifier', { caseUuid: '' }],
       ['an empty field name', { caseFields: [{ field: '', value: 'x' }] }],
