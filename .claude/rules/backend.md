@@ -85,7 +85,7 @@ The backend has three error families. Do not add a new family.
 
 - Construct it with options: `new StepError({ name, solution, kind, cause })`. `cause` is an optional `HttpError`.
 - The positional constructor `new StepError(name, solution, error, extraProperties)` is `@deprecated`. Never use it in new code.
-- Existing call sites migrate one app per PR.
+- Never migrate existing call sites. Humans migrate them, one app per PR.
 - `kind` stays optional until every call site is migrated. New code always passes it.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
 - The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
