@@ -22,7 +22,7 @@ The command targets macOS amd64, matching the committed binary.
 ```
 docker run --rm -it -e GOOS=darwin -e GOARCH=amd64 -e GOTOOLCHAIN=go1.26.10 \
   -u "$(id -u):$(id -g)" -v "${PWD}:/xk6" \
-  grafana/xk6:1.4.15 build v1.8.2 \
+  grafana/xk6:1.4.15 build v1.8.2 --output /xk6/k6.next \
   --with github.com/grafana/xk6-sql@v1.0.6 \
   --with github.com/grafana/xk6-sql-driver-postgres@v0.1.2 \
   --with github.com/grafana/xk6-dashboard@v0.8.1 \
@@ -33,12 +33,13 @@ docker run --rm -it -e GOOS=darwin -e GOARCH=amd64 -e GOTOOLCHAIN=go1.26.10 \
 
 1. Review security fixes and compatibility before changing the pinned versions above.
    SQL 1.1.0 and PostgreSQL driver 0.2.0 introduce k6 2 dependencies.
-2. Rebuild using the command above. It replaces `tools/load-tests/k6`.
-3. On a compatible Mac, check `./k6 version` and smoke-test SQL, PostgreSQL, dotenv, and the dashboard.
+2. Rebuild using the command above. It writes `tools/load-tests/k6.next` without replacing the committed binary.
+3. On a compatible Mac, check `./k6.next version` and smoke-test SQL, PostgreSQL, dotenv, and `--out dashboard=open`.
    Use a disposable database and local HTTP endpoint.
 4. Inspect the embedded dependency versions and scan the generated executable for vulnerabilities.
    Rebuilding does not guarantee that every finding is fixed.
-5. Commit the updated `k6` executable together with the pinned build command.
+5. After validation, run `chmod +x k6.next && mv k6.next k6`.
+6. Commit the updated `k6` executable together with the pinned build command.
 
 ### To run with dashboard
 
