@@ -499,61 +499,42 @@ describe('decrypt form response - MRF specific', () => {
         })
       }
 
-      it('gives an empty table the schema columns when a title has an unmatched bracket', async () => {
-        mockTableSchema()
-        mocks.cryptoV3Decrypt.mockReturnValueOnce({
-          responses: {
-            tbl: {
-              fieldType: 'table',
-              question: 'Items',
-              answer: {},
-              provenance: V4_PROVENANCE,
-            },
-          },
-          verified: undefined,
-        })
-
-        await decryptFormResponse($)
-
-        const table = $.request.body.fields.tbl
-        expect(table).not.toHaveProperty('tableColumnTitles')
-        expect(JSON.parse(table.answer)).toMatchObject({
-          rows: [],
-          columns: [
-            { id: COL_1_ID, label: 'Name (optional' },
-            { id: COL_2_ID, label: 'Qty' },
-          ],
-        })
-      })
-
-      it('uses the schema titles for a filled table and keeps the column ids', async () => {
-        mockTableSchema()
-        mocks.cryptoV3Decrypt.mockReturnValueOnce({
-          responses: {
-            tbl: {
-              fieldType: 'table',
-              question: 'Items',
-              answer: {
-                'row-a': { rowNum: 0, value: { col1: 'Apple', col2: '3' } },
+      it.each([
+        ['an empty', {}, []],
+        [
+          'a filled',
+          { 'row-a': { rowNum: 0, value: { col1: 'Apple', col2: '3' } } },
+          [{ data: { [COL_1_ID]: 'Apple', [COL_2_ID]: '3' } }],
+        ],
+      ])(
+        'gives %s v4 table the schema columns when a title has an unmatched bracket',
+        async (_, answer, rows) => {
+          mockTableSchema()
+          mocks.cryptoV3Decrypt.mockReturnValueOnce({
+            responses: {
+              tbl: {
+                fieldType: 'table',
+                question: 'Items',
+                answer,
+                provenance: V4_PROVENANCE,
               },
-              provenance: V4_PROVENANCE,
             },
-          },
-          verified: undefined,
-        })
+            verified: undefined,
+          })
 
-        await decryptFormResponse($)
+          await decryptFormResponse($)
 
-        const table = $.request.body.fields.tbl
-        expect(table).not.toHaveProperty('tableColumnTitles')
-        expect(JSON.parse(table.answer)).toMatchObject({
-          rows: [{ data: { [COL_1_ID]: 'Apple', [COL_2_ID]: '3' } }],
-          columns: [
-            { id: COL_1_ID, label: 'Name (optional' },
-            { id: COL_2_ID, label: 'Qty' },
-          ],
-        })
-      })
+          const table = $.request.body.fields.tbl
+          expect(table).not.toHaveProperty('tableColumnTitles')
+          expect(JSON.parse(table.answer)).toMatchObject({
+            rows,
+            columns: [
+              { id: COL_1_ID, label: 'Name (optional' },
+              { id: COL_2_ID, label: 'Qty' },
+            ],
+          })
+        },
+      )
 
       it('keeps parsing the question for a v3 table', async () => {
         mockTableSchema()

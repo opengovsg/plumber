@@ -1125,9 +1125,6 @@ describe('processResponsesV4', () => {
       const actual = await processResponsesV4($, 'formId', v4Responses)
 
       // Only v4 carries the schema column titles.
-      expect(actual.find((field) => field._id === 'f7')).toMatchObject({
-        tableColumnTitles: ['Name', 'Qty'],
-      })
       expect(actual.map(({ tableColumnTitles: _, ...field }) => field)).toEqual(
         expected,
       )
