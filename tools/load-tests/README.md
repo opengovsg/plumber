@@ -2,32 +2,67 @@
 
 ### To run
 
-`brew install grafana/k6`
-then
-`k6 run formsg.js`
+Run these commands from `tools/load-tests`:
+
+```sh
+pnpm run build:k6
+./k6 run formsg.js
+```
 
 ### Build k6 with extensions
 
-Since we are using k6 plugins, we need to use xk6 to build k6 with extensions.
+Install [Go](https://go.dev/doc/install) before running `pnpm run build:k6`.
+The command pins Go 1.26.10, xk6 1.4.15, and k6 1.8.2.
+Go downloads the pinned toolchain when needed.
+The build targets your operating system and CPU architecture.
 
-We are using the following extensions:
+The build includes these extensions:
 
-- postgres
-- dotenv
-- dashboard
+- SQL 1.0.6 and the PostgreSQL driver 0.1.2 for the Tiles scripts.
+- dotenv 0.3.0 to load the local `.env` file.
+- The dashboard bundled with k6 1.8.2.
 
-```
-docker run --rm -it -e GOOS=darwin -u "$(id -u):$(id -g)" -v "${PWD}:/xk6" \
-  grafana/xk6 build \
-  --with github.com/grafana/xk6-sql@latest \
-  --with github.com/grafana/xk6-sql-driver-postgres@latest \
-  --with github.com/grafana/xk6-dashboard@latest\
-  --with github.com/szkiba/xk6-dotenv@latest
-```
+Keep these extension versions on the k6 1.x line.
+SQL 1.1.0 and PostgreSQL driver 0.2.0 introduce k6 2 dependencies.
+
+Generated executables stay local and Git ignores them.
+Rebuild after changing the pinned versions.
+Remove any previous local `k6` executable before rebuilding.
+
+### Security review
+
+The supplied Inspector scan reports 104 findings against the previous committed executable.
+Its build metadata identifies k6 1.0.0 and Go 1.24.3.
+The findings concern embedded Go dependencies, not `@types/k6`.
+
+The replacement build uses k6 1.8.2 and its security updates within the supported k6 1.x line.
+The existing scripts do not import the experimental APIs changed in intervening releases.
+
+| Dependency                            | Previous binary | k6 1.8.2 dependency |
+| ------------------------------------- | --------------- | ------------------- |
+| gRPC                                  | 1.71.1          | 1.83.2              |
+| `golang.org/x/crypto`                 | 0.37.0          | 0.57.0              |
+| `golang.org/x/net`                    | 0.39.0          | 0.60.0              |
+| `golang.org/x/sys`                    | 0.32.0          | 0.48.0              |
+| `golang.org/x/text`                   | 0.24.0          | 0.42.0              |
+| `klauspost/compress`                  | 1.18.0          | 1.18.7              |
+| `redis/go-redis/v9`                   | 9.0.5           | 9.17.2              |
+| OpenTelemetry SDK and trace exporters | 1.35.0          | 1.45.0              |
+
+These module versions meet the scan's fixed versions except for two `golang.org/x/net` findings.
+CVE-2026-78661 and CVE-2026-97045 require 0.62.0 according to the supplied scan.
+The build retains upstream's 0.60.0 dependency pending a separate compatibility review.
+Go 1.26.10 meets the scan's toolchain fix requirements.
+
+After building, inspect the actual dependency versions with `go version -m ./k6` and rescan the executable.
+Removing the committed executable does not patch copies developers already downloaded.
+
+Sources: [k6 1.8.2 release notes](https://github.com/grafana/k6/releases/tag/v1.8.2)
+and [module versions](https://github.com/grafana/k6/blob/v1.8.2/go.mod).
 
 ### To run with dashboard
 
-`./k6 run --out dashboard=open webhook.js`
+`K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_OPEN=true ./k6 run webhook.js`
 
 ### Testing incoming FormSG Webhook
 
@@ -60,10 +95,10 @@ full webhook URLs into `m365-batch/pipes.json`:
 `DURATION` overrides the run length (defaults to `2m`, except `persistent_failure.js`, which defaults to `5m`).
 
 ```
-k6 run m365-batch/even_spread.js
-k6 run m365-batch/hotspot.js
-k6 run m365-batch/persistent_failure.js
-k6 run m365-batch/single_file_lock.js
+./k6 run m365-batch/even_spread.js
+./k6 run m365-batch/hotspot.js
+./k6 run m365-batch/persistent_failure.js
+./k6 run m365-batch/single_file_lock.js
 ```
 
 k6 only checks that the webhook trigger is accepted - it can't see queue

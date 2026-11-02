@@ -7,6 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
+    "build:k6": "GOTOOLCHAIN=go1.26.10 go run go.k6.io/xk6@v1.4.15 build v1.8.2 --with github.com/grafana/xk6-sql@v1.0.6 --with github.com/grafana/xk6-sql-driver-postgres@v0.1.2 --with github.com/szkiba/xk6-dotenv@v0.3.0",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "format": "oxfmt --check .",
