@@ -1,6 +1,7 @@
 import { LangfuseClient } from '@langfuse/client'
 
 /**
+ * The one Langfuse client for every script in tools/langfuse.
  * Same credential path as packages/backend/src/helpers/langfuse.ts.
  * Secrets are injected by scripts/with-op-env.mjs, not read from a .env file.
  */
@@ -18,7 +19,7 @@ export function buildLangfuseClient(project, env) {
 
   if (!credentials.publicKey || !credentials.secretKey) {
     throw new Error(
-      `Missing Langfuse credentials for project "${project}". Run this through "pnpm run prompt" so 1Password injects them.`,
+      `Missing Langfuse credentials for project "${project}". Run the script through pnpm so 1Password injects them.`,
     )
   }
 

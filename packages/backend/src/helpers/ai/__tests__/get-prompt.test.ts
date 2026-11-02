@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getPrompt, LOCAL_PROMPTS_DIR } from '../get-prompt'
+import { getPrompt, PROMPTS_REPO_DIR } from '../get-prompt'
 
 const mocks = vi.hoisted(() => ({
   isDev: true,
@@ -62,7 +62,7 @@ describe('getPrompt', () => {
     const prompt = await getPrompt('skills/form', 'aiBuilder', 'production')
 
     expect(mocks.readFile).toHaveBeenCalledWith(
-      path.join(LOCAL_PROMPTS_DIR, 'aiBuilder', 'skills', 'form', 'v10.md'),
+      path.join(PROMPTS_REPO_DIR, 'aiBuilder', 'skills', 'form', 'v10.md'),
       'utf-8',
     )
     expect(prompt.prompt).toBe('local prompt text')

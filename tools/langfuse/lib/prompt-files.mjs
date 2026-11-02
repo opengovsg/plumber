@@ -1,12 +1,16 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import {
   existsSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   realpathSync,
+  rmSync,
   statSync,
+  writeFileSync,
 } from 'node:fs'
-import { dirname, join, relative, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 // IMPORTANT: packages/backend/src/helpers/ai/get-prompt.ts reads from this folder.
@@ -64,7 +68,18 @@ export function parseArgs(argv) {
     project: flags.project,
     message: flags.message,
     renumber: flags.renumber === true,
+    resume: flags.resume === true,
   }
+}
+
+export function isInside(parent, child) {
+  const path = relative(parent, child)
+  return (
+    path !== '' &&
+    path !== '..' &&
+    !path.startsWith(`..${sep}`) &&
+    !isAbsolute(path)
+  )
 }
 
 /**
@@ -73,7 +88,7 @@ export function parseArgs(argv) {
 export function promptDir(project, name, root = PROMPTS_DIR) {
   const projectDir = resolve(root, project)
   const dir = resolve(projectDir, name)
-  if (!dir.startsWith(projectDir + sep)) {
+  if (!isInside(projectDir, dir)) {
     throw new Error(`Invalid prompt name: ${name}`)
   }
   return dir
@@ -131,12 +146,15 @@ export function formatContent(prompt) {
     : prompt.prompt
 }
 
-export function formatMeta(prompt) {
-  return `${JSON.stringify(
-    { config: prompt.config ?? {}, commitMessage: prompt.commitMessage ?? '' },
-    null,
-    2,
-  )}\n`
+/**
+ * Drafts also record basedOn, the version they were copied from, so a renumber can merge.
+ */
+export function formatMeta({ config, commitMessage, basedOn }) {
+  const meta = { config: config ?? {}, commitMessage: commitMessage ?? '' }
+  if (basedOn !== undefined) {
+    meta.basedOn = basedOn
+  }
+  return `${JSON.stringify(meta, null, 2)}\n`
 }
 
 export function readMeta(path) {
@@ -164,32 +182,78 @@ export function compareVersions(repoVersions, langfuseVersions) {
 }
 
 /**
+ * Returns the next version number above every taken one, and reserves it.
+ */
+export function takeNextVersion(taken) {
+  const next = Math.max(0, ...taken) + 1
+  taken.add(next)
+  return next
+}
+
+export function hasConflictMarkers(text) {
+  return /^(<{7}|={7}|>{7})( |$)/m.test(text)
+}
+
+/**
+ * Merges the version that landed first into a draft. Version files are separate
+ * files, so git cannot merge them itself.
+ */
+export function threeWayMerge({ ours, base, theirs, labels }) {
+  const dir = mkdtempSync(join(tmpdir(), 'prompt-merge-'))
+  try {
+    const files = ['ours', 'base', 'theirs'].map((name) => join(dir, name))
+    ;[ours, base, theirs].forEach((text, i) => writeFileSync(files[i], text))
+    const result = spawnSync(
+      'git',
+      [
+        'merge-file',
+        '-p',
+        ...labels.flatMap((label) => ['-L', label]),
+        ...files,
+      ],
+      { encoding: 'utf-8' },
+    )
+    // git merge-file exits with the conflict count. Errors exit above 127.
+    if (result.error || result.status === null || result.status > 127) {
+      throw new Error(`git merge-file failed: ${result.stderr || result.error}`)
+    }
+    return { text: result.stdout, conflicts: result.status }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+/**
  * Keeps the repo and Langfuse on the same version numbers. A draft must be
  * the next number after both the newest Langfuse version and the newest
  * version on main.
  */
 export function getPushBlocker({
   draft,
+  draftText,
   langfuseLatest,
   mainLatest,
   changedPushedFiles,
 }) {
+  if (changedPushedFiles.length > 0) {
+    return `Pushed versions are read-only. Revert your changes to: ${changedPushedFiles.join(
+      ', ',
+    )}`
+  }
+  if (mainLatest > langfuseLatest) {
+    return `main has v${mainLatest} but Langfuse stops at v${langfuseLatest}. An earlier push did not finish. Run push with --resume first.`
+  }
+  if (mainLatest < langfuseLatest) {
+    return `Langfuse has v${langfuseLatest} but main stops at v${mainLatest}. Run "pnpm run prompt sync" first.`
+  }
   if (!draft) {
     return 'There is no draft. Run "pnpm run prompt new <name>" first.'
   }
   if (draft.type !== 'text') {
     return 'Only text prompts can be pushed.'
   }
-  if (mainLatest < langfuseLatest) {
-    return `Langfuse has v${langfuseLatest} but main stops at v${mainLatest}. Run "pnpm run prompt sync", commit and push the files, then retry.`
-  }
-  if (mainLatest > langfuseLatest) {
-    return `main has v${mainLatest} but Langfuse stops at v${langfuseLatest}. Move your draft out of the folder, then run push again to finish the earlier push.`
-  }
-  if (changedPushedFiles.length > 0) {
-    return `Pushed versions are read-only. Revert your changes to: ${changedPushedFiles.join(
-      ', ',
-    )}`
+  if (hasConflictMarkers(draftText)) {
+    return 'The draft has merge conflict markers. Resolve them, test, then push again.'
   }
   if (draft.version !== mainLatest + 1) {
     return `v${draft.version} is not the next version. main is at v${mainLatest}. Retry with --renumber.`
@@ -283,4 +347,44 @@ export function listVersionsAtRef(ref, dir, root = PROMPTS_DIR) {
     .filter(Boolean)
     .map((match) => Number(match[1]))
     .sort((a, b) => a - b)
+}
+
+export function readAtRef(ref, path, root = PROMPTS_DIR) {
+  return gitRaw(['show', `${ref}:${relative(root, path)}`], root)
+}
+
+/**
+ * Fast-forwards the clone so a push lands on top of main.
+ */
+export function fastForwardToMain(main, hint, root = PROMPTS_DIR) {
+  if (git(['rev-list', '--count', `${main}..HEAD`], root) !== '0') {
+    throw new Error(
+      `Your clone has commits that are not on ${main}. Push or drop those commits first.`,
+    )
+  }
+  if (!gitSucceeds(['merge', '--ff-only', '--quiet', main], root)) {
+    throw new Error(`Could not fast-forward to ${main}. ${hint}`)
+  }
+}
+
+/**
+ * Commits and pushes only the given files, so other local work stays local.
+ */
+export function commitAndPush({ main, paths, message }, root = PROMPTS_DIR) {
+  const branch = main.replace(/^origin\//, '')
+  git(['add', '--', ...paths], root)
+  git(['commit', '--quiet', '-m', message, '--', ...paths], root)
+  if (
+    !gitSucceeds(
+      ['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`],
+      root,
+    )
+  ) {
+    // IMPORTANT: unstage too. Staged files block the next fast-forward.
+    git(['reset', '--quiet', 'HEAD~1', '--', ...paths], root)
+    git(['reset', '--quiet', '--soft', 'HEAD~1'], root)
+    throw new Error(
+      `Someone pushed to ${main} first. Nothing was created in Langfuse. Run the command again.`,
+    )
+  }
 }
