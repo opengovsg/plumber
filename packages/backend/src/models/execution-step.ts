@@ -13,13 +13,13 @@ class ExecutionStep extends Base {
   stepId!: string
   dataIn!: IJSONObject
   dataOut!: IJSONObject
-  errorDetails!: IJSONObject
+  errorDetails?: IJSONObject | null
   status!: 'success' | 'failure'
-  appKey!: string
+  appKey?: string | null
   jobId?: string
   step!: Step
   metadata!: IExecutionStepMetadata
-  key!: string
+  key?: string | null
   execution?: Execution
 
   static tableName = 'execution_steps'

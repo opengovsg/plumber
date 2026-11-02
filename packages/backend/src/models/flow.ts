@@ -21,7 +21,7 @@ class Flow extends Base {
   active!: boolean
   steps!: Step[]
   publishedAt?: string | null
-  remoteWebhookId!: string
+  remoteWebhookId?: string | null
   executions?: Execution[]
   testExecutionId?: string | null
   testExecution?: Execution
