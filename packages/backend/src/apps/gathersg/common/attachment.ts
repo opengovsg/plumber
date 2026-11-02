@@ -1,4 +1,4 @@
-import { IGlobalVariable, IJSONValue } from '@plumber/types'
+import { IGlobalVariable, IJSONValue, StepErrorKind } from '@plumber/types'
 import axios from 'axios'
 import FormData from 'form-data'
 import { z } from 'zod'
@@ -33,6 +33,20 @@ export type ProcessedAttachment = EnrichedAttachment & {
   attachmentUuid: string
 }
 
+function getAttachmentDownloadFailureKind(error: unknown): StepErrorKind {
+  if (!(error instanceof HttpError)) {
+    return 'internal'
+  }
+  const status = error.response?.status
+  if (status === 401 || status === 403) {
+    return 'config'
+  }
+  if (status === 429) {
+    return 'internal'
+  }
+  return 'third-party'
+}
+
 async function downloadAndStoreAttachmentInS3(
   $: IGlobalVariable,
   caseUuid: IJSONValue,
@@ -54,10 +68,11 @@ async function downloadAndStoreAttachmentInS3(
 
     if (attachment.size > MAX_FILE_SIZE) {
       const sizeText = MAX_FILE_SIZE / (1024 * 1024)
-      throw new StepError(
-        `Attachment ${filename} exceeds maximum size of ${sizeText}MB`,
-        `Please check that your case attachments do not exceed ${sizeText}MB.`,
-      )
+      throw new StepError({
+        name: `Attachment ${filename} exceeds maximum size of ${sizeText}MB`,
+        solution: `Please check that your case attachments do not exceed ${sizeText}MB.`,
+        kind: 'internal',
+      })
     }
 
     const { data: attachmentBinary } = await $.http.get(
@@ -99,11 +114,13 @@ async function downloadAndStoreAttachmentInS3(
       throw error
     }
 
-    throw new StepError(
-      `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
-      'Please check that your case attachments are accessible and try again.',
-      error,
-    )
+    throw new StepError({
+      name: `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
+      solution:
+        'Please check that your case attachments are accessible and try again.',
+      kind: getAttachmentDownloadFailureKind(error),
+      cause: error instanceof HttpError ? error : undefined,
+    })
   }
 }
 
@@ -119,10 +136,12 @@ export async function processAttachments(
   const parsedAttachments = attachmentsSchema.safeParse(attachments)
 
   if (!parsedAttachments.success) {
-    throw new StepError(
-      `Invalid attachments: ${parsedAttachments.error.message}`,
-      'Please check that your case attachments are accessible and try again.',
-    )
+    throw new StepError({
+      name: `Invalid attachments: ${parsedAttachments.error.message}`,
+      solution:
+        'Please check that your case attachments are accessible and try again.',
+      kind: 'third-party',
+    })
   }
 
   return Promise.all(
@@ -164,10 +183,12 @@ export async function generateUploadToken(
 
   const token = data?.data?.token
   if (!token) {
-    throw new StepError(
-      'Ownself Gather did not return an upload token',
-      'Please try again. If this persists, check that your Ownself Gather API key is valid.',
-    )
+    throw new StepError({
+      name: 'Ownself Gather did not return an upload token',
+      solution:
+        'Please try again. If this persists, check that your Ownself Gather API key is valid.',
+      kind: 'third-party',
+    })
   }
   return token
 }
@@ -230,10 +251,11 @@ export async function uploadCaseAttachments({
   }
 
   if (s3Ids.length > MAX_ATTACHMENTS_PER_FIELD) {
-    throw new StepError(
-      `Field ${field} has ${s3Ids.length} attachments, exceeding the maximum of ${MAX_ATTACHMENTS_PER_FIELD}`,
-      `Please check that your case attachments do not exceed ${MAX_ATTACHMENTS_PER_FIELD} files per field.`,
-    )
+    throw new StepError({
+      name: `Field ${field} has ${s3Ids.length} attachments, exceeding the maximum of ${MAX_ATTACHMENTS_PER_FIELD}`,
+      solution: `Please check that your case attachments do not exceed ${MAX_ATTACHMENTS_PER_FIELD} files per field.`,
+      kind: 'config',
+    })
   }
 
   const files = await Promise.all(
@@ -241,10 +263,11 @@ export async function uploadCaseAttachments({
       const obj = await getObjectFromS3Id(s3Id, { flowId: $.flow.id })
       if (obj.data.byteLength > MAX_FILE_SIZE) {
         const sizeText = MAX_FILE_SIZE / (1024 * 1024)
-        throw new StepError(
-          `Attachment ${obj.name} exceeds maximum size of ${sizeText}MB`,
-          `Please check that your case attachments do not exceed ${sizeText}MB.`,
-        )
+        throw new StepError({
+          name: `Attachment ${obj.name} exceeds maximum size of ${sizeText}MB`,
+          solution: `Please check that your case attachments do not exceed ${sizeText}MB.`,
+          kind: 'config',
+        })
       }
       return obj
     }),

@@ -74,7 +74,10 @@ describe('resolveCaseIdentifier', () => {
 
     await expect(
       resolveCaseIdentifier(makeGlobal(post), MOCK_CASE_REF),
-    ).rejects.toThrow('More than one case found')
+    ).rejects.toMatchObject({
+      kind: 'config',
+      message: expect.stringContaining('More than one case found'),
+    })
   })
 
   it('throws when search returns no case', async () => {
@@ -84,7 +87,12 @@ describe('resolveCaseIdentifier', () => {
 
     await expect(
       resolveCaseIdentifier(makeGlobal(post), MOCK_CASE_REF),
-    ).rejects.toThrow('No case found for case ref 261007-00001')
+    ).rejects.toMatchObject({
+      kind: 'config',
+      message: expect.stringContaining(
+        'No case found for case ref 261007-00001',
+      ),
+    })
   })
 
   it('throws when the search response shape is unexpected', async () => {
@@ -94,6 +102,9 @@ describe('resolveCaseIdentifier', () => {
 
     await expect(
       resolveCaseIdentifier(makeGlobal(post), MOCK_CASE_REF),
-    ).rejects.toThrow('Unable to read the case search result')
+    ).rejects.toMatchObject({
+      kind: 'third-party',
+      message: expect.stringContaining('Unable to read the case search result'),
+    })
   })
 })
