@@ -189,7 +189,11 @@ async function sendEmail(
       ? 'This attachment was not stored in the last submission. Please make a new submission with attachments to successfully configure this pipe.'
       : 'Reconfigure the invalid field and try again.'
 
-    throw new StepError(stepErrorName, stepErrorSolution)
+    throw new StepError({
+      name: stepErrorName,
+      solution: stepErrorSolution,
+      kind: 'config',
+    })
   }
 
   let recipientsToSend = result.data.destinationEmail
