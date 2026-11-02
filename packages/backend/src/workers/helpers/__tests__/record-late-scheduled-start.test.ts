@@ -58,7 +58,7 @@ describe('recordLateScheduledStart', () => {
     vi.clearAllMocks()
   })
 
-  it('sets the first-start marker per job and the late marker per execution', async () => {
+  it('sets the first-start marker per job and the late marker per execution and tag', async () => {
     await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
@@ -75,7 +75,7 @@ describe('recordLateScheduledStart', () => {
     )
     expect(mocks.redisSet).toHaveBeenNthCalledWith(
       2,
-      'delay:late-execution:execution-1',
+      'delay:late-execution:execution-1:false',
       '1',
       'EX',
       2_592_000,

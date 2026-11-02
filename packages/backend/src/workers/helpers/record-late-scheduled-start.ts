@@ -61,9 +61,12 @@ export async function recordLateScheduledStart({
       return
     }
 
-    // The SLA counts executions, so a second late step in the same execution does not count again.
+    // The SLA counts executions. A marker per tag stops a rate-limited late step hiding another late step.
     const isFirstLateStep = await redisAppDataClient.set(
-      makeRedisAppDataKey('delay', `late-execution:${executionId}`),
+      makeRedisAppDataKey(
+        'delay',
+        `late-execution:${executionId}:${rateLimited}`,
+      ),
       '1',
       'EX',
       LATE_EXECUTION_MARKER_TTL_SECONDS,

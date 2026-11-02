@@ -3,6 +3,9 @@
  *
  *   "For delayed jobs, anything that executed later than 5 mins past the
  *   scheduled time should count as failures in our SLA."
+ *
+ * Each late execution counts once per `rate_limited` tag, so dropping
+ * rate-limited lateness from the SLO never hides other lateness.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -170,7 +173,9 @@ describe('recordLateScheduledStart', () => {
     }
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
-    expect(mocks.redisStore.has('delay:late-execution:execution-3')).toBe(true)
+    expect(mocks.redisStore.has('delay:late-execution:execution-3:false')).toBe(
+      true,
+    )
   })
 
   it('does not count a job without scheduledAt', async () => {
@@ -248,22 +253,43 @@ describe('recordLateScheduledStart', () => {
     expect(lateCount(true)).toBe(1)
   })
 
-  it('does not count a second late step in the same execution', async () => {
+  it.each([false, true])(
+    'does not count a second late step with rate_limited:%s in the same execution',
+    async (rateLimited) => {
+      const recordLateScheduledStart = await loadRecordLateScheduledStart()
+
+      await recordLateScheduledStart({
+        job: makeJob({ id: 'job-1', latenessMs: 400_000 }),
+        queueName: QUEUE_NAME,
+        rateLimited,
+      })
+      await recordLateScheduledStart({
+        job: makeJob({ id: 'job-2', latenessMs: 500_000 }),
+        queueName: QUEUE_NAME,
+        rateLimited,
+      })
+
+      expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+      expect(lateCount(rateLimited)).toBe(1)
+    },
+  )
+
+  it('still counts a late step without a rate limit after a rate-limited late step in the same execution', async () => {
     const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
     await recordLateScheduledStart({
       job: makeJob({ id: 'job-1', latenessMs: 400_000 }),
-      queueName: QUEUE_NAME,
-      rateLimited: false,
-    })
-    await recordLateScheduledStart({
-      job: makeJob({ id: 'job-2', latenessMs: 500_000 }),
       queueName: '{app-actions-m365-excel}',
       rateLimited: true,
     })
+    await recordLateScheduledStart({
+      job: makeJob({ id: 'job-2', latenessMs: 500_000 }),
+      queueName: QUEUE_NAME,
+      rateLimited: false,
+    })
 
-    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
-    expect(lateCount()).toBe(1)
+    expect(lateCount(true)).toBe(1)
+    expect(lateCount(false)).toBe(1)
   })
 })
 
