@@ -458,18 +458,13 @@ async function push(args) {
         )}`,
       )
     }
-    if (mainLatest !== langfuseLatest + 1) {
+    const next = langfuseLatest + 1
+    if (!listVersionsAtRef(main, dir).includes(next)) {
       throw new Error(
         `Nothing to resume. main is at v${mainLatest} and Langfuse is at v${langfuseLatest}.`,
       )
     }
-    return createLangfuseVersion({
-      client,
-      main,
-      name,
-      dir,
-      version: mainLatest,
-    })
+    return createLangfuseVersion({ client, main, name, dir, version: next })
   }
 
   // Stops after renumbering so the dev re-tests the merged draft.
