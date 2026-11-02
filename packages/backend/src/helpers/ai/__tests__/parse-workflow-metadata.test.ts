@@ -276,7 +276,8 @@ steps:
 
   describe('invalid YAML logging', () => {
     it('logs when the LLM emits YAML that only parses after quoting', () => {
-      parseWorkflowMetadata(`
+      parseWorkflowMetadata(
+        `
 <!-- WORKFLOW_METADATA
 name: Webhook to Tiles: Save Client ID
 steps:
@@ -289,10 +290,13 @@ steps:
     key: sendTransactionalEmail
     description: Action
 -->
-`)
+`,
+        [],
+        { traceId: 'trace-123' },
+      )
       expect(mocks.logInfo).toHaveBeenCalledWith(
         'AI builder emitted invalid workflow YAML',
-        { event: 'ai-builder-workflow-yaml-invalid' },
+        { event: 'ai-builder-workflow-yaml-invalid', traceId: 'trace-123' },
       )
     })
 

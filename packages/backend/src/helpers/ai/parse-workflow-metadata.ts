@@ -149,7 +149,7 @@ export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
   return flattened
 }
 
-function parseRawWorkflowData(text: string): IFlowSteps {
+function parseRawWorkflowData(text: string, traceId?: string): IFlowSteps {
   const match = text.match(WORKFLOW_METADATA_REGEX)
   if (!match) {
     throw new BadUserInputError('Unable to generate the workflow.')
@@ -162,6 +162,7 @@ function parseRawWorkflowData(text: string): IFlowSteps {
   } catch {
     logger.info('AI builder emitted invalid workflow YAML', {
       event: 'ai-builder-workflow-yaml-invalid',
+      traceId,
     })
     // Quoting can corrupt valid YAML (e.g. block scalars), so only repair output that fails to parse.
     try {
@@ -235,8 +236,9 @@ function parseRawWorkflowData(text: string): IFlowSteps {
 function parseWorkflowMetadata(
   text: string,
   restrictedAppKeys: string[] = [],
+  { traceId }: { traceId?: string } = {},
 ): IFlowSteps {
-  const workflowData = parseRawWorkflowData(text)
+  const workflowData = parseRawWorkflowData(text, traceId)
 
   const schema = z.object({
     trigger: getTriggerSchema(restrictedAppKeys),

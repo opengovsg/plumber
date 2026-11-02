@@ -309,6 +309,7 @@ const handleChatStream = observe(
                     const parsedWorkflowMetadata = parseWorkflowMetadata(
                       event.text,
                       restrictedApps,
+                      { traceId },
                     )
                     const flowSteps = { ...parsedWorkflowMetadata, traceId }
                     writer.write({
