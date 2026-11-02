@@ -405,6 +405,86 @@ steps:
       )
     })
 
+    it('accepts a value that starts and ends with a quote but is not one quoted string', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Client ID" column: saves "id"
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        '"Client ID" column: saves "id"',
+      )
+    })
+
+    it('keeps a block scalar description when the YAML is valid', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: |
+      Line one
+      name: not a key
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        'Line one\nname: not a key\n',
+      )
+    })
+
+    it('keeps the "Build with AI" default for a null name when the YAML is valid', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: null
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->
+`
+      expect(parseWorkflowMetadata(text).name).toBe('Build with AI')
+    })
+
+    it('drops a comment after a quoted value when the YAML needs quoting', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Notify: applicant" # sent on submit
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        'Notify: applicant',
+      )
+    })
+
     it('uses stepName for config.stepName', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
       expect(result.actions[0].config.stepName).toBe('Send welcome email')

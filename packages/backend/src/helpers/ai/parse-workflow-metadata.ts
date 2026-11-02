@@ -1,5 +1,5 @@
 import { IFlowSteps } from '@plumber/types'
-import { parse as parseYaml } from 'yaml'
+import { isScalar, parse as parseYaml, parseDocument, Scalar } from 'yaml'
 import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -25,12 +25,14 @@ const FREE_TEXT_KEYS = new Set([
   'branchName',
 ])
 
+// A value can start and end with a quote yet hold unquoted text in between (e.g. `"a" b: "c"`).
 function isQuoted(value: string): boolean {
-  const quote = value[0]
+  const doc = parseDocument(value)
   return (
-    value.length >= 2 &&
-    (quote === '"' || quote === "'") &&
-    value.at(-1) === quote
+    doc.errors.length === 0 &&
+    isScalar(doc.contents) &&
+    (doc.contents.type === Scalar.QUOTE_DOUBLE ||
+      doc.contents.type === Scalar.QUOTE_SINGLE)
   )
 }
 
@@ -147,15 +149,6 @@ export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
   return flattened
 }
 
-function canParseYaml(yamlText: string): boolean {
-  try {
-    parseYaml(yamlText)
-    return true
-  } catch {
-    return false
-  }
-}
-
 function parseRawWorkflowData(text: string): IFlowSteps {
   const match = text.match(WORKFLOW_METADATA_REGEX)
   if (!match) {
@@ -163,18 +156,19 @@ function parseRawWorkflowData(text: string): IFlowSteps {
   }
 
   const rawYaml = match[1].trim()
-  // Quoting rewrites most valid outputs too, so only a failed raw parse counts as an LLM error.
-  if (!canParseYaml(rawYaml)) {
+  let parsed: any
+  try {
+    parsed = parseYaml(rawYaml)
+  } catch {
     logger.info('AI builder emitted invalid workflow YAML', {
       event: 'ai-builder-workflow-yaml-invalid',
     })
-  }
-
-  let parsed: any
-  try {
-    parsed = parseYaml(quoteFreeTextValues(rawYaml))
-  } catch {
-    throw new BadUserInputError('Unable to generate the workflow.')
+    // Quoting can corrupt valid YAML (e.g. block scalars), so only repair output that fails to parse.
+    try {
+      parsed = parseYaml(quoteFreeTextValues(rawYaml))
+    } catch {
+      throw new BadUserInputError('Unable to generate the workflow.')
+    }
   }
 
   if (
