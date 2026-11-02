@@ -86,6 +86,7 @@ interface Email extends EmailContent {
 interface ResolvedRecipients {
   to: string[]
   cc: string[]
+  blacklistedCcs: string[]
   suppressed: Set<string>
 }
 
@@ -113,6 +114,7 @@ type GroupFailure = Omit<PostmanPromiseRejected, 'recipient'>
 
 interface SendOutcome {
   dataOut: PostmanEmailDataOut
+  blacklistedCcs: string[]
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }
@@ -193,6 +195,7 @@ async function resolveRecipients(
   return {
     to: recipients.filter((r) => !suppressed.has(r)),
     cc: (ccList ?? []).filter((cc) => !suppressed.has(cc)),
+    blacklistedCcs: (ccList ?? []).filter((cc) => suppressed.has(cc)),
     suppressed,
   }
 }
@@ -498,7 +501,7 @@ async function sendGroups(
 function collectResults(
   recipients: string[],
   ccList: string[] | undefined,
-  suppressed: Set<string>,
+  resolved: ResolvedRecipients,
   groups: SendGroup[],
   groupResults: PromiseSettledResult<SentParams>[],
 ): SendOutcome {
@@ -533,7 +536,7 @@ function collectResults(
 
   let resultIdx = 0
   recipients.forEach((recipientEmail) => {
-    if (suppressed.has(recipientEmail)) {
+    if (resolved.suppressed.has(recipientEmail)) {
       status.push('BLACKLISTED')
       recipient.push(recipientEmail)
       errors.push({
@@ -558,6 +561,18 @@ function collectResults(
       errors.push(result.reason)
     }
   })
+
+  // Suppressed CCs surface as BLACKLISTED like suppressed To recipients, so the
+  // step reports them even when every To send succeeded.
+  for (const cc of resolved.blacklistedCcs) {
+    errors.push({
+      status: 'BLACKLISTED',
+      recipient: cc,
+      error: {
+        message: 'CC email address is in suppression list',
+      } as HttpError,
+    })
+  }
 
   /**
    * Since we can only return one error per postman step, we have to select in terms of priority:
@@ -587,6 +602,7 @@ function collectResults(
   } satisfies PostmanEmailDataOut
   return {
     dataOut,
+    blacklistedCcs: resolved.blacklistedCcs,
     error: sortedErrors.length ? sortedErrors[0].error : undefined,
     errorStatus: sortedErrors.length ? sortedErrors[0].status : undefined,
   }
@@ -605,11 +621,5 @@ export async function sendTransactionalEmails(
   const resolved = await resolveRecipients(recipients, ccList, useSes)
   const groups = planSendGroups(resolved, sendMode, useSes)
   const groupResults = await sendGroups(http, groups, content, useSes, sendMode)
-  return collectResults(
-    recipients,
-    ccList,
-    resolved.suppressed,
-    groups,
-    groupResults,
-  )
+  return collectResults(recipients, ccList, resolved, groups, groupResults)
 }

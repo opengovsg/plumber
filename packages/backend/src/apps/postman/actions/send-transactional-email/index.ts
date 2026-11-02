@@ -253,25 +253,26 @@ async function sendEmail(
     extensionPolicy,
   })
 
-  const { dataOut, error, errorStatus } = await sendTransactionalEmails(
-    $.http,
-    recipientsToSend,
-    {
-      subject: result.data.subject,
-      // this is to make sure there's at least some content for every new line
-      // so on the email client the new line will have some height and show up
-      body: result.data.body.replace(
-        /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
-        '<p style="margin: 0">&nbsp;</p>',
-      ),
-      ccList: result.data.destinationEmailCc,
-      replyTo: result.data.replyTo,
-      senderName: result.data.senderName,
-      attachments: attachmentFiles,
-      sendMode: result.data[SEND_MODE_KEY],
-    },
-    useSes,
-  )
+  const { dataOut, blacklistedCcs, error, errorStatus } =
+    await sendTransactionalEmails(
+      $.http,
+      recipientsToSend,
+      {
+        subject: result.data.subject,
+        // this is to make sure there's at least some content for every new line
+        // so on the email client the new line will have some height and show up
+        body: result.data.body.replace(
+          /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+          '<p style="margin: 0">&nbsp;</p>',
+        ),
+        ccList: result.data.destinationEmailCc,
+        replyTo: result.data.replyTo,
+        senderName: result.data.senderName,
+        attachments: attachmentFiles,
+        sendMode: result.data[SEND_MODE_KEY],
+      },
+      useSes,
+    )
 
   /**
    * Patch the status of the recipients that were sent in the previous execution
@@ -324,11 +325,16 @@ async function sendEmail(
    * Send blacklist notification email if any
    * If there are any invalid attachments, it will be included in this email
    */
-  if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
+  if (
+    (blacklistedRecipients.length > 0 || blacklistedCcs.length > 0) &&
+    !$.execution.testRun
+  ) {
     try {
+      // The removal form and the notification treat every address alike, so
+      // CCs are merged in here rather than threaded through as a second list.
       await sendBlacklistEmail({
         ...defaultSendEmailParams,
-        blacklistedRecipients,
+        blacklistedRecipients: [...blacklistedRecipients, ...blacklistedCcs],
       })
     } catch (e) {
       logger.error(e)
@@ -337,6 +343,7 @@ async function sendEmail(
         flowId: $.flow.id,
         executionId: $.execution.id,
         blacklistedRecipients,
+        blacklistedCcs,
         error: e,
       })
     }
@@ -376,6 +383,7 @@ async function sendEmail(
       error,
       isPartialSuccess: hasAtLeastOneSuccess || invalidAttachments.length > 0,
       blacklistedRecipients,
+      blacklistedCcs,
       invalidAttachments,
       isRetryWithoutAttachments,
     })
