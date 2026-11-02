@@ -40,15 +40,16 @@ Run every command from the plumber repo root. No command changes plumber's track
 
 `pnpm run prompt` commands load Langfuse keys from 1Password, so they prompt for biometrics.
 
-| Command                                      | `plumber-prompts` clone                                                                                                       | `plumber-prompts` on GitHub        | Langfuse                         |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------- |
-| `pnpm run prompts:clone`                     | Clones it if missing. Otherwise fetches, and fast-forwards a clean default branch.                                            | Reads.                             | None.                            |
-| `pnpm run prompt sync`                       | Fast-forwards to `main`. Writes and commits the Langfuse versions it is missing. Moves a draft that shares a number with one. | Pushes the commit to `main`.       | Reads every prompt and version.  |
-| `pnpm run prompt status`                     | Fetches. Changes no files.                                                                                                    | Reads.                             | Reads the version lists.         |
-| `pnpm run prompt new <name>`                 | Fetches. Adds the draft `v<N+1>.md` and `v<N+1>.meta.json` as uncommitted files.                                              | Reads.                             | None.                            |
-| `pnpm run prompt diff <name>`                | Reads the two newest versions.                                                                                                | None.                              | None.                            |
-| `pnpm run prompt push <name> -m "<message>"` | Fast-forwards to `main`. Commits the draft.                                                                                   | Pushes the draft commit to `main`. | Creates the same version number. |
-| `pnpm run prompt push <name> --renumber`     | Renames the draft to the next free number and fast-forwards. Stops before committing.                                         | Reads.                             | Reads the version list.          |
+| Command                                      | `plumber-prompts` clone                                                                                                                | `plumber-prompts` on GitHub        | Langfuse                                                 |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------- |
+| `pnpm run prompts:clone`                     | Clones it if missing. Otherwise fetches, and fast-forwards a clean default branch.                                                     | Reads.                             | None.                                                    |
+| `pnpm run prompt sync`                       | Fast-forwards to `main`. Writes and commits the missing Langfuse versions. Moves a clashing draft to a free number and merges into it. | Pushes the commit to `main`.       | Reads every prompt and version.                          |
+| `pnpm run prompt status`                     | Fetches. Changes no files.                                                                                                             | Reads.                             | Reads the version lists.                                 |
+| `pnpm run prompt new <name>`                 | Fast-forwards to `main`. Adds the draft `v<N+1>.md` and `v<N+1>.meta.json` as uncommitted files.                                       | Reads.                             | None.                                                    |
+| `pnpm run prompt diff <name>`                | Reads your newest file.                                                                                                                | None.                              | Reads the newest version.                                |
+| `pnpm run prompt push <name> -m "<message>"` | Fast-forwards to `main`. Commits the draft.                                                                                            | Pushes the draft commit to `main`. | Creates the same version number.                         |
+| `pnpm run prompt push <name> --renumber`     | Moves the draft to the next free number. Merges the version that landed first into it. Stops before committing.                        | Reads.                             | Reads the version list.                                  |
+| `pnpm run prompt push <name> --resume`       | Changes no files.                                                                                                                      | Reads.                             | Creates the version an earlier push left on `main` only. |
 
 `new`, `diff` and `push` default to `--project=aiBuilder`. `status` and `sync` cover both projects unless you pass `--project`. `new` and `push` support text prompts only.
 
@@ -57,17 +58,33 @@ Run every command from the plumber repo root. No command changes plumber's track
 1. `pnpm run prompts:clone`
 2. `pnpm run prompt new chat`
 3. Edit `tools/langfuse/prompts/aiBuilder/chat/v<N>.md`. Test it in the local AI Builder.
-4. `pnpm run prompt diff chat`
+4. `pnpm run prompt diff chat` compares your draft with Langfuse's newest version.
 5. `pnpm run prompt push chat -m "<what changed and why>"`
 6. Promote the version in the Langfuse UI or the LaunchDarkly flag.
 
 ## How push keeps versions in sync
 
 - It refuses unless the draft is the next number after the newest version on `main` and in Langfuse.
-- It refuses when a pushed version file has changes. Pushed versions are read-only.
+- It refuses when a pushed version file has changes, or the draft has merge conflict markers.
 - It pushes to git before it creates the Langfuse version. Git rejects a push that is not on top of `main`, so a concurrent push stops before it reaches Langfuse.
-- If someone pushed the same number first, `push` asks for `--renumber`. That renumbers your draft and stops. Run `diff`, fold their change into your draft, test, then push again.
-- If Langfuse fails after the git push, run `push` again. It creates the missing version from the repo.
+- It creates the Langfuse version from the file on `main`, not your working copy.
+
+## When two devs push the same number
+
+`new` records the version a draft came from as `basedOn` in its `meta.json`. `push` removes it.
+
+1. `push` reports that `main` already holds your number and asks for `--renumber`.
+2. `push --renumber` moves your draft to the next free number. It three-way merges the version that landed first into your draft, using `basedOn` as the base.
+3. A clean merge needs a re-test. A conflict leaves `<<<<<<<` markers, and `push` refuses until you resolve them.
+4. Test again, then push.
+
+`sync` does the same when a version created in the Langfuse UI takes your draft's number.
+
+Ask your AI assistant for help reconciling. The `langfuse-prompts` skill covers it.
+
+## When Langfuse fails after the git push
+
+The version is on `main` but not in Langfuse. Run `pnpm run prompt push <name> --resume`. It creates the version from the file on `main`. It refuses if a pushed file has local changes.
 
 ## Rules
 
