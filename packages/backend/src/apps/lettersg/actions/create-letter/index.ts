@@ -9,12 +9,8 @@ import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
 
-function handleZodError(error: ZodError): never {
-  const firstError = fromZodError(error).details[0]
-  throw new StepError(
-    `${firstError.message}`,
-    GenericSolution.ReconfigureInvalidField,
-  )
+function getFirstZodErrorMessage(error: ZodError): string {
+  return `${fromZodError(error).details[0].message}`
 }
 
 const action: IRawAction = {
@@ -112,14 +108,22 @@ const action: IRawAction = {
     const payloadResult = requestSchema.safeParse($.step.parameters)
 
     if (payloadResult.success === false) {
-      handleZodError(payloadResult.error)
+      throw new StepError({
+        name: getFirstZodErrorMessage(payloadResult.error),
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
 
     const rawResponse = await $.http.post('/v1/letters', payloadResult.data)
     const responseResult = responseSchema.safeParse(rawResponse.data)
 
     if (responseResult.success === false) {
-      handleZodError(responseResult.error)
+      throw new StepError({
+        name: getFirstZodErrorMessage(responseResult.error),
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'third-party',
+      })
     }
 
     const response = responseResult.data
