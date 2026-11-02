@@ -171,26 +171,33 @@ function makeEmptyResponse(field: FormSchemaField): FieldResponseV4 {
   }
 }
 
-function accumulatedFieldIds(
+function fieldIdsThroughStep(
   workflow: Array<{ edit: string[] }>,
   workflowStep: number,
 ): Set<string> {
-  const lastIndex = Math.min(Math.max(workflowStep, 0), workflow.length - 1)
-  const fieldIds = new Set<string>()
-  for (let index = 0; index <= lastIndex; index++) {
-    for (const fieldId of workflow[index].edit) {
-      fieldIds.add(fieldId)
-    }
-  }
-  return fieldIds
+  const reachedSteps = workflow.slice(0, Math.max(workflowStep, 0) + 1)
+  return new Set(reachedSteps.flatMap((step) => step.edit))
 }
 
 function readSubmissionWorkflow(
   $: IGlobalVariable,
+  formId: string,
 ): { workflow: Array<{ edit: string[] }>; workflowStep: number } | null {
   const workflowContent = $.request?.body?.data?.workflowContent
-  const parsed = mrfWorkflowDataSchema.safeParse(workflowContent?.workflow)
-  if (!workflowContent || !parsed.success || parsed.data.length === 0) {
+  if (!workflowContent) {
+    return null
+  }
+  const parsed = mrfWorkflowDataSchema.safeParse(workflowContent.workflow)
+  if (!parsed.success) {
+    // Without this log, a new FormSG workflow shape stops MRF restoration silently.
+    logger.warn('Unable to parse FormSG MRF workflow', {
+      event: 'formsg-mrf-workflow-unparsable',
+      formId,
+      issues: parsed.error.issues,
+    })
+    return null
+  }
+  if (parsed.data.length === 0) {
     return null
   }
   const workflowStep = workflowContent.workflowStep
@@ -201,68 +208,56 @@ function readSubmissionWorkflow(
 }
 
 /**
- * Puts back optional fields that v4 left out of the payload.
+ * Puts back optional fields that v4 left out of the payload, in schema order.
  * Pipes expect those variables to exist.
  *
- * `allowedFieldIds` limits an MRF delivery to fields reached by its step.
+ * `restorableIds` limits an MRF delivery to fields reached by its step.
  * Null means every answer field in the schema.
  */
 function withOmittedFields(
   responses: FieldResponsesV4,
   schemaFields: FormSchemaField[],
-  allowedFieldIds: Set<string> | null,
+  restorableIds: Set<string> | null,
 ): FieldResponsesV4 {
   if (schemaFields.length === 0) {
     return responses
   }
 
-  const schemaFieldIds = new Set(schemaFields.map((field) => field._id))
-  const answerSchemaIds = new Set(
-    schemaFields
-      .filter((field) => !NON_ANSWER_FIELD_TYPES.has(field.fieldType))
-      .map((field) => field._id),
+  const answerFields = schemaFields.filter(
+    (field) => !NON_ANSWER_FIELD_TYPES.has(field.fieldType),
   )
-  const unknownAfter = new Map<string, Array<[string, FieldResponseV4]>>()
-  const trailingUnknown: Array<[string, FieldResponseV4]> = []
-  let previousKnownId: string | null = null
-  for (const [id, response] of Object.entries(responses)) {
-    if (answerSchemaIds.has(id)) {
-      previousKnownId = id
-      continue
-    }
-    if (schemaFieldIds.has(id)) {
-      continue
-    }
-    if (!previousKnownId) {
-      trailingUnknown.push([id, response])
-      continue
-    }
-    const pending = unknownAfter.get(previousKnownId) ?? []
-    pending.push([id, response])
-    unknownAfter.set(previousKnownId, pending)
-  }
+  const answerIds = new Set(answerFields.map((field) => field._id))
+  const schemaIds = new Set(schemaFields.map((field) => field._id))
 
-  const filled: FieldResponsesV4 = {}
-  for (const field of schemaFields) {
-    if (NON_ANSWER_FIELD_TYPES.has(field.fieldType)) {
-      continue
-    }
-    const present = responses[field._id]
-    if (!present && allowedFieldIds && !allowedFieldIds.has(field._id)) {
-      continue
-    }
-    filled[field._id] = present ?? makeEmptyResponse(field)
-    for (const [id, response] of unknownAfter.get(field._id) ?? []) {
-      filled[id] = response
+  // v1 and v3 keep payload order. So a field missing from the schema stays
+  // after the answer field it followed in the payload.
+  const unlistedAfter = new Map<string | null, string[]>()
+  let previousId: string | null = null
+  for (const id of Object.keys(responses)) {
+    if (answerIds.has(id)) {
+      previousId = id
+    } else if (!schemaIds.has(id)) {
+      unlistedAfter.set(previousId, [
+        ...(unlistedAfter.get(previousId) ?? []),
+        id,
+      ])
     }
   }
 
-  for (const [id, response] of trailingUnknown) {
-    if (!schemaFieldIds.has(id)) {
-      filled[id] = response
+  const ordered = new Map<string, FieldResponseV4>()
+  for (const field of answerFields) {
+    const response = responses[field._id]
+    if (response || !restorableIds || restorableIds.has(field._id)) {
+      ordered.set(field._id, response ?? makeEmptyResponse(field))
+    }
+    for (const id of unlistedAfter.get(field._id) ?? []) {
+      ordered.set(id, responses[id])
     }
   }
-  return filled
+  for (const id of unlistedAfter.get(null) ?? []) {
+    ordered.set(id, responses[id])
+  }
+  return Object.fromEntries(ordered)
 }
 
 export async function processResponsesV4(
@@ -272,7 +267,7 @@ export async function processResponsesV4(
 ): Promise<FormField[]> {
   const formSchemaFields: Record<string, FormSchemaField> = {}
   let schemaFieldList: FormSchemaField[] = []
-  let allowedFieldIds: Set<string> | null = null
+  let restorableIds: Set<string> | null = null
   try {
     const formSchema = await fetchFormSchema($, formId)
     if (formSchema?.form?.form_fields) {
@@ -283,9 +278,9 @@ export async function processResponsesV4(
         formSchema.form.responseMode === 'multirespondent' &&
         schemaWorkflow.length > 0
       if (configuredMrf) {
-        const submissionWorkflow = readSubmissionWorkflow($)
-        allowedFieldIds = submissionWorkflow
-          ? accumulatedFieldIds(
+        const submissionWorkflow = readSubmissionWorkflow($, formId)
+        restorableIds = submissionWorkflow
+          ? fieldIdsThroughStep(
               submissionWorkflow.workflow,
               submissionWorkflow.workflowStep,
             )
@@ -309,7 +304,7 @@ export async function processResponsesV4(
   const responsesWithOmittedFields = withOmittedFields(
     responses,
     schemaFieldList,
-    allowedFieldIds,
+    restorableIds,
   )
   for (const [key, value] of Object.entries(responsesWithOmittedFields)) {
     questionNumber++

@@ -1246,6 +1246,29 @@ describe('processResponsesV4', () => {
       ])
     })
 
+    it('keeps a payload field missing from the schema after the field it followed', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'a', title: 'A', fieldType: 'textfield' },
+          { _id: 'b', title: 'B', fieldType: 'textfield' },
+          { _id: 'c', title: 'C', fieldType: 'textfield' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        a: v4Response('textfield', { value: 'first' }),
+        unknown: v4Response('textfield', { value: 'unknown answer' }),
+        c: v4Response('textfield', { value: 'third' }),
+      })
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['a', 'first'],
+        ['unknown', 'unknown answer'],
+        ['b', ''],
+        ['c', 'third'],
+      ])
+    })
+
     it('does not restore statement, image, or section fields', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
@@ -1345,6 +1368,52 @@ describe('processResponsesV4', () => {
         ['q1', ''],
         ['q2', 'kept'],
       ])
+    })
+
+    it('warns and restores nothing when the MRF workflow is unparsable', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce({
+        form: {
+          responseMode: 'multirespondent',
+          workflow: [{ _id: 'step0', edit: ['q1'], workflow_type: 'static' }],
+          form_fields: [
+            { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+            { _id: 'q2', title: 'Notes', fieldType: 'textfield' },
+          ],
+        },
+      })
+
+      const result = await processResponsesV4(
+        {
+          request: {
+            body: {
+              data: {
+                workflowContent: {
+                  workflow: [
+                    { _id: 'step0', edit: ['q1'], workflow_type: 'new_type' },
+                  ],
+                  workflowStep: 0,
+                  submittedSteps: [],
+                },
+              },
+            },
+          },
+        } as IGlobalVariable,
+        'formId',
+        {
+          q2: v4Response('textfield', { value: 'kept' }),
+        },
+      )
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['q2', 'kept'],
+      ])
+      expect(mocks.loggerWarn).toHaveBeenCalledWith(
+        'Unable to parse FormSG MRF workflow',
+        expect.objectContaining({
+          event: 'formsg-mrf-workflow-unparsable',
+          formId: 'formId',
+        }),
+      )
     })
 
     it('restores an empty answer for each answer shape', async () => {
