@@ -61,6 +61,9 @@ export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
   })
 }
 
+// RFC 5322's recommended limit, excluding the CRLF.
+const MAX_HEADER_LINE_LENGTH = 78
+
 /**
  * Cheaply add a `To:` header to a message built without one (`to` omitted
  * from `buildRawEmail`'s input), so the expensive part of building a message
@@ -68,11 +71,24 @@ export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
  *
  * Safe because the header block isn't terminated until the first blank line,
  * and `buildRawEmail` never emits one before the first real header.
+ *
+ * IMPORTANT: SES rejects raw messages with a line over 1,000 characters, which
+ * 50 addresses on one line exceed. The header is folded between addresses.
  */
-export function withRecipient(
-  rawMessage: Buffer,
-  to: string | string[],
-): Buffer {
-  const header = Array.isArray(to) ? to.join(', ') : to
-  return Buffer.concat([Buffer.from(`To: ${header}\r\n`, 'utf-8'), rawMessage])
+export function withRecipient(rawMessage: Buffer, to: string[]): Buffer {
+  const lines: string[] = []
+  let line = 'To:'
+  to.forEach((address, i) => {
+    const token = i < to.length - 1 ? `${address},` : address
+    if (i > 0 && line.length + 1 + token.length > MAX_HEADER_LINE_LENGTH) {
+      lines.push(line)
+      line = ''
+    }
+    line += ` ${token}`
+  })
+  lines.push(line)
+  return Buffer.concat([
+    Buffer.from(`${lines.join('\r\n')}\r\n`, 'utf-8'),
+    rawMessage,
+  ])
 }

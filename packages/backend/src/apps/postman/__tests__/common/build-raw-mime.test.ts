@@ -97,7 +97,7 @@ describe('buildRawEmail', () => {
 describe('withRecipient', () => {
   it('prepends a To header without disturbing the rest of the message', async () => {
     const raw = await buildRawEmail({ ...baseInput, to: undefined })
-    const withTo = withRecipient(raw, 'dave@open.gov.sg').toString('utf-8')
+    const withTo = withRecipient(raw, ['dave@open.gov.sg']).toString('utf-8')
 
     expect(withTo).toMatch(/^To: dave@open\.gov\.sg\r\n/)
     expect(withTo).toContain('multipart/mixed')
@@ -107,10 +107,10 @@ describe('withRecipient', () => {
   it('reuses the exact same body/attachments when adding different To headers', async () => {
     const shared = await buildRawEmail({ ...baseInput, to: undefined })
 
-    const forAlice = withRecipient(shared, 'alice@open.gov.sg').toString(
+    const forAlice = withRecipient(shared, ['alice@open.gov.sg']).toString(
       'utf-8',
     )
-    const forBob = withRecipient(shared, 'bob@open.gov.sg').toString('utf-8')
+    const forBob = withRecipient(shared, ['bob@open.gov.sg']).toString('utf-8')
 
     // Only the prepended To: line should differ between the two.
     expect(forAlice.replace(/^To:.*\r\n/, '')).toEqual(
@@ -128,5 +128,31 @@ describe('withRecipient', () => {
     ]).toString('utf-8')
 
     expect(withTo).toMatch(/^To: alice@open\.gov\.sg, bob@open\.gov\.sg\r\n/)
+  })
+
+  it('folds a 50-address To header so no line exceeds SES limits', async () => {
+    const to = Array.from(
+      { length: 50 },
+      (_, i) => `recipient-number-${i}@some-agency.gov.sg`,
+    )
+    const raw = await buildRawEmail({
+      ...baseInput,
+      to: undefined,
+      cc: Array.from({ length: 20 }, (_, i) => `cc-${i}@some-agency.gov.sg`),
+    })
+    const withTo = withRecipient(raw, to).toString('utf-8')
+
+    const toHeader = withTo.match(/^To:.*?\r\n(?! )/s)![0]
+    for (const line of toHeader.split('\r\n').slice(0, -1)) {
+      expect(line.length).toBeLessThanOrEqual(78)
+    }
+    // RFC 5322's hard limit, below SES's 1,000. Also covers the Cc header.
+    for (const line of withTo.split('\r\n')) {
+      expect(line.length).toBeLessThanOrEqual(998)
+    }
+    // Unfolding (dropping each CRLF before a space) must restore every address.
+    expect(toHeader.replace(/\r\n(?= )/g, '')).toEqual(
+      `To: ${to.join(', ')}\r\n`,
+    )
   })
 })
