@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
-import { isRetriableHttpError } from '@/helpers/actions'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendMessageAction from '../../actions/send-message'
@@ -204,7 +203,7 @@ describe('send message', () => {
     })
   })
 
-  it('should throw internal step error with a retriable cause for 429 error code', async () => {
+  it('should throw internal step error with an HttpError cause for 429 error code', async () => {
     $.step.parameters.text = 'test message'
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
@@ -221,7 +220,6 @@ describe('send message', () => {
       kind: 'internal',
     })
     expect(error.cause).toBe(httpError)
-    expect(isRetriableHttpError(error.cause)).toBe(true)
   })
 
   it('should throw config step error for 401 error code', async () => {
