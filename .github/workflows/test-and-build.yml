@@ -10,6 +10,16 @@ permissions:
   contents: read
 
 jobs:
+  test-inspector-malware:
+    name: Test (Inspector malware alert)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - run: python3 .github/scripts/inspector-malware.test.py
+
   supply-chain:
     name: Supply chain verification
     runs-on: ubuntu-latest
