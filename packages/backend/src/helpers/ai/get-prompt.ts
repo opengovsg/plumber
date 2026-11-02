@@ -7,7 +7,8 @@ import appConfig from '@/config/app'
 import { getLangfuseClient, LangfuseProject } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
 
-export const LOCAL_PROMPTS_DIR = path.resolve(
+// The clone of the plumber-prompts repo, not the PROMPTS.md doc next to it.
+export const PROMPTS_REPO_DIR = path.resolve(
   __dirname,
   '../../../../../tools/langfuse/prompts',
 )
@@ -27,9 +28,16 @@ function getLocalPromptDir(
   promptName: string,
   project: LangfuseProject,
 ): string | null {
-  const projectDir = path.join(LOCAL_PROMPTS_DIR, project)
+  const projectDir = path.join(PROMPTS_REPO_DIR, project)
   const promptDir = path.resolve(projectDir, promptName)
-  if (!promptDir.startsWith(projectDir + path.sep)) {
+  // path.resolve follows "..", so a crafted name can still leave the folder.
+  const fromProject = path.relative(projectDir, promptDir)
+  if (
+    fromProject === '' ||
+    fromProject === '..' ||
+    fromProject.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(fromProject)
+  ) {
     return null
   }
   return promptDir

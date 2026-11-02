@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -8,16 +14,22 @@ import test from 'node:test'
 import {
   assertPromptsRepo,
   changedFiles,
+  commitAndPush,
   compareVersions,
+  fastForwardToMain,
   formatContent,
   formatMeta,
   getPushBlocker,
+  hasConflictMarkers,
   listPrompts,
   listVersions,
   listVersionsAtRef,
   mainRef,
   parseArgs,
   promptDir,
+  readAtRef,
+  takeNextVersion,
+  threeWayMerge,
   versionPaths,
 } from './prompt-files.mjs'
 
@@ -52,7 +64,7 @@ function withPromptsRepo(fn) {
     run(seed, 'commit', '-m', 'seed')
     run(seed, 'push', 'origin', 'HEAD:main')
     run(dir, 'clone', origin, clone)
-    fn(clone)
+    fn(clone, origin)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -84,6 +96,11 @@ test('keeps Langfuse folders in the path and rejects escapes', () => {
     '/root/aiBuilder/skills/form',
   )
   assert.throws(() => promptDir('aiBuilder', '../../etc', '/root'))
+  assert.throws(() => promptDir('aiBuilder', '.', '/root'))
+  assert.equal(
+    promptDir('aiBuilder', '..notes', '/root'),
+    '/root/aiBuilder/..notes',
+  )
   assert.deepEqual(versionPaths('/p', 3, 'chat'), {
     content: '/p/v3.json',
     meta: '/p/v3.meta.json',
@@ -132,17 +149,43 @@ test('formats text, chat and metadata files', () => {
     '{\n  "config": {\n    "t": 1\n  },\n  "commitMessage": "why"\n}\n',
   )
   assert.equal(formatMeta({}), '{\n  "config": {},\n  "commitMessage": ""\n}\n')
+  assert.match(formatMeta({ basedOn: 211 }), /"basedOn": 211/)
 })
 
-test('compares version lists in both directions', () => {
+test('compares version lists and reserves distinct free numbers', () => {
   assert.deepEqual(compareVersions([1, 2, 4], [3, 2, 1]), {
     missingInRepo: [3],
     missingInLangfuse: [4],
   })
+  const taken = new Set([1, 2, 5])
+  assert.equal(takeNextVersion(taken), 6)
+  assert.equal(takeNextVersion(taken), 7)
+})
+
+test('merges the version that landed first into a draft', () => {
+  const labels = ['draft', 'v1', 'v2']
+  const clean = threeWayMerge({
+    base: 'one\ntwo\nthree\n',
+    ours: 'ONE\ntwo\nthree\n',
+    theirs: 'one\ntwo\nTHREE\n',
+    labels,
+  })
+  assert.deepEqual(clean, { text: 'ONE\ntwo\nTHREE\n', conflicts: 0 })
+
+  const clash = threeWayMerge({
+    base: 'one\n',
+    ours: 'mine\n',
+    theirs: 'theirs\n',
+    labels,
+  })
+  assert.equal(clash.conflicts, 1)
+  assert.equal(hasConflictMarkers(clash.text), true)
+  assert.equal(hasConflictMarkers('a <<<<<<< b'), false)
 })
 
 const ready = {
   draft: { version: 3, type: 'text' },
+  draftText: 'draft',
   langfuseLatest: 2,
   mainLatest: 2,
   changedPushedFiles: [],
@@ -160,9 +203,10 @@ test('allows only a draft that is the next version on both sides', () => {
     /text/,
   )
   assert.match(getPushBlocker({ ...ready, langfuseLatest: 3 }), /prompt sync/)
+  assert.match(getPushBlocker({ ...ready, langfuseLatest: 1 }), /--resume/)
   assert.match(
-    getPushBlocker({ ...ready, langfuseLatest: 1 }),
-    /finish the earlier push/,
+    getPushBlocker({ ...ready, draftText: '<<<<<<< draft\nx' }),
+    /conflict/,
   )
   assert.match(
     getPushBlocker({ ...ready, draft: { version: 5, type: 'text' } }),
@@ -209,4 +253,43 @@ test('rejects a plain folder and finds main after the first push', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('a rejected push leaves the draft unstaged so a renumber can land', () => {
+  withPromptsRepo((repo, origin) => {
+    const chat = join(repo, 'aiBuilder/chat')
+    const other = `${origin}-other`
+    run(join(origin, '..'), 'clone', origin, other)
+    writeFileSync(join(other, 'aiBuilder/chat/v3.md'), 'theirs\n')
+    run(other, 'add', '.')
+    run(other, 'commit', '-m', 'their v3')
+    run(other, 'push', 'origin', 'HEAD:main')
+
+    writeFileSync(join(chat, 'v3.md'), 'mine\n')
+    const draft = {
+      main: 'origin/main',
+      message: 'my v3',
+      paths: [join(chat, 'v3.md')],
+    }
+    const commit = (args) => commitAndPush(args, repo)
+    const withIdentity = () => {
+      run(repo, 'config', 'user.email', 'dev@example.com')
+      run(repo, 'config', 'user.name', 'Dev')
+    }
+    withIdentity()
+    assert.throws(() => commit(draft), /pushed to origin\/main first/)
+    assert.deepEqual(changedFiles(chat, repo), [join(chat, 'v3.md')])
+
+    run(repo, 'fetch', 'origin')
+    assert.throws(
+      () => fastForwardToMain('origin/main', 'Retry with --renumber.', repo),
+      /--renumber/,
+    )
+    renameSync(join(chat, 'v3.md'), join(chat, 'v4.md'))
+    fastForwardToMain('origin/main', 'unused', repo)
+    commit({ ...draft, paths: [join(chat, 'v4.md')] })
+    run(repo, 'fetch', 'origin')
+    assert.deepEqual(listVersionsAtRef('origin/main', chat, repo), [1, 2, 3, 4])
+    assert.equal(readAtRef('origin/main', join(chat, 'v4.md'), repo), 'mine\n')
+  })
 })
