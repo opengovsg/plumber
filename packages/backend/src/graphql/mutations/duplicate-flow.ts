@@ -46,7 +46,11 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       .insert({
         name: `[COPY] ${flow.name}`,
         active: false,
-        config: isOwner && !isEmpty(prevConfig) ? prevConfig : undefined,
+        // Set after the inherited config, so a copy of a copy names its direct source.
+        config: {
+          ...(isOwner ? prevConfig : {}),
+          duplicatedFromFlowId: flow.id,
+        },
       })
 
     // duplicate the steps and the variables

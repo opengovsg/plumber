@@ -3,7 +3,8 @@ import { randomUUID } from 'crypto'
 /**
  * Collaborator duplicate rules:
  * - Editors and viewers get their own copy.
- * - The copy has no connections and no pipe config.
+ * - The copy has no connections.
+ * - The copy's config holds only duplicatedFromFlowId, the pipe it was copied from.
  * - Step names, variables, and non-sensitive parameters stay.
  * - File, table, and secret parameters are removed.
  * - The original pipe changes only duplicateCount.
@@ -169,10 +170,33 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       }
     })
 
-    it('does not copy the pipe config', async () => {
+    it('does not copy the pipe config, and records the source pipe', async () => {
       const { copy } = await duplicate()
 
-      expect(copy.config ?? {}).toEqual({})
+      expect(copy.config).toEqual({ duplicatedFromFlowId: flow.id })
+    })
+
+    it('records the copy, not the original, when a copy is duplicated again', async () => {
+      const { copy } = await duplicate()
+      const nextUser = await User.query().insert({
+        email: `${randomUUID()}@open.gov.sg`,
+      })
+      await FlowCollaborator.query().insert({
+        flowId: copy.id,
+        userId: nextUser.id,
+        role,
+        updatedBy: collaborator.id,
+      })
+
+      const secondCopy = await duplicateFlow(
+        null,
+        { input: { id: copy.id } },
+        contextFor(nextUser),
+      )
+
+      const reloaded = await Flow.query().findById(secondCopy.id)
+      expect(reloaded.name).toBe('[COPY] [COPY] Source Flow')
+      expect(reloaded.config).toEqual({ duplicatedFromFlowId: copy.id })
     })
 
     it('does not copy sensitive step parameters', async () => {
