@@ -1,7 +1,3 @@
-import type { IFieldTabs } from '@plumber/types'
-
-import { useContext } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
 import {
   Box,
   FormControl,
@@ -11,6 +7,9 @@ import {
   Tabs,
 } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
+import type { IFieldTabs } from '@plumber/types'
+import { useContext } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
 
 import { EditorContext } from '@/contexts/Editor'
 
