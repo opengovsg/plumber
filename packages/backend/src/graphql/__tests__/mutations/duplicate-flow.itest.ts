@@ -125,6 +125,43 @@ describe('duplicateFlow endStepId remap', () => {
     )
   })
 
+  it('records the source pipe on the copy only', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+
+    const duplicated = await duplicateFlow(
+      null,
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const copy = await Flow.query().findById(duplicated.id)
+    const original = await Flow.query().findById(flow.id)
+    expect(copy.config?.duplicatedFromFlowId).toBe(flow.id)
+    expect(original.config?.duplicatedFromFlowId).toBeUndefined()
+  })
+
+  it('records the direct source when a copy is duplicated again', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    const firstCopy = await duplicateFlow(
+      null,
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const secondCopy = await duplicateFlow(
+      null,
+      { input: { id: firstCopy.id } },
+      context,
+    )
+
+    const reloaded = await Flow.query().findById(secondCopy.id)
+    expect(reloaded.config?.duplicatedFromFlowId).toBe(firstCopy.id)
+  })
+
   it('does not copy AI builder history onto the duplicated pipe', async () => {
     const { flow, steps } = await seedFlow([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
@@ -198,43 +235,6 @@ describe('duplicateFlow endStepId remap', () => {
     expect(copy.config?.rejectIfOverMaxQps).toBeUndefined()
     expect(copy.config?.isForceClogged).toBeUndefined()
     expect(copiedTrigger.config?.adminOverride).toBeUndefined()
-  })
-
-  it('records the source pipe on the copy only', async () => {
-    const { flow } = await seedFlow([
-      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-    ])
-
-    const duplicated = await duplicateFlow(
-      null,
-      { input: { id: flow.id } },
-      context,
-    )
-
-    const copy = await Flow.query().findById(duplicated.id)
-    const original = await Flow.query().findById(flow.id)
-    expect(copy.config?.duplicatedFromFlowId).toBe(flow.id)
-    expect(original.config?.duplicatedFromFlowId).toBeUndefined()
-  })
-
-  it('records the direct source when a copy is duplicated again', async () => {
-    const { flow } = await seedFlow([
-      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-    ])
-    const firstCopy = await duplicateFlow(
-      null,
-      { input: { id: flow.id } },
-      context,
-    )
-
-    const secondCopy = await duplicateFlow(
-      null,
-      { input: { id: firstCopy.id } },
-      context,
-    )
-
-    const reloaded = await Flow.query().findById(secondCopy.id)
-    expect(reloaded.config?.duplicatedFromFlowId).toBe(firstCopy.id)
   })
 
   it('rejects a user who is not the owner or a collaborator', async () => {
