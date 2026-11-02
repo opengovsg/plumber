@@ -10,7 +10,6 @@
  *   minus the number of CCs, and each batch gets one email.
  */
 import { IGlobalVariable } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'

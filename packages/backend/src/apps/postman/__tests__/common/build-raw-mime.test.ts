@@ -148,7 +148,10 @@ describe('withRecipients', () => {
       { length: 50 },
       (_, i) => `recipient-number-${i}@some-agency.gov.sg`,
     )
-    const cc = Array.from({ length: 49 }, (_, i) => `cc-${i}@some-agency.gov.sg`)
+    const cc = Array.from(
+      { length: 49 },
+      (_, i) => `cc-${i}@some-agency.gov.sg`,
+    )
     const raw = await buildRawEmail({ ...baseInput, to: undefined })
     const withHeaders = withRecipients(raw, to, cc).toString('utf-8')
 
