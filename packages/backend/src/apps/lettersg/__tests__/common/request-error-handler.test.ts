@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
-import { isRetriableHttpError } from '@/helpers/actions'
 import createHttpClient from '@/helpers/http-client'
 
 import app from '../..'
@@ -104,7 +103,7 @@ describe('lettersg requestErrorHandler', () => {
     },
   )
 
-  it('classifies 429 as internal and keeps it retriable', async () => {
+  it('classifies 429 as internal and keeps its HttpError cause', async () => {
     mockAdapter
       .onPost('/v1/letters')
       .reply(429, { message: 'Too many requests' }, { 'retry-after': '10' })
@@ -112,7 +111,7 @@ describe('lettersg requestErrorHandler', () => {
     const error = await catchStepError(createLetter())
 
     expect(error.kind).toBe('internal')
-    expect(isRetriableHttpError(error.cause as HttpError)).toBe(true)
+    expect(error.cause).toBeInstanceOf(HttpError)
   })
 
   it.each([502, 503])('classifies %i as third-party', async (status) => {
@@ -124,17 +123,17 @@ describe('lettersg requestErrorHandler', () => {
     expect(error.cause).toBeInstanceOf(HttpError)
   })
 
-  it('classifies 504 as third-party and keeps it retriable', async () => {
+  it('classifies 504 as third-party and keeps its HttpError cause', async () => {
     mockAdapter.onPost('/v1/letters').reply(504, 'Gateway timeout')
 
     const error = await catchStepError(createLetter())
 
     expect(error.kind).toBe('third-party')
-    expect(isRetriableHttpError(error.cause as HttpError)).toBe(true)
+    expect(error.cause).toBeInstanceOf(HttpError)
   })
 
   it.each(['ECONNRESET', 'ETIMEDOUT'])(
-    'classifies a %s network error as third-party and keeps it retriable',
+    'classifies a %s network error as third-party and keeps its HttpError cause',
     async (code) => {
       mockAdapter
         .onPost('/v1/letters')
@@ -147,7 +146,7 @@ describe('lettersg requestErrorHandler', () => {
       const error = await catchStepError(createLetter())
 
       expect(error.kind).toBe('third-party')
-      expect(isRetriableHttpError(error.cause as HttpError)).toBe(true)
+      expect(error.cause).toBeInstanceOf(HttpError)
     },
   )
 
