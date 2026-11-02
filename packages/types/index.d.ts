@@ -235,6 +235,8 @@ export interface IFlowConfig {
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
+  // The pipe this one was copied from directly. Follow it back to find the original.
+  duplicatedFromFlowId?: string
   templateConfig?: IFlowTemplateConfig
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
