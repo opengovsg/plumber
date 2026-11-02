@@ -24,11 +24,11 @@ const LATE_EXECUTION_MARKER_TTL_SECONDS = 30 * 24 * 60 * 60
 export async function recordLateScheduledStart({
   job,
   queueName,
-  groupLimited,
+  rateLimited,
 }: {
   job: JobPro<IActionJobData>
   queueName: string
-  groupLimited: boolean
+  rateLimited: boolean
 }): Promise<void> {
   const { flowId, executionId, stepId, scheduledAt, retryTimestamp } = job.data
 
@@ -74,7 +74,7 @@ export async function recordLateScheduledStart({
     }
 
     incrementMetric('plumber.executions.late_after_delay', {
-      group_limited: String(groupLimited),
+      rate_limited: String(rateLimited),
     })
     logger.warn('Step after a delay step started late', {
       event: 'late-execution',
@@ -82,7 +82,7 @@ export async function recordLateScheduledStart({
       executionId,
       stepId,
       queueName,
-      groupLimited,
+      rateLimited,
       latenessMs,
     })
   } catch (err) {

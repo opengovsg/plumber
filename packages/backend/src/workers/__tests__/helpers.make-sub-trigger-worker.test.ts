@@ -98,7 +98,7 @@ describe('makeSubTriggerWorker processor', () => {
     expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
       job,
       queueName: '{app-actions-formsg}',
-      groupLimited: false,
+      rateLimited: false,
     })
     expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
       mocks.globalVariable,

@@ -121,11 +121,11 @@ describe('recordLateScheduledStart', () => {
     } as never
   }
 
-  function lateCount(groupLimited = false) {
+  function lateCount(rateLimited = false) {
     return mocks.incrementMetric.mock.calls.filter(
       ([name, tags]) =>
         name === 'plumber.executions.late_after_delay' &&
-        tags.group_limited === String(groupLimited),
+        tags.rate_limited === String(rateLimited),
     ).length
   }
 
@@ -135,7 +135,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob({ latenessMs: 300_001 }),
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
@@ -148,7 +148,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob({ latenessMs: 300_000 }),
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
@@ -165,7 +165,7 @@ describe('recordLateScheduledStart', () => {
       await recordLateScheduledStart({
         job: makeJob({ id: executionId, executionId, latenessMs }),
         queueName: QUEUE_NAME,
-        groupLimited: false,
+        rateLimited: false,
       })
     }
 
@@ -179,7 +179,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob({}),
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
@@ -191,7 +191,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob({ latenessMs: 3_600_000, retryTimestamp: NOW - 1_000 }),
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
@@ -204,13 +204,13 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
     vi.advanceTimersByTime(60_000)
     await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
@@ -223,25 +223,25 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
     vi.advanceTimersByTime(10 * 60_000)
     await recordLateScheduledStart({
       job,
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
   })
 
-  it('counts a late start on a queue with group limits as group_limited:true', async () => {
+  it('counts a rate-limited late start as rate_limited:true', async () => {
     const recordLateScheduledStart = await loadRecordLateScheduledStart()
 
     await recordLateScheduledStart({
       job: makeJob({ latenessMs: 300_001 }),
       queueName: QUEUE_NAME,
-      groupLimited: true,
+      rateLimited: true,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()
@@ -254,12 +254,12 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob({ id: 'job-1', latenessMs: 400_000 }),
       queueName: QUEUE_NAME,
-      groupLimited: false,
+      rateLimited: false,
     })
     await recordLateScheduledStart({
       job: makeJob({ id: 'job-2', latenessMs: 500_000 }),
       queueName: '{app-actions-m365-excel}',
-      groupLimited: true,
+      rateLimited: true,
     })
 
     expect(mocks.incrementMetric).toHaveBeenCalledOnce()

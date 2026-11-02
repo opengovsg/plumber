@@ -80,7 +80,7 @@ export function makeSubTriggerWorker(
         workerVersion: appConfig.version,
       })
 
-      await recordLateScheduledStart({ job, queueName, groupLimited: false })
+      await recordLateScheduledStart({ job, queueName, rateLimited: false })
 
       const $ = await globalVariable({
         flow,

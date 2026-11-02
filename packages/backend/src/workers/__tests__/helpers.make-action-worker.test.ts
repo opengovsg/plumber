@@ -240,26 +240,36 @@ describe('makeActionWorker', () => {
 
     it.each([
       {
-        name: 'a queue without group limits',
+        name: 'a queue without rate limits',
         queueConfig: { isQueueDelayable: false, workerType: 'action' as const },
         group: undefined,
-        groupLimited: false,
+        rateLimited: false,
       },
       {
         name: 'a grouped job on a group-limited queue',
         queueConfig: groupLimitedQueueConfig,
         group: { id: 'table-1-findSingleRow' },
-        groupLimited: true,
+        rateLimited: true,
       },
       {
         name: 'an ungrouped job on a group-limited queue',
         queueConfig: groupLimitedQueueConfig,
         group: undefined,
-        groupLimited: false,
+        rateLimited: false,
+      },
+      {
+        name: 'an ungrouped job on a queue with a queue-wide rate limit',
+        queueConfig: {
+          isQueueDelayable: true,
+          workerType: 'action' as const,
+          queueRateLimit: { max: 1, duration: 5000 },
+        },
+        group: undefined,
+        rateLimited: true,
       },
     ])(
-      'records late scheduled starts before running the step for $name (groupLimited: $groupLimited)',
-      async ({ queueConfig, group, groupLimited }) => {
+      'records late scheduled starts before running the step for $name (rateLimited: $rateLimited)',
+      async ({ queueConfig, group, rateLimited }) => {
         const job = { ...baseJob, opts: group ? { group } : {} }
         mocks.processAction.mockResolvedValueOnce({})
         makeActionWorker({
@@ -273,7 +283,7 @@ describe('makeActionWorker', () => {
         expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
           job,
           queueName: '{test-app-queue}',
-          groupLimited,
+          rateLimited,
         })
         expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
           mocks.processAction,

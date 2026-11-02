@@ -89,6 +89,7 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
+  const queueHasRateLimit = Boolean(params.queueConfig.queueRateLimit)
   const queueHasGroupLimits = Boolean(params.queueConfig.groupLimits)
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
@@ -123,7 +124,9 @@ export function makeActionWorker(
           job,
           queueName,
           // An ungrouped job on a group-limited queue never waits on a group limit.
-          groupLimited: queueHasGroupLimits && job.opts.group !== undefined,
+          rateLimited:
+            queueHasRateLimit ||
+            (queueHasGroupLimits && job.opts.group !== undefined),
         })
 
         const processResult = await processAction({ ...jobData, jobId }).catch(

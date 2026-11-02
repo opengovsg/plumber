@@ -62,7 +62,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.redisSet).toHaveBeenNthCalledWith(
@@ -87,7 +87,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob(1_234),
       queueName: '{app-actions-slack}',
-      groupLimited: false,
+      rateLimited: false,
     })
 
     expect(mocks.setTag).toHaveBeenCalledWith('delay.lateness_ms', 1_234)
@@ -97,7 +97,7 @@ describe('recordLateScheduledStart', () => {
     await recordLateScheduledStart({
       job: makeJob(400_000),
       queueName: '{app-actions-slack}',
-      groupLimited: true,
+      rateLimited: true,
     })
 
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
@@ -108,7 +108,7 @@ describe('recordLateScheduledStart', () => {
         executionId: 'execution-1',
         stepId: 'step-2',
         queueName: '{app-actions-slack}',
-        groupLimited: true,
+        rateLimited: true,
         latenessMs: 400_000,
       }),
     )
@@ -121,7 +121,7 @@ describe('recordLateScheduledStart', () => {
       recordLateScheduledStart({
         job: makeJob(400_000),
         queueName: '{app-actions-slack}',
-        groupLimited: false,
+        rateLimited: false,
       }),
     ).resolves.toBeUndefined()
 
