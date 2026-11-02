@@ -133,14 +133,15 @@ export interface IExecutionStep {
   step: IStep
   dataIn: IJSONObject
   dataOut: IJSONObject
-  errorDetails: IJSONObject
+  errorDetails?: IJSONObject | null
   status: 'success' | 'failure'
-  appKey: string
+  appKey?: string | null
   jobId?: string
   createdAt: string
   updatedAt: string
   metadata: IExecutionStepMetadata
-  key: string
+  key?: string | null
+  iconUrl?: string | null
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
@@ -292,7 +293,7 @@ export interface IFlow {
   steps: IStep[]
   createdAt: string
   updatedAt: string
-  remoteWebhookId: string
+  remoteWebhookId?: string | null
   lastInternalId: () => Promise<string>
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
