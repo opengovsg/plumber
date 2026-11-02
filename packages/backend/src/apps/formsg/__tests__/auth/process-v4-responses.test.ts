@@ -816,6 +816,7 @@ describe('processResponsesV4', () => {
             ['Apple', '3'],
             ['Banana', '5'],
           ],
+          tableColumnTitles: ['Name', 'Qty'],
         },
       ])
     })
@@ -856,6 +857,7 @@ describe('processResponsesV4', () => {
       })
 
       expect(result[0].question).toBe('Data (First  Last, Age)')
+      expect(result[0].tableColumnTitles).toEqual(['First  Last', 'Age'])
     })
 
     it('does not append columns to question if schema has no columns', async () => {
@@ -870,6 +872,7 @@ describe('processResponsesV4', () => {
       })
 
       expect(result[0].question).toBe('Items')
+      expect(result[0]).not.toHaveProperty('tableColumnTitles')
     })
   })
 
@@ -1121,7 +1124,13 @@ describe('processResponsesV4', () => {
       })
       const actual = await processResponsesV4($, 'formId', v4Responses)
 
-      expect(actual).toEqual(expected)
+      // Only v4 carries the schema column titles.
+      expect(actual.find((field) => field._id === 'f7')).toMatchObject({
+        tableColumnTitles: ['Name', 'Qty'],
+      })
+      expect(actual.map(({ tableColumnTitles: _, ...field }) => field)).toEqual(
+        expected,
+      )
     })
   })
   describe('real v4 submission', () => {
