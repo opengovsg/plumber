@@ -1,6 +1,7 @@
 import { IApp } from '@plumber/types'
 
 import actions from './actions'
+import { stepTransformer } from './common/transform-step-parameters'
 import queue from './queue'
 
 const app: IApp = {
@@ -18,6 +19,7 @@ const app: IApp = {
     title: 'Setting up Email by Postman',
   },
   queue,
+  stepTransformer,
   category: 'communication',
 }
 

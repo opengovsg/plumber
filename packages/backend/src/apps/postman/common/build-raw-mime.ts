@@ -4,9 +4,9 @@ export interface RawEmailInput {
   /** RFC 5322 From address, e.g. `Display Name <addr@domain>`. */
   from: string
   /**
-   * Omit to build a recipient-agnostic message (no `To:` header) that can be
-   * shared across recipients — combine with `withRecipient` to add the header
-   * per recipient without rebuilding the whole message.
+   * Omit `to` and `cc` to build a recipient-agnostic message that can be
+   * shared across sends — combine with `withRecipients` to add the headers
+   * per send without rebuilding the whole message.
    */
   to?: string
   cc?: string[]
@@ -61,14 +61,45 @@ export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
   })
 }
 
+// RFC 5322's recommended limit, excluding the CRLF.
+const MAX_HEADER_LINE_LENGTH = 78
+
 /**
- * Cheaply add a `To:` header to a message built without one (`to` omitted
- * from `buildRawEmail`'s input), so the expensive part of building a message
- * (base64-encoding attachments) can happen once and be reused per recipient.
+ * Cheaply add `To:` and `Cc:` headers to a message built without them, so the
+ * expensive part of building a message (base64-encoding attachments) can
+ * happen once and be reused per send.
  *
  * Safe because the header block isn't terminated until the first blank line,
  * and `buildRawEmail` never emits one before the first real header.
  */
-export function withRecipient(rawMessage: Buffer, to: string): Buffer {
-  return Buffer.concat([Buffer.from(`To: ${to}\r\n`, 'utf-8'), rawMessage])
+export function withRecipients(
+  rawMessage: Buffer,
+  to: string[],
+  cc: string[] = [],
+): Buffer {
+  const toHeader = foldAddressHeader('To', to)
+  const ccHeader = cc.length ? foldAddressHeader('Cc', cc) : ''
+  return Buffer.concat([
+    Buffer.from(`${toHeader}${ccHeader}`, 'utf-8'),
+    rawMessage,
+  ])
+}
+
+/**
+ * IMPORTANT: SES rejects raw messages with a line over 1,000 characters, which
+ * 50 addresses on one line exceed. The header is folded between addresses.
+ */
+function foldAddressHeader(name: string, addresses: string[]): string {
+  const lines: string[] = []
+  let line = `${name}:`
+  addresses.forEach((address, i) => {
+    const token = i < addresses.length - 1 ? `${address},` : address
+    if (i > 0 && line.length + 1 + token.length > MAX_HEADER_LINE_LENGTH) {
+      lines.push(line)
+      line = ''
+    }
+    line += ` ${token}`
+  })
+  lines.push(line)
+  return `${lines.join('\r\n')}\r\n`
 }
