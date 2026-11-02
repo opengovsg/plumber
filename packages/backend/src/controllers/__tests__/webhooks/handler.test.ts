@@ -93,6 +93,7 @@ describe('webhook handler', () => {
         flowId: FLOW_ID,
       },
       body: BODY,
+      headers: {},
       rawBody: Buffer.from('abc'),
     } as unknown as IRequest
   })
@@ -205,7 +206,22 @@ describe('webhook handler', () => {
         flowName: 'Test pipe',
         ownerEmail: 'owner@example.com',
         maxQps: 5,
+        fromFormSg: false,
       })
+    })
+
+    it('flags rate-limited requests that carry a FormSG signature header', async () => {
+      request.headers = { 'x-formsg-signature': 't=1,s=abc,f=form,v1=sig' }
+      mocks.rateLimiterRedis.consume.mockImplementation(() => {
+        throw new mocks.rateLimiterRes()
+      })
+
+      await webhookHandler(request, mocks.response)
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Rate limited flow ${FLOW_ID}`,
+        expect.objectContaining({ fromFormSg: true }),
+      )
     })
 
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(

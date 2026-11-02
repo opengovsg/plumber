@@ -85,6 +85,9 @@ export default async (request: IRequest, response: Response) => {
         flowName: flow.name,
         ownerEmail: flow.user.email,
         maxQps,
+        // IMPORTANT: unverified. Checking the signature here would add work to
+        // every rejected request during a flood.
+        fromFormSg: request.headers['x-formsg-signature'] !== undefined,
       })
 
       if (rejectIfOverMaxQps) {
