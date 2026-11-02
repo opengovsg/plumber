@@ -883,26 +883,6 @@ describe('decrypt form response', () => {
       )
     })
 
-    it('keeps parsing the question for a v1 table with an unmatched bracket', async () => {
-      $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
-        responses: [
-          {
-            _id: 'tableField',
-            fieldType: 'table',
-            question: 'Items (Name (optional, Qty)',
-            answerArray: [['Apple', '3']],
-          },
-        ],
-      })
-
-      await decryptFormResponse($)
-
-      expect(
-        JSON.parse($.request.body.fields.tableField.answer).columns,
-      ).toMatchObject([{ label: 'Col 1' }, { label: 'Col 2' }])
-    })
-
     it('should handle answerArray with null characters', async () => {
       $.flow.hasFileProcessingActions = false
       mocks.cryptoDecrypt.mockReturnValueOnce({

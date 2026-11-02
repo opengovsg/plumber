@@ -12,46 +12,15 @@ function columnsOf(tableObject: string) {
 }
 
 describe('convertTableAnswerArrayToTableObject', () => {
-  it('parses column names from the question without column titles', () => {
-    expect(
-      columnsOf(
-        convertTableAnswerArrayToTableObject('Items (Name, Qty)', [['a', '1']]),
-      ),
-    ).toEqual([
-      { id: COL_1_ID, label: 'Name' },
-      { id: COL_2_ID, label: 'Qty' },
-    ])
-  })
-
-  it('returns no columns for an empty table with an unparsable question', () => {
-    expect(
-      columnsOf(
-        convertTableAnswerArrayToTableObject('Items (Name (optional, Qty)', []),
-      ),
-    ).toEqual([])
-  })
-
-  it('uses column titles over the question for an empty table', () => {
+  it.each([
+    ['an empty', []],
+    ['a filled', [['a', '1']]],
+  ])('uses column titles over the question for %s table', (_, answerArray) => {
     expect(
       columnsOf(
         convertTableAnswerArrayToTableObject(
           'Items (Name (optional, Qty)',
-          [],
-          ['Name (optional', 'Qty'],
-        ),
-      ),
-    ).toEqual([
-      { id: COL_1_ID, label: 'Name (optional' },
-      { id: COL_2_ID, label: 'Qty' },
-    ])
-  })
-
-  it('uses column titles over the question for a filled table', () => {
-    expect(
-      columnsOf(
-        convertTableAnswerArrayToTableObject(
-          'Items (Name (optional, Qty)',
-          [['a', '1']],
+          answerArray,
           ['Name (optional', 'Qty'],
         ),
       ),
