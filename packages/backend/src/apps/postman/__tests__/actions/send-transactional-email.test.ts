@@ -1129,7 +1129,6 @@ describe('send transactional email', () => {
         }),
       })
     })
-
   })
 
   describe('combined send mode (one email to all)', () => {
