@@ -912,11 +912,11 @@ describe('update case', () => {
           ],
         },
       ],
-    ])('tags a null %s as internal', async (_label, parameters) => {
+    ])('tags a null %s as config', async (_label, parameters) => {
       Object.assign($.step.parameters, parameters)
 
       await expect(updateCaseAction.run($)).rejects.toMatchObject({
-        kind: 'internal',
+        kind: 'config',
         message: expect.stringContaining(
           'Invalid input: expected string, received null',
         ),

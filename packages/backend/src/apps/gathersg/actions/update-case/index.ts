@@ -23,13 +23,6 @@ import throwGatherSGStepError from '../../common/throw-errors'
 import { GatherSGCase } from '../../common/types'
 import { requestSchema, responseSchema } from './schema'
 
-// A null may come from the UI saving a cleared optional field, so it is not proven user config.
-function hasNullValueIssue(error: ZodError): boolean {
-  return error.issues.some(
-    (issue) => issue.code === 'invalid_type' && issue.input === null,
-  )
-}
-
 /**
  * Read the case's current uuids for each of the given attachment fields.
  * Gather stores an attachment field as the full array of file uuids, so
@@ -286,9 +279,7 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const parsed = requestSchema.parse($.step.parameters, {
-        reportInput: true,
-      })
+      const parsed = requestSchema.parse($.step.parameters)
       const caseUuid = await resolveCaseIdentifier($, parsed.caseUuid)
       const { attachmentFields, ...patchBody } = parsed
       patchBody.caseUuid = caseUuid
@@ -362,7 +353,7 @@ const action: IRawAction = {
         throw new StepError({
           name: `${firstError.message}`,
           solution: GenericSolution.ReconfigureInvalidField,
-          kind: hasNullValueIssue(error) ? 'internal' : 'config',
+          kind: 'config',
         })
       }
 
