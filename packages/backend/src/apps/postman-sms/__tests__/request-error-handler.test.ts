@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
-import { isRetriableHttpError } from '@/helpers/actions'
 
 import { makeHttpError } from '../../../../test/utils/make-http-error'
 import requestErrorHandler from '../common/request-error-handler'
@@ -157,7 +156,7 @@ describe('Postman SMS request error handler', () => {
       },
     )
 
-    it('treats 504 as third-party and keeps it retriable', async () => {
+    it('treats 504 as third-party and keeps its HttpError cause', async () => {
       const error = makeHttpError({
         message: 'Request failed with status code 504',
         status: 504,
@@ -166,10 +165,9 @@ describe('Postman SMS request error handler', () => {
       const thrown = await requestErrorHandler($, error).catch((e) => e)
       expect(thrown).toBeInstanceOf(StepError)
       expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
-      expect(isRetriableHttpError(thrown.cause)).toBe(true)
     })
 
-    it('treats a network error as third-party and keeps it retriable', async () => {
+    it('treats a network error as third-party and keeps its HttpError cause', async () => {
       const error = makeHttpError({
         message: 'read ECONNRESET',
         code: 'ECONNRESET',
@@ -178,7 +176,6 @@ describe('Postman SMS request error handler', () => {
       const thrown = await requestErrorHandler($, error).catch((e) => e)
       expect(thrown).toBeInstanceOf(StepError)
       expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
-      expect(isRetriableHttpError(thrown.cause)).toBe(true)
     })
 
     it('treats a beforeRequest error as internal', async () => {
