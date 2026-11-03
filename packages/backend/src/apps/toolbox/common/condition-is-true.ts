@@ -1,5 +1,4 @@
 import type { IJSONObject, IJSONValue, StepErrorKind } from '@plumber/types'
-import { DateTime } from 'luxon'
 
 import StepError from '@/errors/step'
 import { generateTimestampFromFormats } from '@/helpers/generate-timestamp-from-formats'
@@ -63,13 +62,6 @@ const VALID_DATETIME_FORMATS = [
   'd LLL yyyy h:mm:ss a',
 ]
 
-// Rejecting ISO 8601 is a Plumber gap, because Plumber's own variables (e.g. FormSG submission time) emit it.
-function getInvalidDateKind(input: IJSONValue): StepErrorKind {
-  return typeof input === 'string' && DateTime.fromISO(input).isValid
-    ? 'internal'
-    : 'config'
-}
-
 function compareDates(
   field: IJSONValue,
   condition: 'before' | 'after',
@@ -84,7 +76,7 @@ function compareDates(
     throw makeConditionGroupError(
       groupNumber,
       'Invalid date used in field for comparison',
-      getInvalidDateKind(field),
+      'config',
     )
   }
 
@@ -96,7 +88,7 @@ function compareDates(
     throw makeConditionGroupError(
       groupNumber,
       'Invalid date used in value for comparison',
-      getInvalidDateKind(value),
+      'config',
     )
   }
 
