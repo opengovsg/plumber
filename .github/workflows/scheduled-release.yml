@@ -23,12 +23,14 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   draft-release:
     name: Draft release
+    # Scheduled runs use the default branch, so this only skips manual dispatch from other branches.
+    if: github.ref == 'refs/heads/develop-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

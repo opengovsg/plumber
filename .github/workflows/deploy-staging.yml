@@ -19,6 +19,8 @@ permissions:
 jobs:
   deploy:
     name: Deploy
+    # workflow_dispatch ignores the push.branches filter above.
+    if: github.ref == 'refs/heads/staging-v2'
     uses: ./.github/workflows/deploy.yml
     with:
       environment: 'staging'
