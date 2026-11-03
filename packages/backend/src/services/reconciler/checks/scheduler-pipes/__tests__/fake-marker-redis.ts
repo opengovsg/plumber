@@ -9,7 +9,7 @@ function isBelowMax(score: number, max: string): boolean {
 }
 
 /**
- * Sorted sets in memory, shared by every transaction, like one Redis primary.
+ * Sorted sets in memory, shared by every pipeline, like one Redis primary.
  */
 export function createFakeMarkerRedis() {
   const sortedSets = new Map<string, Map<string, number>>()
@@ -17,9 +17,9 @@ export function createFakeMarkerRedis() {
   const expirySecondsByKey = new Map<string, number>()
   const state = { inFlight: 0, maxInFlight: 0, failWith: null as Error | null }
 
-  function multi() {
+  function pipeline() {
     const queued: (() => Reply)[] = []
-    const transaction = {
+    const commandPipeline = {
       zadd(key: string, nx: string, ...scoreMembers: (string | number)[]) {
         commands.push(['zadd', key, nx, ...scoreMembers])
         queued.push(() => {
@@ -35,7 +35,7 @@ export function createFakeMarkerRedis() {
           sortedSets.set(key, members)
           return [null, added]
         })
-        return transaction
+        return commandPipeline
       },
       zremrangebyscore(key: string, min: string, max: string) {
         commands.push(['zremrangebyscore', key, min, max])
@@ -50,7 +50,7 @@ export function createFakeMarkerRedis() {
           }
           return [null, removed]
         })
-        return transaction
+        return commandPipeline
       },
       expire(key: string, seconds: number) {
         commands.push(['expire', key, seconds])
@@ -58,7 +58,7 @@ export function createFakeMarkerRedis() {
           expirySecondsByKey.set(key, seconds)
           return [null, 1]
         })
-        return transaction
+        return commandPipeline
       },
       async exec(): Promise<Reply[]> {
         state.inFlight++
@@ -71,11 +71,11 @@ export function createFakeMarkerRedis() {
         return queued.map((run) => run())
       },
     }
-    return transaction
+    return commandPipeline
   }
 
   return {
-    client: { multi } as unknown as Pick<Redis, 'multi'>,
+    client: { pipeline } as unknown as Pick<Redis, 'pipeline'>,
     sortedSets,
     commands,
     expirySecondsByKey,

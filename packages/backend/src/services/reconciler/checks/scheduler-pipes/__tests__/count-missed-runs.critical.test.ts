@@ -4,6 +4,7 @@
  * - Count a run time only when `ZADD NX` adds it.
  * - The `plumber.executions.missed` metric counts each missed run exactly once.
  * - Each missed run carries a `reason` tag.
+ * - One `ZADD` carries at most 169 run times, so it never stalls the job queues.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -123,6 +124,28 @@ describe('countMissedRuns', () => {
       RUN_TIME + 2 * HOUR,
       String(RUN_TIME + 2 * HOUR),
     ])
+  })
+
+  it('splits a reason with more than 169 run times across ZADDs and still counts each once', async () => {
+    const redis = createFakeMarkerRedis()
+    const missedRuns = Array.from({ length: 400 }, (_, index) => ({
+      flowId: FLOW_ID,
+      runTimeMillis: RUN_TIME - index * HOUR,
+      reason: 'no-redis-entry' as const,
+    }))
+
+    const count = await countMissedRuns({
+      markerRedis: redis.client,
+      missedRuns,
+      nowMillis: NOW,
+    })
+
+    const runTimesPerZadd = redis.commands
+      .filter(([command]) => command === 'zadd')
+      .map((command) => (command.length - 3) / 2)
+    expect(runTimesPerZadd).toEqual([169, 169, 62])
+    expect(count).toBe(400)
+    expect(mocks.logWarn).toHaveBeenCalledTimes(400)
   })
 
   it('keeps counted run times for two look-backs and expires the set after 7 days', async () => {

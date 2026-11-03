@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis'
+import { chunk } from 'lodash'
 
 import logger from '@/helpers/logger'
 import { makeRedisAppDataKey } from '@/helpers/redis-app-data'
@@ -12,8 +13,11 @@ import {
 // Every Redis key shares one primary, so a large burst would delay the job queues.
 const PIPES_IN_FLIGHT = 10
 
+// Fits a week of hourly runs and stops one huge ZADD from stalling the job queues.
+const MAX_RUN_TIMES_PER_ZADD = 169
+
 interface CountMissedRunsInput {
-  markerRedis: Pick<Redis, 'multi'>
+  markerRedis: Pick<Redis, 'pipeline'>
   missedRuns: MissedRun[]
   nowMillis: number
 }
@@ -34,34 +38,40 @@ function groupRunTimesByPipeAndReason(
 }
 
 async function countPipeMissedRuns(
-  markerRedis: Pick<Redis, 'multi'>,
+  markerRedis: Pick<Redis, 'pipeline'>,
   flowId: string,
   runTimesByReason: Map<MissedRunReason, number[]>,
   nowMillis: number,
 ): Promise<number> {
   const key = makeRedisAppDataKey('scheduler', `missed-runs:${flowId}`)
-  const reasons = [...runTimesByReason.keys()]
+  const zadds = [...runTimesByReason].flatMap(([reason, runTimes]) =>
+    chunk(runTimes, MAX_RUN_TIMES_PER_ZADD).map((runTimesChunk) => ({
+      reason,
+      runTimes: runTimesChunk,
+    })),
+  )
 
-  const transaction = markerRedis.multi()
-  for (const reason of reasons) {
-    const runTimes = runTimesByReason.get(reason) ?? []
-    transaction.zadd(
+  // Not MULTI, so Redis can serve the job queues between ZADDs.
+  // IMPORTANT: a dropped connection can leave a new key without its TTL.
+  const pipeline = markerRedis.pipeline()
+  for (const { runTimes } of zadds) {
+    pipeline.zadd(
       key,
       'NX',
       ...runTimes.flatMap((runTime) => [runTime, String(runTime)]),
     )
   }
   // Keeps a second look-back of margin, so an overlapping task with an older clock never recounts.
-  transaction.zremrangebyscore(
+  pipeline.zremrangebyscore(
     key,
     '-inf',
     `(${nowMillis - 2 * MISSED_RUN_MARKER_TTL_SECONDS * 1000}`,
   )
-  transaction.expire(key, MISSED_RUN_MARKER_TTL_SECONDS)
+  pipeline.expire(key, MISSED_RUN_MARKER_TTL_SECONDS)
 
-  const replies = await transaction.exec()
+  const replies = await pipeline.exec()
   if (!replies) {
-    throw new Error('Missed run transaction was aborted')
+    throw new Error('Missed run pipeline returned no replies')
   }
   const failed = replies.find(([error]) => error)
   if (failed) {
@@ -69,7 +79,7 @@ async function countPipeMissedRuns(
   }
 
   let newlyCountedCount = 0
-  reasons.forEach((reason, index) => {
+  zadds.forEach(({ reason }, index) => {
     const addedCount = Number(replies[index][1])
     for (let i = 0; i < addedCount; i++) {
       logger.warn('Scheduler pipes check counted a missed run', {

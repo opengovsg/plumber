@@ -14,7 +14,7 @@ export const SCHEDULE_ENTRIES_KEY = `${FLOW_QUEUE_KEY_PREFIX}:repeat`
 
 interface CreateSchedulerPipesCheckInput {
   jobsRedis: Pick<Redis, 'zrange' | 'hmget'>
-  markerRedis: Pick<Redis, 'multi'>
+  markerRedis: Pick<Redis, 'pipeline'>
   config: SchedulerPipesCheckConfig
 }
 
