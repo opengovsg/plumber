@@ -1,5 +1,5 @@
 import type { Redis } from 'ioredis'
-import { chunk } from 'lodash'
+import { chunk, sum, times } from 'lodash'
 
 import logger from '@/helpers/logger'
 import { makeRedisAppDataKey } from '@/helpers/redis-app-data'
@@ -9,9 +9,6 @@ import {
   type MissedRun,
   type MissedRunReason,
 } from './missed-runs'
-
-// Every Redis key shares one primary, so a large burst would delay the job queues.
-const PIPES_IN_FLIGHT = 10
 
 // Fits a week of hourly runs and stops one huge ZADD from stalling the job queues.
 const MAX_RUN_TIMES_PER_ZADD = 169
@@ -78,19 +75,17 @@ async function countPipeMissedRuns(
     throw failed[0]
   }
 
-  let newlyCountedCount = 0
+  const addedCounts = zadds.map((_, index) => Number(replies[index][1]))
   zadds.forEach(({ reason }, index) => {
-    const addedCount = Number(replies[index][1])
-    for (let i = 0; i < addedCount; i++) {
+    times(addedCounts[index], () =>
       logger.warn('Scheduler pipes check counted a missed run', {
         event: 'reconciler-missed-run',
         flowId,
         reason,
-      })
-    }
-    newlyCountedCount += addedCount
+      }),
+    )
   })
-  return newlyCountedCount
+  return sum(addedCounts)
 }
 
 /**
@@ -101,19 +96,17 @@ export async function countMissedRuns({
   missedRuns,
   nowMillis,
 }: CountMissedRunsInput): Promise<number> {
-  const pipes = [...groupRunTimesByPipeAndReason(missedRuns)]
   let newlyCountedCount = 0
-
-  // Each batch is awaited, so Redis serves BullMQ's connections between batches, not after the whole loop.
-  for (let start = 0; start < pipes.length; start += PIPES_IN_FLIGHT) {
-    const counts = await Promise.all(
-      pipes
-        .slice(start, start + PIPES_IN_FLIGHT)
-        .map(([flowId, runTimesByReason]) =>
-          countPipeMissedRuns(markerRedis, flowId, runTimesByReason, nowMillis),
-        ),
+  // One pipe at a time, so the job queues never wait behind more than one pipe's commands.
+  for (const [flowId, runTimesByReason] of groupRunTimesByPipeAndReason(
+    missedRuns,
+  )) {
+    newlyCountedCount += await countPipeMissedRuns(
+      markerRedis,
+      flowId,
+      runTimesByReason,
+      nowMillis,
     )
-    newlyCountedCount += counts.reduce((sum, count) => sum + count, 0)
   }
 
   return newlyCountedCount

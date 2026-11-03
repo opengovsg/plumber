@@ -5,6 +5,7 @@
  * - The `plumber.executions.missed` metric counts each missed run exactly once.
  * - Each missed run carries a `reason` tag.
  * - One `ZADD` carries at most 169 run times, so it never stalls the job queues.
+ * - The check sends one pipe's commands to Redis at a time, so the job queues get Redis first.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -173,7 +174,7 @@ describe('countMissedRuns', () => {
     expect(redis.expirySecondsByKey.get(key)).toBe(604800)
   })
 
-  it('sends at most 10 pipes to Redis at once', async () => {
+  it('sends one pipe to Redis at a time', async () => {
     const redis = createFakeMarkerRedis()
     const missedRuns = Array.from({ length: 25 }, (_, index) => ({
       flowId: `flow-${index}`,
@@ -188,7 +189,7 @@ describe('countMissedRuns', () => {
     })
 
     expect(count).toBe(25)
-    expect(redis.state.maxInFlight).toBe(10)
+    expect(redis.state.maxInFlight).toBe(1)
   })
 
   it('fails the check and logs nothing when Redis fails', async () => {

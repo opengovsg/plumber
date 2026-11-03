@@ -57,8 +57,9 @@ export async function collectMissedRuns({
   const pipeByFlowId = new Map(
     publishedPipes.map((pipe) => [pipe.flowId, pipe]),
   )
-  const missedRuns: MissedRun[] = []
+  const overdueMissedRuns: MissedRun[] = []
 
+  // One pipe at a time, so the job queues never wait behind more than one HMGET.
   for (const flowId of overdueFlowIds) {
     const pipe = pipeByFlowId.get(flowId)
     const scheduleEntry = scheduleEntryByFlowId.get(flowId)
@@ -72,7 +73,7 @@ export async function collectMissedRuns({
       scheduleEntryMember: scheduleEntry.member,
       runTimeMillis: scheduleEntry.runTimeMillis,
     })
-    missedRuns.push(
+    overdueMissedRuns.push(
       ...listPipeMissedRuns(pipe, (pattern) =>
         findOverduePipeMissedRuns({
           flowId,
@@ -87,34 +88,32 @@ export async function collectMissedRuns({
   }
 
   if (missingFlowIds.length === 0) {
-    return missedRuns
+    return overdueMissedRuns
   }
 
   const latestExecutionMillisByFlowId = await fetchLatestExecutionTimes(
     missingFlowIds,
     getLookBackStartMillis(nowMillis),
   )
-  for (const flowId of missingFlowIds) {
+  const missingMissedRuns = missingFlowIds.flatMap((flowId) => {
     const pipe = pipeByFlowId.get(flowId)
     if (!pipe) {
-      continue
+      return []
     }
 
-    missedRuns.push(
-      ...listPipeMissedRuns(pipe, (pattern) =>
-        findMissingPipeMissedRuns({
-          flowId,
-          pattern,
-          publishedAtMillis: pipe.publishedAt
-            ? new Date(pipe.publishedAt).getTime()
-            : 0,
-          latestExecutionMillis: latestExecutionMillisByFlowId.get(flowId),
-          nowMillis,
-          graceSeconds,
-        }),
-      ),
+    return listPipeMissedRuns(pipe, (pattern) =>
+      findMissingPipeMissedRuns({
+        flowId,
+        pattern,
+        publishedAtMillis: pipe.publishedAt
+          ? new Date(pipe.publishedAt).getTime()
+          : 0,
+        latestExecutionMillis: latestExecutionMillisByFlowId.get(flowId),
+        nowMillis,
+        graceSeconds,
+      }),
     )
-  }
+  })
 
-  return missedRuns
+  return [...overdueMissedRuns, ...missingMissedRuns]
 }
