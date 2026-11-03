@@ -12,6 +12,7 @@ import { useContext } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import { EditorContext } from '@/contexts/Editor'
+import { useCaptureFlowEvent } from '@/hooks/useCaptureFlowEvent'
 
 interface TabbedInputProps {
   // Full react-hook-form path of the tab parameter, not of the input itself.
@@ -22,6 +23,7 @@ interface TabbedInputProps {
   tabs: IFieldTabs
   // Field-level read-only state, combined with the editor-wide one.
   readOnly?: boolean
+  stepId?: string
   children: React.ReactNode
 }
 
@@ -63,11 +65,13 @@ export default function TabbedInput(props: TabbedInputProps) {
     tooltipText,
     tabs,
     readOnly: fieldReadOnly,
+    stepId,
     children,
   } = props
   const { control } = useFormContext()
   const { readOnly: editorReadOnly } = useContext(EditorContext)
   const readOnly = editorReadOnly || fieldReadOnly
+  const captureFlowEvent = useCaptureFlowEvent()
 
   return (
     <Controller
@@ -98,9 +102,25 @@ export default function TabbedInput(props: TabbedInputProps) {
             <Tabs
               variant="unstyled"
               index={selectedIndex}
-              onChange={(index) =>
-                !readOnly && onChange(tabs.options[index].value)
-              }
+              onChange={(index) => {
+                if (readOnly) {
+                  return
+                }
+                const next = tabs.options[index].value
+                // Unsaved pill changes, so flip-flopping before a save shows up.
+                if (next !== value) {
+                  captureFlowEvent({
+                    name: 'flow_editor:field_tab_changed',
+                    properties: {
+                      tab_key: tabs.key,
+                      from: value,
+                      to: next,
+                      step_id: stepId,
+                    },
+                  })
+                }
+                onChange(next)
+              }}
               bg="base.divider.medium"
               p={1}
               borderRadius="full"
@@ -110,7 +130,12 @@ export default function TabbedInput(props: TabbedInputProps) {
             >
               <TabList gap={1} overflowX="auto">
                 {tabs.options.map((option) => (
-                  <Tab key={option.value} {...tabStyle}>
+                  <Tab
+                    key={option.value}
+                    // Lets PostHog heatmaps and rage-click filters target a pill.
+                    data-attr={`tab-${tabs.key}-${option.value}`}
+                    {...tabStyle}
+                  >
                     {option.label}
                   </Tab>
                 ))}

@@ -9,6 +9,7 @@ import apps from '@/apps'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
+import { logSendModeChange } from '@/apps/postman/common/log-send-mode-change'
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
 import Connection from '@/models/connection'
@@ -88,7 +89,7 @@ export async function updateStepParametersService({
   connectionId,
   traceId,
 }: UpdateStepParametersInput): Promise<McpUpdateStepParametersResult> {
-  const { step, rawApp } = await Step.transaction(async (trx) => {
+  const { step, previousStep, rawApp } = await Step.transaction(async (trx) => {
     const accessible = await user
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .findOne({
@@ -202,7 +203,13 @@ export async function updateStepParametersService({
       }),
     })
 
-    return { step: updatedStep, rawApp }
+    return { step: updatedStep, previousStep: step, rawApp }
+  })
+
+  await logSendModeChange({
+    previous: previousStep,
+    updated: step,
+    source: 'ai_builder',
   })
 
   const result: McpUpdateStepParametersResult = { step }

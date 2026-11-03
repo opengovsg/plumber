@@ -29,6 +29,8 @@ import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
+import { captureFlowEvent } from '@/helpers/capture-flow-event'
+import { getSendModeChange, toIsoTimestamp } from '@/helpers/postman-send-mode'
 import {
   isForEachStep,
   isIfThenStep,
@@ -299,10 +301,24 @@ export const EditorProvider = ({
         mutationInput.appKey = step.appKey
       }
 
+      const previous = flow.steps?.find((s) => s.id === step.id)
       const updatedStep = await updateStep({
         variables: { input: mutationInput },
         onCompleted: () => onCompleted?.(),
       })
+
+      const sendModeChange = getSendModeChange(previous, step)
+      if (sendModeChange) {
+        captureFlowEvent(flowId, {
+          name: 'flow_editor:send_mode_saved',
+          properties: {
+            ...sendModeChange,
+            step_id: step.id,
+            step_created_at: toIsoTimestamp(previous?.createdAt),
+            flow_published: !!flow.active,
+          },
+        })
+      }
 
       return updatedStep.data?.updateStep as IStep
     },

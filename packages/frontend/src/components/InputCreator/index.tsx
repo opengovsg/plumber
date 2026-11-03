@@ -239,6 +239,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         tooltipText={tooltipText}
         tabs={tabs}
         readOnly={isReadOnly}
+        stepId={stepId}
       >
         {input}
       </TabbedInput>
