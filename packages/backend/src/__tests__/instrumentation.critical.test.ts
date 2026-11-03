@@ -1,10 +1,13 @@
 /**
  * Business-critical: "i need traces to be sent to Rome (our self-hosted Langfuse) still"
  */
+import { diag } from '@opentelemetry/api'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   langfuse: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
   sdk: vi.fn(),
   start: vi.fn(),
   shutdown: vi.fn().mockResolvedValue(undefined),
@@ -26,6 +29,9 @@ const mocks = vi.hoisted(() => ({
   },
 }))
 
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.error, warn: mocks.warn },
+}))
 vi.mock('@/config/app', () => ({ default: mocks.config }))
 vi.mock('@langfuse/otel', () => ({
   LangfuseSpanProcessor: class {
@@ -58,6 +64,23 @@ beforeEach(() => {
 })
 
 describe('Rome and PostHog instrumentation', () => {
+  it('logs rejected exports through the backend logger', async () => {
+    await import('../instrumentation')
+
+    diag.error('PostHog export failed', new Error('HTTP 413'))
+    diag.warn('PostHog export warning')
+    diag.debug('Span payload')
+
+    expect(mocks.error).toHaveBeenCalledWith(
+      'OpenTelemetry: PostHog export failed',
+      { args: [expect.objectContaining({ message: 'HTTP 413' })] },
+    )
+    expect(mocks.warn).toHaveBeenCalledWith(
+      'OpenTelemetry: PostHog export warning',
+      { args: [] },
+    )
+  })
+
   it.each([
     { projectToken: '', host: '' },
     { projectToken: 'phc-test', host: '' },

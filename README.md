@@ -73,11 +73,10 @@ The server flushes both destinations after draining HTTP requests during gracefu
 
 In staging, send a chat that calls a tool and compare both trace timelines.
 Confirm matching trace IDs, tool spans, token usage, and PostHog user attribution.
-Exports use the transport's JSON serializer to split batches below 3.5 MB, leaving room below PostHog's 4 MB limit.
-Splitting batches preserves span content, IDs, timestamps, and trace relationships.
-If a single span exceeds 3.5 MB, PostHog receives its IDs, timing, and key metadata with content-omission notices.
-The span includes `posthog.content_omitted` and `posthog.original_payload_bytes` properties.
-Rome retains the original span content.
+Both destinations receive full span content without truncation or byte-aware batch splitting.
+PostHog can reject exports above its 4 MB limit, losing that batch from PostHog.
+OpenTelemetry export warnings and errors appear in backend logs.
+Rome continues exporting independently.
 See [PostHog's OpenTelemetry documentation](https://posthog.com/docs/ai-observability/installation/opentelemetry).
 
 ## Acknowledgements

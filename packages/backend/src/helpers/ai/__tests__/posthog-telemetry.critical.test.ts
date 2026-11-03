@@ -296,7 +296,7 @@ describe('AI Builder exports to Rome and PostHog', () => {
     expect(span.attributes).not.toHaveProperty('gen_ai.conversation.id')
   })
 
-  it('preserves oversized content in Rome while marking its omission in PostHog', async () => {
+  it('preserves oversized content in both Rome and PostHog', async () => {
     const input = JSON.stringify([
       { role: 'user', content: '🙂'.repeat(1_000_000) },
     ])
@@ -315,19 +315,20 @@ describe('AI Builder exports to Rome and PostHog', () => {
     await flush()
 
     const original = findSpan(romeExporter.getFinishedSpans(), 'ai.large-turn')
-    const compact = findSpan(
+    const posthogSpan = findSpan(
       posthogExporter.getFinishedSpans(),
       'ai.large-turn',
     )
     expect(original.attributes['ai.prompt.messages']).toBe(input)
     expect(original.attributes).not.toHaveProperty('posthog.content_omitted')
-    expect(compact.attributes).toMatchObject({
-      'posthog.content_omitted': true,
+    expect(posthogSpan.attributes).not.toHaveProperty('posthog.content_omitted')
+    expect(posthogSpan.attributes).toMatchObject({
+      'ai.prompt.messages': input,
       'posthog.distinct_id': 'user-1',
       'gen_ai.conversation.id': 'large-chat',
       'ai.model.id': 'test-model',
     })
-    expect(compact.spanContext()).toEqual(original.spanContext())
-    expect(compact.parentSpanContext).toEqual(original.parentSpanContext)
+    expect(posthogSpan.spanContext()).toEqual(original.spanContext())
+    expect(posthogSpan.parentSpanContext).toEqual(original.parentSpanContext)
   })
 })

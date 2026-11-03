@@ -7,8 +7,6 @@ import {
   type SpanExporter,
 } from '@opentelemetry/sdk-trace-base'
 
-import { ByteLimitedPostHogSpanExporter } from './posthog-span-exporter'
-
 type AiBuilderTelemetry = {
   distinctId: string
   sessionId?: string
@@ -38,7 +36,7 @@ export class AiBuilderPostHogSpanProcessor extends BatchSpanProcessor {
     exporter: SpanExporter,
     private readonly environment: string,
   ) {
-    super(new ByteLimitedPostHogSpanExporter(exporter), {
+    super(exporter, {
       exportTimeoutMillis: 10000,
       maxExportBatchSize: 16,
     })
@@ -46,8 +44,7 @@ export class AiBuilderPostHogSpanProcessor extends BatchSpanProcessor {
 
   onStart(span: Span, parentContext: Context): void {
     const telemetry = parentContext.getValue(AI_BUILDER_TELEMETRY) as
-      | AiBuilderTelemetry
-      | undefined
+      AiBuilderTelemetry | undefined
     if (telemetry) {
       this.requests.set(span, telemetry)
     }

@@ -1,4 +1,5 @@
 import { LangfuseSpanProcessor } from '@langfuse/otel'
+import { diag, DiagLogLevel } from '@opentelemetry/api'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 
 import appConfig from '@/config/app'
@@ -6,6 +7,22 @@ import {
   createPostHogSpanProcessor,
   PAIR_ACTION_RESOURCE_NAMES,
 } from '@/helpers/ai/posthog-telemetry'
+
+import logger from '@/helpers/logger'
+
+// Rejected exports otherwise disappear without a backend log.
+diag.setLogger(
+  {
+    error: (message, ...args) =>
+      logger.error(`OpenTelemetry: ${message}`, { args }),
+    warn: (message, ...args) =>
+      logger.warn(`OpenTelemetry: ${message}`, { args }),
+    info: () => undefined,
+    debug: () => undefined,
+    verbose: () => undefined,
+  },
+  DiagLogLevel.WARN,
+)
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
 
