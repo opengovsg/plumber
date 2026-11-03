@@ -18,28 +18,6 @@ import {
 import getDataOutMetadata from './get-data-out-metadata'
 import { inputSchema, parameterSchema } from './schema'
 
-// Empty or free-text input is the user's variable choice, but a malformed table comes from a Plumber step.
-function isEmptyOrNonJsonInput(rawItems: unknown, testRun: boolean): boolean {
-  if (rawItems === undefined || rawItems === null) {
-    return true
-  }
-  if (Array.isArray(rawItems)) {
-    return testRun && rawItems.length === 0
-  }
-  if (typeof rawItems !== 'string') {
-    return false
-  }
-  if (rawItems.trim() === '') {
-    return true
-  }
-  try {
-    JSON.parse(rawItems)
-    return false
-  } catch {
-    return true
-  }
-}
-
 const action: IRawAction = {
   name: 'Repeat for each item',
   key: 'forEach',
@@ -82,7 +60,7 @@ const action: IRawAction = {
       throw new StepError({
         name: 'Invalid input list',
         solution: 'Select a valid input list',
-        kind: isEmptyOrNonJsonInput(rawItems, testRun) ? 'config' : 'internal',
+        kind: 'config',
       })
     }
 
@@ -141,7 +119,7 @@ const action: IRawAction = {
       throw new StepError({
         name: 'Invalid input list',
         solution: 'Select a valid input list',
-        kind: 'internal',
+        kind: 'config',
       })
     }
   },
