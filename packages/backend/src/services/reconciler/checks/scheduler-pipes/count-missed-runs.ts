@@ -98,6 +98,7 @@ export async function countMissedRuns({
 }: CountMissedRunsInput): Promise<number> {
   let newlyCountedCount = 0
   // One pipe at a time, so the job queues never wait behind more than one pipe's commands.
+  // IMPORTANT: map() needs p-limit for this, which keeps writing queued pipes after one fails and can lose counts.
   for (const [flowId, runTimesByReason] of groupRunTimesByPipeAndReason(
     missedRuns,
   )) {

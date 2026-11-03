@@ -54,6 +54,7 @@ export async function collectMissedRuns({
   const overdueMissedRuns: MissedRun[] = []
 
   // One pipe at a time, so the job queues never wait behind more than one HMGET.
+  // IMPORTANT: map() needs p-limit for this, which keeps running queued pipes after one fails.
   for (const { pipe, scheduleEntry } of overduePipes) {
     const isNextRunJobPending = await isRunTimeJobPending({
       jobsRedis,
