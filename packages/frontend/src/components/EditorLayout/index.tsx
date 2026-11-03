@@ -10,6 +10,7 @@ import Container from '@/components/Container'
 import EditableInput from '@/components/EditableInput'
 import Editor from '@/components/Editor'
 import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
+import { isStillOnPipe } from '@/components/Survey/abandon'
 import { useSurvey } from '@/components/Survey/SurveyProvider'
 import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
@@ -179,16 +180,27 @@ export default function EditorLayout() {
   useCaptureAiBuilderFlow(flow)
 
   // Leaving an unpublished pipe counts as an abandon. beforeunload is
-  // unreliable, so only in-app navigation away from the editor is detected.
+  // unreliable, so only in-app navigation away from the pipe is detected.
   const isAbandonableRef = useRef(false)
-  isAbandonableRef.current = !!flow && !flow.active && flow.role !== 'viewer'
   useEffect(() => {
+    isAbandonableRef.current = !!flow && !flow.active && flow.role !== 'viewer'
+  })
+  useEffect(() => {
+    if (!flowId) {
+      return
+    }
+    // Coming back to the pipe means the user did not leave it.
+    clearAbandonedSeq(flowId)
     return () => {
-      if (isAbandonableRef.current && flowId) {
+      // The route has already changed when this cleanup runs.
+      if (
+        isAbandonableRef.current &&
+        !isStillOnPipe(window.location.pathname, flowId)
+      ) {
         queueAbandonedSeq({ flow: 'regular', refId: flowId })
       }
     }
-  }, [flowId, queueAbandonedSeq])
+  }, [flowId, clearAbandonedSeq, queueAbandonedSeq])
 
   // navigate user to not found page if flow does not belong to the user
   if (

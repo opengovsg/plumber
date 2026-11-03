@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { loadUserState, recordPrompt } from './storage'
+import {
+  clearAbandonForRef,
+  getPendingAbandon,
+  loadUserState,
+  queueAbandon,
+  recordPrompt,
+} from './storage'
 
 const USER_ID = 'user-1'
 const NOW = new Date('2026-06-01T00:00:00Z')
@@ -44,5 +50,30 @@ describe('recordPrompt', () => {
     expect(state.lastPromptAt).toEqual(earlier)
     expect(state.lastCsatAt).toEqual(earlier)
     expect(state.lastSeqAt.pipe).toEqual(NOW)
+  })
+})
+
+describe('abandon queue', () => {
+  it('queues an abandon for a pipe', () => {
+    queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
+
+    expect(getPendingAbandon(USER_ID)).toMatchObject({
+      flow: 'regular',
+      type: 'abandon',
+    })
+  })
+
+  it('clears the abandon when the user returns to the same pipe', () => {
+    queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
+    clearAbandonForRef(USER_ID, 'pipe-1')
+
+    expect(getPendingAbandon(USER_ID)).toBeNull()
+  })
+
+  it('keeps the abandon when the user opens a different pipe', () => {
+    queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
+    clearAbandonForRef(USER_ID, 'pipe-2')
+
+    expect(getPendingAbandon(USER_ID)).not.toBeNull()
   })
 })
