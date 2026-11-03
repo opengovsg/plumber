@@ -310,34 +310,40 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   }
 
   const durationMs = Date.now() - startedAt
+  const counts = {
+    executions_archived: totalArchived,
+    real_executions_archived: totalArchived - totalTestArchived,
+    test_executions_archived: totalTestArchived,
+    executions_skipped: totalSkipped,
+    durationMs,
+  }
 
   // Write the summary before logging completion, so run.complete only appears
   // once nothing else can fail.
-  await putArchiveObject({
-    s3Client: archiveS3Client,
-    bucket: archiveBucket,
-    key: `_meta/runs/${runAt}.json`,
-    body: JSON.stringify({
-      runAt,
-      dryRun,
-      executionsArchived: totalArchived - totalTestArchived,
-      testExecutionsArchived: totalTestArchived,
-      totalExecutionsArchived: totalArchived,
-      executionsSkipped: totalSkipped,
-      flowsAffected: archivedByFlow.size,
-      stepCounts: stepCountsObj,
-      nullStepCount,
-      durationMs,
-    }),
-    contentType: 'application/json',
-  })
+  try {
+    await putArchiveObject({
+      s3Client: archiveS3Client,
+      bucket: archiveBucket,
+      key: `_meta/runs/${runAt}.json`,
+      body: JSON.stringify({
+        runAt,
+        dryRun,
+        executionsArchived: totalArchived,
+        realExecutionsArchived: totalArchived - totalTestArchived,
+        testExecutionsArchived: totalTestArchived,
+        executionsSkipped: totalSkipped,
+        flowsAffected: archivedByFlow.size,
+        stepCounts: stepCountsObj,
+        nullStepCount,
+        durationMs,
+      }),
+      contentType: 'application/json',
+    })
+  } catch (err) {
+    // The executions are already archived, so this log is the only remaining record of the run's counts.
+    logger.error({ event: 'archival.run.meta_write_failed', ...counts, err })
+    throw err
+  }
 
-  logger.info({
-    event: 'archival.run.complete',
-    executions_archived: totalArchived - totalTestArchived,
-    test_executions_archived: totalTestArchived,
-    total_executions_archived: totalArchived,
-    executions_skipped: totalSkipped,
-    durationMs,
-  })
+  logger.info({ event: 'archival.run.complete', ...counts })
 }

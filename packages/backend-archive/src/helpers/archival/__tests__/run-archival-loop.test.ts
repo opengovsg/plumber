@@ -744,8 +744,8 @@ describe('runArchivalLoop', () => {
       expect(payload).toMatchObject({
         dryRun: false,
         executionsArchived: 1,
+        realExecutionsArchived: 1,
         testExecutionsArchived: 0,
-        totalExecutionsArchived: 1,
         executionsSkipped: 0,
         flowsAffected: 1,
       })
@@ -763,6 +763,31 @@ describe('runArchivalLoop', () => {
 
       expect(logger.info).not.toHaveBeenCalledWith(
         expect.objectContaining({ event: 'archival.run.complete' }),
+      )
+    })
+
+    it('logs the run counts when the meta file write fails', async () => {
+      vi.mocked(putArchiveObject).mockRejectedValueOnce(new Error('S3 down'))
+      setupDb(
+        [[makeExecution('e1'), makeExecution('e2', { testRun: true })], []],
+        {
+          e1: [],
+          e2: [],
+        },
+      )
+
+      await expect(
+        runArchivalLoop(new AbortController().signal),
+      ).rejects.toThrow('S3 down')
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'archival.run.meta_write_failed',
+          executions_archived: 2,
+          real_executions_archived: 1,
+          test_executions_archived: 1,
+          executions_skipped: 0,
+        }),
       )
     })
 
@@ -786,16 +811,16 @@ describe('runArchivalLoop', () => {
         .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))!
       const payload = JSON.parse(metaCall[0].body as string)
       expect(payload).toMatchObject({
-        executionsArchived: 1,
+        executionsArchived: 3,
+        realExecutionsArchived: 1,
         testExecutionsArchived: 2,
-        totalExecutionsArchived: 3,
       })
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'archival.run.complete',
-          executions_archived: 1,
+          executions_archived: 3,
+          real_executions_archived: 1,
           test_executions_archived: 2,
-          total_executions_archived: 3,
         }),
       )
     })

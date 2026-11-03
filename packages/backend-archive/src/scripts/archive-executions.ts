@@ -5,8 +5,8 @@ import { runArchivalLoop } from '@/helpers/archival/run-archival-loop'
 
 const controller = new AbortController()
 
-// process.exit drops stdout writes still queued for the pipe, which lost the final logs of
-// a prod run. The empty write's callback fires only once everything before it has flushed.
+// process.exit drops stdout writes still queued for the pipe. The empty write's callback
+// fires only once everything before it has flushed.
 async function flushAndExit(code: number): Promise<never> {
   await new Promise<void>((resolve) =>
     process.stdout.write('', () => resolve()),
