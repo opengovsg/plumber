@@ -93,18 +93,43 @@ jobs:
         run: |
           docker build . -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
 
-      - name: Scan built image with Inspector
+      - name: Scan repository with Inspector
         uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@c87d8a405e237cfdf16e5dd3808d28d088d7cb6f # v1.6.1
         id: inspector
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
         with:
-          artifact_type: 'container'
-          artifact_path: '${{ steps.ecr-image-uri.outputs.image }}'
+          artifact_type: 'repository'
+          artifact_path: './'
           critical_threshold: 5
           high_threshold: 10
+
+      - name: Check Inspector malware findings
+        id: malware
+        env:
+          SCAN_RESULTS_PATH: ${{ steps.inspector.outputs.inspector_scan_results }}
+        run: |
+          set -euo pipefail
+
+          if ! count=$(jq -esr '
+            if length == 1 then .[0] else error("Expected one scan result") end
+            |
+            [.sbom.metadata.properties[]
+             | select(.name == "amazon:inspector:sbom_scanner:malicious_packages")
+             | .value | tostring]
+            | if length == 1 and (.[0] | test("^(0|[1-9][0-9]*)$"))
+              then .[0] else error("Invalid malware count") end
+          ' "$SCAN_RESULTS_PATH"); then
+            echo "::warning::Could not validate Inspector malware count. Review the full scan."
+            echo "detected=1" >> "$GITHUB_OUTPUT"
+            echo "summary=Could not validate Inspector malware count. Review the full scan." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          detected=0
+          if [ "$count" != "0" ]; then
+            detected=1
+          fi
+          echo "detected=$detected" >> "$GITHUB_OUTPUT"
+          echo "summary=Inspector reported $count malicious packages." >> "$GITHUB_OUTPUT"
 
       - name: Display CycloneDX SBOM (JSON)
         env:
@@ -127,8 +152,8 @@ jobs:
             ${{ steps.inspector.outputs.artifact_sbom }}
           retention-days: 7
 
-      - name: Notify Slack if vulnerability threshold is exceeded
-        if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
+      - name: Notify Slack if vulnerability threshold is exceeded or malware is detected
+        if: ${{ !cancelled() && (steps.inspector.outputs.vulnerability_threshold_exceeded == '1' || steps.malware.outputs.detected == '1') }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
@@ -136,7 +161,7 @@ jobs:
           payload: |
             channel: "${{ secrets.SLACK_CHANNEL_ID }}"
             username: "Plumber Deployment Scanner"
-            text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            text: ":warning: *Inspector security alert* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). CVE threshold exceeded: ${{ steps.inspector.outputs.vulnerability_threshold_exceeded }}. ${{ steps.malware.outputs.summary }} Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Push image to ECR after scan passes
         env:
