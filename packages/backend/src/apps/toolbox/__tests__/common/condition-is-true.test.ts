@@ -336,6 +336,18 @@ describe('Condition is true', () => {
         text: '',
         name: 'Error in condition group 2: Invalid date used in value for comparison',
       },
+      {
+        field: '2026-11-02T18:00:00.000+08:00',
+        condition: 'before',
+        text: '04 Nov 2024',
+        name: 'Error in condition group 2: Invalid date used in field for comparison',
+      },
+      {
+        field: '04 Nov 2024',
+        condition: 'after',
+        text: '2026-11-02T10:00:00Z',
+        name: 'Error in condition group 2: Invalid date used in value for comparison',
+      },
     ])(
       'marks a bad $condition operand as config ($name)',
       ({ field, condition, text, name }) => {
@@ -348,29 +360,6 @@ describe('Condition is true', () => {
         expect(JSON.parse(err.message).solution).toBe(
           'Check that the condition has been configured properly.',
         )
-      },
-    )
-
-    it.each([
-      {
-        field: '2026-11-02T18:00:00.000+08:00',
-        text: '04 Nov 2024',
-        name: 'Error in condition group 1: Invalid date used in field for comparison',
-      },
-      {
-        field: '04 Nov 2024',
-        text: '2026-11-02T10:00:00Z',
-        name: 'Error in condition group 1: Invalid date used in value for comparison',
-      },
-    ])(
-      'marks an ISO 8601 date the parser rejects as internal ($name)',
-      ({ field, text, name }) => {
-        const err = catchStepError(() =>
-          conditionIsTrue({ field, is: 'is', condition: 'before', text }, 1),
-        )
-
-        expect(err.kind).toBe('internal')
-        expect(nameOf(err)).toBe(name)
       },
     )
 
