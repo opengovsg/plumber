@@ -1,5 +1,6 @@
 import { IAction } from '@/../../types'
 import apps from '@/apps'
+import { logSendModeChange } from '@/apps/postman/common/log-send-mode-change'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
@@ -33,6 +34,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
     throw new BadUserInputError('No such trigger or action')
   }
 
+  let previousStep: Step | undefined
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
@@ -44,6 +46,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
     if (!step) {
       throw new BadUserInputError('Step not found')
     }
+    previousStep = step
 
     step.flow.assertNotUpdatedSince(
       input.flow.updatedAt,
@@ -176,6 +179,12 @@ const updateStep: MutationResolvers['updateStep'] = async (
     updatedStep.flow.updatedAt = updatedFlow.updatedAt
     updatedStep.flow.updatedBy = context.currentUser.id
     return updatedStep
+  })
+
+  await logSendModeChange({
+    previous: previousStep,
+    updated: step,
+    source: 'editor',
   })
 
   return step

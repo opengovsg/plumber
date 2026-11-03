@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStep from '@/graphql/mutations/update-step'
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
@@ -580,6 +581,46 @@ describe('updateStep mutation', () => {
           ),
         }),
       )
+    })
+
+    it('logs a send mode saved from the editor', async () => {
+      context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
+        owner,
+        currentUser: context.currentUser,
+        stepKey: null as unknown as string,
+        stepAppKey: null as unknown as string,
+        stepVersion: 1,
+        stepConnection: { id: mockConnectionId, userId: owner.id },
+        flowUpdatedAt: testFlowISODateString,
+      })
+      const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
+      try {
+        await updateStep(
+          null,
+          {
+            input: {
+              ...genericInputParams,
+              appKey: 'postman',
+              key: 'sendTransactionalEmail',
+              parameters: { sendMode: 'individual' },
+              connection: { id: undefined },
+            },
+          },
+          context,
+        )
+
+        expect(infoSpy).toHaveBeenCalledWith(
+          'Postman step send mode changed',
+          expect.objectContaining({
+            from: 'combined',
+            to: 'individual',
+            source: 'editor',
+            stepId: mockStepId,
+          }),
+        )
+      } finally {
+        infoSpy.mockRestore()
+      }
     })
 
     it('uses step.version from DB (not frontend) when transforming — stale frontend fix', async () => {

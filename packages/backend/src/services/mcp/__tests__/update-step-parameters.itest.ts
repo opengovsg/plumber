@@ -1,11 +1,12 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
+import { spyOnLogger } from '@/test/spy-on-logger'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
 import { updateStepParametersService } from '../update-step-parameters'
@@ -150,6 +151,80 @@ describe('updateStepParametersService', () => {
     })
 
     expect(result.step.status).toBe('incomplete')
+  })
+
+  describe('send mode change log', () => {
+    async function createPostmanStep() {
+      const user = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `update-params-send-mode-${randomUUID()}@example.com`,
+      })
+      const flow = await createFlowWithStepsService({
+        user,
+        name: 'Send Mode Pipe',
+        traceId: 'trace-send-mode',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 2,
+          },
+        ],
+      })
+      const actionStep = flow.steps.find((s) => s.type === 'action')
+      return { user, flowId: flow.id, stepId: actionStep.id }
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('logs a send mode the AI builder sets on a new step', async () => {
+      const { user, flowId, stepId } = await createPostmanStep()
+      const logs = spyOnLogger()
+
+      await updateStepParametersService({
+        user,
+        pipeId: flowId,
+        stepId,
+        parameters: { sendMode: 'individual' },
+      })
+
+      expect(logs.info).toHaveBeenCalledWith(
+        'Postman step send mode changed',
+        expect.objectContaining({
+          from: 'combined',
+          to: 'individual',
+          source: 'ai_builder',
+          stepId,
+          hasRealRun: false,
+        }),
+      )
+    })
+
+    it('does not log when the AI builder leaves the send mode unset', async () => {
+      const { user, flowId, stepId } = await createPostmanStep()
+      const logs = spyOnLogger()
+
+      await updateStepParametersService({
+        user,
+        pipeId: flowId,
+        stepId,
+        parameters: { subject: 'Hello' },
+      })
+
+      expect(logs.info).not.toHaveBeenCalledWith(
+        'Postman step send mode changed',
+        expect.anything(),
+      )
+    })
   })
 
   it('throws if the step does not belong to the requesting user', async () => {

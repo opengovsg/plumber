@@ -29,6 +29,8 @@ export const sendModeSchema = z.enum(['combined', 'individual'])
 
 export type SendMode = z.infer<typeof sendModeSchema>
 
+export const DEFAULT_SEND_MODE: SendMode = 'combined'
+
 function recipientStringToArray(value: string) {
   const recipientArray = value
     .split(',')
@@ -82,7 +84,7 @@ export const transactionalEmailFields: IField[] = [
     variables: true,
     tabs: {
       key: SEND_MODE_KEY,
-      value: 'combined' satisfies SendMode,
+      value: DEFAULT_SEND_MODE,
       options: [
         {
           label: 'One email to all',
@@ -141,7 +143,7 @@ export const transactionalEmailSchema = z.object({
   // Steps created before this field existed carry `individual`, injected by the
   // step transformer. Only steps saved without the key fall through to the
   // default, which is the behaviour new steps get.
-  [SEND_MODE_KEY]: sendModeSchema.default('combined'),
+  [SEND_MODE_KEY]: sendModeSchema.default(DEFAULT_SEND_MODE),
   subject: z
     .string()
     .min(1, { message: 'Empty subject' })
