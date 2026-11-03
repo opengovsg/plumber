@@ -126,8 +126,13 @@ describe('collectMissedRuns', () => {
     expect(missedRuns).toEqual([])
     expect(mocks.logError).toHaveBeenCalledWith(
       'Scheduler pipes check could not read a pipe schedule',
-      expect.objectContaining({ flowId: FLOW_BROKEN }),
+      expect.objectContaining({
+        flowId: FLOW_BROKEN,
+        errorName: 'Error',
+        errorMessage: expect.any(String),
+      }),
     )
+    expect(mocks.logError.mock.calls[0][1]).not.toHaveProperty('error')
   })
 
   it('skips an overdue pipe whose schedule does not parse and counts the rest', async () => {

@@ -37,7 +37,8 @@ function listPipeMissedRuns(
       event: 'reconciler-schedule-pattern-error',
       flowId: pipe.flowId,
       triggerKey: pipe.triggerKey,
-      error,
+      errorName: error instanceof Error ? error.name : undefined,
+      errorMessage: error instanceof Error ? error.message : String(error),
     })
     return []
   }
