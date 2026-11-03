@@ -163,7 +163,7 @@ export function createMcpBridgeTools(
   const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
       description:
-        "List all available Plumber apps, triggers, and actions with their field schemas. A field's variableTypes, when present, restricts it to upstream variables whose execute_step dataOutMetadata type matches one of the listed values.",
+        "List all available Plumber apps, triggers, and actions with their field schemas. A field's variableTypes, when present, restricts it to upstream variables whose execute_step dataOutMetadata type matches one of the listed values. A field's tabs, when present, stores the selected option under tabs.key. Omit tabs.key to use tabs.defaultValue unless the user explicitly asks for another option.",
       inputSchema: z.object({}),
       execute: async (): Promise<IMcpApp[]> => {
         return listAppsService(user)

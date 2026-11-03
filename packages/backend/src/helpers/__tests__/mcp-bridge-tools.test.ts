@@ -141,6 +141,15 @@ describe('createMcpBridgeTools', () => {
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
   })
 
+  // New steps should land on a tabbed field's default (e.g. combined Postman
+  // sends) unless the user asks for another option.
+  it('list_apps tells the AI to omit a tab key so the default applies', () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    expect(tools.list_apps.description).toContain(
+      'Omit tabs.key to use tabs.defaultValue unless the user explicitly asks for another option.',
+    )
+  })
+
   it('unpublish_pipe calls unpublishPipeService and reports the pipe change', async () => {
     const onPipeChange = vi.fn()
     const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
