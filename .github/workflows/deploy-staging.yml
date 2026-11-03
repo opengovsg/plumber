@@ -8,6 +8,9 @@ on:
   push:
     branches:
       - staging-v2
+  # Pushes made with GITHUB_TOKEN (scheduled-release.yml) do not trigger the push
+  # event above, so that workflow dispatches this one instead.
+  workflow_dispatch:
 
 permissions:
   id-token: write

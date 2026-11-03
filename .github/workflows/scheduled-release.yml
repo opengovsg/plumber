@@ -1,7 +1,9 @@
 name: Scheduled release
 
-# Creates a DRAFT release for a human to review and publish.
-# Nothing is pushed to develop-v2. A draft needs no tag until it is published.
+# Creates a DRAFT release for a human to review and publish, and fast-forwards
+# staging-v2 (the branch deploy-staging.yml deploys) to the develop-v2 commit
+# being released. Nothing is pushed to develop-v2. A draft needs no tag until
+# it is published.
 
 on:
   schedule:
@@ -30,11 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write
+      contents: write # create the draft release and update staging-v2
+      actions: write # dispatch deploy-staging.yml
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RELEASE_BRANCH: develop-v2
+      STAGING_BRANCH: staging-v2
       # Scheduled runs have no inputs, so they fall back to minor.
       BUMP: ${{ inputs.bump || 'minor' }}
       # #plumber
@@ -100,6 +104,9 @@ jobs:
             echo "- Changes since ${latest_tag}: ${GITHUB_SERVER_URL}/${GH_REPO}/compare/${latest_tag}...${RELEASE_BRANCH}" > notes.md
           fi
 
+          # The develop-v2 commit being released (and staged below).
+          sha="$(gh api "repos/${GH_REPO}/commits/${RELEASE_BRANCH}" --jq .sha)"
+
           url="$(gh release create "${next_tag}" \
             --draft \
             --target "${RELEASE_BRANCH}" \
@@ -111,6 +118,7 @@ jobs:
             echo "tag=${next_tag}"
             echo "url=${url}"
             echo "commit-count=${commit_count}"
+            echo "sha=${sha}"
           } >> "${GITHUB_OUTPUT}"
           echo "Draft release ${next_tag} (${BUMP} bump): ${url}" >> "${GITHUB_STEP_SUMMARY}"
 
@@ -124,3 +132,21 @@ jobs:
             channel: "${{ env.SLACK_CHANNEL_ID }}"
             username: "Plumber Release Drafter"
             text: ":package: Draft release *${{ steps.draft.outputs.tag }}* is ready for review (${{ steps.draft.outputs.commit-count }} commits on `${{ env.RELEASE_BRANCH }}` since the last release): ${{ steps.draft.outputs.url }}"
+
+      # Pushes made with GITHUB_TOKEN do not trigger other workflows, so the
+      # push below would not start deploy-staging.yml on its own: dispatch it.
+      - name: Push to staging
+        if: steps.draft.outputs.created == 'true'
+        shell: bash
+        env:
+          SHA: ${{ steps.draft.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          # force=false: fails (rather than overwrites) if staging-v2 has
+          # commits that are not on develop-v2.
+          gh api --method PATCH "repos/${GH_REPO}/git/refs/heads/${STAGING_BRANCH}" \
+            -f sha="${SHA}" -F force=false
+
+          gh workflow run deploy-staging.yml --ref "${STAGING_BRANCH}"
+          echo "Pushed ${SHA} to ${STAGING_BRANCH} and dispatched the staging deploy." >> "${GITHUB_STEP_SUMMARY}"
