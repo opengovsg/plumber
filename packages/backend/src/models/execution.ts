@@ -6,11 +6,11 @@ type ExecutionStatus = 'success' | 'failure' | null
 class Execution extends Base {
   id!: string
   flowId!: string
-  testRun: boolean
-  internalId: string
-  flow: Flow
-  executionSteps: ExecutionStep[]
-  status: ExecutionStatus
+  testRun!: boolean
+  internalId?: string | null
+  flow!: Flow
+  executionSteps!: ExecutionStep[]
+  status!: ExecutionStatus
 
   static tableName = 'executions'
 

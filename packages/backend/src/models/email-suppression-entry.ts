@@ -38,10 +38,10 @@ export type SuppressionReason = 'BOUNCE' | 'COMPLAINT'
 class EmailSuppressionEntry extends Base {
   email!: string
   reason!: SuppressionReason
-  reasonDetail?: string
-  sesMessageId?: string
+  reasonDetail?: string | null
+  sesMessageId?: string | null
   whitelistCount!: number
-  lastWhitelistedAt?: string
+  lastWhitelistedAt?: string | null
 
   static tableName = 'email_suppression'
 

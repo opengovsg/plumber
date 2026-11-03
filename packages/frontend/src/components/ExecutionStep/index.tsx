@@ -52,7 +52,7 @@ export default function ExecutionStep({
     canRetry,
     customRetryButtonText,
   } = useExecutionStepStatus({
-    appKey,
+    appKey: appKey ?? '',
     status,
     errorDetails,
     execution,
@@ -141,11 +141,11 @@ export default function ExecutionStep({
                   <DelayPausedAlert execution={execution} />
                 </TabPanel>
               )}
-              {showErrorTab && (
+              {showErrorTab && errorDetails && (
                 <TabPanel>
                   <ErrorResult
                     executionStepId={executionStep.id}
-                    errorDetails={executionStep.errorDetails}
+                    errorDetails={errorDetails}
                     isTestRun={false}
                   />
                 </TabPanel>

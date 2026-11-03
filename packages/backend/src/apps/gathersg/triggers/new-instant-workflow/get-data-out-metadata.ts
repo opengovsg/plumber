@@ -9,7 +9,7 @@ import { dataOutSchema } from './schema'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut: rawDataOut } = executionStep
 
   if (!rawDataOut) {

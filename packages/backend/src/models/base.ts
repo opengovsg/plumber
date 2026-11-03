@@ -7,7 +7,7 @@ import ExtendedQueryBuilder from './query-builder'
 class Base extends Model {
   createdAt!: string
   updatedAt!: string
-  deletedAt: string
+  deletedAt!: string | null
 
   QueryBuilderType!: ExtendedQueryBuilder<this>
   static QueryBuilder = ExtendedQueryBuilder
