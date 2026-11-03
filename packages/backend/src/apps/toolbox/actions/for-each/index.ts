@@ -118,7 +118,8 @@ const action: IRawAction = {
     } catch (err) {
       logger.error('For each failed to process a parsed input list', {
         event: 'for-each-process-input-failed',
-        err,
+        errorName: err instanceof Error ? err.name : typeof err,
+        errorMessage: err instanceof Error ? err.message : String(err),
         flowId: $.flow?.id,
         stepId: $.step?.id,
         executionId: $.execution?.id,
