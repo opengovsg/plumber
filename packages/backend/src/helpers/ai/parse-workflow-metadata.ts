@@ -1,5 +1,5 @@
 import { IFlowSteps } from '@plumber/types'
-import { parse as parseYaml } from 'yaml'
+import { isScalar, parse as parseYaml, parseDocument, Scalar } from 'yaml'
 import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -10,12 +10,59 @@ import {
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getActionsSchema } from '@/graphql/mutations/ai/schemas/actions.zod'
 import { getTriggerSchema } from '@/graphql/mutations/ai/schemas/triggers.zod'
+import logger from '@/helpers/logger'
 
 export const WORKFLOW_METADATA_MARKER = '<!-- WORKFLOW_METADATA'
 export const WORKFLOW_METADATA_REGEX =
   /<!--\s*WORKFLOW_METADATA\s*([\s\S]*?)-->/
 
 export type WorkflowData = ReturnType<typeof parseWorkflowMetadata>
+
+const FREE_TEXT_KEYS = new Set([
+  'name',
+  'stepName',
+  'description',
+  'branchName',
+])
+
+// A value can start and end with a quote yet hold unquoted text in between (e.g. `"a" b: "c"`).
+function isQuoted(value: string): boolean {
+  const doc = parseDocument(value)
+  return (
+    doc.errors.length === 0 &&
+    isScalar(doc.contents) &&
+    (doc.contents.type === Scalar.QUOTE_DOUBLE ||
+      doc.contents.type === Scalar.QUOTE_SINGLE)
+  )
+}
+
+// The LLM emits unquoted free text, which YAML can misread as syntax (e.g. ": " or " #").
+// This function is a stopgap to best-effort fix wrongly emitted YAML strings.
+function quoteFreeTextValues(yamlText: string): string {
+  return yamlText
+    .split('\n')
+    .map((line) => {
+      // The key ends at the first ": ". Everything after it is the value.
+      const separatorIndex = line.indexOf(': ')
+      if (separatorIndex === -1) {
+        return line
+      }
+
+      // Strip indentation and a leading "- " list marker from the key.
+      const keyPart = line.slice(0, separatorIndex).trim()
+      const key = keyPart.startsWith('- ') ? keyPart.slice(2).trim() : keyPart
+      const value = line.slice(separatorIndex + 2).trim()
+
+      // Skip other keys and quoted values. Empty values stay null so defaults like "Build with AI" apply.
+      if (!FREE_TEXT_KEYS.has(key) || value === '' || isQuoted(value)) {
+        return line
+      }
+
+      // Keep the line up to ": " and rewrite the value as a JSON string, which YAML reads as quoted text.
+      return line.slice(0, separatorIndex + 2) + JSON.stringify(value)
+    })
+    .join('\n')
+}
 
 // Converts a ZodError into a user-facing message with workflow-specific context.
 // - invalid_union: the appKey/key combo didn't match any known app, so we report
@@ -102,17 +149,27 @@ export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
   return flattened
 }
 
-function parseRawWorkflowData(text: string): IFlowSteps {
+function parseRawWorkflowData(text: string, traceId?: string): IFlowSteps {
   const match = text.match(WORKFLOW_METADATA_REGEX)
   if (!match) {
     throw new BadUserInputError('Unable to generate the workflow.')
   }
 
+  const rawYaml = match[1].trim()
   let parsed: any
   try {
-    parsed = parseYaml(match[1].trim())
+    parsed = parseYaml(rawYaml)
   } catch {
-    throw new BadUserInputError('Unable to generate the workflow.')
+    logger.info('AI builder emitted invalid workflow YAML', {
+      event: 'ai-builder-workflow-yaml-invalid',
+      traceId,
+    })
+    // Quoting can corrupt valid YAML (e.g. block scalars), so only repair output that fails to parse.
+    try {
+      parsed = parseYaml(quoteFreeTextValues(rawYaml))
+    } catch {
+      throw new BadUserInputError('Unable to generate the workflow.')
+    }
   }
 
   if (
@@ -179,8 +236,9 @@ function parseRawWorkflowData(text: string): IFlowSteps {
 function parseWorkflowMetadata(
   text: string,
   restrictedAppKeys: string[] = [],
+  { traceId }: { traceId?: string } = {},
 ): IFlowSteps {
-  const workflowData = parseRawWorkflowData(text)
+  const workflowData = parseRawWorkflowData(text, traceId)
 
   const schema = z.object({
     trigger: getTriggerSchema(restrictedAppKeys),

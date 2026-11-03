@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { parseWorkflowMetadata } from '../parse-workflow-metadata'
+
+const mocks = vi.hoisted(() => ({
+  logInfo: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    info: mocks.logInfo,
+  },
+}))
 
 const VALID_WORKFLOW = `
 <!-- WORKFLOW_METADATA
@@ -76,6 +86,10 @@ ${rejectedStageLine}
 `
 
 describe('parseWorkflowMetadata', () => {
+  beforeEach(() => {
+    mocks.logInfo.mockClear()
+  })
+
   describe('MRF approval stages', () => {
     it('passes the approval flag and the rejected path to the preview', () => {
       const result = parseWorkflowMetadata(
@@ -260,6 +274,38 @@ steps:
     })
   })
 
+  describe('invalid YAML logging', () => {
+    it('logs when the LLM emits YAML that only parses after quoting', () => {
+      parseWorkflowMetadata(
+        `
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->
+`,
+        [],
+        { traceId: 'trace-123' },
+      )
+      expect(mocks.logInfo).toHaveBeenCalledWith(
+        'AI builder emitted invalid workflow YAML',
+        { event: 'ai-builder-workflow-yaml-invalid', traceId: 'trace-123' },
+      )
+    })
+
+    it('does not log when the LLM emits valid YAML', () => {
+      parseWorkflowMetadata(VALID_WORKFLOW)
+      expect(mocks.logInfo).not.toHaveBeenCalled()
+    })
+  })
+
   describe('valid metadata', () => {
     it('extracts trigger and actions', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
@@ -298,6 +344,149 @@ steps:
 -->
 `
       expect(parseWorkflowMetadata(text).name).toBe('Build with AI')
+    })
+
+    it('accepts an unquoted name containing a colon', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: webhook
+    key: catchRawWebhook
+    stepName: Catch raw webhook
+    description: Triggers when the webhook receives a request with a JSON payload
+  - step: 2
+    appKey: tiles
+    key: createTileRow
+    stepName: Create tile row
+    description: Saves the clientId from the webhook payload into the "Client ID" column of your Tile
+-->
+`
+      expect(parseWorkflowMetadata(text).name).toBe(
+        'Webhook to Tiles: Save Client ID',
+      )
+    })
+
+    it('accepts an unquoted step description containing a colon', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: "Notify: applicant"
+    description: Note: send to the applicant
+-->
+`
+      const [action] = parseWorkflowMetadata(text).actions
+      expect(action.config.stepName).toBe('Notify: applicant')
+      expect(action.description).toBe('Note: send to the applicant')
+    })
+
+    it('accepts a value that starts with a quote but is not fully quoted', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Client ID" column: saves the id
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        '"Client ID" column: saves the id',
+      )
+    })
+
+    it('accepts a value that starts and ends with a quote but is not one quoted string', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Client ID" column: saves "id"
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        '"Client ID" column: saves "id"',
+      )
+    })
+
+    it('keeps a block scalar description when the YAML is valid', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: |
+      Line one
+      name: not a key
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        'Line one\nname: not a key\n',
+      )
+    })
+
+    it('keeps the "Build with AI" default for a null name when the YAML is valid', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: null
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->
+`
+      expect(parseWorkflowMetadata(text).name).toBe('Build with AI')
+    })
+
+    it('drops a comment after a quoted value when the YAML needs quoting', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Notify: applicant" # sent on submit
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        'Notify: applicant',
+      )
     })
 
     it('uses stepName for config.stepName', () => {
