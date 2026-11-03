@@ -5,11 +5,24 @@ import pLimit from 'p-limit'
 import { archiveExecution } from './archive-execution'
 import { archivalConfig } from './config'
 import { archivalDb, archivalDbReader } from './db'
+import {
+  assertTidRangeScanSupported,
+  formatTid,
+  getExecutionsHeapPages,
+  parseTid,
+  type Tid,
+} from './executions-heap'
 import logger from './logger'
 import { archiveS3Client, putArchiveObject } from './s3-client'
 import type { ExecutionRow, ExecutionStepRow } from './types'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Bounds each batch query to a slice of heap pages. The planner sorts every row a TID range
+// scan returns, so an unbounded `ctid > cursor ORDER BY ctid` would sort the rest of the table.
+const INITIAL_WINDOW_PAGES = 64
+const MIN_WINDOW_PAGES = 8
+const MAX_WINDOW_PAGES = 4096
 
 export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const {
@@ -27,7 +40,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - retentionDays)
 
-  let cursor: string | null = null
+  await assertTidRangeScanSupported()
+
+  // Walk the heap in ctid order to archive the oldest executions first. No index leads with
+  // created_at, and Postgres stores rows in insertion order until vacuum frees space for reuse.
+  // Offset 0 never holds a row, so `ctid > (page,0)` starts at the top of that page.
+  let cursor: Tid = { page: 0, offset: 0 }
+  let windowPages = INITIAL_WINDOW_PAGES
+  let heapPages = await getExecutionsHeapPages()
   let totalArchived = 0
   let totalTestArchived = 0
   let totalSkipped = 0
@@ -56,14 +76,22 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       break
     }
 
+    if (cursor.page >= heapPages) {
+      // Re-read the size because inserts extend the heap during the run.
+      heapPages = await getExecutionsHeapPages()
+      if (cursor.page >= heapPages) {
+        break
+      }
+    }
+
     // When archiveDeletedFlowsOnly is set we skip the full three-branch OR
     // entirely — just a single whereIn on deleted flows. This avoids asking
     // Postgres to plan a complex multi-branch query when the full query will
     // be filtered down to the same deleted-flows set anyway.
     //
     // Note: this subquery is evaluated live per batch, not snapshotted at run
-    // start. A flow soft-deleted mid-run will have its executions picked up on
-    // the next batch (immediately, with no cutoff check). Retries are therefore
+    // start. A flow soft-deleted mid-run will have its executions ahead of the
+    // cursor picked up by later batches, with no cutoff check. Retries are therefore
     // not fully idempotent with respect to the deleted-flows set — but this is
     // harmless since already-archived rows are removed from source, making
     // double-archiving impossible.
@@ -132,16 +160,17 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     // TODO(perf): the batch query still hits `flows` twice via subqueries
     // (deleted_at, archiveDisabled). If batch times climb, add a partial index
     // on `(id) WHERE config->>'archiveDisabled' = 'true'` for the JSONB filter.
-    const batch = (await eligibilityQuery
+    const windowEnd: Tid = { page: cursor.page + windowPages, offset: 0 }
+    const rows = (await eligibilityQuery
+      .select(archivalDbReader.raw('executions.ctid::text as ctid'))
       // Never archive the designated test execution of any flow (deleted or active).
       // LEFT JOIN anti-join: cheaper than NOT IN (subquery) when the flows table grows.
       .leftJoin('flows as f_tex', 'executions.id', 'f_tex.test_execution_id')
       .whereNull('f_tex.test_execution_id')
-      .modify((qb) => {
-        if (cursor) {
-          qb.whereRaw('executions.id > ?::uuid', [cursor])
-        }
-      })
+      .whereRaw('executions.ctid > ?::tid AND executions.ctid < ?::tid', [
+        formatTid(cursor),
+        formatTid(windowEnd),
+      ])
       // Exclude flows with archiveDisabled set in flow config. Applies to all
       // flows (active and deleted) so rehydrated executions are protected until
       // the operator clears the flag.
@@ -151,12 +180,29 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           .select('id')
           .whereRaw(`config->>'archiveDisabled' = 'true'`),
       )
-      .orderBy('executions.id')
-      .limit(batchSize)) as ExecutionRow[]
+      .orderBy('executions.ctid')
+      .limit(batchSize)) as Array<ExecutionRow & { ctid: string }>
 
-    if (!batch.length) {
-      break
+    // Cursor advances regardless of outcome. Failed executions stay eligible and are
+    // retried on the next scheduled run.
+    // Shrink the window after a full batch and grow it after a short one, so each query
+    // reads about one batch of eligible rows.
+    if (rows.length === batchSize) {
+      cursor = parseTid(rows[rows.length - 1].ctid)
+      windowPages = Math.max(MIN_WINDOW_PAGES, Math.floor(windowPages / 2))
+    } else {
+      cursor = windowEnd
+      windowPages = Math.min(MAX_WINDOW_PAGES, windowPages * 2)
     }
+
+    if (!rows.length) {
+      continue
+    }
+
+    // ctid only drives the cursor. It must not reach the archived payload.
+    const batch: ExecutionRow[] = rows.map(
+      ({ ctid: _ctid, ...execution }) => execution,
+    )
 
     let batchArchived = 0
     let batchSkipped = 0
@@ -274,9 +320,6 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       }
     }
 
-    // Cursor advances to the last execution in the batch regardless of outcome.
-    // Failed executions stay eligible and are retried on the next scheduled run.
-    cursor = batch[batch.length - 1].id
     totalArchived += batchArchived
     totalSkipped += batchSkipped
 
@@ -284,7 +327,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       event: 'archival.batch.complete',
       batchArchived,
       batchSkipped,
-      cursor,
+      cursor: formatTid(cursor),
       durationMs: Date.now() - startedAt,
     })
 
