@@ -45,15 +45,16 @@ describe('collectMissedRuns', () => {
   ) {
     return collectMissedRuns({
       jobsRedis: { hmget },
-      publishedPipes: [pipe(FLOW_OVERDUE), pipe(FLOW_MISSING)],
-      scheduleEntryByFlowId: new Map([
-        [
-          FLOW_OVERDUE,
-          { member: `flow-${FLOW_OVERDUE}`, runTimeMillis: NOW - 2 * HOUR },
-        ],
-      ]),
-      missingFlowIds: [FLOW_MISSING],
-      overdueFlowIds: [FLOW_OVERDUE],
+      missingPipes: [pipe(FLOW_MISSING)],
+      overduePipes: [
+        {
+          pipe: pipe(FLOW_OVERDUE),
+          scheduleEntry: {
+            member: `flow-${FLOW_OVERDUE}`,
+            runTimeMillis: NOW - 2 * HOUR,
+          },
+        },
+      ],
       nowMillis: NOW,
       graceSeconds: 900,
       ...input,
@@ -100,7 +101,7 @@ describe('collectMissedRuns', () => {
     hmget.mockResolvedValue(['1', '2'])
     mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
 
-    const missedRuns = await collect({ missingFlowIds: [] })
+    const missedRuns = await collect({ missingPipes: [] })
 
     expect(missedRuns).toEqual([
       {
@@ -115,12 +116,11 @@ describe('collectMissedRuns', () => {
     mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
 
     const missedRuns = await collect({
-      publishedPipes: [
+      missingPipes: [
         pipe(FLOW_BROKEN, { triggerKey: 'unknown' }),
         pipe(FLOW_MISSING, { publishedAt: new Date(NOW - HOUR).toISOString() }),
       ],
-      missingFlowIds: [FLOW_BROKEN, FLOW_MISSING],
-      overdueFlowIds: [],
+      overduePipes: [],
     })
 
     expect(missedRuns).toEqual([])
@@ -135,23 +135,23 @@ describe('collectMissedRuns', () => {
     mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
 
     const missedRuns = await collect({
-      publishedPipes: [
-        pipe(FLOW_BROKEN, {
-          triggerKey: 'everyDay',
-          triggerParameters: { triggersOnWeekend: true },
-        }),
+      overduePipes: [
+        {
+          pipe: pipe(FLOW_BROKEN, {
+            triggerKey: 'everyDay',
+            triggerParameters: { triggersOnWeekend: true },
+          }),
+          scheduleEntry: {
+            member: `flow-${FLOW_BROKEN}`,
+            runTimeMillis: NOW - 2 * HOUR,
+          },
+        },
+      ],
+      missingPipes: [
         pipe(FLOW_MISSING, {
           publishedAt: new Date(NOW - 2 * HOUR).toISOString(),
         }),
       ],
-      scheduleEntryByFlowId: new Map([
-        [
-          FLOW_BROKEN,
-          { member: `flow-${FLOW_BROKEN}`, runTimeMillis: NOW - 2 * HOUR },
-        ],
-      ]),
-      overdueFlowIds: [FLOW_BROKEN],
-      missingFlowIds: [FLOW_MISSING],
     })
 
     expect(missedRuns).toEqual([
@@ -171,14 +171,13 @@ describe('collectMissedRuns', () => {
     mocks.fetchLatestExecutionTimes.mockResolvedValue(new Map())
 
     const missedRuns = await collect({
-      publishedPipes: [
+      missingPipes: [
         pipe(FLOW_BROKEN, {
           triggerKey: 'everyDay',
           triggerParameters: { triggersOnWeekend: false },
         }),
       ],
-      missingFlowIds: [FLOW_BROKEN],
-      overdueFlowIds: [],
+      overduePipes: [],
     })
 
     expect(missedRuns).toEqual([])
@@ -195,7 +194,7 @@ describe('collectMissedRuns', () => {
   })
 
   it('makes no extra calls when no pipe has a problem', async () => {
-    const missedRuns = await collect({ missingFlowIds: [], overdueFlowIds: [] })
+    const missedRuns = await collect({ missingPipes: [], overduePipes: [] })
 
     expect(missedRuns).toEqual([])
     expect(hmget).not.toHaveBeenCalled()

@@ -2,7 +2,7 @@ import type { Redis } from 'ioredis'
 
 import logger from '@/helpers/logger'
 
-import type { ScheduleEntry } from './classify-schedules'
+import type { OverduePipe } from './classify-schedules'
 import { fetchLatestExecutionTimes } from './fetch-latest-execution-times'
 import type { PublishedScheduledPipe } from './fetch-published-scheduled-pipes'
 import { isRunTimeJobPending } from './is-run-time-job-pending'
@@ -16,10 +16,8 @@ import {
 
 interface CollectMissedRunsInput {
   jobsRedis: Pick<Redis, 'hmget'>
-  publishedPipes: PublishedScheduledPipe[]
-  scheduleEntryByFlowId: Map<string, ScheduleEntry>
-  missingFlowIds: string[]
-  overdueFlowIds: string[]
+  missingPipes: PublishedScheduledPipe[]
+  overduePipes: OverduePipe[]
   nowMillis: number
   graceSeconds: number
 }
@@ -47,36 +45,25 @@ function listPipeMissedRuns(
 
 export async function collectMissedRuns({
   jobsRedis,
-  publishedPipes,
-  scheduleEntryByFlowId,
-  missingFlowIds,
-  overdueFlowIds,
+  missingPipes,
+  overduePipes,
   nowMillis,
   graceSeconds,
 }: CollectMissedRunsInput): Promise<MissedRun[]> {
-  const pipeByFlowId = new Map(
-    publishedPipes.map((pipe) => [pipe.flowId, pipe]),
-  )
   const overdueMissedRuns: MissedRun[] = []
 
   // One pipe at a time, so the job queues never wait behind more than one HMGET.
-  for (const flowId of overdueFlowIds) {
-    const pipe = pipeByFlowId.get(flowId)
-    const scheduleEntry = scheduleEntryByFlowId.get(flowId)
-    if (!pipe || !scheduleEntry) {
-      continue
-    }
-
+  for (const { pipe, scheduleEntry } of overduePipes) {
     const isNextRunJobPending = await isRunTimeJobPending({
       jobsRedis,
-      flowId,
+      flowId: pipe.flowId,
       scheduleEntryMember: scheduleEntry.member,
       runTimeMillis: scheduleEntry.runTimeMillis,
     })
     overdueMissedRuns.push(
       ...listPipeMissedRuns(pipe, (pattern) =>
         findOverduePipeMissedRuns({
-          flowId,
+          flowId: pipe.flowId,
           pattern,
           nextRunTimeMillis: scheduleEntry.runTimeMillis,
           isNextRunJobPending,
@@ -87,33 +74,28 @@ export async function collectMissedRuns({
     )
   }
 
-  if (missingFlowIds.length === 0) {
+  if (missingPipes.length === 0) {
     return overdueMissedRuns
   }
 
   const latestExecutionMillisByFlowId = await fetchLatestExecutionTimes(
-    missingFlowIds,
+    missingPipes.map((pipe) => pipe.flowId),
     getLookBackStartMillis(nowMillis),
   )
-  const missingMissedRuns = missingFlowIds.flatMap((flowId) => {
-    const pipe = pipeByFlowId.get(flowId)
-    if (!pipe) {
-      return []
-    }
-
-    return listPipeMissedRuns(pipe, (pattern) =>
+  const missingMissedRuns = missingPipes.flatMap((pipe) =>
+    listPipeMissedRuns(pipe, (pattern) =>
       findMissingPipeMissedRuns({
-        flowId,
+        flowId: pipe.flowId,
         pattern,
         publishedAtMillis: pipe.publishedAt
           ? new Date(pipe.publishedAt).getTime()
           : 0,
-        latestExecutionMillis: latestExecutionMillisByFlowId.get(flowId),
+        latestExecutionMillis: latestExecutionMillisByFlowId.get(pipe.flowId),
         nowMillis,
         graceSeconds,
       }),
-    )
-  })
+    ),
+  )
 
   return [...overdueMissedRuns, ...missingMissedRuns]
 }

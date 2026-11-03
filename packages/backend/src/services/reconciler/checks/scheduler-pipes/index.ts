@@ -38,8 +38,8 @@ export function createSchedulerPipesCheck({
       const scheduleEntryByFlowId = parseScheduleEntries(zrangeWithScores)
       const nowMillis = Date.now()
 
-      const { missingFlowIds, overdueFlowIds } = classifySchedules({
-        publishedFlowIds: publishedPipes.map((pipe) => pipe.flowId),
+      const { missingPipes, overduePipes } = classifySchedules({
+        publishedPipes,
         scheduleEntryByFlowId,
         nowMillis,
         graceSeconds: config.missedRunGraceSeconds,
@@ -47,10 +47,8 @@ export function createSchedulerPipesCheck({
 
       const missedRuns = await collectMissedRuns({
         jobsRedis,
-        publishedPipes,
-        scheduleEntryByFlowId,
-        missingFlowIds,
-        overdueFlowIds,
+        missingPipes,
+        overduePipes,
         nowMillis,
         graceSeconds: config.missedRunGraceSeconds,
       })
@@ -64,11 +62,11 @@ export function createSchedulerPipesCheck({
       const logDetails = {
         event: 'reconciler-scheduler-pipes-check',
         publishedPipeCount: publishedPipes.length,
-        missingCount: missingFlowIds.length,
-        overdueCount: overdueFlowIds.length,
+        missingCount: missingPipes.length,
+        overdueCount: overduePipes.length,
         newlyCountedMissedRunCount,
       }
-      if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
+      if (missingPipes.length > 0 || overduePipes.length > 0) {
         logger.warn('Scheduler pipes check found problem pipes', logDetails)
       } else {
         logger.info('Scheduler pipes check found no problem pipes', logDetails)
