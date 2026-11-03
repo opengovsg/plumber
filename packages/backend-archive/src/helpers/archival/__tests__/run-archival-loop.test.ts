@@ -31,10 +31,19 @@ vi.mock('../db', () => ({
   archivalDb: vi.fn(),
   archivalDbReader: vi.fn(),
 }))
+vi.mock('../executions-heap', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../executions-heap')>()),
+  assertTidRangeScanSupported: vi.fn(),
+  getExecutionsHeapPages: vi.fn(),
+}))
 
 import { archiveExecution } from '../archive-execution'
 import { archivalConfig } from '../config'
 import { archivalDb, archivalDbReader } from '../db'
+import {
+  assertTidRangeScanSupported,
+  getExecutionsHeapPages,
+} from '../executions-heap'
 import logger from '../logger'
 import { runArchivalLoop } from '../run-archival-loop'
 import { putArchiveObject } from '../s3-client'
@@ -85,10 +94,12 @@ let capturedTestExecAntiJoin: {
   col2: string
 } | null = null
 let capturedDeletedFlowsWhereIn: any = null
-let capturedModifyCbs: Array<(qb: any) => void> = []
+// [lowerBound, upperBound] of each batch query's ctid window
+let capturedCtidWindows: string[][] = []
 
+// Rows without a ctid get one on page 0 in batch order.
 function setupDb(
-  batches: ExecutionRow[][],
+  batches: Array<Array<ExecutionRow & { ctid?: string }>>,
   stepsByExecutionId: Record<string, ExecutionStepRow[]> = {},
 ) {
   let batchIdx = 0
@@ -96,7 +107,10 @@ function setupDb(
   capturedEligibilityCb = null
   capturedTestExecAntiJoin = null
   capturedDeletedFlowsWhereIn = null
-  capturedModifyCbs = []
+  capturedCtidWindows = []
+  const dbBatches = batches.map((batch) =>
+    batch.map((row, i) => ({ ctid: `(0,${i + 1})`, ...row })),
+  )
 
   const flowsBuilder = {
     select: vi.fn().mockReturnThis(),
@@ -142,14 +156,16 @@ function setupDb(
     }),
     whereNotIn: vi.fn().mockReturnThis(),
     whereNull: vi.fn().mockReturnThis(),
-    modify: vi.fn().mockImplementation((cb: (qb: any) => void) => {
-      capturedModifyCbs.push(cb)
+    whereRaw: vi.fn().mockImplementation((sql: string, bindings: string[]) => {
+      if (sql.includes('executions.ctid')) {
+        capturedCtidWindows.push(bindings)
+      }
       return execBuilder
     }),
     orderBy: vi.fn().mockReturnThis(),
     limit: vi
       .fn()
-      .mockImplementation(() => Promise.resolve(batches[batchIdx++] ?? [])),
+      .mockImplementation(() => Promise.resolve(dbBatches[batchIdx++] ?? [])),
   }
 
   const tableRouter = (table: string) => {
@@ -178,12 +194,16 @@ describe('runArchivalLoop', () => {
 
   beforeEach(() => {
     vi.mocked(archiveExecution).mockResolvedValue('archived')
+    vi.mocked(assertTidRangeScanSupported).mockResolvedValue(undefined)
+    // One page: the first ctid window covers the whole heap.
+    vi.mocked(getExecutionsHeapPages).mockResolvedValue(1)
   })
 
   afterEach(() => {
     vi.clearAllMocks()
     ;(archivalConfig as any).archiveDeletedFlowsOnly = false
     ;(archivalConfig as any).archiveTestRuns = false
+    ;(archivalConfig as any).archiveBatchSize = 500
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -210,6 +230,7 @@ describe('runArchivalLoop', () => {
     const controller = new AbortController()
     // Use concurrency=1 so abort is observed before subsequent executions start
     ;(archivalConfig as any).archiveIntraBatchConcurrency = 1
+    vi.mocked(getExecutionsHeapPages).mockResolvedValue(1000)
     vi.mocked(archiveExecution).mockImplementation(async () => {
       controller.abort()
       return 'archived'
@@ -242,25 +263,115 @@ describe('runArchivalLoop', () => {
     expect(archiveExecution).toHaveBeenCalledTimes(3)
   })
 
-  it('advances cursor to the last batch item even when some executions fail', async () => {
-    // All fail — cursor should still move to the last batch item
-    vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 error'))
+  describe('ctid cursor', () => {
+    it('orders each batch by ctid', async () => {
+      setupDb([[makeExecution('e1')]])
+      await runArchivalLoop(new AbortController().signal)
 
-    const batch = [
-      makeExecution('00000000-0000-0000-0000-000000000001'),
-      makeExecution('00000000-0000-0000-0000-000000000002'),
-      makeExecution('00000000-0000-0000-0000-000000000003'),
-    ]
-    setupDb([batch, []])
+      const execBuilder = vi
+        .mocked(archivalDbReader)
+        .mock.results.find(
+          (_r, i) =>
+            vi.mocked(archivalDbReader).mock.calls[i][0] === 'executions',
+        )!.value
+      expect(execBuilder.orderBy).toHaveBeenCalledWith('executions.ctid')
+    })
 
-    await runArchivalLoop(new AbortController().signal)
+    it('starts after the last row and halves the window after a full batch, even when every execution fails', async () => {
+      ;(archivalConfig as any).archiveBatchSize = 3
+      vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 error'))
+      vi.mocked(getExecutionsHeapPages).mockResolvedValue(10)
+      setupDb([
+        [
+          makeExecution('e1'),
+          makeExecution('e2'),
+          { ...makeExecution('e3'), ctid: '(5,7)' },
+        ],
+      ])
 
-    // The second batch SELECT uses whereRaw(id > cursor); capturedModifyCbs[1] is the cursor modifier
-    const qb = { whereRaw: vi.fn() }
-    capturedModifyCbs[1](qb)
-    expect(qb.whereRaw).toHaveBeenCalledWith('executions.id > ?::uuid', [
-      '00000000-0000-0000-0000-000000000003',
-    ])
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedCtidWindows[0]).toEqual(['(0,0)', '(64,0)'])
+      expect(capturedCtidWindows[1]).toEqual(['(5,7)', '(37,0)'])
+    })
+
+    it('starts at the window end and doubles the window after a short batch', async () => {
+      vi.mocked(getExecutionsHeapPages).mockResolvedValue(100)
+      setupDb([[makeExecution('e1')]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedCtidWindows).toEqual([
+        ['(0,0)', '(64,0)'],
+        ['(64,0)', '(192,0)'],
+      ])
+    })
+
+    it('scans past empty windows without archiving or logging', async () => {
+      vi.mocked(getExecutionsHeapPages).mockResolvedValue(200)
+      setupDb([[], [], [makeExecution('e1')]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedCtidWindows.map(([lower]) => lower)).toEqual([
+        '(0,0)',
+        '(64,0)',
+        '(192,0)',
+      ])
+      expect(archiveExecution).toHaveBeenCalledTimes(1)
+      const batchLogs = vi
+        .mocked(logger.info)
+        .mock.calls.filter(
+          ([arg]: any[]) => arg.event === 'archival.batch.complete',
+        )
+      expect(batchLogs).toHaveLength(1)
+      expect(batchLogs[0][0]).toMatchObject({ cursor: '(448,0)' })
+    })
+
+    it('re-reads the heap size before stopping so pages added mid-run are scanned', async () => {
+      vi.mocked(getExecutionsHeapPages)
+        .mockResolvedValueOnce(100)
+        .mockResolvedValue(300)
+      setupDb([])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedCtidWindows.map(([lower]) => lower)).toEqual([
+        '(0,0)',
+        '(64,0)',
+        '(192,0)',
+      ])
+      expect(getExecutionsHeapPages).toHaveBeenCalledTimes(3)
+    })
+
+    it('does not pass ctid to archiveExecution', async () => {
+      setupDb([[{ ...makeExecution('e1'), ctid: '(0,1)' }]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(archiveExecution).toHaveBeenCalledWith(
+        makeExecution('e1'),
+        [],
+        expect.anything(),
+      )
+      expect(vi.mocked(archiveExecution).mock.calls[0][0]).not.toHaveProperty(
+        'ctid',
+      )
+    })
+
+    it('does not query executions when the reader cannot run TID range scans', async () => {
+      vi.mocked(assertTidRangeScanSupported).mockRejectedValue(
+        new Error('archival needs Postgres 14+'),
+      )
+      setupDb([[makeExecution('e1')]])
+
+      await expect(
+        runArchivalLoop(new AbortController().signal),
+      ).rejects.toThrow('Postgres 14+')
+
+      expect(capturedCtidWindows).toEqual([])
+      expect(archiveExecution).not.toHaveBeenCalled()
+    })
   })
 
   it('counts skipped executions when archiveExecution returns skipped', async () => {

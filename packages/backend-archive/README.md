@@ -6,7 +6,7 @@ Standalone ECS task that archives old Plumber execution records from Postgres to
 
 The archival pipeline runs nightly as a Fargate task. It:
 
-1. **Scans** Postgres for eligible executions (deleted flows, aged-out non-test executions, aged-out test executions — depending on config flags).
+1. **Scans** Postgres for eligible executions (deleted flows, aged-out non-test executions, aged-out test executions — depending on config flags). The scan walks the `executions` heap in physical (`ctid`) order. See [Archival order](#archival-order).
 2. **Serialises** each execution + its steps into a gzip-compressed JSON object and writes it to S3.
 3. **Verifies** the S3 object is present and non-empty.
 4. **Deletes** the rows from `execution_steps` and `executions` in a single transaction (skipped in dry-run mode).
@@ -17,6 +17,24 @@ S3 key format:
 executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 test-executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 ```
+
+### Archival order
+
+A run archives the oldest executions first, so a run that stops at `ARCHIVE_MAX_RUNTIME_MS` leaves only newer rows behind.
+
+No index on `executions` leads with `created_at`. The loop pages through the heap by `ctid` instead. Postgres appends rows in insertion order, so heap order tracks `created_at`.
+
+- Each batch query reads one window of heap pages with a TID range scan. The window shrinks after a full batch and grows after a short one (8 to 4096 pages).
+- Each run starts at page 0. It stops at the end of the heap or at the runtime limit.
+- The reader must run Postgres 14 or later. The run fails at startup otherwise, because older versions answer a `ctid` range with a full table scan.
+
+The order is approximate:
+
+- Vacuum frees the space of archived rows, and new executions reuse it. Those rows become eligible a year later and are archived ahead of older rows further down the heap.
+- Deleted-flow executions have no age cutoff. Recent ones are archived in heap order, mixed in with old executions.
+- A rewrite of the table during a run (`VACUUM FULL`, `pg_repack`) moves rows. Rows that move behind the cursor wait for the next run.
+
+The `cursor` field of `archival.batch.complete` is the heap position the next batch starts after, as `(page,offset)`.
 
 Rehydration (`rehydrate-execution`) runs on demand (not scheduled). It reads archived objects from S3 and writes execution + step rows back into Postgres, setting an `archiveDisabled` guard on the flow to prevent the archival task from immediately re-archiving them.
 
