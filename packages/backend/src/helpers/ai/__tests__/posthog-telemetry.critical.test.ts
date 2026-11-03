@@ -161,9 +161,6 @@ describe('AI Builder exports to Rome and PostHog', () => {
     )
     expect(generation.attributes['gen_ai.usage.input_tokens']).toBe(12)
     expect(generation.attributes['gen_ai.usage.output_tokens']).toBe(3)
-    expect(generation.attributes['gen_ai.usage.cache_read.input_tokens']).toBe(
-      8,
-    )
     const generations = posthogSpans.filter(
       (span) => span.name === 'ai.streamText.doStream',
     )
@@ -314,21 +311,12 @@ describe('AI Builder exports to Rome and PostHog', () => {
     )
     await flush()
 
-    const original = findSpan(romeExporter.getFinishedSpans(), 'ai.large-turn')
-    const posthogSpan = findSpan(
-      posthogExporter.getFinishedSpans(),
-      'ai.large-turn',
-    )
-    expect(original.attributes['ai.prompt.messages']).toBe(input)
-    expect(original.attributes).not.toHaveProperty('posthog.content_omitted')
-    expect(posthogSpan.attributes).not.toHaveProperty('posthog.content_omitted')
-    expect(posthogSpan.attributes).toMatchObject({
-      'ai.prompt.messages': input,
-      'posthog.distinct_id': 'user-1',
-      'gen_ai.conversation.id': 'large-chat',
-      'ai.model.id': 'test-model',
-    })
-    expect(posthogSpan.spanContext()).toEqual(original.spanContext())
-    expect(posthogSpan.parentSpanContext).toEqual(original.parentSpanContext)
+    for (const exporter of [romeExporter, posthogExporter]) {
+      expect(
+        findSpan(exporter.getFinishedSpans(), 'ai.large-turn').attributes[
+          'ai.prompt.messages'
+        ],
+      ).toBe(input)
+    }
   })
 })

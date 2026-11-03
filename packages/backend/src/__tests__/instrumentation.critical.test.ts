@@ -69,7 +69,6 @@ describe('Rome and PostHog instrumentation', () => {
 
     diag.error('PostHog export failed', new Error('HTTP 413'))
     diag.warn('PostHog export warning')
-    diag.debug('Span payload')
 
     expect(mocks.error).toHaveBeenCalledWith(
       'OpenTelemetry: PostHog export failed',
