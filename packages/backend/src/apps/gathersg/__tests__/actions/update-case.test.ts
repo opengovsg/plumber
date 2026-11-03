@@ -879,4 +879,88 @@ describe('update case', () => {
       } as never),
     ).toBe(false)
   })
+
+  describe('error kinds', () => {
+    it.each([
+      [
+        'an empty checkbox list',
+        {
+          caseFields: [
+            { field: 'categories', fieldType: 'checkbox', value: [] },
+          ],
+        },
+      ],
+      ['an empty case identifier', { caseUuid: '' }],
+      ['an empty field name', { caseFields: [{ field: '', value: 'x' }] }],
+    ])('tags %s as config', async (_label, parameters) => {
+      Object.assign($.step.parameters, parameters)
+
+      await expect(updateCaseAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+      expect(mocks.httpPatch).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      ['case status', { caseStatus: null }],
+      ['case field name', { caseFields: [{ field: null, value: 'x' }] }],
+      [
+        'attachment field name',
+        {
+          attachmentFields: [
+            { field: null, attachments: ['s3:bucket:flow-id-123/a/one.png'] },
+          ],
+        },
+      ],
+    ])('tags a null %s as config', async (_label, parameters) => {
+      Object.assign($.step.parameters, parameters)
+
+      await expect(updateCaseAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+        message: expect.stringContaining(
+          'Invalid input: expected string, received null',
+        ),
+      })
+      expect(mocks.httpPatch).not.toHaveBeenCalled()
+    })
+
+    it('tags a PATCH response without traceId as third-party', async () => {
+      mocks.httpPatch.mockReturnValueOnce({ data: {} } as never)
+
+      await expect(updateCaseAction.run($)).rejects.toMatchObject({
+        kind: 'third-party',
+      })
+    })
+
+    it('tags a 504 from the PATCH as third-party and keeps the cause', async () => {
+      const error = makeHttpError({
+        status: 504,
+        data: '<html>Gateway Timeout</html>',
+      })
+      mocks.httpPatch.mockRejectedValueOnce(error as never)
+
+      await expect(updateCaseAction.run($)).rejects.toMatchObject({
+        kind: 'third-party',
+        cause: error,
+      })
+    })
+
+    it('tags a non-HTTP failure as internal', async () => {
+      vi.spyOn(attachment, 'uploadCaseAttachments').mockRejectedValueOnce(
+        new Error('Invalid S3 ID'),
+      )
+      $.step.parameters.attachmentFields = [
+        {
+          field: 'photos',
+          replaceExisting: true,
+          attachments: ['s3:bucket:flow-id-123/a/one.png'],
+        },
+      ]
+
+      await expect(updateCaseAction.run($)).rejects.toMatchObject({
+        kind: 'internal',
+        message: expect.stringContaining("An error occurred: 'Invalid S3 ID'"),
+      })
+    })
+  })
 })

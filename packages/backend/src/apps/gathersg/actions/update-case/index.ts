@@ -17,6 +17,7 @@ import { resolveCaseIdentifier } from '../../common/case-identifier'
 import {
   fieldTypeEnum,
   GATHER_ATTACHMENT_FIELD_TYPE,
+  UNEXPECTED_RESPONSE_SOLUTION,
 } from '../../common/constants'
 import throwGatherSGStepError from '../../common/throw-errors'
 import { GatherSGCase } from '../../common/types'
@@ -332,20 +333,28 @@ const action: IRawAction = {
           caseUuid,
         },
       })
-      const response = responseSchema.parse(rawResponse.data)
+      const response = responseSchema.safeParse(rawResponse.data)
+      if (!response.success) {
+        throw new StepError({
+          name: `${fromZodError(response.error).details[0].message}`,
+          solution: UNEXPECTED_RESPONSE_SOLUTION,
+          kind: 'third-party',
+        })
+      }
 
       $.setActionItem({
         raw: {
-          ...response,
+          ...response.data,
         },
       })
     } catch (error) {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
-        throw new StepError(
-          `${firstError.message}`,
-          GenericSolution.ReconfigureInvalidField,
-        )
+        throw new StepError({
+          name: `${firstError.message}`,
+          solution: GenericSolution.ReconfigureInvalidField,
+          kind: 'config',
+        })
       }
 
       if (error instanceof StepError) {
@@ -356,10 +365,11 @@ const action: IRawAction = {
         throwGatherSGStepError(error)
       }
 
-      throw new StepError(
-        `An error occurred: '${error.message}'`,
-        'Please check that you have configured your step correctly',
-      )
+      throw new StepError({
+        name: `An error occurred: '${error.message}'`,
+        solution: 'Please check that you have configured your step correctly',
+        kind: 'internal',
+      })
     }
   },
 }

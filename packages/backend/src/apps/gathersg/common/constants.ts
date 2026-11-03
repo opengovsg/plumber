@@ -72,3 +72,6 @@ export const GATHER_FILE_API_UPLOAD_URL =
  * the upload-token request body.
  */
 export const GATHER_ATTACHMENT_FIELD_TYPE = 'attachment'
+
+export const UNEXPECTED_RESPONSE_SOLUTION =
+  'Ownself Gather returned an unexpected response. Please try again later.'
