@@ -12,6 +12,7 @@ import {
   resolveCaseIdentifier,
 } from '../../common/case-identifier'
 import throwGatherSGStepError from '../../common/throw-errors'
+import { GatherSGError } from '../../common/types'
 import { processFields } from '../../common/utils'
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -52,7 +53,12 @@ const action: IRawAction = {
         rawData = data
       } catch (error) {
         logger.error(`Failed to get case details for case ${caseUuid}:`, error)
-        if (error instanceof HttpError && error.response?.status === 404) {
+        if (
+          error instanceof HttpError &&
+          error.response?.status === 404 &&
+          (error.response.data?.error as GatherSGError | undefined)?.code ===
+            'RESOURCE_NOT_FOUND'
+        ) {
           throw new StepError({
             name: `Invalid case uuid: ${caseUuid}`,
             solution:

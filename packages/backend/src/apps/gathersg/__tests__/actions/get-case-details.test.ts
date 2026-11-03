@@ -387,6 +387,22 @@ describe('get case details', () => {
       })
     })
 
+    it.each([
+      ['an HTML body', '<html>Not Found</html>'],
+      [
+        'another Gather code',
+        { error: { code: 'SOMETHING_ELSE', message: 'Not found' } },
+      ],
+    ])('tags a 404 with %s as internal', async (_label, data) => {
+      const error = makeHttpError({ status: 404, data })
+      httpGet.mockRejectedValueOnce(error)
+
+      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+        kind: 'internal',
+        cause: error,
+      })
+    })
+
     it('tags a 403 UNAUTHORIZED for the case as config', async () => {
       httpGet.mockRejectedValueOnce(
         makeHttpError({
