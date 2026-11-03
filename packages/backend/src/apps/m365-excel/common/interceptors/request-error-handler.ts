@@ -9,11 +9,11 @@ import { getLastHitGraphApiType, GraphApiType } from '../graph-api-type'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 
 type ThrowingHandler = (
-  ...args: Parameters<IApp['requestErrorHandler']>
+  ...args: Parameters<NonNullable<IApp['requestErrorHandler']>>
 ) => never
 
 type MaybeThrowingHandler = (
-  ...args: Parameters<IApp['requestErrorHandler']>
+  ...args: Parameters<NonNullable<IApp['requestErrorHandler']>>
 ) => never | void
 
 const handleIntermittentError: MaybeThrowingHandler = ($, error) => {
@@ -44,8 +44,8 @@ const handle404: ThrowingHandler = ($, error) => {
   logger.error('Received HTTP 404 from MS Graph', {
     event: 'm365-http-404-invalid-version',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -74,7 +74,8 @@ const handle429: ThrowingHandler = ($, error) => {
   //
   // Since they apply per-file, we delay only the group when retrying.
   if (
-    getLastHitGraphApiType(error.response.config.url) === GraphApiType.Excel
+    getLastHitGraphApiType(error.response.config?.url ?? '') ===
+    GraphApiType.Excel
   ) {
     throw new RetriableError({
       error: 'Retrying HTTP 429 from Excel endpoint',
@@ -88,8 +89,8 @@ const handle429: ThrowingHandler = ($, error) => {
   logger.error('Received HTTP 429 from MS Graph', {
     event: 'm365-http-429',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -113,8 +114,8 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
   logger.warn(`Received HTTP ${status} from MS Graph`, {
     event: `m365-http-${status}`,
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -154,8 +155,8 @@ const handle504: ThrowingHandler = function ($, error) {
   logger.warn('Received HTTP 504 from MS Graph', {
     event: 'm365-http-504',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -186,8 +187,8 @@ const handle509: ThrowingHandler = function ($, error) {
   logger.error('Received HTTP 509 from MS Graph', {
     event: 'm365-http-509',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,

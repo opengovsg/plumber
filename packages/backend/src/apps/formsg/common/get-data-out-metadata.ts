@@ -55,8 +55,8 @@ function buildQuestionMetadatum(
 ): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
     type: 'text',
-    label: displayOrder ? `Question ${displayOrder}` : null,
-    order: fieldData.order ? (fieldData.order as number) : null,
+    label: displayOrder ? `Question ${displayOrder}` : undefined,
+    order: fieldData.order ? (fieldData.order as number) : undefined,
     isCollapsedByDefault: true,
   }
 
@@ -77,7 +77,9 @@ function buildAnswerMetadatum(
   answerOffset: number = FIELD_OFFSET.answer,
 ): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
-    order: fieldData.order ? (fieldData.order as number) + answerOffset : null,
+    order: fieldData.order
+      ? (fieldData.order as number) + answerOffset
+      : undefined,
   }
 
   switch (fieldData.fieldType) {
@@ -103,7 +105,7 @@ function buildAnswerMetadatum(
       answer['type'] = 'text'
       answer['label'] = displayOrder
         ? `${displayOrder}. ${fieldData.question}`
-        : null
+        : undefined
   }
 
   return answer
@@ -153,7 +155,7 @@ function buildAnswerArrayForCheckbox(
   return {
     type: 'array',
     label: `${order}. ${question}`,
-    order: order ? (order as number) + FIELD_OFFSET.answer : null,
+    order: order ? (order as number) + FIELD_OFFSET.answer : undefined,
   }
 }
 
@@ -219,7 +221,7 @@ function buildAnswerArrayForTable(
       nestedAnswerArray.push({
         type: 'text',
         label,
-        order: order ? (order as number) + FIELD_OFFSET.answer : null,
+        order: order ? (order as number) + FIELD_OFFSET.answer : undefined,
         // NOTE: we hide the option if it is empty
         // mock data will have dummy strings in the answerArray
         // actual submissions should contain real data, otherwise the cells should be hidden
@@ -252,7 +254,7 @@ function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
       : `Response ${fieldData.order}`,
     order: fieldData.order
       ? (fieldData.order as number) + FIELD_OFFSET.answer
-      : null,
+      : undefined,
     type: 'table',
     displayedValue: `${rowsFound} row${rowsFound != 1 ? 's' : ''}`,
     value: tableObject,
