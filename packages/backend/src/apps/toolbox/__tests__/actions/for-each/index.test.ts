@@ -7,6 +7,7 @@ import {
   processItems,
 } from '@/apps/toolbox/common/get-for-each-variables'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 
 import action from '../../../actions/for-each'
 import {
@@ -639,17 +640,29 @@ describe('For each action', () => {
       await expect(action.run($)).rejects.toMatchObject({ kind: 'config' })
     })
 
-    it('should throw a config StepError when processing valid input fails', async () => {
+    it('should throw an internal StepError and log when processing valid input fails', async () => {
       $.step.parameters.items = VALID_TABLE_DATA
+      const processError = new TypeError('columns is not iterable')
       mockedProcessItems.mockImplementationOnce(() => {
-        throw new TypeError('columns is not iterable')
+        throw processError
       })
-      vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      const loggerErrorSpy = vi
+        .spyOn(logger, 'error')
+        .mockImplementation(() => logger)
 
       await expect(action.run($)).rejects.toMatchObject({
-        kind: 'config',
+        kind: 'internal',
         message: expect.stringContaining('Invalid input list'),
       })
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          event: 'for-each-process-input-failed',
+          err: processError,
+          flowId: 'fake-pipe',
+          stepId: 'for-each',
+        }),
+      )
     })
   })
 })
