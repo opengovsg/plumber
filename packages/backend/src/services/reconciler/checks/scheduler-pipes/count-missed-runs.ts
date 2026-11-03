@@ -104,6 +104,7 @@ export async function countMissedRuns({
   const pipes = [...groupRunTimesByPipeAndReason(missedRuns)]
   let newlyCountedCount = 0
 
+  // Each batch is awaited, so Redis serves BullMQ's connections between batches, not after the whole loop.
   for (let start = 0; start < pipes.length; start += PIPES_IN_FLIGHT) {
     const counts = await Promise.all(
       pipes
