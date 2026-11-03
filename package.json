@@ -24,7 +24,11 @@
     "test": "turbo run test test:unit test:integration",
     "test:ui": "vitest --ui",
     "migrate": "pnpm --filter backend run db:migrate",
-    "teardown": "pnpm --filter backend run teardown"
+    "teardown": "pnpm --filter backend run teardown",
+    "test:e2e": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e",
+    "test:e2e:ui": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e:ui",
+    "login:e2e": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run login",
+    "login:e2e:local": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run login:local"
   },
   "devDependencies": {
     "@1password/sdk": "0.5.0",
