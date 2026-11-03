@@ -16,8 +16,7 @@
         "options": {
           "awslogs-group": "plumber-<ENVIRONMENT>/ecs/archival",
           "awslogs-region": "ap-southeast-1",
-          "awslogs-stream-prefix": "archival",
-          "mode": "blocking"
+          "awslogs-stream-prefix": "archival"
         }
       },
       "environment": [

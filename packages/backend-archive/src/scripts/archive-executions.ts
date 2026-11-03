@@ -5,15 +5,6 @@ import { runArchivalLoop } from '@/helpers/archival/run-archival-loop'
 
 const controller = new AbortController()
 
-// process.exit drops stdout writes still queued for the pipe. The empty write's callback
-// fires only once everything before it has flushed.
-async function flushAndExit(code: number): Promise<never> {
-  await new Promise<void>((resolve) =>
-    process.stdout.write('', () => resolve()),
-  )
-  process.exit(code)
-}
-
 process.on('SIGTERM', () => {
   logger.info({ event: 'archival.run.sigterm' })
   controller.abort()
@@ -22,7 +13,7 @@ process.on('SIGTERM', () => {
 async function main(): Promise<void> {
   if (!archivalConfig.archiveEnabled) {
     logger.info({ event: 'archival.run.disabled' })
-    await flushAndExit(0)
+    process.exit(0)
   }
 
   logger.info({
@@ -40,14 +31,14 @@ async function main(): Promise<void> {
   } catch (err) {
     logger.error({ event: 'archival.run.error', err })
     await archivalDb.destroy()
-    await flushAndExit(1)
+    process.exit(1)
   }
 
   await archivalDb.destroy()
-  await flushAndExit(0)
+  process.exit(0)
 }
 
-main().catch(async (err) => {
+main().catch((err) => {
   logger.error({ event: 'archival.run.error', err })
-  await flushAndExit(1)
+  process.exit(1)
 })
