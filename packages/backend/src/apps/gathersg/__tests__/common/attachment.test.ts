@@ -44,7 +44,7 @@ describe('processAttachments', () => {
     } as unknown as IGlobalVariable
   })
 
-  it('tags an attachment over the size limit as internal', async () => {
+  it('tags an attachment over the size limit as config', async () => {
     await expect(
       processAttachments($, MOCK_CASE_UUID, {
         'attach-uuid-1': {
@@ -53,7 +53,7 @@ describe('processAttachments', () => {
         },
       }),
     ).rejects.toMatchObject({
-      kind: 'internal',
+      kind: 'config',
       message: expect.stringContaining('exceeds maximum size'),
     })
     expect(httpGet).not.toHaveBeenCalled()

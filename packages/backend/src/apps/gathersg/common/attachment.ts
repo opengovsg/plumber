@@ -71,7 +71,7 @@ async function downloadAndStoreAttachmentInS3(
       throw new StepError({
         name: `Attachment ${filename} exceeds maximum size of ${sizeText}MB`,
         solution: `Please check that your case attachments do not exceed ${sizeText}MB.`,
-        kind: 'internal',
+        kind: 'config',
       })
     }
 
