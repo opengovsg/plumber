@@ -642,9 +642,8 @@ describe('For each action', () => {
 
     it('should throw an internal StepError and log when processing valid input fails', async () => {
       $.step.parameters.items = VALID_TABLE_DATA
-      const processError = new TypeError('columns is not iterable')
       mockedProcessItems.mockImplementationOnce(() => {
-        throw processError
+        throw new TypeError('columns is not iterable')
       })
       const loggerErrorSpy = vi
         .spyOn(logger, 'error')
@@ -658,7 +657,8 @@ describe('For each action', () => {
         expect.any(String),
         expect.objectContaining({
           event: 'for-each-process-input-failed',
-          err: processError,
+          errorName: 'TypeError',
+          errorMessage: 'columns is not iterable',
           flowId: 'fake-pipe',
           stepId: 'for-each',
         }),
