@@ -7,7 +7,6 @@ import {
   createPostHogSpanProcessor,
   PAIR_ACTION_RESOURCE_NAMES,
 } from '@/helpers/ai/posthog-telemetry'
-
 import logger from '@/helpers/logger'
 
 // Rejected exports otherwise disappear without a backend log.

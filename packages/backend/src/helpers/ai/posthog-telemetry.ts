@@ -44,7 +44,8 @@ export class AiBuilderPostHogSpanProcessor extends BatchSpanProcessor {
 
   onStart(span: Span, parentContext: Context): void {
     const telemetry = parentContext.getValue(AI_BUILDER_TELEMETRY) as
-      AiBuilderTelemetry | undefined
+      | AiBuilderTelemetry
+      | undefined
     if (telemetry) {
       this.requests.set(span, telemetry)
     }
