@@ -613,6 +613,14 @@ describe('For each action', () => {
       { description: 'invalid JSON', items: '{ invalid json' },
       { description: 'missing', items: undefined },
       { description: 'null', items: null },
+      {
+        description: 'JSON missing required fields',
+        items: JSON.stringify({ invalidField: 'value' }),
+      },
+      {
+        description: 'table failing the table schema',
+        items: { ...VALID_TABLE_DATA, columns: 'not-a-column-list' },
+      },
     ])(
       'should throw a config StepError for $description input',
       async ({ items }) => {
@@ -631,27 +639,7 @@ describe('For each action', () => {
       await expect(action.run($)).rejects.toMatchObject({ kind: 'config' })
     })
 
-    it('should throw an internal StepError for JSON missing required fields', async () => {
-      $.step.parameters.items = JSON.stringify({
-        invalidField: 'value',
-      })
-
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
-      await expect(action.run($)).rejects.toMatchObject({ kind: 'internal' })
-    })
-
-    it('should throw an internal StepError for a table that fails the table schema', async () => {
-      $.step.parameters.items = {
-        ...VALID_TABLE_DATA,
-        columns: 'not-a-column-list',
-      }
-
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
-      await expect(action.run($)).rejects.toMatchObject({ kind: 'internal' })
-    })
-
-    it('should throw an internal StepError when processing valid input fails', async () => {
+    it('should throw a config StepError when processing valid input fails', async () => {
       $.step.parameters.items = VALID_TABLE_DATA
       mockedProcessItems.mockImplementationOnce(() => {
         throw new TypeError('columns is not iterable')
@@ -659,7 +647,7 @@ describe('For each action', () => {
       vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
       await expect(action.run($)).rejects.toMatchObject({
-        kind: 'internal',
+        kind: 'config',
         message: expect.stringContaining('Invalid input list'),
       })
     })
