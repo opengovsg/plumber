@@ -40,7 +40,12 @@ describe('createReconcilerRedisClient', () => {
 
     expect(mocks.logError).toHaveBeenCalledWith(
       'Reconciler Redis connection error',
-      expect.objectContaining({ event: 'reconciler-redis-error' }),
+      expect.objectContaining({
+        event: 'reconciler-redis-error',
+        errorName: 'Error',
+        errorMessage: 'ECONNREFUSED',
+      }),
     )
+    expect(mocks.logError.mock.calls[0][1]).not.toHaveProperty('error')
   })
 })

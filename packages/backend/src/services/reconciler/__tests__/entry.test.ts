@@ -189,7 +189,11 @@ describe('reconciler entry', () => {
 
       expect(mocks.logError).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ event: 'reconciler-fatal-error' }),
+        expect.objectContaining({
+          event: 'reconciler-fatal-error',
+          errorName: 'Error',
+          errorMessage: 'boom',
+        }),
       )
       expect(mocks.logEnd).toHaveBeenCalled()
       expect(processExit).toHaveBeenCalledTimes(1)

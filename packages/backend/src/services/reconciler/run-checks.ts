@@ -24,7 +24,12 @@ export async function runChecksOnce({
       logger.error('Reconciler check failed', {
         event: 'reconciler-check-failed',
         checkName: checks[index].name,
-        error: result.reason,
+        errorName:
+          result.reason instanceof Error ? result.reason.name : undefined,
+        errorMessage:
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason),
       })
     }
   })

@@ -58,9 +58,11 @@ describe('runChecksOnce', () => {
       expect.objectContaining({
         event: 'reconciler-check-failed',
         checkName: 'failing',
-        error,
+        errorName: 'Error',
+        errorMessage: 'boom',
       }),
     )
+    expect(mocks.logError.mock.calls[0][1]).not.toHaveProperty('error')
   })
 
   it('runs the other checks when a check throws synchronously', async () => {

@@ -13,7 +13,8 @@ export function createReconcilerRedisClient(): ReturnType<
   client.on('error', (error) => {
     logger.error('Reconciler Redis connection error', {
       event: 'reconciler-redis-error',
-      error,
+      errorName: error instanceof Error ? error.name : undefined,
+      errorMessage: error instanceof Error ? error.message : String(error),
     })
   })
 

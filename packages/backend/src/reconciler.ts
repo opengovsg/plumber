@@ -38,7 +38,8 @@ async function closeConnectionsWithinWait(): Promise<void> {
     exitCode = 1
     logger.error('Reconciler failed to close connections', {
       event: 'reconciler-close-failed',
-      error,
+      errorName: error instanceof Error ? error.name : undefined,
+      errorMessage: error instanceof Error ? error.message : String(error),
     })
   } finally {
     clearTimeout(waitTimer)
@@ -90,7 +91,8 @@ function exitOnFatalError(source: string) {
   return (error: unknown) =>
     failRun(`Reconciler ${source}`, {
       event: 'reconciler-fatal-error',
-      error,
+      errorName: error instanceof Error ? error.name : undefined,
+      errorMessage: error instanceof Error ? error.message : String(error),
     })
 }
 
