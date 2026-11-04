@@ -4,6 +4,8 @@ import type { IJSONObject, ITriggerItem } from '@plumber/types'
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { z } from 'zod'
 
+import { getErrorDetailsKind } from '@/errors/step'
+import { countExecutionEnd } from '@/helpers/execution-end'
 import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -121,6 +123,11 @@ export const processTrigger = async (
       }),
     { context: { flowId, stepId } },
   )
+
+  // Counted after the retries, so a commit whose reply was lost counts once.
+  if (error) {
+    countExecutionEnd({ testRun: Boolean(testRun) }, getErrorDetailsKind(error))
+  }
 
   const customWebhookResponse = getCustomWebhookResponse(step)
 

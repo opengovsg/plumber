@@ -4,6 +4,7 @@ import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import appConfig from '@/config/app'
 import StepError, { getStepErrorKind } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
+import { countExecutionEnd } from '@/helpers/execution-end'
 import {
   isErrorEmailAlreadySent,
   sendErrorEmail,
@@ -19,6 +20,19 @@ async function findAppKey(stepId: string): Promise<string | undefined> {
   } catch {
     // A missing appKey must not stop the execution from being marked failed.
     return undefined
+  }
+}
+
+/**
+ * A step deleted while its job was queued leaves nothing to run, so Plumber did not fail.
+ */
+async function isStepDeleted(stepId: string): Promise<boolean> {
+  try {
+    const step = await Step.query().withSoftDeleted().findById(stepId)
+    return step?.deletedAt != null
+  } catch {
+    // Only a confirmed deletion skips the count.
+    return false
   }
 }
 
@@ -49,6 +63,7 @@ export async function handleFailedJob(
   const willRetryJob =
     !(err instanceof UnrecoverableError) && // Not an unrecoverable error
     failedJob.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
+  const kind = getStepErrorKind(err instanceof StepError ? err : err.cause)
 
   // Monitors read this log rather than spans, because logs are not sampled.
   logger.error(
@@ -62,7 +77,7 @@ export async function handleFailedJob(
       attemptsStarted: failedJob.attemptsStarted,
       workerVersion: appConfig.version,
       willRetry: willRetryJob,
-      kind: getStepErrorKind(err instanceof StepError ? err : err.cause),
+      kind,
       appKey: willRetryJob ? undefined : await findAppKey(stepId),
     },
   )
@@ -73,7 +88,10 @@ export async function handleFailedJob(
   }
 
   try {
-    await Execution.setStatus(executionId, 'failure')
+    const ended = await Execution.setStatus(executionId, 'failure')
+    if (ended && !(await isStepDeleted(stepId))) {
+      countExecutionEnd(ended, kind)
+    }
 
     const flow = await Flow.query()
       .findById(flowId)

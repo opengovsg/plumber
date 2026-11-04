@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   processForEachStatus: vi.fn(),
   enqueueActionJob: vi.fn(),
   delayAsMilliseconds: vi.fn(),
+  countExecutionEnd: vi.fn(),
 }))
 
 vi.mock('@/helpers/actions', () => ({
@@ -39,6 +40,10 @@ vi.mock('@/queues/action', () => ({
 
 vi.mock('@/helpers/delay-as-milliseconds', () => ({
   default: mocks.delayAsMilliseconds,
+}))
+
+vi.mock('@/helpers/execution-end', () => ({
+  countExecutionEnd: mocks.countExecutionEnd,
 }))
 
 const EXECUTION_ID = 'execution-1'
@@ -155,7 +160,9 @@ describe('advanceAfterStep', () => {
 
   describe('successful step with no next step', () => {
     it('marks the execution successful when the for-each manager says to continue', async () => {
+      const ended = { id: EXECUTION_ID, testRun: false }
       mocks.processForEachStatus.mockResolvedValueOnce(true)
+      mocks.setStatus.mockResolvedValueOnce(ended)
 
       await advanceAfterStep({
         processResult: {
@@ -171,6 +178,7 @@ describe('advanceAfterStep', () => {
       })
 
       expect(mocks.setStatus).toHaveBeenCalledWith(EXECUTION_ID, 'success')
+      expect(mocks.countExecutionEnd).toHaveBeenCalledWith(ended, 'success')
       expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
     })
 

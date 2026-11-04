@@ -9,6 +9,7 @@ import { type Span } from 'dd-trace'
 import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
+import { countExecutionEnd } from '@/helpers/execution-end'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
@@ -104,7 +105,8 @@ export async function advanceAfterStep({
       return
     }
 
-    await Execution.setStatus(executionId, 'success')
+    const ended = await Execution.setStatus(executionId, 'success')
+    countExecutionEnd(ended, 'success')
     return
   }
 

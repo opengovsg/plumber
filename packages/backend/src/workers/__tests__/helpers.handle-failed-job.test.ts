@@ -27,7 +27,12 @@ vi.mock('@/models/execution', () => ({
 }))
 
 vi.mock('@/models/step', () => ({
-  default: { query: () => ({ findById: mocks.findStepById }) },
+  default: {
+    query: () => ({
+      findById: mocks.findStepById,
+      withSoftDeleted: () => ({ findById: mocks.findStepById }),
+    }),
+  },
 }))
 
 vi.mock('@/models/flow', () => ({

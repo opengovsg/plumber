@@ -44,8 +44,29 @@ class Execution extends Base {
     },
   })
 
-  static async setStatus(executionId: string, status: ExecutionStatus) {
-    return Execution.query().findById(executionId).patch({ status })
+  /**
+   * Returns the ended execution, or undefined if it had already ended.
+   *
+   * IMPORTANT: only a change from pending returns the execution, so each end is counted once.
+   */
+  static async setStatus(
+    executionId: string,
+    status: 'success' | 'failure',
+  ): Promise<Pick<Execution, 'id' | 'testRun'> | undefined> {
+    const [execution] = await Execution.query()
+      .patch({ status })
+      .where('id', executionId)
+      .whereNull('status')
+      .returning(['id', 'test_run'])
+
+    // A for-each retry can succeed after another iteration failed the execution, and users must see that success.
+    if (!execution && status === 'success') {
+      await Execution.query()
+        .patch({ status })
+        .where('id', executionId)
+        .where('status', 'failure')
+    }
+    return execution
   }
 }
 

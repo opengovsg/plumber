@@ -12,6 +12,7 @@ import PartialStepError from '../partial-error'
 import RetriableError from '../retriable-error'
 import StepError, {
   attachHiddenCauseIfStepError,
+  getErrorDetailsKind,
   getStepErrorKind,
 } from '../step'
 import { UserFacingError } from '../user-facing-error'
@@ -137,6 +138,30 @@ describe('getStepErrorKind', () => {
     { label: 'undefined', error: undefined },
   ])('returns internal for a $label', ({ error }) => {
     expect(getStepErrorKind(error)).toBe('internal')
+  })
+})
+
+describe('getErrorDetailsKind', () => {
+  it.each(['config', 'third-party', 'internal'] as const)(
+    'returns the saved kind %s',
+    (kind) => {
+      const error = new StepError({ name: 'n', solution: 's', kind })
+
+      expect(getErrorDetailsKind(JSON.parse(error.message))).toBe(kind)
+    },
+  )
+
+  it.each([
+    { label: 'details without kind', details: { name: 'n', solution: 's' } },
+    { label: 'an unknown kind', details: { kind: 'user' } },
+    {
+      label: 'a kind only in the message',
+      details: { error: '"kind":"config"' },
+    },
+    { label: 'null', details: null },
+    { label: 'undefined', details: undefined },
+  ])('returns internal for $label', ({ details }) => {
+    expect(getErrorDetailsKind(details)).toBe('internal')
   })
 })
 
