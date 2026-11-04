@@ -2,6 +2,8 @@ import { URL } from 'url'
 
 import { IGlobalVariable } from '@plumber/types'
 
+import { throwSlackApiError } from '../../common/throw-slack-api-error'
+
 type TData = {
   channel: string
   text: string
@@ -44,7 +46,7 @@ const postMessage = async ($: IGlobalVariable) => {
   })
 
   if (response.data.ok === false) {
-    throw new Error(JSON.stringify(response.data))
+    throwSlackApiError(response.data)
   }
 
   const message = {
