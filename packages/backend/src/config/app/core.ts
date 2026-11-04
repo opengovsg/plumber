@@ -83,12 +83,17 @@ export type CoreConfig = {
   gathersg: {
     publicKey: string
   }
+  bedrock: {
+    region: string
+    model: string
+    imageModel: string
+    fallbackModel: string
+    /**
+     * Local dev only. Deployed environments authenticate with the ECS task role.
+     */
+    devApiKey?: string
+  }
   pair: {
-    foundry: {
-      apiKey: string
-      model: string
-      imageModel: string
-    }
     rome: {
       baseUrl: string
       cloudflare: {
@@ -213,18 +218,20 @@ const coreConfig: CoreConfig = {
       process.env.GATHERSG_PUBLIC_KEY,
     ),
   },
+  bedrock: {
+    region: requireEnv('BEDROCK_REGION', process.env.BEDROCK_REGION),
+    model: requireEnv('BEDROCK_MODEL', process.env.BEDROCK_MODEL),
+    imageModel: requireEnv(
+      'BEDROCK_IMAGE_MODEL',
+      process.env.BEDROCK_IMAGE_MODEL,
+    ),
+    fallbackModel: requireEnv(
+      'BEDROCK_FALLBACK_MODEL',
+      process.env.BEDROCK_FALLBACK_MODEL,
+    ),
+    devApiKey: process.env.BEDROCK_API_KEY,
+  },
   pair: {
-    foundry: {
-      apiKey: requireEnv(
-        'PAIR_FOUNDRY_API_KEY',
-        process.env.PAIR_FOUNDRY_API_KEY,
-      ),
-      model: requireEnv('PAIR_FOUNDRY_MODEL', process.env.PAIR_FOUNDRY_MODEL),
-      imageModel: requireEnv(
-        'PAIR_FOUNDRY_IMAGE_MODEL',
-        process.env.PAIR_FOUNDRY_IMAGE_MODEL,
-      ),
-    },
     rome: {
       baseUrl: requireEnv('PAIR_ROME_BASE_URL', process.env.PAIR_ROME_BASE_URL),
       cloudflare: {

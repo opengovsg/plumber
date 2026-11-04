@@ -3,7 +3,7 @@ import { generateObject as AiSdkGenerateObject } from 'ai'
 import z from 'zod'
 
 import logger from '@/helpers/logger'
-import { model } from '@/helpers/pair'
+import { model, structuredOutputProviderOptions } from '@/helpers/pair'
 
 async function generateObject(
   prompt: string,
@@ -14,6 +14,7 @@ async function generateObject(
     const { object } = await AiSdkGenerateObject({
       model,
       schema,
+      providerOptions: structuredOutputProviderOptions,
       system:
         "Based on the user's prompt, generate an object that adheres to the provided schema.",
       prompt,

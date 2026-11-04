@@ -48,7 +48,7 @@ import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
-import { chatModel, MODEL_TYPE } from '@/helpers/pair'
+import { model } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -59,6 +59,7 @@ import {
   buildEstablishedConnectionReminder,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
+  stripReasoningParts,
 } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
 import { parseColumnTableBlock } from './parse-column-table-block'
@@ -146,7 +147,9 @@ const handleChatStream = observe(
 
       // Convert UIMessages to ModelMessages
       const messages = convertToModelMessages(
-        rawMessages as Parameters<typeof convertToModelMessages>[0],
+        stripReasoningParts(rawMessages) as Parameters<
+          typeof convertToModelMessages
+        >[0],
         { ignoreIncompleteToolCalls: true },
       )
 
@@ -180,7 +183,7 @@ const handleChatStream = observe(
         chatId,
         ddRumSessionId: rumSessionId,
         userId: context.currentUser.email,
-        model: MODEL_TYPE,
+        model: model.modelId,
         disabledMcpServers,
       })
 
@@ -200,6 +203,11 @@ const handleChatStream = observe(
             SUPPORT_FORM_URL_PLACEHOLDER,
             buildSupportFormUrl(chatId),
           ) + buildEstablishedConnectionReminder(establishedFormConnection),
+        // The system prompt is large and stable across turns; Bedrock's native
+        // cache breakpoint replaces PAIR Foundry's OpenAI-body-rewrite workaround.
+        providerOptions: {
+          anthropic: { cacheControl: { type: 'ephemeral' as const } },
+        },
       }
       const allMessages = [systemMessage, ...messages]
 
@@ -254,7 +262,7 @@ const handleChatStream = observe(
           )
 
           const result = streamText({
-            model: chatModel,
+            model,
             messages: allMessages,
             tools: { ...gitbookTools, ...mcpTools },
             stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
@@ -444,7 +452,7 @@ const handleChatStream = observe(
               // mid-task. The UI uses it to offer Continue.
               messageMetadata: ({ part }) => ({
                 traceId,
-                model: MODEL_TYPE,
+                model: model.modelId,
                 ...(part.type === 'finish' && {
                   finishReason: part.finishReason,
                 }),

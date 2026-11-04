@@ -84,12 +84,7 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
-  chatModel: 'mock-model',
-  model: 'mock-model',
-  MODEL_TYPE: 'mock-model-type',
-  engineProvider: {
-    chat: vi.fn().mockReturnValue('mock-model'),
-  },
+  model: { modelId: 'mock-model' },
 }))
 
 vi.mock('@/helpers/stream', () => ({
@@ -498,7 +493,7 @@ describe('chat handler continuation', () => {
       messageMetadata({ part: { type: 'finish', finishReason: 'tool-calls' } }),
     ).toEqual({
       traceId: 'trace-123',
-      model: 'mock-model-type',
+      model: 'mock-model',
       finishReason: 'tool-calls',
     })
     expect(
