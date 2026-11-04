@@ -2,7 +2,7 @@ import { type PartialModelObject, raw } from 'objection'
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
+import { BadUserInputError, TileMigratingError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
@@ -11,6 +11,7 @@ import {
   MAX_TILE_NAME_LENGTH,
 } from '@/models/tiles/constants'
 import { getTableOperations } from '@/models/tiles/factory'
+import { isTileMigrating } from '@/models/tiles/migration/lease'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -55,6 +56,14 @@ const updateTable: MutationResolvers['updateTable'] = async (
   const table = await TableMetadata.query().findById(tableId)
 
   const tableOperations = getTableOperations(table.db)
+
+  // Renames and reorders only touch metadata, so they stay allowed during a migration.
+  if (
+    (addedColumns?.length || deletedColumns?.length) &&
+    isTileMigrating(table)
+  ) {
+    throw new TileMigratingError()
+  }
 
   if (tableName) {
     await table.$query().patch({

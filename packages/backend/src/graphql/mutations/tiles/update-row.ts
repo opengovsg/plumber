@@ -1,6 +1,8 @@
+import { TileMigratingError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
+import { isTileMigrating } from '@/models/tiles/migration/lease'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -17,6 +19,10 @@ const updateRow: MutationResolvers['updateRow'] = async (
     .findById(tableId)
     .throwIfNotFound()
     .withGraphFetched('columns')
+
+  if (isTileMigrating(table)) {
+    throw new TileMigratingError()
+  }
 
   if (!(await table.validateRows([data]))) {
     throw new Error('Invalid column id')
