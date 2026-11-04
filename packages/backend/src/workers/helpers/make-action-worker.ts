@@ -1,5 +1,6 @@
 import type { IActionJobData, IAppQueue } from '@plumber/types'
 import {
+  type JobPro,
   UnrecoverableError,
   WorkerPro,
   type WorkerProOptions,
@@ -77,6 +78,9 @@ interface MakeActionWorkerParams {
   queueConfig: IAppQueue
 }
 
+const RATE_LIMIT_ERROR_MESSAGE = WorkerPro.RateLimitError().message
+const REQUEUED = Symbol('requeued')
+
 /**
  * Creates a worker for an action queue.
  *
@@ -88,64 +92,79 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
+
+  async function processJob(job: JobPro<IActionJobData>): Promise<void> {
+    const span = tracer.scope().active()
+
+    const jobData = job.data
+    const jobId = makeActionJobId(queueName, job.id)
+
+    // The reason why we dont add .throwIfNotFound() here is to prevent job
+    // retries delegating the error throwing and handling to processAction
+    // where it also queries for Step.
+    const currStep = await Step.query().findById(jobData.stepId)
+
+    span?.addTags({
+      queueName,
+      flowId: jobData.flowId,
+      executionId: jobData.executionId,
+      stepId: jobData.stepId,
+      actionKey: currStep?.key,
+      appKey: currStep?.appKey,
+      jobId,
+      ...getJobQueueTimingTags(job),
+      workerVersion: appConfig.version,
+    })
+
+    const processResult = await processAction({ ...jobData, jobId }).catch(
+      async (err) => {
+        // Lost the per-file lock race (see file-lock.ts). Re-queue onto the
+        // group with a short delay WITHOUT consuming an attempt - no failed
+        // step was recorded, so this contention stays invisible.
+        if (err instanceof FileLockContentionError) {
+          return requeueOnFileLockContention(worker, job)
+        }
+        // This happens when the prerequisite steps for the action fails
+        // (e.g. db error, missing execution, flow, step, etc...) in such
+        // cases, we do not want to retry
+        throw new UnrecoverableError(err.message || 'Action failed to execute')
+      },
+    )
+
+    await advanceAfterStep({
+      processResult,
+      currStep,
+      context: {
+        isQueueDelayable,
+        span,
+        worker,
+        job,
+      },
+    })
+  }
+
+  const tracedProcessJob = tracer.wrap(
+    // Fix trace service name to workers.action regardless of queue name, so
+    // that we can more easily monitor all actions.
+    'workers.action',
+    (job: JobPro<IActionJobData>) =>
+      processJob(job).catch((err) => {
+        // A re-queue is not a failure. Rejecting here would make dd-trace mark
+        // the span as errored.
+        if (err?.message === RATE_LIMIT_ERROR_MESSAGE) {
+          return REQUEUED
+        }
+        throw err
+      }),
+  )
+
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
-    tracer.wrap(
-      // Fix trace service name to workers.action regardless of queue name, so
-      // that we can more easily monitor all actions.
-      'workers.action',
-      async (job) => {
-        const span = tracer.scope().active()
-
-        const jobData = job.data
-        const jobId = makeActionJobId(queueName, job.id)
-
-        // The reason why we dont add .throwIfNotFound() here is to prevent job
-        // retries delegating the error throwing and handling to processAction
-        // where it also queries for Step.
-        const currStep = await Step.query().findById(jobData.stepId)
-
-        span?.addTags({
-          queueName,
-          flowId: jobData.flowId,
-          executionId: jobData.executionId,
-          stepId: jobData.stepId,
-          actionKey: currStep?.key,
-          appKey: currStep?.appKey,
-          jobId,
-          ...getJobQueueTimingTags(job),
-          workerVersion: appConfig.version,
-        })
-
-        const processResult = await processAction({ ...jobData, jobId }).catch(
-          async (err) => {
-            // Lost the per-file lock race (see file-lock.ts). Re-queue onto the
-            // group with a short delay WITHOUT consuming an attempt - no failed
-            // step was recorded, so this contention stays invisible.
-            if (err instanceof FileLockContentionError) {
-              return requeueOnFileLockContention(worker, job)
-            }
-            // This happens when the prerequisite steps for the action fails
-            // (e.g. db error, missing execution, flow, step, etc...) in such
-            // cases, we do not want to retry
-            throw new UnrecoverableError(
-              err.message || 'Action failed to execute',
-            )
-          },
-        )
-
-        await advanceAfterStep({
-          processResult,
-          currStep,
-          context: {
-            isQueueDelayable,
-            span,
-            worker,
-            job,
-          },
-        })
-      },
-    ),
+    async (job) => {
+      if ((await tracedProcessJob(job)) === REQUEUED) {
+        throw WorkerPro.RateLimitError()
+      }
+    },
     workerOptions,
   )
 
