@@ -40,8 +40,6 @@ import TableHeader from './TableHeader'
 import SearchBar from './TableHeader/SearchBar'
 import TableRow from './TableRow'
 
-import styles from './Table.module.css'
-
 export default function Table(): JSX.Element {
   const { tableColumns, flattenedData, allDataRef, filteredDataRef, mode } =
     useTableContext()
@@ -211,11 +209,18 @@ export default function Table(): JSX.Element {
       rowSelection={rowSelection}
       clearRowSelection={() => setRowSelection({})}
     >
-      <Box position="relative">
+      <Box
+        position="relative"
+        flex={1}
+        minH={0}
+        display="flex"
+        flexDir="column"
+      >
         <Flex
           overflow="auto"
           w="100%"
           ref={parentRef}
+          flex={1}
           minH="300px"
           flexDir="column"
           position="relative"
@@ -225,7 +230,6 @@ export default function Table(): JSX.Element {
           // so highlighted element doesnt get blocked by checkbox column
           scrollPaddingLeft={60}
           onClick={onBlurClick}
-          className={styles.table}
         >
           <Flex
             flexDir="column"

@@ -8,7 +8,10 @@ import {
   INVALID_TILE_VIEW_KEY,
   INVALID_TILE_VIEW_TOKEN,
   NOT_AUTHORISED,
+  TILE_MIGRATING,
 } from '@/config/errors'
+
+export const TILE_MIGRATING_EVENT = 'tile-migrating'
 
 type CreateLinkOptions = {
   uri: string
@@ -51,6 +54,11 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
 
         if (autoSnackbar && !noSnackbarErrors.includes(code)) {
           callback?.(message)
+        }
+
+        // The Tile page listens for this to switch an open editor to read-only.
+        if (code === TILE_MIGRATING) {
+          window.dispatchEvent(new Event(TILE_MIGRATING_EVENT))
         }
 
         // oxlint-disable-next-line no-console
