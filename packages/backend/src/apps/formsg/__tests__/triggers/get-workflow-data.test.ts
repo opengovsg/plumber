@@ -121,7 +121,12 @@ describe('parseWorkflowData', () => {
     it('should throw StepError when workflow is undefined', () => {
       const formSchema = createFormSchema(undefined)
 
-      expect(() => parseWorkflowData($, formSchema)).toThrow('Invalid MRF data')
+      expect(() => parseWorkflowData($, formSchema)).toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining('"name":"Invalid MRF data"'),
+          kind: 'third-party',
+        }),
+      )
     })
   })
 })

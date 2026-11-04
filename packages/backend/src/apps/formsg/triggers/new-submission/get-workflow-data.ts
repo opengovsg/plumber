@@ -23,10 +23,11 @@ export function parseWorkflowData(
 export function parseMrfWorkflow(workflow: unknown): ParsedMrfWorkflow {
   const result = mrfWorkflowDataSchema.safeParse(workflow)
   if (!result.success) {
-    throw new StepError(
-      'Invalid MRF data',
-      'Reconnect your MRF form and try again.',
-    )
+    throw new StepError({
+      name: 'Invalid MRF data',
+      solution: 'Reconnect your MRF form and try again.',
+      kind: 'third-party',
+    })
   }
 
   const parsedSteps: ParsedMrfWorkflowStep[] = []
