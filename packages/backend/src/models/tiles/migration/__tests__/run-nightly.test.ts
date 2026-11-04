@@ -16,6 +16,27 @@ vi.mock('@/helpers/launch-darkly', () => ({
   getLdFlagValue: mocks.getLdFlagValue,
 }))
 
+// The tile loop is covered by run-nightly.itest.ts. Here it finds no tiles.
+vi.mock('@/models/tiles/migration/migrate-table', () => ({
+  migrateTable: vi.fn(),
+}))
+vi.mock('@/models/tiles/migration/report-email', () => ({
+  sendReportEmail: vi.fn(),
+}))
+vi.mock('@/models/table-metadata', () => {
+  const chain = {
+    select: () => chain,
+    where: () => chain,
+    whereRaw: () => chain,
+    modify: () => chain,
+    orderBy: () => chain,
+    // Resolves as an empty page when awaited.
+    limit: async (): Promise<unknown[]> => [],
+    resultSize: async () => 0,
+  }
+  return { default: { query: () => chain } }
+})
+
 function mockFlags(flags: { mode: string; ignoreWindow?: boolean }) {
   mocks.getLdFlagValue.mockImplementation(
     async (flag: string, _email: string | null, fallback: unknown) => {
@@ -64,13 +85,13 @@ describe('runNightly', () => {
   it('exits when the flag is off, even inside the window', async () => {
     vi.setSystemTime(SGT_01_00)
     mockFlags({ mode: 'off' })
-    await expect(runNightly()).resolves.toBe('flag-off')
+    await expect(runNightly()).resolves.toMatchObject({ status: 'flag-off' })
   })
 
   it('treats an unknown flag value as off', async () => {
     vi.setSystemTime(SGT_01_00)
     mockFlags({ mode: 'something-else' })
-    await expect(runNightly()).resolves.toBe('flag-off')
+    await expect(runNightly()).resolves.toMatchObject({ status: 'flag-off' })
   })
 
   it.each([
@@ -82,26 +103,26 @@ describe('runNightly', () => {
   ])('at %s SGT returns %s', async (_label, expected, now) => {
     vi.setSystemTime(now)
     mockFlags({ mode: 'migrate' })
-    await expect(runNightly()).resolves.toBe(expected)
+    await expect(runNightly()).resolves.toMatchObject({ status: expected })
   })
 
   it('skips the window check when the override flag is on outside production', async () => {
     vi.setSystemTime(SGT_14_00)
     mockFlags({ mode: 'migrate', ignoreWindow: true })
-    await expect(runNightly()).resolves.toBe('ran')
+    await expect(runNightly()).resolves.toMatchObject({ status: 'ran' })
   })
 
   it('defaults the override to isDev', async () => {
     vi.setSystemTime(SGT_14_00)
     mocks.appConfig.isDev = true
     mockFlags({ mode: 'migrate' })
-    await expect(runNightly()).resolves.toBe('ran')
+    await expect(runNightly()).resolves.toMatchObject({ status: 'ran' })
   })
 
   it('uses the flag fallbacks when LaunchDarkly cannot initialize', async () => {
     vi.setSystemTime(SGT_14_00)
     mocks.getLdFlagValue.mockRejectedValue(new Error('Authentication failed'))
-    await expect(runNightly()).resolves.toBe('flag-off')
+    await expect(runNightly()).resolves.toMatchObject({ status: 'flag-off' })
   })
 
   it('uses the isDev window fallback when LaunchDarkly cannot initialize', async () => {
@@ -113,14 +134,16 @@ describe('runNightly', () => {
       }
       throw new Error('Authentication failed')
     })
-    await expect(runNightly()).resolves.toBe('ran')
+    await expect(runNightly()).resolves.toMatchObject({ status: 'ran' })
   })
 
   it('ignores the override flag in production', async () => {
     vi.setSystemTime(SGT_14_00)
     mocks.appConfig.isProd = true
     mockFlags({ mode: 'migrate', ignoreWindow: true })
-    await expect(runNightly()).resolves.toBe('outside-window')
+    await expect(runNightly()).resolves.toMatchObject({
+      status: 'outside-window',
+    })
     expect(mocks.getLdFlagValue).not.toHaveBeenCalledWith(
       'tiles-ddb-migration-ignore-window',
       expect.anything(),
