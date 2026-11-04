@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   appendStepAiBuilderEvent,
+  clearConnectionConflict,
   createStepAiBuilderConfig,
+  setConnectionConflict,
   stampStepDeletedByAi,
 } from '../step-ai-builder-config'
 
@@ -105,5 +107,30 @@ describe('step AI builder config', () => {
         { skipIfRecorded: true },
       ),
     ).toEqual(first)
+  })
+
+  it('records a connection conflict beside existing config', () => {
+    expect(
+      setConnectionConflict({ stepName: 'Trigger' }, 'conn-1', 'trace-1'),
+    ).toEqual({
+      stepName: 'Trigger',
+      aiBuilderConnectionConflict: {
+        connectionId: 'conn-1',
+        traceId: 'trace-1',
+      },
+    })
+    expect(setConnectionConflict(null, 'conn-1')).toEqual({
+      aiBuilderConnectionConflict: { connectionId: 'conn-1' },
+    })
+  })
+
+  it('clears a connection conflict and keeps the rest', () => {
+    expect(
+      clearConnectionConflict({
+        stepName: 'Trigger',
+        aiBuilderConnectionConflict: { connectionId: 'conn-1' },
+      }),
+    ).toEqual({ stepName: 'Trigger' })
+    expect(clearConnectionConflict(undefined)).toEqual({})
   })
 })

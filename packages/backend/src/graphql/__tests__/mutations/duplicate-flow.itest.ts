@@ -179,6 +179,7 @@ describe('duplicateFlow endStepId remap', () => {
       config: {
         stepName: 'Trigger',
         aiBuilderConfig: [{ traceId: 'trace-source', tool: 'create_pipe' }],
+        aiBuilderConnectionConflict: { connectionId: 'conn-source' },
       },
     })
 
@@ -192,6 +193,7 @@ describe('duplicateFlow endStepId remap', () => {
 
     expect(copy?.config?.aiBuilderConfig).toBeUndefined()
     expect(copies[0].config.aiBuilderConfig).toBeUndefined()
+    expect(copies[0].config.aiBuilderConnectionConflict).toBeUndefined()
     expect(copies[0].config.stepName).toBe('Trigger')
 
     const original = await Flow.query().findById(flow.id)
