@@ -29,6 +29,12 @@ export default function SecretKeyWarningDialog({
   onRemoveKeyAndSend,
   onConnectSecurely,
 }: SecretKeyWarningDialogProps) {
+  const body = !isFormsgKey
+    ? "Secret keys and API keys should only be entered via the app's own connection setup, never in chat — chat messages are sent to the AI. Are you sure you want to send this?"
+    : onConnectSecurely
+      ? 'Chat messages are sent to the AI. Connect your form securely instead. Your key goes only to Plumber, never to the AI.'
+      : 'Chat messages are sent to the AI. Plumber asks for your secret key in a secure form after it creates your workflow.'
+
   return (
     <AlertDialog
       isOpen={isOpen}
@@ -42,27 +48,7 @@ export default function SecretKeyWarningDialog({
               ? 'Do not send your form secret key in chat'
               : 'This message appears to contain a secret key'}
           </AlertDialogHeader>
-          <AlertDialogBody>
-            {isFormsgKey ? (
-              onConnectSecurely ? (
-                <>
-                  Chat messages are sent to the AI. Connect your form securely
-                  instead. Your key goes only to Plumber, never to the AI.
-                </>
-              ) : (
-                <>
-                  Chat messages are sent to the AI. Plumber asks for your secret
-                  key in a secure form after it creates your workflow.
-                </>
-              )
-            ) : (
-              <>
-                Secret keys and API keys should only be entered via the
-                app&apos;s own connection setup, never in chat — chat messages
-                are sent to the AI. Are you sure you want to send this?
-              </>
-            )}
-          </AlertDialogBody>
+          <AlertDialogBody>{body}</AlertDialogBody>
           <AlertDialogFooter>
             <Button
               colorScheme="neutral"

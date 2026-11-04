@@ -4,7 +4,6 @@ import {
   buildSecretKeyRemovedMessage,
   containsSecretKey,
   extractFormsgSecretKey,
-  extractFormUrl,
   removeFormsgSecretKeys,
 } from '../helpers'
 
@@ -153,19 +152,5 @@ describe('buildSecretKeyRemovedMessage', () => {
     expect(message).not.toContain(SAMPLE_FORMSG_KEY)
     expect(containsSecretKey(message)).toBe(false)
     expect(message).toContain("here's my key: [secret key removed]")
-  })
-})
-
-describe('extractFormUrl', () => {
-  it('returns the form URL from a message', () => {
-    expect(
-      extractFormUrl(
-        `form https://form.gov.sg/654ab1234abc1a012345f1e0 key ${SAMPLE_FORMSG_KEY}`,
-      ),
-    ).toBe('https://form.gov.sg/654ab1234abc1a012345f1e0')
-  })
-
-  it('returns undefined when the message has no form URL', () => {
-    expect(extractFormUrl(SAMPLE_FORMSG_KEY)).toBeUndefined()
   })
 })

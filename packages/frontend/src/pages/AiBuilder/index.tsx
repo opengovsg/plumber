@@ -143,7 +143,7 @@ function AiBuilderContent() {
   const [addFormContext, setAddFormContext] = useState<
     | { kind: 'picker'; question: string }
     | { kind: 'kickoff' }
-    | { kind: 'pasted-key'; secretKey: string; formUrl?: string }
+    | { kind: 'pasted-key'; secretKey: string }
     | null
   >(null)
 
@@ -204,8 +204,7 @@ function AiBuilderContent() {
   )
 
   const handleConnectFormSecurely = useCallback(
-    (draft: { secretKey: string; formUrl?: string }) =>
-      setAddFormContext({ kind: 'pasted-key', ...draft }),
+    (secretKey: string) => setAddFormContext({ kind: 'pasted-key', secretKey }),
     [],
   )
 
@@ -426,10 +425,7 @@ function AiBuilderContent() {
           isOpen={addFormContext !== null}
           flowId={flowId}
           variant={addFormContext?.kind === 'kickoff' ? 'url-only' : 'full'}
-          prefillFormUrl={
-            (addFormContext?.kind === 'pasted-key' && addFormContext.formUrl) ||
-            prefillFormUrl
-          }
+          prefillFormUrl={prefillFormUrl}
           prefillSecretKey={
             addFormContext?.kind === 'pasted-key'
               ? addFormContext.secretKey

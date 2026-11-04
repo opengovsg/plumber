@@ -30,7 +30,6 @@ import {
   buildSecretKeyRemovedMessage,
   containsSecretKey,
   extractFormsgSecretKey,
-  extractFormUrl,
   removeFormsgSecretKeys,
 } from '@/pages/AiBuilder/helpers'
 import posthog, { isPostHogConfigured } from '@/posthog'
@@ -64,10 +63,7 @@ interface PromptInputProps {
    */
   attachedForm?: { label: string; isConnected?: boolean } | null
   /** Opens the full FormSG connection modal with a key pasted into the composer. */
-  onConnectFormSecurely?: (draft: {
-    secretKey: string
-    formUrl?: string
-  }) => void
+  onConnectFormSecurely?: (secretKey: string) => void
 }
 
 // Display-only chip anchoring the conversation's form to the composer.
@@ -146,13 +142,18 @@ export default function PromptInput({
     ? extractFormsgSecretKey(input)
     : undefined
 
-  const captureSecretKeyWarning = (action: string, isFormsgKey: boolean) => {
+  const captureSecretKeyWarning = (action: string) => {
     if (isPostHogConfigured) {
       posthog.capture('ai_builder:secret_key_warning', {
         action,
-        key_type: isFormsgKey ? 'formsg' : 'other',
+        key_type: extractFormsgSecretKey(input) ? 'formsg' : 'other',
       })
     }
+  }
+
+  const closeSecretKeyWarning = (action: string) => {
+    captureSecretKeyWarning(action)
+    setShowSecretKeyWarning(false)
   }
 
   const doSend = (message = input) => {
@@ -173,35 +174,26 @@ export default function PromptInput({
       return
     }
     if (containsSecretKey(input)) {
-      captureSecretKeyWarning('shown', Boolean(extractFormsgSecretKey(input)))
+      captureSecretKeyWarning('shown')
       setShowSecretKeyWarning(true)
       return
     }
     doSend()
   }
 
-  const handleSecretKeyWarningClose = () => {
-    captureSecretKeyWarning('cancel', Boolean(formsgSecretKey))
-    setShowSecretKeyWarning(false)
-  }
-
   const handleSendAnyway = () => {
-    captureSecretKeyWarning('send_anyway', false)
-    setShowSecretKeyWarning(false)
+    closeSecretKeyWarning('send_anyway')
     doSend()
   }
 
   const handleRemoveKeyAndSend = () => {
-    captureSecretKeyWarning('remove_key_and_send', true)
-    setShowSecretKeyWarning(false)
+    closeSecretKeyWarning('remove_key_and_send')
     doSend(buildSecretKeyRemovedMessage(input))
   }
 
-  // The key moves into the modal, so the composer keeps only the other text.
   const handleConnectSecurely = (secretKey: string) => {
-    captureSecretKeyWarning('connect_securely', true)
-    setShowSecretKeyWarning(false)
-    onConnectFormSecurely?.({ secretKey, formUrl: extractFormUrl(input) })
+    closeSecretKeyWarning('connect_securely')
+    onConnectFormSecurely?.(secretKey)
     setInput(removeFormsgSecretKeys(input).trim())
   }
 
@@ -515,7 +507,7 @@ export default function PromptInput({
         cancelRef={secretKeyDialogCancelRef}
         isOpen={showSecretKeyWarning}
         isFormsgKey={Boolean(formsgSecretKey)}
-        onClose={handleSecretKeyWarningClose}
+        onClose={() => closeSecretKeyWarning('cancel')}
         onSendAnyway={handleSendAnyway}
         onRemoveKeyAndSend={handleRemoveKeyAndSend}
         onConnectSecurely={

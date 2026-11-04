@@ -40,10 +40,7 @@ interface ChatInterfaceProps {
   onNewChat?: () => void
   onSelectExistingForm?: (label: string, connectionId: string) => void
   attachedForm?: { label: string; isConnected?: boolean } | null
-  onConnectFormSecurely?: (draft: {
-    secretKey: string
-    formUrl?: string
-  }) => void
+  onConnectFormSecurely?: (secretKey: string) => void
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {

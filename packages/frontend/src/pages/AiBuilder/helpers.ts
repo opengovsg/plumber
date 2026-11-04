@@ -273,7 +273,7 @@ export const containsSecretKey = (text: string): boolean =>
     )
 
 export const extractFormsgSecretKey = (text: string): string | undefined =>
-  text.split(/\s+/).find((token) => token && isFormsgSecretKey(token))
+  text.split(/\s+/).find(isFormsgSecretKey)
 
 export const removeFormsgSecretKeys = (
   text: string,
@@ -282,9 +282,6 @@ export const removeFormsgSecretKeys = (
   text.replace(/\S+/g, (token) =>
     isFormsgSecretKey(token) ? replacement : token,
   )
-
-export const extractFormUrl = (text: string): string | undefined =>
-  text.match(FORM_URL_REGEX)?.[0]
 
 // The LLM may ask for the key before create_pipe runs, when no connection can
 // exist yet. This tells it to continue so its connection picker can collect
