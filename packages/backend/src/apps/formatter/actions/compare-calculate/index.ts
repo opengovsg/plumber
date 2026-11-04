@@ -20,22 +20,41 @@ function getParams($: Parameters<IRawAction['run']>[0]) {
     if (!(error instanceof ZodError)) {
       throw error
     }
-    throw new StepError(
-      `Configuration problem: '${firstZodParseError(error)}'`,
-      GenericSolution.ReconfigureInvalidField,
-    )
+    throw new StepError({
+      name: `Configuration problem: '${firstZodParseError(error)}'`,
+      solution: GenericSolution.ReconfigureInvalidField,
+      kind: 'config',
+    })
   }
 }
 
 function parseAmount(raw: string | undefined): number {
   const amount = Number(raw?.toString().trim())
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new StepError(
-      `'${raw}' is not a valid amount of time`,
-      'Enter a positive number for the amount of time.',
-    )
+    throw new StepError({
+      name: `'${raw}' is not a valid amount of time`,
+      solution: 'Enter a positive number for the amount of time.',
+      kind: 'config',
+    })
   }
   return amount
+}
+
+const PROCESSING_SOLUTION =
+  'Ensure that you have selected the correct format for each date.'
+
+function parseDate(
+  ...args: Parameters<typeof parseOperand>
+): ReturnType<typeof parseOperand> {
+  try {
+    return parseOperand(...args)
+  } catch (error) {
+    throw new StepError({
+      name: `Error processing dates: '${error.message}'`,
+      solution: PROCESSING_SOLUTION,
+      kind: 'config',
+    })
+  }
 }
 
 const action: IRawAction = {
@@ -51,11 +70,8 @@ const action: IRawAction = {
     const params = getParams($)
 
     try {
-      const firstDate = parseOperand(
-        params.firstDateFormat,
-        params.firstDateValue,
-      )
-      const secondDate = parseOperand(
+      const firstDate = parseDate(params.firstDateFormat, params.firstDateValue)
+      const secondDate = parseDate(
         params.secondDateFormat,
         params.secondDateValue,
       )
@@ -63,10 +79,11 @@ const action: IRawAction = {
       switch (params.operation) {
         case 'compare': {
           if (!params.compareOperator) {
-            throw new StepError(
-              'No comparison selected',
-              GenericSolution.ReconfigureInvalidField,
-            )
+            throw new StepError({
+              name: 'No comparison selected',
+              solution: GenericSolution.ReconfigureInvalidField,
+              kind: 'config',
+            })
           }
           $.setActionItem({
             raw: computeComparison(
@@ -83,10 +100,11 @@ const action: IRawAction = {
           // a time gap is a single threshold — see fields.ts).
           const period = params.gapPeriod?.[0]
           if (!params.gapOperator || !period?.gapUnit) {
-            throw new StepError(
-              'Incomplete time-gap configuration',
-              GenericSolution.ReconfigureInvalidField,
-            )
+            throw new StepError({
+              name: 'Incomplete time-gap configuration',
+              solution: GenericSolution.ReconfigureInvalidField,
+              kind: 'config',
+            })
           }
           const amount = parseAmount(period.gapAmount)
           $.setActionItem({
@@ -103,10 +121,11 @@ const action: IRawAction = {
 
         case 'calculate': {
           if (!params.diffUnit) {
-            throw new StepError(
-              'No unit selected',
-              GenericSolution.ReconfigureInvalidField,
-            )
+            throw new StepError({
+              name: 'No unit selected',
+              solution: GenericSolution.ReconfigureInvalidField,
+              kind: 'config',
+            })
           }
           $.setActionItem({
             raw: computeDifference(firstDate, secondDate, params.diffUnit),
@@ -118,10 +137,11 @@ const action: IRawAction = {
       if (error instanceof StepError) {
         throw error
       }
-      throw new StepError(
-        `Error processing dates: '${error.message}'`,
-        'Ensure that you have selected the correct format for each date.',
-      )
+      throw new StepError({
+        name: `Error processing dates: '${error.message}'`,
+        solution: PROCESSING_SOLUTION,
+        kind: 'internal',
+      })
     }
   },
 }
