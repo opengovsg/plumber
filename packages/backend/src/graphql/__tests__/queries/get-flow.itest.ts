@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto'
 
-import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import flowResolvers from '@/graphql/custom-resolvers/flow'
 import getFlow from '@/graphql/queries/get-flow'
 import Flow from '@/models/flow'
@@ -226,6 +226,9 @@ describe('getFlow', () => {
       await expect(
         getFlow(null, { id: 'invalid-uuid' }, context),
       ).rejects.toThrow('Please provide a valid pipe ID in your URL.')
+      await expect(
+        getFlow(null, { id: 'invalid-uuid' }, context),
+      ).rejects.toThrow(NotFoundError)
     })
 
     it('should throw error for non-string ID', async () => {
