@@ -6,16 +6,26 @@ import {
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
 
 export const worker = new WorkerPro(
   'flow',
-  async (job) => {
+  tracer.wrap('workers.flow', async (job) => {
+    const span = tracer.scope().active()
     const { flowId } = job.data
 
+    // Tagged before the flow lookup so runs that fail still count towards the lateness SLO.
+    if (job.opts.prevMillis !== undefined) {
+      span?.setTag('schedule.lateness_ms', Date.now() - job.opts.prevMillis)
+    }
+
     const flow = await Flow.query().findById(flowId).throwIfNotFound()
+
+    // Inactive runs come from failed unpublish cleanup, not user schedules.
+    span?.setTag('flow.active', flow.active)
 
     // safe guard to prevent processing unpublished flows with scheduler
     if (!flow.active) {
@@ -61,7 +71,7 @@ export const worker = new WorkerPro(
 
       await triggerQueue.add(jobName, jobPayload, jobOptions)
     }
-  },
+  }),
   {
     prefix: '{flowQ}',
     connection: createRedisClient(),
