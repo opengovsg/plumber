@@ -196,6 +196,81 @@ describe('Delay until action', () => {
     await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
   })
 
+  describe('StepError kind', () => {
+    it('is config for an invalid date or time format', async () => {
+      $.step.parameters = {
+        delayUntil: VALID_DATE,
+        delayUntilTime: INVALID_TIME,
+      }
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('Incorrect date or time format'),
+        kind: 'config',
+      })
+    })
+
+    it('is config for an empty date variable', async () => {
+      $.step.parameters = {
+        delayUntil: '',
+        delayUntilTime: VALID_TIME,
+      }
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('Incorrect date or time format'),
+        kind: 'config',
+      })
+    })
+
+    it('is config when the target was already past when the execution started', async () => {
+      $.execution.createdAt = DateTime.now().minus({ hours: 1 }).toISO()
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'config',
+      })
+    })
+
+    it('is internal when the target passed after the execution started', async () => {
+      const executionStart = DateTime.now().minus({ hours: 1 })
+      $.execution.createdAt = executionStart.toISO()
+      const target = executionStart.plus({ minutes: 30 })
+      $.step.parameters = {
+        delayUntil: target.toPlumberFormat('dd MMM yyyy'),
+        delayUntilTime: target.toPlumberFormat('HH:mm'),
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'internal',
+      })
+    })
+
+    it('is internal for a past target when the execution start time is unknown', async () => {
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'internal',
+      })
+    })
+  })
+
   describe('retry logic', () => {
     it('allows past timestamp when retrying after past timestamp error', async () => {
       $.step.parameters = {
