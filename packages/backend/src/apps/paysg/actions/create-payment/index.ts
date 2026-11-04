@@ -1,9 +1,12 @@
 import type { IRawAction } from '@plumber/types'
-import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 
+import {
+  rethrowAsPaySgStepError,
+  UNEXPECTED_RESPONSE_SOLUTION,
+} from '../../common/paysg-http-error'
 import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
@@ -106,33 +109,35 @@ const action: IRawAction = {
   async run($) {
     const paymentServiceId = $.auth.data.paymentServiceId as string
 
-    try {
-      const payload = requestSchema.parse($.step.parameters)
-
-      const rawResponse = await $.http.post(
-        `/v1/payment-services/:paymentServiceId/payments`,
-        payload,
-        {
-          urlPathParams: {
-            paymentServiceId,
-          },
-        },
-      )
-      const response = responseSchema.parse(rawResponse.data)
-
-      $.setActionItem({ raw: response })
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const firstError = fromZodError(error).details[0]
-
-        throw new StepError(
-          `${firstError.message} at "${firstError.path}"`,
-          GenericSolution.ReconfigureInvalidField,
-        )
-      }
-
-      throw error
+    const request = requestSchema.safeParse($.step.parameters)
+    if (!request.success) {
+      const firstError = fromZodError(request.error).details[0]
+      throw new StepError({
+        name: `${firstError.message} at "${firstError.path}"`,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
+
+    const rawResponse = await $.http
+      .post(`/v1/payment-services/:paymentServiceId/payments`, request.data, {
+        urlPathParams: {
+          paymentServiceId,
+        },
+      })
+      .catch(rethrowAsPaySgStepError)
+
+    const response = responseSchema.safeParse(rawResponse.data)
+    if (!response.success) {
+      const firstError = fromZodError(response.error).details[0]
+      throw new StepError({
+        name: `${firstError.message} at "${firstError.path}"`,
+        solution: UNEXPECTED_RESPONSE_SOLUTION,
+        kind: 'third-party',
+      })
+    }
+
+    $.setActionItem({ raw: response.data })
   },
 }
 
