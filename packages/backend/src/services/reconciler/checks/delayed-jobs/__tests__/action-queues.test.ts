@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
+// Imported here, not in the test, so loading every app does not count against the test timeout.
+import '@/queues/action'
+
 import { ACTION_QUEUES, type ActionQueue } from '../action-queues'
 
 const mocks = vi.hoisted(() => ({
@@ -20,9 +23,7 @@ function sortByName(queues: ActionQueue[]): ActionQueue[] {
 }
 
 describe('ACTION_QUEUES', () => {
-  it('matches the action queues the worker creates from the app registry', async () => {
-    await import('@/queues/action')
-
+  it('matches the action queues the worker creates from the app registry', () => {
     const createdQueues = mocks.makeActionQueue.mock.calls.map(([params]) => ({
       // BullMQ's default key prefix.
       prefix: params.redisConnectionPrefix ?? 'bull',
