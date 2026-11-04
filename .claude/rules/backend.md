@@ -97,14 +97,22 @@ The backend has three error families. Do not add a new family.
 
 The thrower chooses `kind`. Never derive it later from messages or status codes.
 
-- `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries: `handleFailedStepAndThrow` (`helpers/actions/handle-failed-step-and-throw.ts`) throws `UnrecoverableError` for it.
+- `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries, unless its cause is an `HttpError` that `handleHttpError` retries. Both live in `helpers/actions/handle-failed-step-and-throw.ts`.
+  - The final failure still logs `kind: config`, because the `StepError` rides as the hidden `cause`.
+  - `isRetriableHttpError` (same file) holds the retry conditions. A thrower calls it to choose `kind` before it throws.
 - `third-party`: an external service failed. Counts as bad, but apart from Plumber bugs.
 - `internal`: a Plumber bug. Counts as bad.
+
+Rules for choosing:
+
+- Choose `config` only with high confidence. When unsure, choose `internal` or `third-party`. A later PR can tighten it with prod evidence.
+- The thrower may branch on input values it holds (e.g. whether a date is ISO 8601).
+- In a catch-all, only listed user-fixable 4xx statuses or error codes become `config`. Each listed code has a test. Unlisted 4xx → `internal`. 5xx and network errors → `third-party`.
 
 Special cases:
 
 - A rate limit (429, `RATE-LIMITED`) is `internal`. Plumber must drain its queues fast enough to avoid rate limits.
-- A user's own endpoint failing (custom-api) is `config`. The user owns the endpoint.
+- Every failure of a user's own endpoint (custom-api) is `config`, because the user owns the endpoint. This includes 429, 5xx, timeouts and network errors. Retriable causes still retry (see `config` above). Only a non-`HttpError` (a Plumber bug) is `internal`.
 - Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
 

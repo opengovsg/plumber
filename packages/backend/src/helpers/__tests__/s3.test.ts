@@ -153,6 +153,47 @@ describe('s3', () => {
     })
   })
 
+  describe('getObjectFromS3Id on a manual upload that failed its scan', () => {
+    beforeEach(() => {
+      mocks.s3Client.send.mockResolvedValueOnce({
+        Body: { transformToByteArray: vi.fn() },
+        Metadata: {
+          flowid: 'flow-id',
+          filename: 'my file.txt',
+          manualupload: 'true',
+        },
+      })
+    })
+
+    it.each([
+      [MALWARE_SCAN_STATUS.THREATS_FOUND, 'config'],
+      [MALWARE_SCAN_STATUS.UNSUPPORTED, 'internal'],
+      [MALWARE_SCAN_STATUS.ACCESS_DENIED, 'internal'],
+      [MALWARE_SCAN_STATUS.FAILED, 'internal'],
+      [undefined, 'internal'],
+    ])('throws scan status %s as a %s StepError', async (status, kind) => {
+      mocks.s3Client.send.mockResolvedValueOnce({
+        TagSet: [{ Key: 'GuardDutyMalwareScanStatus', Value: status }],
+      })
+
+      await expect(
+        getObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
+          flowId: 'flow-id',
+        }),
+      ).rejects.toMatchObject({ kind })
+    })
+
+    it('throws an internal StepError while the scan is pending', async () => {
+      mocks.s3Client.send.mockResolvedValueOnce({ TagSet: [] })
+
+      await expect(
+        getObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
+          flowId: 'flow-id',
+        }),
+      ).rejects.toMatchObject({ kind: 'internal' })
+    })
+  })
+
   describe('getPresignedPost', () => {
     beforeEach(() => {
       vi.clearAllMocks()
