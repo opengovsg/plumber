@@ -155,11 +155,28 @@ describe('send transactional email', () => {
     })
   })
 
-  it('should throw step error for invalid parameters', async () => {
-    $.step.parameters.body = ''
-    // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow('Empty body')
-  })
+  it.each([
+    { parameter: 'body', value: '', stepErrorName: 'Empty body' },
+    { parameter: 'subject', value: '', stepErrorName: 'Empty subject' },
+    {
+      parameter: 'destinationEmail',
+      value: 'not-an-email',
+      stepErrorName: 'Invalid recipient emails',
+    },
+    {
+      parameter: 'destinationEmailCc',
+      value: 'not-an-email',
+      stepErrorName: 'Invalid CC emails',
+    },
+  ])(
+    'should throw a config step error for invalid $parameter',
+    async ({ parameter, value, stepErrorName }) => {
+      $.step.parameters[parameter] = value
+      const run = sendTransactionalEmail.run($)
+      await expect(run).rejects.toThrow(stepErrorName)
+      await expect(run).rejects.toMatchObject({ kind: 'config' })
+    },
+  )
 
   it.each([
     {
@@ -199,7 +216,9 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(error)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrow(stepErrorName)
+      const run = sendTransactionalEmail.run($)
+      await expect(run).rejects.toThrow(stepErrorName)
+      await expect(run).rejects.toMatchObject({ kind: 'config' })
     },
   )
 
@@ -233,9 +252,9 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(errorUnknown)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-        postmanResponseData.code,
-      )
+      const run = sendTransactionalEmail.run($)
+      await expect(run).rejects.toThrow(postmanResponseData.code)
+      await expect(run).rejects.toMatchObject({ kind: 'internal' })
     },
   )
 
@@ -299,9 +318,9 @@ describe('send transactional email', () => {
           statusText: 'Bad Request',
         }),
       )
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-      PartialStepError,
-    )
+    const run = sendTransactionalEmail.run($)
+    await expect(run).rejects.toThrow(PartialStepError)
+    await expect(run).rejects.toMatchObject({ kind: 'config' })
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'BLACKLISTED'],
@@ -605,9 +624,9 @@ describe('send transactional email', () => {
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
     })
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-      PartialStepError,
-    )
+    const run = sendTransactionalEmail.run($)
+    await expect(run).rejects.toThrow(PartialStepError)
+    await expect(run).rejects.toMatchObject({ kind: 'config' })
     expect($.http.post).toHaveBeenCalledTimes(2)
     expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
@@ -810,9 +829,9 @@ describe('send transactional email', () => {
         }),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-      PartialStepError,
-    )
+    const run = sendTransactionalEmail.run($)
+    await expect(run).rejects.toThrow(PartialStepError)
+    await expect(run).rejects.toMatchObject({ kind: 'config' })
     expect($.http.post).toHaveBeenCalledTimes(2)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
