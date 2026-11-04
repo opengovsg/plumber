@@ -9,14 +9,11 @@ export type SuppressReason =
   | 'flow_cooldown'
   | 'csat_cooldown'
   | 'new_user'
-  | 'not_sampled'
   | 'expired'
 
 export interface SeqCandidate {
   flow: SeqFlow
   type: SeqTriggerType
-  /** Required for abandons. Seeds the sampling decision. */
-  abandonId?: string
   expiresAt?: Date
 }
 
@@ -48,21 +45,12 @@ function daysSince(date: Date | null, now: Date): number {
   return (now.getTime() - date.getTime()) / MS_PER_DAY
 }
 
-/**
- * Deterministic so a refresh or retry cannot re-roll the sampling decision.
- */
-export function isSampledIn(
-  userId: string,
-  abandonId: string,
-  rate: number,
+export function isAiBuilderExitSurveyDue(
+  lastShownAt: Date | null,
+  config: SurveyConfig,
+  now: Date,
 ): boolean {
-  // FNV-1a
-  let hash = 2166136261
-  for (const char of `${userId}:${abandonId}`) {
-    hash ^= char.charCodeAt(0)
-    hash = Math.imul(hash, 16777619)
-  }
-  return (hash >>> 0) / 2 ** 32 < rate
+  return daysSince(lastShownAt, now) >= config.aiBuilderExitCooldownDays
 }
 
 export function evaluate({
@@ -113,15 +101,6 @@ export function evaluate({
       config.seqCooldownDaysPerFlow
     ) {
       seqSuppressReason = 'flow_cooldown'
-    } else if (
-      candidate.type === 'abandon' &&
-      !isSampledIn(
-        user.userId,
-        candidate.abandonId ?? '',
-        config.abandonSampleRate,
-      )
-    ) {
-      seqSuppressReason = 'not_sampled'
     } else {
       return { type: 'SEQ', flow: candidate.flow, trigger: candidate.type }
     }

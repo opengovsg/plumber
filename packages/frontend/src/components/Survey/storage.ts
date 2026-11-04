@@ -7,7 +7,6 @@ const STATE_KEY_PREFIX = 'plumber:survey:v1:'
 const SESSION_KEY = 'plumber:survey:session'
 
 interface PendingAbandon {
-  abandonId: string
   flow: SeqFlow
   /** Id of the pipe being edited. Clears the abandon if the pipe is published. */
   refId: string
@@ -19,7 +18,7 @@ interface StoredState {
   lastCsatAt: string | null
   lastSeqAt: Record<SeqFlow, string | null>
   pendingAbandon: PendingAbandon | null
-  aiBuilderExitSurveySeen: boolean
+  lastAiBuilderExitSurveyAt: string | null
 }
 
 function emptyState(): StoredState {
@@ -28,7 +27,7 @@ function emptyState(): StoredState {
     lastCsatAt: null,
     lastSeqAt: { pipe: null, regular: null },
     pendingAbandon: null,
-    aiBuilderExitSurveySeen: false,
+    lastAiBuilderExitSurveyAt: null,
   }
 }
 
@@ -113,7 +112,6 @@ export function queueAbandon(
     now.getTime() + SURVEY_CONFIG.abandonQueueExpiryHours * 60 * 60 * 1000,
   )
   state.pendingAbandon = {
-    abandonId: `${refId}:${now.getTime()}`,
     flow,
     refId,
     expiresAt: expiresAt.toISOString(),
@@ -137,18 +135,17 @@ export function getPendingAbandon(userId: string): SeqCandidate | null {
   return {
     flow: pendingAbandon.flow,
     type: 'abandon',
-    abandonId: pendingAbandon.abandonId,
     expiresAt: new Date(pendingAbandon.expiresAt),
   }
 }
 
-export function hasSeenAiBuilderExitSurvey(userId: string): boolean {
-  return load(userId).aiBuilderExitSurveySeen
+export function getLastAiBuilderExitSurveyAt(userId: string): Date | null {
+  return toDate(load(userId).lastAiBuilderExitSurveyAt)
 }
 
-export function markAiBuilderExitSurveySeen(userId: string): void {
+export function recordAiBuilderExitSurvey(userId: string, now: Date): void {
   const state = load(userId)
-  state.aiBuilderExitSurveySeen = true
+  state.lastAiBuilderExitSurveyAt = now.toISOString()
   save(userId, state)
 }
 

@@ -14,10 +14,12 @@ import { useRef, useState } from 'react'
 import ConfettiEmbeddedSurvey, {
   ConfettiEmbeddedSurveyRef,
 } from '@/components/ConfettiEmbeddedSurvey'
+import { SURVEY_CONFIG } from '@/components/Survey/config'
+import { isAiBuilderExitSurveyDue } from '@/components/Survey/engine'
 import {
-  hasSeenAiBuilderExitSurvey,
-  markAiBuilderExitSurveySeen,
+  getLastAiBuilderExitSurveyAt,
   markSessionPromptShown,
+  recordAiBuilderExitSurvey,
   recordPrompt,
 } from '@/components/Survey/storage'
 import appConfig from '@/config/app'
@@ -54,9 +56,15 @@ export default function ExitAlert({
   const [isReadyToSubmit, setIsReadyToSubmit] = useState(false)
   const { currentUser } = useAuthentication()
   const userId = currentUser?.id
-  // Only the first exit asks for the survey. Later exits keep the warning only.
+  // Exits inside the cooldown keep the warning only.
   const [shouldShowSurvey] = useState(
-    () => !!userId && !hasSeenAiBuilderExitSurvey(userId),
+    () =>
+      !!userId &&
+      isAiBuilderExitSurveyDue(
+        getLastAiBuilderExitSurveyAt(userId),
+        SURVEY_CONFIG,
+        new Date(),
+      ),
   )
 
   const handleExit = () => {
@@ -67,8 +75,9 @@ export default function ExitAlert({
       }
       // A survey that timed out unseen must not start cooldowns.
       if (confettiRef.current?.hasLoaded()) {
-        markAiBuilderExitSurveySeen(userId)
-        recordPrompt(userId, { type: 'seq', flow: 'regular' }, new Date())
+        const now = new Date()
+        recordAiBuilderExitSurvey(userId, now)
+        recordPrompt(userId, { type: 'seq', flow: 'regular' }, now)
         markSessionPromptShown()
       }
     }

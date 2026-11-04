@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { SURVEY_CONFIG } from './config'
-import { evaluate, isSampledIn, SurveyTrigger, SurveyUserState } from './engine'
+import { evaluate, SurveyTrigger, SurveyUserState } from './engine'
 
 const NOW = new Date('2026-06-01T00:00:00Z')
 
@@ -37,19 +37,6 @@ function run(
   config = GATED_CONFIG,
 ) {
   return evaluate({ trigger, user, sessionPromptShown, config, now: NOW })
-}
-
-// Finds an abandonId that the default rate samples in or out.
-function findAbandonId(sampledIn: boolean): string {
-  for (let i = 0; i < 1000; i++) {
-    const id = `abandon-${i}`
-    if (
-      isSampledIn('user-1', id, SURVEY_CONFIG.abandonSampleRate) === sampledIn
-    ) {
-      return id
-    }
-  }
-  throw new Error('no abandon id found')
 }
 
 describe('evaluate', () => {
@@ -91,13 +78,8 @@ describe('evaluate', () => {
     })
   })
 
-  it('6. shows a sampled-in abandon and drops an expired one', () => {
-    const abandonId = findAbandonId(true)
-    const candidate = {
-      flow: 'regular' as const,
-      type: 'abandon' as const,
-      abandonId,
-    }
+  it('6. shows a queued abandon and drops an expired one', () => {
+    const candidate = { flow: 'regular' as const, type: 'abandon' as const }
     expect(
       run(
         {
@@ -118,22 +100,6 @@ describe('evaluate', () => {
     ).toEqual({ type: 'NONE', reason: 'expired' })
   })
 
-  it('7. shows nothing for a sampled-out abandon', () => {
-    expect(
-      run(
-        {
-          isPausePoint: true,
-          seqCandidate: {
-            flow: 'regular',
-            type: 'abandon',
-            abandonId: findAbandonId(false),
-          },
-        },
-        makeUser({ lastCsatAt: daysAgo(1) }),
-      ),
-    ).toEqual({ type: 'NONE', reason: 'not_sampled' })
-  })
-
   it('8. shows CSAT at a pause point when due', () => {
     expect(run(pause, makeUser({ lastCsatAt: daysAgo(31) }))).toEqual({
       type: 'CSAT',
@@ -146,9 +112,8 @@ describe('evaluate', () => {
 
   it('9. blocks SEQ within the per-flow cooldown', () => {
     const user = makeUser({
-      lastSeqAt: { pipe: daysAgo(20), regular: null },
+      lastSeqAt: { pipe: daysAgo(10), regular: null },
     })
-    // 20 days is past the global gate but inside the 30-day flow cooldown.
     expect(run(completion, user)).toEqual({
       type: 'NONE',
       reason: 'flow_cooldown',
@@ -214,7 +179,7 @@ describe('evaluate with pipeCompletionAlwaysShows', () => {
       run(
         {
           isPausePoint: false,
-          seqCandidate: { flow: 'regular', type: 'abandon', abandonId: 'x' },
+          seqCandidate: { flow: 'regular', type: 'abandon' },
         },
         user,
         false,
@@ -245,30 +210,5 @@ describe('after a pipe SEQ that did not start the global gate', () => {
       lastSeqAt: { pipe: daysAgo(0), regular: null },
     })
     expect(run(pause, overdue, false)).toEqual({ type: 'CSAT' })
-  })
-})
-
-describe('isSampledIn', () => {
-  it('is deterministic per user and abandon id', () => {
-    const first = isSampledIn('user-1', 'abandon-1', 0.3)
-    for (let i = 0; i < 5; i++) {
-      expect(isSampledIn('user-1', 'abandon-1', 0.3)).toEqual(first)
-    }
-  })
-
-  it('samples roughly the configured fraction', () => {
-    let sampled = 0
-    for (let i = 0; i < 2000; i++) {
-      if (isSampledIn('user-1', `abandon-${i}`, 0.3)) {
-        sampled++
-      }
-    }
-    expect(sampled / 2000).toBeGreaterThan(0.25)
-    expect(sampled / 2000).toBeLessThan(0.35)
-  })
-
-  it('never samples at rate 0 and always samples at rate 1', () => {
-    expect(isSampledIn('user-1', 'a', 0)).toBe(false)
-    expect(isSampledIn('user-1', 'a', 1)).toBe(true)
   })
 })
