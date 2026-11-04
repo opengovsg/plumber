@@ -493,7 +493,7 @@ describe('chat handler continuation', () => {
       messageMetadata({ part: { type: 'finish', finishReason: 'tool-calls' } }),
     ).toEqual({
       traceId: 'trace-123',
-      model: 'mock-model-type',
+      model: 'mock-model',
       finishReason: 'tool-calls',
     })
     expect(

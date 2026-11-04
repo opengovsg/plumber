@@ -51,7 +51,7 @@ const mockModel = (doGenerate: Call, doStream: Call) =>
     supportedUrls: {},
     doGenerate: vi.fn(doGenerate),
     doStream: vi.fn(doStream),
-  } as LanguageModelV2)
+  }) as LanguageModelV2
 
 function setup(primary: { generate?: Call; stream?: Call }) {
   const fallback = mockModel(

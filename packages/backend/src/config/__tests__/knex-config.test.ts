@@ -27,6 +27,7 @@ const CORE_ONLY_ENV_KEYS = [
   'BEDROCK_REGION',
   'BEDROCK_MODEL',
   'BEDROCK_IMAGE_MODEL',
+  'BEDROCK_FALLBACK_MODEL',
 ] as const
 
 afterEach(() => {
