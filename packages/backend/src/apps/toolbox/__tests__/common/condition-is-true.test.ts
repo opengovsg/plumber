@@ -172,6 +172,40 @@ describe('Condition is true', () => {
     expect(result).toEqual(expectedResult)
   })
 
+  it.each([
+    {
+      field: '2026-11-04T09:00:00.000+08:00',
+      condition: 'before',
+      text: '06 Nov 2026',
+      expectedResult: true,
+    },
+    {
+      field: '06 Nov 2026',
+      condition: 'after',
+      text: '2026-11-04T09:00:00.000+08:00',
+      expectedResult: true,
+    },
+    {
+      field: '2026-11-04T09:00:00.000+08:00',
+      condition: 'before',
+      text: '2026-11-04T02:00:00.000Z',
+      expectedResult: true,
+    },
+    {
+      field: '2026-11-04T09:00:00.000+08:00',
+      condition: 'after',
+      text: '2026-11-04T02:00:00.000Z',
+      expectedResult: false,
+    },
+  ])(
+    'supports ISO 8601 dates ($field $condition $text)',
+    ({ field, condition, text, expectedResult }) => {
+      const result = conditionIsTrue({ field, is: 'is', condition, text }, 1)
+
+      expect(result).toEqual(expectedResult)
+    },
+  )
+
   // Test that date formats accept both single-padded and double-padded input
   it.each([
     // d/L/yy accepts both padded and non-padded
@@ -334,18 +368,6 @@ describe('Condition is true', () => {
         field: '04 Sep 2024',
         condition: 'after',
         text: '',
-        name: 'Error in condition group 2: Invalid date used in value for comparison',
-      },
-      {
-        field: '2026-11-02T18:00:00.000+08:00',
-        condition: 'before',
-        text: '04 Nov 2024',
-        name: 'Error in condition group 2: Invalid date used in field for comparison',
-      },
-      {
-        field: '04 Nov 2024',
-        condition: 'after',
-        text: '2026-11-02T10:00:00Z',
         name: 'Error in condition group 2: Invalid date used in value for comparison',
       },
     ])(

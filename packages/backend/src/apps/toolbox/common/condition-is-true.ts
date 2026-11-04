@@ -1,4 +1,5 @@
 import type { IJSONObject, IJSONValue, StepErrorKind } from '@plumber/types'
+import { DateTime } from 'luxon'
 
 import StepError from '@/errors/step'
 import { generateTimestampFromFormats } from '@/helpers/generate-timestamp-from-formats'
@@ -62,16 +63,26 @@ const VALID_DATETIME_FORMATS = [
   'd LLL yyyy h:mm:ss a',
 ]
 
+// Plumber variables (e.g. scheduler, FormSG submission time) emit ISO 8601, which no fixed format matches.
+function parseDate(input: IJSONValue): number {
+  const timestamp = generateTimestampFromFormats(
+    input as string,
+    VALID_DATETIME_FORMATS,
+  )
+  if (!isNaN(timestamp) || typeof input !== 'string') {
+    return timestamp
+  }
+  const isoDateTime = DateTime.fromISO(input)
+  return isoDateTime.isValid ? isoDateTime.toMillis() : NaN
+}
+
 function compareDates(
   field: IJSONValue,
   condition: 'before' | 'after',
   value: IJSONValue,
   groupNumber: number,
 ) {
-  const fieldTimestamp = generateTimestampFromFormats(
-    field as string,
-    VALID_DATETIME_FORMATS,
-  )
+  const fieldTimestamp = parseDate(field)
   if (isNaN(fieldTimestamp)) {
     throw makeConditionGroupError(
       groupNumber,
@@ -80,10 +91,7 @@ function compareDates(
     )
   }
 
-  const valueTimestamp = generateTimestampFromFormats(
-    value as string,
-    VALID_DATETIME_FORMATS,
-  )
+  const valueTimestamp = parseDate(value)
   if (isNaN(valueTimestamp)) {
     throw makeConditionGroupError(
       groupNumber,
