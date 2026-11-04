@@ -4,7 +4,7 @@ import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 import StepError from '@/errors/step'
 
 import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
-import { validateCanAccessFile } from '../../common/file-privacy'
+import { validateCanAccessFileForDynamicData } from '../validate-can-access-file'
 import { parametersSchema } from './schema'
 
 const dynamicData: IDynamicData = {
@@ -21,10 +21,11 @@ const dynamicData: IDynamicData = {
 
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'There was a problem with the input.',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
 
     const authData = extractAuthDataWithPlumberFolder($)
@@ -33,7 +34,7 @@ const dynamicData: IDynamicData = {
     // browsing through files, so directly invoke access validation.
     // FIXME (ogp-weeloong): move to a central file metadata cache to remove
     // need for this check
-    await validateCanAccessFile(
+    await validateCanAccessFileForDynamicData(
       $.user?.email,
       authData,
       fileId as string,

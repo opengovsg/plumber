@@ -11,6 +11,7 @@ import logger from '@/helpers/logger'
 
 import { extractAuthDataWithPlumberFolder } from '../auth-data'
 import { validateCanAccessFile } from '../file-privacy'
+import { rethrowAsGraphStepError, toGraphStepError } from '../graph-http-error'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 import {
   clearSessionIdFromRedis,
@@ -23,18 +24,20 @@ async function refreshSessionId(
   fileId: string,
   $: IGlobalVariable,
 ): Promise<string> {
-  const createSessionResponse = await $.http.post<{ id: string }>(
-    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook/createSession`,
-    {
-      persistChanges: true,
-    },
-    {
-      urlPathParams: {
-        fileId,
-        sharePointSiteId: tenant.sharePointSiteId,
+  const createSessionResponse = await $.http
+    .post<{ id: string }>(
+      `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook/createSession`,
+      {
+        persistChanges: true,
       },
-    },
-  )
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
+      },
+    )
+    .catch(rethrowAsGraphStepError)
   const sessionId = createSessionResponse.data.id
 
   await setSessionIdInRedis(tenant, fileId, sessionId)
@@ -140,7 +143,7 @@ export default class WorkbookSession {
         !graphApiInnerError ||
         !graphApiInnerError.startsWith('invalidSession')
       ) {
-        throw err
+        throw toGraphStepError(err)
       }
 
       logger.warn('M365 Excel session was invalidated.', {

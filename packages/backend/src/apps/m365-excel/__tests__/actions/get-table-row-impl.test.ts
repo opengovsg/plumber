@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StepError from '@/errors/step'
 
 import getTableRowImpl from '../../actions/get-table-row/implementation'
+import { TEST_STEP_MAX_COLUMNS } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 
 // Mock the getTopNTableRows function
@@ -66,7 +67,7 @@ describe('getTableRowImpl', () => {
           tableId,
           filters: [{ lookupColumn: 'NonExistent', lookupValue: 'value' }],
         }),
-      ).rejects.toThrow(StepError)
+      ).rejects.toMatchObject({ kind: 'config' })
     })
   })
 
@@ -171,11 +172,32 @@ describe('getTableRowImpl', () => {
             { lookupColumn: 'NonExistent', lookupValue: 'value' },
           ],
         }),
-      ).rejects.toThrow(StepError)
+      ).rejects.toMatchObject({ kind: 'config' })
     })
   })
 
   describe('edge cases', () => {
+    it('throws a config StepError when a test run reads a table with too many columns', async () => {
+      const columns = Array.from(
+        { length: TEST_STEP_MAX_COLUMNS + 1 },
+        (_, i) => `Column ${i}`,
+      )
+      vi.mocked(getTopNTableRows).mockResolvedValue({
+        columns,
+        rows: [],
+        headerSheetRowIndex: 0,
+      })
+
+      const error = await getTableRowImpl({
+        $: { execution: { testRun: true } } as any,
+        session: mockSession,
+        tableId,
+        filters: [{ lookupColumn: 'Column 0', lookupValue: 'value' }],
+      }).catch((err: unknown) => err)
+      expect(error).toBeInstanceOf(StepError)
+      expect(error).toMatchObject({ kind: 'config' })
+    })
+
     it('should handle empty table rows', async () => {
       vi.mocked(getTopNTableRows).mockResolvedValue({
         columns: ['Name', 'Email'],
