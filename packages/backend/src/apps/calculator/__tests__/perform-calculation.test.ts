@@ -62,6 +62,7 @@ describe('perform calculation', () => {
     { firstNumber: 'not a number', op: 'divide', secondNumber: '8.5' },
     { firstNumber: '850', op: 'invalid op', secondNumber: '8.5' },
     { firstNumber: '850', op: 'add', secondNumber: '' },
+    { firstNumber: '', op: 'add', secondNumber: '8.5' },
   ])(
     'rejects bad parameters (firstNumber = $firstNumber, op = $op, secondNumber = $secondNumber)',
     async (params) => {
@@ -76,6 +77,7 @@ describe('perform calculation', () => {
           expect(err.message).toEqual(
             expect.stringContaining('Configuration problem: '),
           )
+          expect(err.kind).toBe('config')
         }
       }
     },
@@ -100,8 +102,19 @@ describe('perform calculation', () => {
               "Error performing calculation: 'Division by zero'",
             ),
           )
+          expect(err.kind).toBe('config')
         }
       }
     },
   )
+
+  it('treats a thrown non-Error value as internal', async () => {
+    $.step.parameters = { firstNumber: '1', op: 'add', secondNumber: '2' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw 'not an Error'
+    })
+    await expect(performCalculationAction.run($)).rejects.toMatchObject({
+      kind: 'internal',
+    })
+  })
 })
