@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/helpers/pair', () => ({
   model: {},
+  structuredOutputProviderOptions: {},
 }))
 
 vi.mock('ai', async (importOriginal) => ({
