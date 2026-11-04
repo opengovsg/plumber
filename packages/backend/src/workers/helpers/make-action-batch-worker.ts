@@ -126,7 +126,7 @@ type FailedJob = {
  */
 type BatchContext = {
   queueName: string
-  queueHasRateLimit: boolean
+  queueRateLimit: IActionBatchQueue['queueRateLimit']
   worker: WorkerPro<IActionJobData>
   job: JobPro<IActionJobData>
   span: Span | null
@@ -634,7 +634,8 @@ async function processBatch(ctx: BatchContext): Promise<void> {
         job: batchJob,
         queueName: ctx.queueName,
         // Only grouped jobs wait on the group concurrency cap.
-        rateLimited: ctx.queueHasRateLimit || batchJob.opts.group !== undefined,
+        rateLimited:
+          ctx.queueRateLimit !== undefined || batchJob.opts.group !== undefined,
       }),
     ),
   )
@@ -774,7 +775,7 @@ export function makeActionBatchWorker(
     tracer.wrap('workers.action.batch', async (job) =>
       processBatch({
         queueName,
-        queueHasRateLimit: Boolean(params.batchConfig.queueRateLimit),
+        queueRateLimit: params.batchConfig.queueRateLimit,
         worker,
         job,
         span: tracer.scope().active(),
