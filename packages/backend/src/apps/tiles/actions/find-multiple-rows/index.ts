@@ -134,6 +134,7 @@ const action: IRawAction = {
       columnIds: table.columns.map((c) => c.id),
       filters,
       order: returnLastRowFirst ? 'desc' : 'asc',
+      orderByCreatedAt: table.config.migratedFromDdb === true,
       scanLimit,
     })
 
