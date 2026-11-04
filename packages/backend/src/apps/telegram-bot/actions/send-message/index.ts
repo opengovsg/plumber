@@ -69,10 +69,12 @@ const action: IRawAction = {
   async run($) {
     const messageText = ($.step.parameters.text as string).trim()
     if (!messageText) {
-      throw new StepError(
-        'Empty message text',
-        'Check that the message text is not empty, especially if variables are used.',
-      )
+      throw new StepError({
+        name: 'Empty message text',
+        solution:
+          'Check that the message text is not empty, especially if variables are used.',
+        kind: 'config',
+      })
     }
 
     const sanitizedMarkdown = sanitizeMarkdown(messageText)
