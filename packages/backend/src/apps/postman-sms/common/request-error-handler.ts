@@ -1,5 +1,6 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, StepErrorKind } from '@plumber/types'
 
+import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
@@ -30,6 +31,15 @@ const handle5xxErrors: ThrowingHandler = (_, error): never => {
   })
 }
 
+// No Postman SMS 4xx is proven user-fixable yet, so none maps to config.
+function getCatchAllKind(error: HttpError): StepErrorKind {
+  const status = error.response.status
+  if (status === undefined) {
+    return error.code ? 'third-party' : 'internal'
+  }
+  return status >= 500 ? 'third-party' : 'internal'
+}
+
 const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   $,
   error,
@@ -55,13 +65,20 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
       }
 
       if (error.response.data?.error?.code === 'parameter_invalid') {
-        throw new StepError(
-          'Campaign template was not set up correctly',
-          'Ensure that you have followed the instructions in our guide to set up your campaign template.',
-        )
+        throw new StepError({
+          name: 'Campaign template was not set up correctly',
+          solution:
+            'Ensure that you have followed the instructions in our guide to set up your campaign template.',
+          kind: 'config',
+        })
       }
 
-      throw new StepError('Error sending SMS', error.message)
+      throw new StepError({
+        name: 'Error sending SMS',
+        solution: error.message,
+        kind: getCatchAllKind(error),
+        cause: error,
+      })
   }
 }
 
