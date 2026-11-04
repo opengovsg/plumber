@@ -91,7 +91,8 @@ export async function recordLateScheduledStart({
   } catch (err) {
     logger.error('Failed to record late execution', {
       event: 'late-execution-record-failed',
-      err,
+      errorName: err instanceof Error ? err.name : undefined,
+      errorMessage: err instanceof Error ? err.message : String(err),
       flowId,
       executionId,
       stepId,

@@ -126,6 +126,14 @@ describe('recordLateScheduledStart', () => {
     ).resolves.toBeUndefined()
 
     expect(mocks.loggerError).toHaveBeenCalledOnce()
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      'Failed to record late execution',
+      expect.objectContaining({
+        errorName: 'Error',
+        errorMessage: 'connection lost',
+      }),
+    )
+    expect(mocks.loggerError.mock.calls[0][1]).not.toHaveProperty('err')
     expect(mocks.incrementMetric).not.toHaveBeenCalled()
   })
 })
