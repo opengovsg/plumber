@@ -91,10 +91,11 @@ const action: IRawAction = {
       .withGraphFetched('columns')
 
     if (!table) {
-      throw new StepError(
-        'Tile not found',
-        'Tile may have been deleted. Please check your tile.',
-      )
+      throw new StepError({
+        name: 'Tile not found',
+        solution: 'Tile may have been deleted. Please check your tile.',
+        kind: 'config',
+      })
     }
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
@@ -111,10 +112,12 @@ const action: IRawAction = {
         action: 'find-single-row',
         error: e,
       })
-      throw new StepError(
-        'Invalid filters',
-        'One or more filters are invalid. Please check that the columns in your filters still exist',
-      )
+      throw new StepError({
+        name: 'Invalid filters',
+        solution:
+          'One or more filters are invalid. Please check that the columns in your filters still exist',
+        kind: 'config',
+      })
     }
     // Retrieve the manual scan limit override, converting it to a number.
     // If the conversion results in NaN, we set scanLimit to undefined.
