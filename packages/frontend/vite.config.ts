@@ -24,6 +24,9 @@ export default defineConfig({
   build: {
     // disable inline images since we don't allow them in csp
     assetsInlineLimit: 0,
+    // Maps are uploaded to PostHog and deleted in the Dockerfile. 'hidden' omits
+    // the sourceMappingURL comment so browsers never request them.
+    sourcemap: 'hidden',
   },
   // Vite serves linked workspace packages as-is in dev, and the browser cannot run CommonJS.
   optimizeDeps: {

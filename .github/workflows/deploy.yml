@@ -45,6 +45,8 @@ on:
         required: true
       SLACK_CHANNEL_ID:
         required: true
+      POSTHOG_CLI_API_KEY:
+        required: false
 
 permissions: {}
 
@@ -88,10 +90,12 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
           INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+          INPUTS_RELEASE_VERSION: ${{ inputs.release-version }}
           IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
         run: |
-          docker build . -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
+          docker build . -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --build-arg RELEASE_VERSION="${INPUTS_RELEASE_VERSION}" --secret id=NPM_TASKFORCESH_TOKEN --secret id=POSTHOG_CLI_API_KEY
 
       - name: Scan repository with Inspector
         uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@c87d8a405e237cfdf16e5dd3808d28d088d7cb6f # v1.6.1

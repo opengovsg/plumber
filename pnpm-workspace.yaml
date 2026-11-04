@@ -110,6 +110,8 @@ allowBuilds:
   '@datadog/native-metrics': true
   '@datadog/pprof': true
   '@parcel/watcher': false
+  # Downloads its version-pinned binary from PostHog's GitHub releases.
+  '@posthog/cli': true
   '@swc/core': true
   'core-js': false
   'cpu-features': true

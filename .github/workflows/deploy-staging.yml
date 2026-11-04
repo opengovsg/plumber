@@ -36,3 +36,4 @@ jobs:
       NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+      POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
