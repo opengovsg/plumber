@@ -272,6 +272,26 @@ export const containsSecretKey = (text: string): boolean =>
         token && SECRET_KEY_DETECTORS.some((isMatch) => isMatch(token)),
     )
 
+export const extractFormsgSecretKey = (text: string): string | undefined =>
+  text.split(/\s+/).find((token) => token && isFormsgSecretKey(token))
+
+export const removeFormsgSecretKeys = (
+  text: string,
+  replacement = '',
+): string =>
+  text.replace(/\S+/g, (token) =>
+    isFormsgSecretKey(token) ? replacement : token,
+  )
+
+export const extractFormUrl = (text: string): string | undefined =>
+  text.match(FORM_URL_REGEX)?.[0]
+
+// The LLM may ask for the key before create_pipe runs, when no connection can
+// exist yet. This tells it to continue so its connection picker can collect
+// the key.
+export const buildSecretKeyRemovedMessage = (text: string): string =>
+  `${removeFormsgSecretKeys(text, '[secret key removed]').trim()}\n\nI will enter my form secret key in the secure connection form, not in chat.`
+
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
 export const deduplicateMessages = (messages: Message[]) => {

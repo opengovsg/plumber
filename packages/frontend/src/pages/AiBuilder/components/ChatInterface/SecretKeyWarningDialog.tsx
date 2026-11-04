@@ -12,15 +12,22 @@ import { RefObject } from 'react'
 interface SecretKeyWarningDialogProps {
   cancelRef: RefObject<HTMLButtonElement>
   isOpen: boolean
+  isFormsgKey: boolean
   onClose: () => void
   onSendAnyway: () => void
+  onRemoveKeyAndSend: () => void
+  /** Only set once the pipe exists, since a connection needs a flow. */
+  onConnectSecurely?: () => void
 }
 
 export default function SecretKeyWarningDialog({
   cancelRef,
   isOpen,
+  isFormsgKey,
   onClose,
   onSendAnyway,
+  onRemoveKeyAndSend,
+  onConnectSecurely,
 }: SecretKeyWarningDialogProps) {
   return (
     <AlertDialog
@@ -31,12 +38,30 @@ export default function SecretKeyWarningDialog({
       <AlertDialogOverlay>
         <AlertDialogContent>
           <AlertDialogHeader>
-            This message appears to contain a secret key
+            {isFormsgKey
+              ? 'Do not send your form secret key in chat'
+              : 'This message appears to contain a secret key'}
           </AlertDialogHeader>
           <AlertDialogBody>
-            Secret keys and API keys should only be entered via the app&apos;s
-            own connection setup, never in chat — chat messages are sent to the
-            AI. Are you sure you want to send this?
+            {isFormsgKey ? (
+              onConnectSecurely ? (
+                <>
+                  Chat messages are sent to the AI. Connect your form securely
+                  instead. Your key goes only to Plumber, never to the AI.
+                </>
+              ) : (
+                <>
+                  Chat messages are sent to the AI. Plumber asks for your secret
+                  key in a secure form after it creates your workflow.
+                </>
+              )
+            ) : (
+              <>
+                Secret keys and API keys should only be entered via the
+                app&apos;s own connection setup, never in chat — chat messages
+                are sent to the AI. Are you sure you want to send this?
+              </>
+            )}
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button
@@ -47,9 +72,26 @@ export default function SecretKeyWarningDialog({
             >
               Cancel
             </Button>
-            <Button colorScheme="critical" onClick={onSendAnyway} ml={3}>
-              Send anyway
-            </Button>
+            {isFormsgKey ? (
+              <>
+                <Button
+                  variant={onConnectSecurely ? 'outline' : 'solid'}
+                  onClick={onRemoveKeyAndSend}
+                  ml={3}
+                >
+                  Remove key and send
+                </Button>
+                {onConnectSecurely && (
+                  <Button onClick={onConnectSecurely} ml={3}>
+                    Connect securely
+                  </Button>
+                )}
+              </>
+            ) : (
+              <Button colorScheme="critical" onClick={onSendAnyway} ml={3}>
+                Send anyway
+              </Button>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialogOverlay>

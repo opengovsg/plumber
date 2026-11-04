@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { containsSecretKey } from '../helpers'
+import {
+  buildSecretKeyRemovedMessage,
+  containsSecretKey,
+  extractFormsgSecretKey,
+  extractFormUrl,
+  removeFormsgSecretKeys,
+} from '../helpers'
 
 // A real base64 encoding of a random 32-byte value — FormSG secret key shape.
 const SAMPLE_FORMSG_KEY = 'qCRJMYOtgLI3QWdNWwK52u8LTfPQCvRXU/Vm/O7DY/E='
@@ -107,5 +113,59 @@ describe('containsSecretKey', () => {
   it('returns false for an empty or whitespace-only message', () => {
     expect(containsSecretKey('')).toBe(false)
     expect(containsSecretKey('   ')).toBe(false)
+  })
+})
+
+describe('extractFormsgSecretKey', () => {
+  it('returns the FormSG key from a longer message', () => {
+    expect(extractFormsgSecretKey(`my key:\n${SAMPLE_FORMSG_KEY} thanks`)).toBe(
+      SAMPLE_FORMSG_KEY,
+    )
+  })
+
+  it('ignores secret keys of other apps', () => {
+    expect(extractFormsgSecretKey(SAMPLE_GATHERSG_KEY)).toBeUndefined()
+    expect(extractFormsgSecretKey(SAMPLE_PAYSG_KEY)).toBeUndefined()
+  })
+})
+
+describe('removeFormsgSecretKeys', () => {
+  it('removes only the FormSG key and keeps the other text', () => {
+    expect(
+      removeFormsgSecretKeys(
+        `key: ${SAMPLE_FORMSG_KEY} ${SAMPLE_LETTERSG_KEY}`,
+      ),
+    ).toBe(`key:  ${SAMPLE_LETTERSG_KEY}`)
+  })
+
+  it('puts the replacement where the key was', () => {
+    expect(removeFormsgSecretKeys(`key: ${SAMPLE_FORMSG_KEY}`, '[x]')).toBe(
+      'key: [x]',
+    )
+  })
+})
+
+describe('buildSecretKeyRemovedMessage', () => {
+  it('never contains the FormSG key', () => {
+    const message = buildSecretKeyRemovedMessage(
+      `here's my key: ${SAMPLE_FORMSG_KEY}`,
+    )
+    expect(message).not.toContain(SAMPLE_FORMSG_KEY)
+    expect(containsSecretKey(message)).toBe(false)
+    expect(message).toContain("here's my key: [secret key removed]")
+  })
+})
+
+describe('extractFormUrl', () => {
+  it('returns the form URL from a message', () => {
+    expect(
+      extractFormUrl(
+        `form https://form.gov.sg/654ab1234abc1a012345f1e0 key ${SAMPLE_FORMSG_KEY}`,
+      ),
+    ).toBe('https://form.gov.sg/654ab1234abc1a012345f1e0')
+  })
+
+  it('returns undefined when the message has no form URL', () => {
+    expect(extractFormUrl(SAMPLE_FORMSG_KEY)).toBeUndefined()
   })
 })

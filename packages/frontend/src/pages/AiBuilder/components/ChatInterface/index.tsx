@@ -40,6 +40,10 @@ interface ChatInterfaceProps {
   onNewChat?: () => void
   onSelectExistingForm?: (label: string, connectionId: string) => void
   attachedForm?: { label: string; isConnected?: boolean } | null
+  onConnectFormSecurely?: (draft: {
+    secretKey: string
+    formUrl?: string
+  }) => void
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -61,6 +65,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     onNewChat,
     onSelectExistingForm,
     attachedForm,
+    onConnectFormSecurely,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -247,6 +252,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   onConnectForm={onConnectForm}
                   onSelectExistingForm={onSelectExistingForm}
                   attachedForm={attachedForm}
+                  onConnectFormSecurely={onConnectFormSecurely}
                 />
               )}
               {!isMobile && (

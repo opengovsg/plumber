@@ -136,10 +136,15 @@ function AiBuilderContent() {
   // - 'kickoff' (pre-pipe, from the "Connect your form" pill): url-only
   //   modal — no secret key, no connection created; the URL just enters the
   //   conversation so the LLM can fetch the public schema.
+  // - 'pasted-key' (post-pipe, from the secret key warning): full modal with
+  //   the key the user pasted into the composer.
   // The secret key stays browser → GraphQL only (never through the chat
   // route or the LLM).
   const [addFormContext, setAddFormContext] = useState<
-    { kind: 'picker'; question: string } | { kind: 'kickoff' } | null
+    | { kind: 'picker'; question: string }
+    | { kind: 'kickoff' }
+    | { kind: 'pasted-key'; secretKey: string; formUrl?: string }
+    | null
   >(null)
 
   // In-chat "add connection" modal for every non-FormSG app in
@@ -198,6 +203,12 @@ function AiBuilderContent() {
     [],
   )
 
+  const handleConnectFormSecurely = useCallback(
+    (draft: { secretKey: string; formUrl?: string }) =>
+      setAddFormContext({ kind: 'pasted-key', ...draft }),
+    [],
+  )
+
   // Announces a connected form to the chat. The connection/form ids ride in
   // the message's "(id: …)" parenthetical (stripped from display) so the LLM
   // can assign the connection and fetch the schema in later setup. As the
@@ -222,7 +233,8 @@ function AiBuilderContent() {
   // added one — no new connection row is created.
   const handleSelectExistingForm = kickoffWithForm
 
-  // Full-variant (URL + key) success — only reachable from the 'picker' kind.
+  // Full-variant (URL + key) success — reachable from the 'picker' and
+  // 'pasted-key' kinds.
   const handleAddFormSuccess = useCallback(
     (connectionLabel: string, connectionId: string) => {
       if (addFormContext?.kind === 'picker') {
@@ -230,10 +242,12 @@ function AiBuilderContent() {
         sendMessage(
           `Q: ${addFormContext.question}\nA: ${connectionLabel} (id: ${connectionId})`,
         )
+      } else if (addFormContext?.kind === 'pasted-key') {
+        kickoffWithForm(connectionLabel, connectionId)
       }
       setAddFormContext(null)
     },
-    [addFormContext, sendMessage],
+    [addFormContext, sendMessage, kickoffWithForm],
   )
 
   // AddAppConnection's onClose hands back the raw accumulated response from
@@ -402,6 +416,9 @@ function AiBuilderContent() {
                 pipeCreated ? undefined : handleSelectExistingForm
               }
               attachedForm={displayedForm}
+              onConnectFormSecurely={
+                flowId ? handleConnectFormSecurely : undefined
+              }
             />
           </Container>
         </Flex>
@@ -409,7 +426,15 @@ function AiBuilderContent() {
           isOpen={addFormContext !== null}
           flowId={flowId}
           variant={addFormContext?.kind === 'kickoff' ? 'url-only' : 'full'}
-          prefillFormUrl={prefillFormUrl}
+          prefillFormUrl={
+            (addFormContext?.kind === 'pasted-key' && addFormContext.formUrl) ||
+            prefillFormUrl
+          }
+          prefillSecretKey={
+            addFormContext?.kind === 'pasted-key'
+              ? addFormContext.secretKey
+              : undefined
+          }
           lockFormUrl={
             addFormContext?.kind === 'picker' && Boolean(prefillFormUrl)
           }
