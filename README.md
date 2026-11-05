@@ -62,18 +62,19 @@ The host can use a `String` parameter.
 Both parameters must exist for ECS to start the task, even when PostHog export is disabled in application configuration.
 Ensure the task execution role can read both parameters and decrypt the token's KMS key.
 
-PostHog receives AI Builder traces, including prompts, responses, and tool calls.
-PAIR action traces continue to export only to Rome.
-PostHog identifies users by their Plumber user ID and groups chat turns by `chatId`.
+PostHog receives AI Builder and PAIR action traces, including prompts, responses, and tool calls.
+Base64 images and files are redacted from PostHog's copy. Rome retains the original content.
+PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
+`OTEL_BSP_MAX_EXPORT_BATCH_SIZE=50` caps the span count.
+PostHog identifies users by their Plumber user ID.
+It groups AI Builder turns by `chatId` and PAIR action calls by execution ID.
+`withAiTelemetryContext` in `packages/backend/src/helpers/ai/posthog-client.ts` sets both values.
 Both destinations retain the OpenTelemetry trace ID.
-PostHog receives cache-read token counts when PAIR reports `prompt_tokens_details.cached_tokens`.
-Input token totals include cache reads. PostHog uses the separate cache-read count to calculate the breakdown.
-Missing cache usage remains unknown. The current OpenAI-compatible SDK does not expose cache-write counts.
 The server flushes both destinations after draining HTTP requests during graceful shutdown.
 
 In staging, send a chat that calls a tool and compare both trace timelines.
 Confirm matching trace IDs, tool spans, token usage, and PostHog user attribution.
-Both destinations receive full span content without truncation or byte-aware batch splitting.
+No custom truncation or byte-aware batch splitting is applied.
 PostHog can reject exports above its 4 MB limit, losing that batch from PostHog.
 OpenTelemetry export warnings and errors appear in backend logs.
 Rome continues exporting independently.

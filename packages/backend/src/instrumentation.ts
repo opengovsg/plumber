@@ -1,12 +1,10 @@
 import { LangfuseSpanProcessor } from '@langfuse/otel'
 import { diag, DiagLogLevel } from '@opentelemetry/api'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { PostHogSpanProcessor } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
-import {
-  createPostHogSpanProcessor,
-  PAIR_ACTION_RESOURCE_NAMES,
-} from '@/helpers/ai/posthog-telemetry'
+import { posthogClient } from '@/helpers/ai/posthog-client'
 import logger from '@/helpers/logger'
 
 // Rejected exports otherwise disappear without a backend log.
@@ -24,6 +22,11 @@ diag.setLogger(
 )
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
+
+const PAIR_ACTION_RESOURCE_NAMES = [
+  'pair-action-generate-object',
+  'pair-action-process-image',
+]
 
 const BASE_CONFIG = {
   baseUrl: appConfig.pair.rome.baseUrl,
@@ -75,10 +78,28 @@ const pairActionSpanProcessor = new LangfuseSpanProcessor({
   },
 })
 
-const posthogSpanProcessor = createPostHogSpanProcessor(
-  appConfig.posthog,
-  appConfig.appEnv,
-)
+const { projectToken: posthogProjectToken, host: posthogHost } =
+  appConfig.posthog
+const missingPostHogConfig = !posthogProjectToken
+  ? 'POSTHOG_PROJECT_TOKEN'
+  : !posthogHost
+    ? 'POSTHOG_HOST'
+    : undefined
+
+if (missingPostHogConfig && appConfig.isDev) {
+  console.warn(
+    `${missingPostHogConfig} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingPostHogConfig} is configured`,
+  )
+}
+
+const posthogSpanProcessor = missingPostHogConfig
+  ? undefined
+  : new PostHogSpanProcessor({
+      projectToken: posthogProjectToken,
+      host: posthogHost,
+      client: posthogClient,
+      privacyMode: false,
+    })
 
 const sdk = new NodeSDK({
   spanProcessors: [
