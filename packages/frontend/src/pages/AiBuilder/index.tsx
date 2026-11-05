@@ -37,7 +37,12 @@ import {
   stripFormIdPrefix,
 } from './helpers'
 import { createNewChatDraft } from './new-chat'
-import { derivePipeChip, type PipeChoice } from './pipe-chip'
+import {
+  derivePipeChip,
+  pipeHeaderTitle,
+  showConnectFormChip,
+  type PipeChoice,
+} from './pipe-chip'
 import StepConfigContext from './StepConfigContext'
 
 function AiBuilderContent() {
@@ -181,10 +186,22 @@ function AiBuilderContent() {
     [messages.length, sendMessage],
   )
 
+  const recoveredName = recoveredPipe?.displayName ?? null
+  const headerTitle = pipeHeaderTitle({
+    flowName,
+    selectedName,
+    recoveredName,
+  })
+  const connectFormVisible = showConnectFormChip({
+    pipeCreated,
+    selectedName,
+    recoveredName,
+  })
+
   const pipeChip = derivePipeChip({
     pipeCreated,
     selectedName,
-    recoveredName: recoveredPipe?.displayName ?? null,
+    recoveredName,
     onSelect: selectPipe,
   })
 
@@ -357,7 +374,7 @@ function AiBuilderContent() {
     >
       <>
         <Helmet>
-          <title>{flowName} | WIP</title>
+          <title>{headerTitle} | WIP</title>
         </Helmet>
         <Flex h="100vh" flexDirection="column">
           {!(isMobile && isDrawerOpen) && (
@@ -390,7 +407,7 @@ function AiBuilderContent() {
                 </Box>
 
                 <Text noOfLines={1} fontWeight={500}>
-                  {flowName}
+                  {headerTitle}
                 </Text>
               </Flex>
               <Tag
@@ -428,10 +445,10 @@ function AiBuilderContent() {
               hasHitStepLimit={hasHitStepLimit}
               onAddConnection={flowId ? handleAddConnection : undefined}
               knownFormUrl={prefillFormUrl}
-              onConnectForm={pipeCreated ? undefined : handleConnectForm}
+              onConnectForm={connectFormVisible ? handleConnectForm : undefined}
               onNewChat={handleNewChat}
               onSelectExistingForm={
-                pipeCreated ? undefined : handleSelectExistingForm
+                connectFormVisible ? handleSelectExistingForm : undefined
               }
               attachedForm={displayedForm}
               pipeChip={pipeChip}
