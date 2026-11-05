@@ -179,17 +179,36 @@ function refusalReminder(pipeId: PipeId): string {
   return `${VERIFIED_PREFIX}The user referenced pipe_id "${pipeId}". It is not a pipe they can edit. Do not call any tool with that id. Tell the user you cannot open that pipe and ask them to choose another or describe a new workflow.`
 }
 
+function toSubjectEntries(messages: ChatRequest['messages']) {
+  return messages.flatMap((message) =>
+    message.parts.flatMap((part) =>
+      part.type === 'text' ? [{ author: message.role, text: part.text }] : [],
+    ),
+  )
+}
+
+// Later turns must not re-seed, or the preview reverts after create_pipe.
+function isSelectionTurn(
+  messages: ChatRequest['messages'],
+  pipeId: PipeId,
+): boolean {
+  const latestUserMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === 'user')
+  if (!latestUserMessage) {
+    return false
+  }
+  return (
+    readLastPipeSubject(toSubjectEntries([latestUserMessage]))?.pipeId ===
+    pipeId
+  )
+}
+
 export async function establishPipeSubject(
   user: User,
   messages: ChatRequest['messages'],
 ): Promise<{ reminder: string; seedPipeId: PipeId | null }> {
-  const subject = readLastPipeSubject(
-    messages.flatMap((message) =>
-      message.parts.flatMap((part) =>
-        part.type === 'text' ? [{ author: message.role, text: part.text }] : [],
-      ),
-    ),
-  )
+  const subject = readLastPipeSubject(toSubjectEntries(messages))
   if (!subject) {
     return { reminder: '', seedPipeId: null }
   }
@@ -201,6 +220,8 @@ export async function establishPipeSubject(
 
   return {
     reminder: editablePipeReminder(subject.pipeId, row.active === true),
-    seedPipeId: subject.pipeId,
+    seedPipeId: isSelectionTurn(messages, subject.pipeId)
+      ? subject.pipeId
+      : null,
   }
 }

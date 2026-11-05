@@ -125,6 +125,8 @@ vi.mock('@opentelemetry/api', async (importOriginal) => {
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
 import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
 
+import { buildPipeSubjectSentence, parsePipeId } from '@plumber/shared'
+
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
@@ -754,5 +756,105 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         (s: { connectionLabel: string | null }) => s.connectionLabel,
       ),
     ).toEqual(['My Workspace', 'My Workspace'])
+  })
+})
+
+describe('chat handler — selected pipe preview seeding', () => {
+  const PIPE_ID = '123e4567-e89b-12d3-a456-426614174000'
+
+  function selectionMessage() {
+    const pipeId = parsePipeId(PIPE_ID)
+    if (!pipeId) {
+      throw new Error('fixture is not a pipe id')
+    }
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: buildPipeSubjectSentence({
+            displayName: 'Leave form',
+            pipeId,
+            place: 'opening',
+          }),
+        },
+      ],
+    }
+  }
+
+  function writtenPartTypes() {
+    return mocks.writerWrite.mock.calls.map(([part]) => part.type)
+  }
+
+  function finishWithText(text: string) {
+    vi.mocked(streamText).mockImplementationOnce((({
+      onFinish,
+    }: {
+      onFinish?: (event: { text: string }) => Promise<void>
+    }) => {
+      if (onFinish) {
+        mocks.onFinishPromise = onFinish({ text })
+      }
+      return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+    }) as unknown as typeof streamText)
+  }
+
+  async function runTurn(messages: unknown[]) {
+    const handler = router.stack[0].route.stack[0].handle
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq({ messages }) as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        version: 'production',
+        disabledMcpServers: [],
+      },
+    })
+    vi.mocked(createMcpBridgeTools).mockReturnValue({
+      plumber_tool: vi.fn(),
+    } as unknown as ReturnType<typeof createMcpBridgeTools>)
+    mocks.findAccessibleFlow.mockResolvedValue({
+      active: false,
+      $relatedQuery: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue([]),
+      }),
+    })
+  })
+
+  it('opens the selected pipe on the selection turn', async () => {
+    await runTurn([selectionMessage()])
+
+    const pipeState = mocks.writerWrite.mock.calls.find(
+      ([part]) => part.type === 'data-pipeState',
+    )
+    expect(pipeState?.[0].data).toEqual(
+      expect.objectContaining({ pipeId: PIPE_ID, steps: [] }),
+    )
+  })
+
+  it('does not reopen the selected pipe on a later turn', async () => {
+    await runTurn([
+      selectionMessage(),
+      { role: 'assistant', parts: [{ type: 'text', text: 'Here it is.' }] },
+      { role: 'user', parts: [{ type: 'text', text: 'Thanks' }] },
+    ])
+
+    expect(writtenPartTypes()).not.toContain('data-pipeState')
+  })
+
+  it('keeps a workflow proposal when no pipe tool ran', async () => {
+    finishWithText('<!-- WORKFLOW_METADATA {} -->')
+
+    await runTurn([selectionMessage()])
+
+    expect(writtenPartTypes()).toContain('data-isChatReady')
+    expect(writtenPartTypes()).not.toContain('data-pipeState')
   })
 })

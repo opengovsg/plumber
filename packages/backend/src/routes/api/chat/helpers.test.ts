@@ -322,4 +322,15 @@ describe('establishPipeSubject', () => {
     expect(result.reminder).not.toContain(ROW_NAME)
     expect(access.findOne).toHaveBeenCalledWith({ 'flows.id': PIPE_ID })
   })
+
+  it('keeps the reminder but does not seed the preview after the selection turn', async () => {
+    const access = userForPipe({ active: false, name: ROW_NAME })
+    const result = await establishPipeSubject(access.user, [
+      selectedPipeMessage(PIPE_ID, 'opening'),
+      { role: 'assistant', parts: [{ type: 'text', text: 'Here it is.' }] },
+      userMessage('add a Slack step'),
+    ])
+    expect(result.seedPipeId).toBeNull()
+    expect(result.reminder).toBe(editableReminder(PIPE_ID, false))
+  })
 })
