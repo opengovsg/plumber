@@ -185,9 +185,14 @@ export default function SelectPipePopover({
                       py={2}
                       borderRadius="md"
                       bg={idx % 2 === 0 ? 'gray.50' : 'white'}
-                      _hover={{ bg: 'primary.50' }}
-                      _active={{ bg: 'primary.100' }}
+                      aria-disabled={choice.published}
+                      cursor={choice.published ? 'not-allowed' : 'pointer'}
+                      _hover={choice.published ? {} : { bg: 'primary.50' }}
+                      _active={choice.published ? {} : { bg: 'primary.100' }}
                       onClick={() => {
+                        if (choice.published) {
+                          return
+                        }
                         handleClose()
                         onSelect(choice)
                       }}
@@ -195,13 +200,13 @@ export default function SelectPipePopover({
                       <Text
                         textStyle="body-2"
                         whiteSpace="normal"
-                        color="gray.800"
+                        color={choice.published ? 'gray.400' : 'gray.800'}
                       >
                         {choice.name}
                       </Text>
                       {choice.published ? (
                         <Text textStyle="caption-1" color="gray.500">
-                          Published
+                          Published. Unpublish it in the editor to edit it here.
                         </Text>
                       ) : null}
                     </Box>
