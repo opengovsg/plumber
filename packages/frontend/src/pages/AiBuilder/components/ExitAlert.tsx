@@ -53,8 +53,6 @@ export default function ExitAlert({
   const userEmail = currentUser?.email ?? 'unknown-user'
 
   const handleExit = () => {
-    // Keep this check behind the disabled state so a stale render cannot
-    // bypass Confetti's `required` setting.
     const hasSubmitted = confettiRef.current?.submitIfComplete() ?? false
     if (!hasSubmitted) {
       return
