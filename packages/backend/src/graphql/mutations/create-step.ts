@@ -7,6 +7,7 @@ import {
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
+import { assertSlackFindMessageCreatable } from '@/helpers/slack-find-message-access'
 import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
@@ -46,6 +47,12 @@ const createStep: MutationResolvers['createStep'] = async (
     if (triggerOrAction?.hiddenFromUser) {
       throw new BadUserInputError('Action can only be created by system')
     }
+
+    await assertSlackFindMessageCreatable({
+      email: context.currentUser.email,
+      appKey: input.appKey,
+      actionKey: input.key,
+    })
   }
 
   return await Step.transaction(async (trx) => {

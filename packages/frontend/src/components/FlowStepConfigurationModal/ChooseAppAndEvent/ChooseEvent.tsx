@@ -3,11 +3,12 @@ import { ModalCloseButton } from '@opengovsg/design-system-react'
 import { type IAction, IApp, ITrigger } from '@plumber/types'
 import { useCallback, useContext, useMemo } from 'react'
 
-import { getAppActionFlag, getAppTriggerFlag } from '@/config/flags'
+import { getAppTriggerFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
 import BackButton from '../BackButton'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { getSelectableActions } from '../helpers/selectable-actions'
 import InvalidModalScreen from '../InvalidModalScreen'
 import FeedbackFooter from './FeedbackFooter'
 import NewBadge from './NewBadge'
@@ -31,18 +32,18 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
       return []
     }
 
-    const triggersOrActions: Array<ITrigger | IAction> = isTrigger
-      ? (selectedApp.triggers ?? [])
-      : (selectedApp.actions ?? [])
-    return triggersOrActions?.filter((triggerOrAction: ITrigger | IAction) => {
-      // Filter away triggers or actions hidden behind feature flags
+    if (!isTrigger) {
+      return getSelectableActions(selectedApp, getFlagValue)
+    }
+
+    return (selectedApp.triggers ?? []).filter((trigger) => {
       if (!selectedApp.key) {
         return true
       }
-      const launchDarklyKey = isTrigger
-        ? getAppTriggerFlag(selectedApp.key, triggerOrAction.key)
-        : getAppActionFlag(selectedApp.key, triggerOrAction.key)
-      return getFlagValue(launchDarklyKey, true)
+      return getFlagValue(
+        getAppTriggerFlag(selectedApp.key, trigger.key),
+        true,
+      )
     })
   }, [selectedApp, isTrigger, getFlagValue])
 

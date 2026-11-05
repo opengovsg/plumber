@@ -7,6 +7,10 @@ import {
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
+import {
+  assertSlackFindMessageCreatable,
+  isSlackFindMessageAction,
+} from '@/helpers/slack-find-message-access'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
 
@@ -32,6 +36,16 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
       .throwIfNotFound()
 
     flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+
+    if (
+      input.steps.some((step) => isSlackFindMessageAction(step.appKey, step.key))
+    ) {
+      await assertSlackFindMessageCreatable({
+        email: context.currentUser.email,
+        appKey: 'slack',
+        actionKey: 'findMessage',
+      })
+    }
 
     // create all the steps in the transaction so that if any fails
     // this entire query fails

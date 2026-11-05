@@ -11,6 +11,7 @@ import {
 } from '@/apps/toolbox/common/constants'
 import { upgradeIfThenV1BlocksIfEnabled } from '@/apps/toolbox/common/validate-end-step'
 import { UserFacingError } from '@/errors/user-facing-error'
+import { assertSlackFindMessageCreatable } from '@/helpers/slack-find-message-access'
 import App from '@/models/app'
 import Step from '@/models/step'
 import type User from '@/models/user'
@@ -52,6 +53,7 @@ function isInsertInsideIfThenBlock(
 export async function assertStepCreatable(
   appKey: string,
   key: string,
+  userEmail?: string | null,
 ): Promise<void> {
   const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
 
@@ -62,10 +64,16 @@ export async function assertStepCreatable(
   if (triggerOrAction.hiddenFromUser) {
     throw new Error('Action can only be created by system')
   }
+
+  await assertSlackFindMessageCreatable({
+    email: userEmail,
+    appKey,
+    actionKey: key,
+  })
 }
 
 export async function createStepService(input: CreateStepInput): Promise<Step> {
-  await assertStepCreatable(input.appKey, input.key)
+  await assertStepCreatable(input.appKey, input.key, input.user.email)
 
   return Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')

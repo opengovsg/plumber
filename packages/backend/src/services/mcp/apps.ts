@@ -8,6 +8,7 @@ import type {
 } from '@plumber/types'
 
 import apps from '@/apps'
+import { SLACK_FIND_MESSAGE_FLAG } from '@/config/flags'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 
 const TOOLBOX_APP_KEY = 'toolbox'
@@ -130,7 +131,13 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
         }),
       actions: (app.actions ?? [])
         .filter((a) => !a.hiddenFromUser)
-        .filter((a) => allLdFlags[`app_${app.key}_action_${a.key}`] !== false)
+        .filter((a) => {
+          // Find a message is hidden until the flag is true for this user.
+          if (app.key === 'slack' && a.key === 'findMessage') {
+            return allLdFlags[SLACK_FIND_MESSAGE_FLAG] === true
+          }
+          return allLdFlags[`app_${app.key}_action_${a.key}`] !== false
+        })
         .map((a) => {
           const raw = a as unknown as IRawAction
           return {

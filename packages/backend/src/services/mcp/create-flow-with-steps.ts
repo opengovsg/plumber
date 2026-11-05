@@ -24,6 +24,7 @@ import {
 import { generateSchema } from '@/graphql/mutations/ai/schemas/schema-generator'
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
+import { assertSlackFindMessageCreatable } from '@/helpers/slack-find-message-access'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
@@ -225,6 +226,12 @@ export async function createFlowWithStepsService({
     if (triggerOrAction?.hiddenFromUser) {
       throw new Error('Action can only be created by system')
     }
+
+    await assertSlackFindMessageCreatable({
+      email: user.email,
+      appKey: step.appKey,
+      actionKey: step.key,
+    })
   }
 
   if (

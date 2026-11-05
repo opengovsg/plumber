@@ -59,7 +59,11 @@ export async function addMrfActions({
   try {
     for (const action of actions) {
       current = action
-      await assertStepCreatable(action.appKey, action.key as string)
+      await assertStepCreatable(
+        action.appKey,
+        action.key as string,
+        user.email,
+      )
     }
 
     const flowSteps = await Step.query()

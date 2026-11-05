@@ -14,6 +14,7 @@ import type {
   StepConfig,
 } from '@/graphql/__generated__/types.generated'
 import { getStepVersion } from '@/helpers/get-step-version'
+import { assertSlackFindMessageCreatable } from '@/helpers/slack-find-message-access'
 import Flow from '@/models/flow'
 import { getTableOperations } from '@/models/tiles/factory'
 import User from '@/models/user'
@@ -247,6 +248,11 @@ export async function createFlowFromTemplate(
     for (const templateStep of steps) {
       const { position, appKey, eventKey, parameters } = templateStep
       validateAppAndEventKey(templateStep, flowName)
+      await assertSlackFindMessageCreatable({
+        email: user.email,
+        appKey,
+        actionKey: eventKey,
+      })
 
       // replace all placeholder parameters in action steps only
       const updatedParameters = replacePlaceholdersInParameters(

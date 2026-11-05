@@ -87,6 +87,12 @@ vi.mock('@/apps', () => ({
             },
           ],
         },
+        {
+          key: 'findMessage',
+          name: 'Find a message',
+          description: 'Finds a message in a Slack channel',
+          arguments: [],
+        },
       ],
     },
     tiles: {
@@ -462,6 +468,24 @@ describe('listAppsService', () => {
       mocks.getAllLdFlags.mockResolvedValue({ app_toolbox: true })
       const apps = await listAppsService(user)
       expect(apps.find((a) => a.key === 'toolbox')).toBeDefined()
+    })
+
+    it('hides find message unless app_slack_action_findMessage is true', async () => {
+      const hidden = await listAppsService(user)
+      const hiddenSlack = hidden.find((a) => a.key === 'slack')
+      expect(hiddenSlack?.actions.map((action) => action.key)).toEqual([
+        'sendMessage',
+      ])
+
+      mocks.getAllLdFlags.mockResolvedValue({
+        app_slack_action_findMessage: true,
+      })
+      const shown = await listAppsService(user)
+      const shownSlack = shown.find((a) => a.key === 'slack')
+      expect(shownSlack?.actions.map((action) => action.key)).toEqual([
+        'sendMessage',
+        'findMessage',
+      ])
     })
 
     it('excludes action when app_${appKey}_action_${actionKey} is false', async () => {
