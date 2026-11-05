@@ -75,15 +75,9 @@
   color: var(--chakra-colors-interaction-support-placeholder, #a0a4ad);
 }
 
-/* The asterisk marks the required question, so the error text stays for
-   screen readers only. */
+/* "Submit and exit" stays enabled, so a refused submit needs visible text. */
 .confetti-embedded-survey .confetti .cf-question .cf-error {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  color: var(--chakra-colors-utility-feedback-critical, #c03434);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
