@@ -40,9 +40,12 @@ messages. Follow them to maintain maximum clarity and eliminate filler:
 
 Do **not** run these yourself unless the user asks — the human runs the dev server in their own terminal.
 
-**Node version:** run `nvm use` (repo `.nvmrc`) before any `pnpm`, `npm`, `npx`, or `node`
-command. Claude Code does this automatically via a hook. Other agents must do it
-explicitly, e.g. `nvm use && pnpm --filter backend run lint`.
+**Node version:** `pnpm`, `npm`, `npx`, and `node` must run on the nearest `.nvmrc`
+version. The Cursor hook allows the command when `node -v` already matches that
+file. Otherwise run `nvm use &&` before the tool. A leading `cd` is fine, for
+example `cd packages/backend && nvm use && pnpm --filter backend run lint`.
+Claude Code prepends `nvm use` with its own hook. `packages/e2e` has a separate
+`.nvmrc`.
 
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
