@@ -1,8 +1,4 @@
-import {
-  parsePipeId,
-  readLastPipeSubject,
-  type PipeId,
-} from '@plumber/shared'
+import { parsePipeId, readLastPipeSubject, type PipeId } from '@plumber/shared'
 
 import type Flow from '@/models/flow'
 import type User from '@/models/user'
@@ -190,9 +186,7 @@ export async function establishPipeSubject(
   const subject = readLastPipeSubject(
     messages.flatMap((message) =>
       message.parts.flatMap((part) =>
-        part.type === 'text'
-          ? [{ author: message.role, text: part.text }]
-          : [],
+        part.type === 'text' ? [{ author: message.role, text: part.text }] : [],
       ),
     ),
   )
