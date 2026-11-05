@@ -49,7 +49,6 @@ import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import { model } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
-import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
@@ -60,6 +59,8 @@ import {
   sumCacheWriteInputTokens,
 } from './cache-breakpoints'
 import {
+  establishPipeSubject,
+  loadPipeForChatPreview,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
   stripReasoningParts,
@@ -188,12 +189,17 @@ const handleChatStream = observe(
         context.currentUser,
         rawMessages,
       )
+      const pipeSubject = await establishPipeSubject(
+        context.currentUser,
+        rawMessages,
+      )
 
       const allMessages = [
         ...buildChatSystemMessages({
           basePrompt: prompt.prompt,
           restrictedApps,
           establishedFormConnection,
+          pipeSubjectReminder: pipeSubject.reminder,
         }),
         ...messages,
       ]
@@ -226,7 +232,7 @@ const handleChatStream = observe(
 
       const workflowError = 'Unable to generate the workflow.'
 
-      let activePipeId: string | null = null
+      let activePipeId: string | null = pipeSubject.seedPipeId
 
       // AI SDK 5 defaults onError to getErrorMessage, which forwards raw
       // litellm/provider dumps to the client. Override both stream constructors
@@ -339,66 +345,72 @@ const handleChatStream = observe(
                       }
                     }
 
-                    // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
                     if (activePipeId) {
-                      const flow = await Flow.query()
-                        .findById(activePipeId)
-                        .where('user_id', context.currentUser.id)
-                      const steps = flow
-                        ? await flow
-                            .$relatedQuery('steps')
-                            .orderBy('position', 'asc')
-                        : []
+                      const flow = await loadPipeForChatPreview(
+                        context.currentUser,
+                        activePipeId,
+                      )
+                      // A viewer, a stranger, or a bad id gets no preview payload.
+                      if (flow) {
+                        const steps = await flow
+                          .$relatedQuery('steps')
+                          .orderBy('position', 'asc')
 
-                      // Resolve connection labels fresh each turn. A step's
-                      // connection can be repointed independently of the step row.
-                      const connectionIds = [
-                        ...new Set(
-                          steps
-                            .map((step) => step.connectionId)
-                            .filter((id): id is string => !!id),
-                        ),
-                      ]
-                      const connectionsById = connectionIds.length
-                        ? new Map(
-                            (
-                              await Connection.query().findByIds(connectionIds)
-                            ).map((connection) => [connection.id, connection]),
-                          )
-                        : new Map<string, Connection>()
+                        // Resolve connection labels fresh each turn. A step's
+                        // connection can be repointed independently of the step row.
+                        const connectionIds = [
+                          ...new Set(
+                            steps
+                              .map((step) => step.connectionId)
+                              .filter((id): id is string => !!id),
+                          ),
+                        ]
+                        const connectionsById = connectionIds.length
+                          ? new Map(
+                              (
+                                await Connection.query().findByIds(
+                                  connectionIds,
+                                )
+                              ).map((connection) => [
+                                connection.id,
+                                connection,
+                              ]),
+                            )
+                          : new Map<string, Connection>()
 
-                      writer.write({
-                        type: 'data-pipeState',
-                        data: {
-                          pipeId: activePipeId,
-                          steps: steps.map((step) => {
-                            const connection = step.connectionId
-                              ? connectionsById.get(step.connectionId)
-                              : undefined
-                            return {
-                              id: step.id,
-                              appKey: step.appKey,
-                              key: step.key,
-                              type: step.type,
-                              position: step.position,
-                              status: step.status,
-                              parameters: step.parameters,
-                              connectionId: step.connectionId ?? null,
-                              connectionLabel: connection
-                                ? connectionLabel(connection)
-                                : null,
-                              // Lets the preview draw an If block's extent
-                              // the same way the editor does.
-                              endStepId: step.config?.endStepId ?? null,
-                              // MRF stage steps are named after the form's stages.
-                              stepName: step.config?.stepName ?? null,
-                              // Lets the preview hide a reject path the same way
-                              // the editor does.
-                              approval: step.config?.approval ?? null,
-                            }
-                          }),
-                        },
-                      })
+                        writer.write({
+                          type: 'data-pipeState',
+                          data: {
+                            pipeId: activePipeId,
+                            steps: steps.map((step) => {
+                              const connection = step.connectionId
+                                ? connectionsById.get(step.connectionId)
+                                : undefined
+                              return {
+                                id: step.id,
+                                appKey: step.appKey,
+                                key: step.key,
+                                type: step.type,
+                                position: step.position,
+                                status: step.status,
+                                parameters: step.parameters,
+                                connectionId: step.connectionId ?? null,
+                                connectionLabel: connection
+                                  ? connectionLabel(connection)
+                                  : null,
+                                // Lets the preview draw an If block's extent
+                                // the same way the editor does.
+                                endStepId: step.config?.endStepId ?? null,
+                                // MRF stage steps are named after the form's stages.
+                                stepName: step.config?.stepName ?? null,
+                                // Lets the preview hide a reject path the same way
+                                // the editor does.
+                                approval: step.config?.approval ?? null,
+                              }
+                            }),
+                          },
+                        })
+                      }
                     }
 
                     // Clarification blocks on both phases

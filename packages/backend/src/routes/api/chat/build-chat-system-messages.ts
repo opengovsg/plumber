@@ -16,6 +16,7 @@ interface BuildChatSystemMessagesOptions {
   basePrompt: string
   restrictedApps: string[]
   establishedFormConnection: EstablishedFormConnection | null
+  pipeSubjectReminder?: string
 }
 
 /**
@@ -27,10 +28,15 @@ export function buildChatSystemMessages({
   basePrompt,
   restrictedApps,
   establishedFormConnection,
+  pipeSubjectReminder = '',
 }: BuildChatSystemMessagesOptions): SystemModelMessage[] {
-  const connectionReminder = buildEstablishedConnectionReminder(
-    establishedFormConnection,
-  ).trim()
+  const chatContext = [
+    buildEstablishedConnectionReminder(establishedFormConnection),
+    pipeSubjectReminder,
+  ]
+    .map((reminder) => reminder.trim())
+    .filter(Boolean)
+    .join('\n\n')
 
   return [
     {
@@ -38,8 +44,6 @@ export function buildChatSystemMessages({
       content: `${buildSystemPrompt(basePrompt, restrictedApps)}\n\n${SUPPORT_FORM_URL_INSTRUCTION}`,
       providerOptions: CACHE_CONTROL_PROVIDER_OPTIONS,
     },
-    ...(connectionReminder
-      ? [{ role: 'system' as const, content: connectionReminder }]
-      : []),
+    ...(chatContext ? [{ role: 'system' as const, content: chatContext }] : []),
   ]
 }
