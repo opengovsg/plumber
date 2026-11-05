@@ -40,6 +40,7 @@ import { createNewChatDraft } from './new-chat'
 import {
   derivePipeChip,
   pipeHeaderTitle,
+  resolveSubjectName,
   showConnectFormChip,
   type PipeChoice,
 } from './pipe-chip'
@@ -163,7 +164,6 @@ function AiBuilderContent() {
   const [attachedForm, setAttachedForm] = useState<{ label: string } | null>(
     null,
   )
-  const [selectedName, setSelectedName] = useState<string | null>(null)
 
   const recoveredPipe = readLastPipeSubject(
     messages.map((message) => ({
@@ -171,10 +171,19 @@ function AiBuilderContent() {
       text: message.text,
     })),
   )
+  const latestUserText = messages.findLast((message) => message.isUser)?.text
+  const subjectName = resolveSubjectName({
+    subject: recoveredPipe,
+    previewPipeId: output?.pipeId ?? null,
+    selectionPending:
+      isStreaming &&
+      latestUserText !== undefined &&
+      readLastPipeSubject([{ author: 'user', text: latestUserText }])
+        ?.pipeId === recoveredPipe?.pipeId,
+  })
 
   const selectPipe = useCallback(
     (choice: PipeChoice) => {
-      setSelectedName(choice.name)
       sendMessage(
         buildPipeSubjectSentence({
           displayName: choice.name,
@@ -186,22 +195,12 @@ function AiBuilderContent() {
     [messages.length, sendMessage],
   )
 
-  const recoveredName = recoveredPipe?.displayName ?? null
-  const headerTitle = pipeHeaderTitle({
-    flowName,
-    selectedName,
-    recoveredName,
-  })
-  const connectFormVisible = showConnectFormChip({
-    pipeCreated,
-    selectedName,
-    recoveredName,
-  })
+  const headerTitle = pipeHeaderTitle({ flowName, subjectName })
+  const connectFormVisible = showConnectFormChip({ pipeCreated, subjectName })
 
   const pipeChip = derivePipeChip({
     pipeCreated,
-    selectedName,
-    recoveredName,
+    subjectName,
     onSelect: selectPipe,
   })
 
@@ -329,7 +328,6 @@ function AiBuilderContent() {
   // chip would keep showing the previous conversation's connected form.
   const handleNewChat = useCallback(() => {
     setAttachedForm(null)
-    setSelectedName(null)
     setAddFormContext(null)
     setAddConnectionContext(null)
   }, [])
