@@ -1,16 +1,12 @@
 import type { IAction, IApp } from '@plumber/types'
 
-import {
-  getAppActionFlag,
-  getAppActionFlagFallback,
-} from '@/config/flags'
+import { getAppActionFlag } from '@/config/flags'
 
 type FlagReader = (flagKey: string, defaultValue?: boolean) => unknown
 
 /**
  * Actions this user can add.
- * Find a message stays hidden until its flag is true, so Slack keeps one
- * action and the picker creates Send a message.
+ * A false action flag is omitted, so one remaining action is created immediately.
  */
 export function getSelectableActions(
   app: Pick<IApp, 'key' | 'actions'>,
@@ -23,11 +19,6 @@ export function getSelectableActions(
     if (!app.key) {
       return true
     }
-    return Boolean(
-      getFlagValue(
-        getAppActionFlag(app.key, action.key),
-        getAppActionFlagFallback(app.key, action.key),
-      ),
-    )
+    return Boolean(getFlagValue(getAppActionFlag(app.key, action.key), true))
   })
 }

@@ -12,12 +12,6 @@ export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
 
 /**
- * Find a message stays hidden until this flag is true for the user.
- * Other app action flags stay visible when the flag is missing.
- */
-export const SLACK_FIND_MESSAGE_FLAG = 'app_slack_action_findMessage'
-
-/**
  * App flags regex
  */
 export const APP_FLAG_REGEX = /^app_.*$/

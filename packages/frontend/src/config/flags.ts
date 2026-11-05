@@ -31,22 +31,6 @@ export const getAppActionFlag = (appKey: string, actionKey: string) =>
   `app_${appKey}_action_${actionKey}`
 
 /**
- * Find a message stays hidden until this flag is true for the user.
- * Must match the backend flag of the same name.
- */
-export const SLACK_FIND_MESSAGE_FLAG = 'app_slack_action_findMessage'
-
-export function getAppActionFlagFallback(
-  appKey: string,
-  actionKey: string,
-): boolean {
-  if (appKey === 'slack' && actionKey === 'findMessage') {
-    return false
-  }
-  return true
-}
-
-/**
  * Input flags: use both appKey and key in case of duplicate key between app_events
  */
 export const getInputFlag = (appKey: string, key: string) =>

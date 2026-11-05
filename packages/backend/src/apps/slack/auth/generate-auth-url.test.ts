@@ -33,6 +33,5 @@ describe('generateAuthUrl', () => {
     expect(url.searchParams.get('user_scope')).toBe(
       'channels:read,chat:write,users:read',
     )
-    expect(url.searchParams.get('user_scope')).not.toContain('search:read')
   })
 })

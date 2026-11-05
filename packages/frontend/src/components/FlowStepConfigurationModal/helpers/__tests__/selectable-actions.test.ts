@@ -12,16 +12,18 @@ const slack = {
 } as IApp
 
 describe('getSelectableActions', () => {
-  it('drops Find a message when the flag is off', () => {
-    const actions = getSelectableActions(slack, (_flag, fallback) => fallback)
+  it('drops an action when its flag is false', () => {
+    const actions = getSelectableActions(slack, (flag) => {
+      return flag !== 'app_slack_action_findMessage'
+    })
 
     expect(actions.map((action) => action.key)).toEqual([
       'sendMessageToChannel',
     ])
   })
 
-  it('keeps Find a message when the flag is on', () => {
-    const actions = getSelectableActions(slack, () => true)
+  it('keeps an action when its flag is missing', () => {
+    const actions = getSelectableActions(slack, (_flag, fallback) => fallback)
 
     expect(actions.map((action) => action.key)).toEqual([
       'findMessage',
