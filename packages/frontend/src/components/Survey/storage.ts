@@ -6,7 +6,8 @@ import type { SeqCandidate, SeqFlow, SurveyUserState } from './engine'
 // IMPORTANT: Confetti tracks history per survey only, so the cross-survey gates
 // live in this browser. Per-survey history syncs in from Confetti when checked.
 const STATE_KEY_PREFIX = 'plumber:survey:v1:'
-const SESSION_KEY = 'plumber:survey:session'
+// Per user, because logout keeps the tab and its sessionStorage.
+const SESSION_KEY_PREFIX = 'plumber:survey:session:'
 
 // A corrupt or outdated field must read as "never", not as an invalid date
 // that slips past every cooldown comparison.
@@ -147,24 +148,24 @@ export function getPendingAbandon(userId: string): SeqCandidate | null {
   }
 }
 
-function loadSession(): SessionState {
+function loadSession(userId: string): SessionState {
   const parsed = SessionStateSchema.safeParse(
-    readJson(sessionStorage, SESSION_KEY),
+    readJson(sessionStorage, `${SESSION_KEY_PREFIX}${userId}`),
   )
   return parsed.success
     ? parsed.data
     : { sessionId: crypto.randomUUID(), promptShown: false }
 }
 
-export function getSession(): SessionState {
-  const session = loadSession()
-  writeJson(sessionStorage, SESSION_KEY, session)
+export function getSession(userId: string): SessionState {
+  const session = loadSession(userId)
+  writeJson(sessionStorage, `${SESSION_KEY_PREFIX}${userId}`, session)
   return session
 }
 
-export function markSessionPromptShown(): void {
-  writeJson(sessionStorage, SESSION_KEY, {
-    ...loadSession(),
+export function markSessionPromptShown(userId: string): void {
+  writeJson(sessionStorage, `${SESSION_KEY_PREFIX}${userId}`, {
+    ...loadSession(userId),
     promptShown: true,
   })
 }

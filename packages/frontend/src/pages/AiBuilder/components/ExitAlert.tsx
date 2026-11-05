@@ -84,7 +84,7 @@ export default function ExitAlert({
         seqCandidate: { flow: 'aiBuilder', type: 'abandon' },
       },
       user: loadUserState(userId, parseApiTimestamp(currentUser?.createdAt)),
-      sessionPromptShown: getSession().promptShown,
+      sessionPromptShown: getSession(userId).promptShown,
       config: SURVEY_CONFIG,
       now: new Date(),
     })
@@ -104,7 +104,7 @@ export default function ExitAlert({
       // A survey that timed out unseen must not start cooldowns.
       if (confettiRef.current?.hasLoaded()) {
         recordActedOn(userId, survey, new Date())
-        markSessionPromptShown()
+        markSessionPromptShown(userId)
       }
     }
     // Fire-and-forget: exiting must never block on the survey network call.
@@ -148,7 +148,7 @@ export default function ExitAlert({
                 apiBaseUrl={appConfig.confettiApiBaseUrl}
                 respondent={respondentFor(userId, survey)}
                 isSurveyVisible
-                metadata={responseMetadata(survey)}
+                metadata={responseMetadata(userId, survey)}
                 onReadyToSubmitChange={setIsReadyToSubmit}
               />
             )}

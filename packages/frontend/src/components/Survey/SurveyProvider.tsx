@@ -118,7 +118,7 @@ function ConfettiPrompt({
         respondent={respondentFor(userId, survey)}
         // History was already checked, so skip the widget's second fetch.
         isSurveyVisible
-        metadata={responseMetadata(survey)}
+        metadata={responseMetadata(userId, survey)}
         onDismiss={() => onActedOn('dismissed')}
         // An undefined result means the response was not saved.
         onFinished={(result?: FinishResult) => {
@@ -160,7 +160,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       const decision = evaluate({
         trigger: { ...trigger, seqCandidate },
         user: loadUserState(userId, parseApiTimestamp(createdAt)),
-        sessionPromptShown: getSession().promptShown,
+        sessionPromptShown: getSession(userId).promptShown,
         config: SURVEY_CONFIG,
         now: new Date(),
       })
@@ -219,7 +219,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       }
       hasActedRef.current = true
       recordActedOn(userId, survey, new Date())
-      markSessionPromptShown()
+      markSessionPromptShown(userId)
       capture(`survey_${action}`, surveyMetadata(survey))
     },
     [userId],

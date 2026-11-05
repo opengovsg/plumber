@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearAbandonForRef,
   getPendingAbandon,
+  getSession,
   loadUserState,
+  markSessionPromptShown,
   queueAbandon,
   recordPrompt,
 } from '../storage'
@@ -12,13 +14,18 @@ const USER_ID = 'user-1'
 const NOW = new Date('2026-06-01T00:00:00Z')
 const STATE_KEY = `plumber:survey:v1:${USER_ID}`
 
-beforeEach(() => {
+function memoryStorage() {
   const data = new Map<string, string>()
-  vi.stubGlobal('localStorage', {
+  return {
     getItem: (key: string) => data.get(key) ?? null,
     setItem: (key: string, value: string) => data.set(key, value),
     removeItem: (key: string) => data.delete(key),
-  })
+  }
+}
+
+beforeEach(() => {
+  vi.stubGlobal('localStorage', memoryStorage())
+  vi.stubGlobal('sessionStorage', memoryStorage())
 })
 
 describe('recordPrompt', () => {
@@ -106,5 +113,14 @@ describe('abandon queue', () => {
     recordPrompt(USER_ID, { type: 'seq', flow: 'regular' }, NOW)
 
     expect(getPendingAbandon(USER_ID)).toBeNull()
+  })
+})
+
+describe('session gate', () => {
+  it('does not carry over to the next user in the same tab', () => {
+    markSessionPromptShown(USER_ID)
+
+    expect(getSession(USER_ID).promptShown).toBe(true)
+    expect(getSession('user-2').promptShown).toBe(false)
   })
 })

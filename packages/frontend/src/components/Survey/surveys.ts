@@ -26,10 +26,13 @@ export function surveyMetadata(survey: ActiveSurvey): Record<string, string> {
 }
 
 /** Metadata sent to Confetti with each response. */
-export function responseMetadata(survey: ActiveSurvey): Record<string, string> {
+export function responseMetadata(
+  userId: string,
+  survey: ActiveSurvey,
+): Record<string, string> {
   return {
     ...surveyMetadata(survey),
-    session_id: getSession().sessionId,
+    session_id: getSession(userId).sessionId,
     app_version: appConfig.version ?? 'unknown',
   }
 }
