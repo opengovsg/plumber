@@ -5,6 +5,7 @@ import type { Server } from 'http'
 
 import app from '@/app'
 import appConfig from '@/config/app'
+import { registerGracefulShutdown } from '@/helpers/graceful-shutdown'
 import logger from '@/helpers/logger'
 
 const port = appConfig.port
@@ -15,23 +16,15 @@ const server: Server = app.listen(port, () => {
   logger.info(`Server is listening on ${port}`)
 })
 
-function shutdown(server: Server) {
-  server.close(() => {
-    void import('@/instrumentation')
-      .then(({ shutdownTelemetry }) => shutdownTelemetry())
-      .catch(() => {
-        logger.warn('Failed to flush AI telemetry during shutdown')
-      })
-  })
-}
-
-process.on('SIGTERM', () => {
-  shutdown(server)
-})
-
-process.once('SIGINT', () => {
-  shutdown(server)
-})
+registerGracefulShutdown(
+  ['SIGTERM', 'SIGINT'],
+  [
+    () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve())
+      }),
+  ],
+)
 
 // As per AWS guidelines, we should set the server timeout to be longer than ALB idle timeout
 // https://repost.aws/knowledge-center/elb-alb-troubleshoot-502-errors

@@ -79,13 +79,13 @@ for (const [appKey, app] of Object.entries(apps)) {
   })
 }
 
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM: gracefully closing all action workers')
+export async function closeActionWorkers(): Promise<void> {
+  logger.info('Closing all action workers')
   const allWorkers = [
     mainActionWorker,
     ...Object.values(appActionWorkers),
     ...Object.values(appActionBatchWorkers),
   ]
   await Promise.all(allWorkers.map((w) => w?.close()))
-  logger.info('SIGTERM: all action workers closed')
-})
+  logger.info('All action workers closed')
+}
