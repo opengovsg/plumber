@@ -297,7 +297,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
-      config: {},
+      config: { firstPublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -337,8 +337,7 @@ describe('updateFlowStatus', () => {
 
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
-      publishedAt: null,
-      config: {},
+      config: { lastUnpublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -361,7 +360,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
-      config: {},
+      config: { firstPublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -386,8 +385,7 @@ describe('updateFlowStatus', () => {
 
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
-      publishedAt: null,
-      config: {},
+      config: { lastUnpublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -408,7 +406,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {},
+        config: { firstPublishedAt: expect.any(String) },
         updatedBy: owner.id,
       })
     })
@@ -427,7 +425,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {},
+        config: { firstPublishedAt: expect.any(String) },
         updatedBy: editor.id,
       })
     })
@@ -473,7 +471,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {},
+        config: { firstPublishedAt: expect.any(String) },
         updatedBy: editor.id,
       })
     })
@@ -673,6 +671,47 @@ describe('updateFlowStatus', () => {
       expect(
         jobs.find((j) => j.key.startsWith(`flow-${fakeFlow.id}`)),
       ).toBeUndefined()
+    })
+
+    it('keeps the first publish time across an unpublish and a republish', async () => {
+      const setStatus = async (active: boolean) => {
+        const realFlow: any = await Flow.query().findById(fakeFlow.id)
+        realFlow.steps = [{ position: 1 }, { position: 2 }]
+        realFlow.getTriggerStep = fakeFlow.getTriggerStep
+        realFlow.assertNotUpdatedSince = vi.fn()
+        fakeQuery.throwIfNotFound.mockResolvedValue(realFlow)
+        await updateFlowStatus(
+          {},
+          {
+            input: { ...defaultInput, active, updatedAt: realFlow.updatedAt },
+          },
+          context,
+        )
+        return Flow.query().findById(fakeFlow.id)
+      }
+
+      const published = await setStatus(true)
+      expect(published.config?.firstPublishedAt).toBeDefined()
+      expect(published.config?.lastUnpublishedAt).toBeUndefined()
+
+      const unpublished = await setStatus(false)
+      expect(unpublished.active).toBe(false)
+      expect(unpublished.publishedAt).toEqual(published.publishedAt)
+      expect(unpublished.config?.firstPublishedAt).toEqual(
+        published.config?.firstPublishedAt,
+      )
+      expect(unpublished.config?.lastUnpublishedAt).toBeDefined()
+
+      const republished = await setStatus(true)
+      expect(republished.config?.firstPublishedAt).toEqual(
+        published.config?.firstPublishedAt,
+      )
+      expect(
+        new Date(republished.publishedAt).getTime(),
+      ).toBeGreaterThanOrEqual(new Date(published.publishedAt).getTime())
+      expect(republished.config?.lastUnpublishedAt).toEqual(
+        unpublished.config?.lastUnpublishedAt,
+      )
     })
   })
 })

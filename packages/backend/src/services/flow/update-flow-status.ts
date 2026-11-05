@@ -85,13 +85,17 @@ export async function updateFlowStatusService({
    * active state stays consistent (best-effort) with whether
    * the repeatable job exists.
    */
+  const now = new Date().toISOString()
   await Flow.transaction(async (trx) => {
     await flow.$query(trx).patch({
       active,
-      publishedAt: active ? new Date().toISOString() : null,
+      ...(active && { publishedAt: now }),
       updatedBy: userId,
       config: {
         ...flow.config,
+        ...(active
+          ? { firstPublishedAt: flow.config?.firstPublishedAt ?? now }
+          : { lastUnpublishedAt: now }),
       },
     })
 

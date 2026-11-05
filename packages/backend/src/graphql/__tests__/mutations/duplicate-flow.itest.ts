@@ -237,6 +237,32 @@ describe('duplicateFlow endStepId remap', () => {
     expect(copiedTrigger.config?.adminOverride).toBeUndefined()
   })
 
+  it('does not copy publish history onto an owner duplicate', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    await flow.$query().patch({
+      config: {
+        firstPublishedAt: '2026-10-01T00:00:00.000Z',
+        lastUnpublishedAt: '2026-10-02T00:00:00.000Z',
+        errorConfig: {
+          notificationFrequency: 'always',
+          notificationRecipients: [],
+        },
+      },
+    })
+
+    const duplicated = await duplicateFlow(
+      null,
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const copy = await Flow.query().findById(duplicated.id)
+    expect(copy.config?.firstPublishedAt).toBeUndefined()
+    expect(copy.config?.lastUnpublishedAt).toBeUndefined()
+  })
+
   it('rejects a user who is not the owner or a collaborator', async () => {
     const { flow } = await seedFlow([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
