@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   // so it stashes the promise here for tests to await before asserting on
   // anything onFinish does asynchronously (Flow/Connection lookups, writes).
   onFinishPromise: Promise.resolve() as Promise<unknown>,
+  findAccessibleFlow: vi.fn(),
 }))
 
 vi.mock('@ai-sdk/mcp', () => ({
@@ -127,7 +128,6 @@ import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
-import Flow from '@/models/flow'
 
 // @ts-expect-error top-level await is supported by Vitest's ESM runner
 const { default: router } = await import('./index')
@@ -139,7 +139,13 @@ function makeReq(body = {}) {
       ...body,
     },
     context: {
-      currentUser: { id: 'user-1', email: 'test@example.com' },
+      currentUser: {
+        id: 'user-1',
+        email: 'test@example.com',
+        withAccessibleFlows: () => ({
+          findOne: mocks.findAccessibleFlow,
+        }),
+      },
     },
   }
 }
@@ -564,17 +570,14 @@ FIELD: columns
 })
 
 describe('chat handler — data-pipeState connectionLabel resolution', () => {
+  const PIPE_ID = '123e4567-e89b-12d3-a456-426614174000'
+
   function mockFlowSteps(steps: unknown[]) {
-    vi.mocked(Flow.query).mockReturnValue({
-      findById: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue({
-          $relatedQuery: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockResolvedValue(steps),
-          }),
-        }),
+    mocks.findAccessibleFlow.mockResolvedValue({
+      $relatedQuery: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue(steps),
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    })
   }
 
   function mockConnections(connections: unknown[]) {
@@ -606,7 +609,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
     // active pipe, the same way onPipeChange is invoked in real usage.
     vi.mocked(createMcpBridgeTools).mockImplementation(
       (_user, _traceId, onPipeChange) => {
-        onPipeChange?.('pipe-1')
+        onPipeChange?.(PIPE_ID)
         return { plumber_tool: vi.fn() } as unknown as ReturnType<
           typeof createMcpBridgeTools
         >
@@ -638,7 +641,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
 
     expect(getWrittenPipeState()).toEqual(
       expect.objectContaining({
-        pipeId: 'pipe-1',
+        pipeId: PIPE_ID,
         steps: [
           expect.objectContaining({
             id: 'step-1',

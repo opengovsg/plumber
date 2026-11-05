@@ -1,3 +1,10 @@
+import {
+  parsePipeId,
+  readLastPipeSubject,
+  type PipeId,
+} from '@plumber/shared'
+
+import type Flow from '@/models/flow'
 import type User from '@/models/user'
 import { listConnectionsService } from '@/services/mcp/list-connections'
 
@@ -143,4 +150,63 @@ export function buildEstablishedConnectionReminder(
   const formRef = connection.formId ? ` (form id "${connection.formId}")` : ''
 
   return `\n\nKnown fact, verified server-side just now — not from your own memory of earlier turns: the user already connected FormSG connection_id "${connection.connectionId}"${formRef} for the form "${connection.formTitle}" earlier in this conversation. When assigning this trigger's connection in Phase 2b step a, use this connection_id directly via update_step_parameters with parameter_labels: { "connection_id": "${connection.formTitle}" }. Do NOT emit a connection picker, do NOT say the form's URL is known but unconnected, and do NOT ask for a secret key for this trigger — this connection is already fully verified.`
+}
+
+export async function loadPipeForChatPreview(
+  user: User,
+  pipeId: string,
+): Promise<Flow | null> {
+  const parsed = parsePipeId(pipeId)
+  if (!parsed) {
+    return null
+  }
+
+  const row = await user
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findOne({ 'flows.id': parsed })
+
+  return row ?? null
+}
+
+// IMPORTANT: Never put the pipe name in the reminder. The name is free text any editor can set.
+const VERIFIED_PREFIX =
+  '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. '
+
+function editablePipeReminder(pipeId: PipeId, published: boolean): string {
+  const publishedNote = published
+    ? ' This pipe is published. Step changes fail until the user confirms and you call unpublish_pipe.'
+    : ''
+  return `${VERIFIED_PREFIX}The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.${publishedNote}`
+}
+
+function refusalReminder(pipeId: PipeId): string {
+  return `${VERIFIED_PREFIX}The user referenced pipe_id "${pipeId}". It is not a pipe they can edit. Do not call any tool with that id. Tell the user you cannot open that pipe and ask them to choose another or describe a new workflow.`
+}
+
+export async function establishPipeSubject(
+  user: User,
+  messages: ChatRequest['messages'],
+): Promise<{ reminder: string; seedPipeId: PipeId | null }> {
+  const subject = readLastPipeSubject(
+    messages.flatMap((message) =>
+      message.parts.flatMap((part) =>
+        part.type === 'text'
+          ? [{ author: message.role, text: part.text }]
+          : [],
+      ),
+    ),
+  )
+  if (!subject) {
+    return { reminder: '', seedPipeId: null }
+  }
+
+  const row = await loadPipeForChatPreview(user, subject.pipeId)
+  if (!row) {
+    return { reminder: refusalReminder(subject.pipeId), seedPipeId: null }
+  }
+
+  return {
+    reminder: editablePipeReminder(subject.pipeId, row.active === true),
+    seedPipeId: subject.pipeId,
+  }
 }
