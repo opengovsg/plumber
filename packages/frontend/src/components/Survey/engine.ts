@@ -51,14 +51,60 @@ function daysSince(date: Date | null, now: Date): number {
  * gate. Otherwise each publish would push CSAT out by 14 days.
  */
 export function isAlwaysShown(
-  survey: Pick<SeqCandidate, 'flow' | 'type'> | undefined,
+  survey: ActiveSurvey,
   config: SurveyConfig,
 ): boolean {
   return (
     config.pipeCompletionAlwaysShows &&
-    survey?.flow === 'pipe' &&
-    survey.type === 'completion'
+    survey.type === 'SEQ' &&
+    survey.flow === 'pipe' &&
+    survey.trigger === 'completion'
   )
+}
+
+/** Confetti's per-survey record of when this respondent last acted. */
+export interface ConfettiHistory {
+  lastRespondedAt: Date | null
+  lastDismissedAt: Date | null
+}
+
+export function lastActedAt(history: ConfettiHistory): Date | null {
+  const { lastRespondedAt: responded, lastDismissedAt: dismissed } = history
+  if (!responded || !dismissed) {
+    return responded ?? dismissed
+  }
+  return responded > dismissed ? responded : dismissed
+}
+
+export type HistoryCheck = 'pending' | 'show' | 'unavailable' | 'cooldown'
+
+/**
+ * Confetti's history follows the user across devices, unlike local state.
+ * `undefined` means still loading and `null` means the survey is unavailable,
+ * matching `useRespondentState`.
+ */
+export function checkHistory(
+  survey: ActiveSurvey,
+  history: ConfettiHistory | null | undefined,
+  config: SurveyConfig,
+  now: Date,
+): HistoryCheck {
+  if (history === undefined) {
+    return 'pending'
+  }
+  if (history === null) {
+    return 'unavailable'
+  }
+  if (isAlwaysShown(survey, config)) {
+    return 'show'
+  }
+  const cooldownDays =
+    survey.type === 'CSAT'
+      ? config.csatCooldownDays
+      : config.seqCooldownDaysPerFlow
+  return daysSince(lastActedAt(history), now) >= cooldownDays
+    ? 'show'
+    : 'cooldown'
 }
 
 export function evaluate({
@@ -75,8 +121,15 @@ export function evaluate({
   now: Date
 }): SurveyDecision {
   const candidate = trigger.seqCandidate
-  if (candidate && isAlwaysShown(candidate, config)) {
-    return { type: 'SEQ', flow: candidate.flow, trigger: candidate.type }
+  if (candidate) {
+    const seq = {
+      type: 'SEQ',
+      flow: candidate.flow,
+      trigger: candidate.type,
+    } as const
+    if (isAlwaysShown(seq, config)) {
+      return seq
+    }
   }
 
   if (sessionPromptShown) {

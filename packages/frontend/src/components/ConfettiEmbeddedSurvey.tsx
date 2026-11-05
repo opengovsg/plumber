@@ -39,6 +39,8 @@ interface ConfettiEmbeddedSurveyProps {
   publishableKey: string
   apiBaseUrl?: string
   respondent?: string
+  /** Pass `true` when the caller already checked history, to skip a fetch. */
+  isSurveyVisible?: boolean
   metadata?: Record<string, string>
   onReadyToSubmitChange?: (isReady: boolean) => void
 }
@@ -62,6 +64,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
       publishableKey,
       apiBaseUrl,
       respondent,
+      isSurveyVisible,
       metadata,
       onReadyToSubmitChange,
     },
@@ -105,6 +108,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
             publishableKey={publishableKey}
             apiBaseUrl={apiBaseUrl}
             respondent={respondent}
+            isSurveyVisible={isSurveyVisible}
             metadata={metadata}
           >
             <ConfettiController>

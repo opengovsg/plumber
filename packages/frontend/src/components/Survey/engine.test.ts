@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { SURVEY_CONFIG } from './config'
-import { evaluate, SurveyTrigger, SurveyUserState } from './engine'
+import {
+  checkHistory,
+  evaluate,
+  lastActedAt,
+  SurveyTrigger,
+  SurveyUserState,
+} from './engine'
 
 // Interval rules live in engine.critical.test.ts. This file covers priority,
 // expiry and edge cases.
@@ -30,7 +36,7 @@ const completion: SurveyTrigger = {
   seqCandidate: { flow: 'pipe', type: 'completion' },
 }
 const pause: SurveyTrigger = { isPausePoint: true }
-const pipeSeq = { type: 'SEQ', flow: 'pipe', trigger: 'completion' }
+const pipeSeq = { type: 'SEQ', flow: 'pipe', trigger: 'completion' } as const
 
 function run(
   trigger: SurveyTrigger,
@@ -128,5 +134,44 @@ describe('after a publish SEQ, which does not start the global gate', () => {
 
   it('lets CSAT show in the next session', () => {
     expect(run(pause, user)).toEqual({ type: 'CSAT' })
+  })
+})
+
+describe('checkHistory', () => {
+  const csat = { type: 'CSAT' } as const
+  const never = { lastRespondedAt: null, lastDismissedAt: null }
+
+  it('waits while Confetti history loads', () => {
+    expect(checkHistory(csat, undefined, SURVEY_CONFIG, NOW)).toBe('pending')
+  })
+
+  it('blocks a survey Confetti cannot serve', () => {
+    expect(checkHistory(csat, null, SURVEY_CONFIG, NOW)).toBe('unavailable')
+  })
+
+  it('shows a survey the respondent never acted on', () => {
+    expect(checkHistory(csat, never, SURVEY_CONFIG, NOW)).toBe('show')
+  })
+
+  it('exempts the publish SEQ from the cooldown', () => {
+    expect(
+      checkHistory(
+        pipeSeq,
+        { lastRespondedAt: NOW, lastDismissedAt: null },
+        SURVEY_CONFIG,
+        NOW,
+      ),
+    ).toBe('show')
+  })
+})
+
+describe('lastActedAt', () => {
+  it('returns the later of the response and the dismissal', () => {
+    expect(
+      lastActedAt({ lastRespondedAt: daysAgo(1), lastDismissedAt: daysAgo(3) }),
+    ).toEqual(daysAgo(1))
+    expect(
+      lastActedAt({ lastRespondedAt: daysAgo(3), lastDismissedAt: daysAgo(1) }),
+    ).toEqual(daysAgo(1))
   })
 })

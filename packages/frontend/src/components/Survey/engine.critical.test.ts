@@ -9,7 +9,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { SURVEY_CONFIG } from './config'
-import { evaluate, SurveyTrigger, SurveyUserState } from './engine'
+import {
+  ActiveSurvey,
+  checkHistory,
+  evaluate,
+  SurveyTrigger,
+  SurveyUserState,
+} from './engine'
 
 const NOW = new Date('2026-06-01T00:00:00Z')
 
@@ -80,7 +86,7 @@ describe.each([
   survey: string
   trigger: SurveyTrigger
   actedOnAt: (at: Date) => Partial<SurveyUserState>
-  shown: object
+  shown: ActiveSurvey
 }[])('$survey', ({ trigger, actedOnAt, shown }) => {
   it('shows again 14 days after the user acted on it', () => {
     expect(run(trigger, makeUser(actedOnAt(daysAgo(14))))).toEqual(shown)
@@ -90,6 +96,28 @@ describe.each([
     expect(run(trigger, makeUser(actedOnAt(daysAgo(13))))).toMatchObject({
       type: 'NONE',
     })
+  })
+
+  it('counts a response on another device', () => {
+    const responded = (days: number) => ({
+      lastRespondedAt: daysAgo(days),
+      lastDismissedAt: null,
+    })
+    expect(checkHistory(shown, responded(14), SURVEY_CONFIG, NOW)).toBe('show')
+    expect(checkHistory(shown, responded(13), SURVEY_CONFIG, NOW)).toBe(
+      'cooldown',
+    )
+  })
+
+  it('counts a dismissal on another device', () => {
+    expect(
+      checkHistory(
+        shown,
+        { lastRespondedAt: null, lastDismissedAt: daysAgo(13) },
+        SURVEY_CONFIG,
+        NOW,
+      ),
+    ).toBe('cooldown')
   })
 })
 

@@ -1,5 +1,5 @@
 import './SurveyPrompt.css'
-import { PopoverConfetti } from '@opengovsg/confetti/static'
+import { type FinishResult, PopoverConfetti } from '@opengovsg/confetti/static'
 import {
   createContext,
   ReactNode,
@@ -16,13 +16,7 @@ import useAuthentication from '@/hooks/useAuthentication'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { SURVEY_CONFIG } from './config'
-import {
-  ActiveSurvey,
-  evaluate,
-  isAlwaysShown,
-  SeqFlow,
-  SurveyTrigger,
-} from './engine'
+import { ActiveSurvey, evaluate, SeqFlow, SurveyTrigger } from './engine'
 import {
   clearAbandonForRef,
   getPendingAbandon,
@@ -30,17 +24,16 @@ import {
   loadUserState,
   markSessionPromptShown,
   queueAbandon,
-  recordPrompt,
 } from './storage'
 import {
   parseApiTimestamp,
+  recordActedOn,
   respondentFor,
   responseMetadata,
   surveyIdFor,
   surveyMetadata,
+  useSurveyHistory,
 } from './surveys'
-
-const THANK_YOU_VISIBLE_MS = 3000
 
 interface SurveyContextParams {
   /** Evaluates the show rules and displays a survey if one is due. */
@@ -70,35 +63,106 @@ function capture(event: string, properties: Record<string, string>) {
   }
 }
 
+interface ConfettiPromptProps {
+  survey: ActiveSurvey
+  userId: string
+  onBlocked: (reason: 'unavailable' | 'cooldown') => void
+  onActedOn: (action: 'submitted' | 'dismissed') => void
+  onClose: () => void
+}
+
+function ConfettiPrompt({
+  survey,
+  userId,
+  onBlocked,
+  onActedOn,
+  onClose,
+}: ConfettiPromptProps) {
+  const check = useSurveyHistory(survey, userId)
+  const promptRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (check === 'unavailable' || check === 'cooldown') {
+      onBlocked(check)
+    }
+  }, [check, onBlocked])
+
+  // The popover renders its questions after a further survey fetch, so
+  // "shown" is detected from the DOM.
+  useEffect(() => {
+    const container = promptRef.current
+    if (check !== 'show' || !container) {
+      return
+    }
+    const observer = new MutationObserver(detect)
+    function detect() {
+      if (container?.querySelector('.cf-question, .cf-title')) {
+        observer.disconnect()
+        capture('survey_shown', surveyMetadata(survey))
+      }
+    }
+    observer.observe(container, { childList: true, subtree: true })
+    detect()
+    return () => observer.disconnect()
+  }, [check, survey])
+
+  if (check !== 'show') {
+    return null
+  }
+  return (
+    <div className="confetti-survey" ref={promptRef}>
+      <PopoverConfetti
+        proxyUrl={appConfig.confettiApiBaseUrl}
+        surveyId={surveyIdFor(survey).id}
+        publishableKey={appConfig.confettiSurveyPublishableKey}
+        respondent={respondentFor(userId, survey)}
+        // History was already checked, so skip the widget's second fetch.
+        isSurveyVisible
+        metadata={responseMetadata(survey)}
+        onDismiss={() => onActedOn('dismissed')}
+        // An undefined result means the response was not saved.
+        onFinished={(result?: FinishResult) => {
+          if (result) {
+            onActedOn('submitted')
+          }
+        }}
+        onClose={onClose}
+      />
+    </div>
+  )
+}
+
 export function SurveyProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuthentication()
   const [active, setActive] = useState<ActiveSurvey | null>(null)
   const activeRef = useRef<ActiveSurvey | null>(null)
-  const hasShownRef = useRef(false)
-  const hasEngagedRef = useRef(false)
-  const promptRef = useRef<HTMLDivElement>(null)
+  const hasActedRef = useRef(false)
 
   const userId = currentUser?.id
   const createdAt = currentUser?.createdAt
+
+  const show = useCallback((survey: ActiveSurvey | null) => {
+    activeRef.current = survey
+    hasActedRef.current = false
+    setActive(survey)
+  }, [])
 
   const requestSurvey = useCallback(
     (trigger: SurveyTrigger) => {
       if (!userId || activeRef.current) {
         return
       }
-      const now = new Date()
       const seqCandidate =
         trigger.seqCandidate ??
         (trigger.isPausePoint ? getPendingAbandon(userId) : null) ??
         undefined
-      const resolvedTrigger = { ...trigger, seqCandidate }
 
       const decision = evaluate({
-        trigger: resolvedTrigger,
+        trigger: { ...trigger, seqCandidate },
         user: loadUserState(userId, parseApiTimestamp(createdAt)),
         sessionPromptShown: getSession().promptShown,
         config: SURVEY_CONFIG,
-        now,
+        now: new Date(),
       })
 
       if (decision.type === 'NONE') {
@@ -108,12 +172,9 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
         return
       }
       capture('survey_eligible', surveyMetadata(decision))
-      activeRef.current = decision
-      hasShownRef.current = false
-      hasEngagedRef.current = false
-      setActive(decision)
+      show(decision)
     },
-    [userId, createdAt],
+    [userId, createdAt, show],
   )
 
   const queueAbandonedSeq = useCallback(
@@ -134,90 +195,37 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
-  // Confetti's isSurveyVisible fires before the survey loads, so the shown
-  // state is detected from rendered questions.
-  const handleShown = useCallback((survey: ActiveSurvey) => {
-    if (hasShownRef.current) {
-      return
-    }
-    hasShownRef.current = true
-    capture('survey_shown', surveyMetadata(survey))
-  }, [])
+  const handleBlocked = useCallback(
+    (reason: 'unavailable' | 'cooldown') => {
+      const survey = activeRef.current
+      if (survey) {
+        capture('survey_suppressed', {
+          ...surveyMetadata(survey),
+          reason: reason === 'cooldown' ? 'confetti_cooldown' : 'unavailable',
+        })
+      }
+      show(null)
+    },
+    [show],
+  )
 
-  // IMPORTANT: cooldowns start only once the user acts on the panel, so a survey
-  // they ignore keeps coming back on the dashboard.
-  const handleEngaged = useCallback(
-    (survey: ActiveSurvey) => {
-      if (!userId || hasEngagedRef.current) {
+  // IMPORTANT: cooldowns start only on a submit or a dismissal, matching
+  // Confetti's history, so a survey the user ignores comes back.
+  const handleActedOn = useCallback(
+    (action: 'submitted' | 'dismissed') => {
+      const survey = activeRef.current
+      if (!userId || !survey || hasActedRef.current) {
         return
       }
-      hasEngagedRef.current = true
-      const startsGlobalGate = !(
-        survey.type === 'SEQ' &&
-        isAlwaysShown(
-          { flow: survey.flow, type: survey.trigger },
-          SURVEY_CONFIG,
-        )
-      )
-      recordPrompt(
-        userId,
-        survey.type === 'CSAT'
-          ? { type: 'csat' }
-          : { type: 'seq', flow: survey.flow },
-        new Date(),
-        { startsGlobalGate },
-      )
+      hasActedRef.current = true
+      recordActedOn(userId, survey, new Date())
       markSessionPromptShown()
-      capture('survey_engaged', surveyMetadata(survey))
+      capture(`survey_${action}`, surveyMetadata(survey))
     },
     [userId],
   )
 
-  useEffect(() => {
-    const container = promptRef.current
-    if (!active || !container) {
-      return
-    }
-    const observer = new MutationObserver(check)
-    function check() {
-      if (container?.querySelector('.cf-question, .cf-title') && active) {
-        observer.disconnect()
-        handleShown(active)
-      }
-    }
-    observer.observe(container, { childList: true, subtree: true })
-    check()
-
-    const engage = () => handleEngaged(active)
-    container.addEventListener('pointerdown', engage, true)
-    container.addEventListener('keydown', engage, true)
-    return () => {
-      observer.disconnect()
-      container.removeEventListener('pointerdown', engage, true)
-      container.removeEventListener('keydown', engage, true)
-    }
-  }, [active, handleShown, handleEngaged])
-
-  const handleDismiss = useCallback(
-    (survey: ActiveSurvey) => {
-      handleEngaged(survey)
-      capture('survey_dismissed', surveyMetadata(survey))
-      activeRef.current = null
-      setActive(null)
-    },
-    [handleEngaged],
-  )
-
-  // The widget keeps its thank-you message up until the user closes it, which
-  // would otherwise follow them to the next page.
-  const handleFinished = useCallback((survey: ActiveSurvey) => {
-    window.setTimeout(() => {
-      if (activeRef.current === survey) {
-        activeRef.current = null
-        setActive(null)
-      }
-    }, THANK_YOU_VISIBLE_MS)
-  }, [])
+  const handleClose = useCallback(() => show(null), [show])
 
   const releaseDashboardSurvey = useCallback(() => {
     const survey = activeRef.current
@@ -229,9 +237,8 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       ...surveyMetadata(survey),
       reason: 'left_dashboard',
     })
-    activeRef.current = null
-    setActive(null)
-  }, [])
+    show(null)
+  }, [show])
 
   const value = useMemo(
     () => ({
@@ -252,18 +259,14 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
     <SurveyContext.Provider value={value}>
       {children}
       {active && userId && (
-        <div className="confetti-survey" ref={promptRef}>
-          <PopoverConfetti
-            key={surveyIdFor(active).key}
-            proxyUrl={appConfig.confettiApiBaseUrl}
-            surveyId={surveyIdFor(active).id}
-            publishableKey={appConfig.confettiSurveyPublishableKey}
-            respondent={respondentFor(userId, active)}
-            onDismiss={() => handleDismiss(active)}
-            onFinished={() => handleFinished(active)}
-            metadata={responseMetadata(active)}
-          />
-        </div>
+        <ConfettiPrompt
+          key={surveyIdFor(active).key}
+          survey={active}
+          userId={userId}
+          onBlocked={handleBlocked}
+          onActedOn={handleActedOn}
+          onClose={handleClose}
+        />
       )}
     </SurveyContext.Provider>
   )

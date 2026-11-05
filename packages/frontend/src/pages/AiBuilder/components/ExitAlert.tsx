@@ -20,13 +20,14 @@ import {
   getSession,
   loadUserState,
   markSessionPromptShown,
-  recordPrompt,
 } from '@/components/Survey/storage'
 import {
   parseApiTimestamp,
+  recordActedOn,
   respondentFor,
   responseMetadata,
   surveyIdFor,
+  useSurveyHistory,
 } from '@/components/Survey/surveys'
 import appConfig from '@/config/app'
 import useAuthentication from '@/hooks/useAuthentication'
@@ -43,6 +44,12 @@ const defaultStyles = {
   my: 6 /* Remove default vertical margins */,
   maxW: '514px' /* Set a maximum width */,
   w: '100%' /* Ensure it takes full width */,
+}
+
+const AI_BUILDER_SURVEY: ActiveSurvey = {
+  type: 'SEQ',
+  flow: 'aiBuilder',
+  trigger: 'abandon',
 }
 
 const mobileStyles = {
@@ -62,9 +69,13 @@ export default function ExitAlert({
   const [isReadyToSubmit, setIsReadyToSubmit] = useState(false)
   const { currentUser } = useAuthentication()
   const userId = currentUser?.id
-  // Decided once per mount so the survey cannot vanish mid-dialog.
-  const [survey] = useState<ActiveSurvey | null>(() => {
-    if (!userId) {
+  const history = useSurveyHistory(AI_BUILDER_SURVEY, userId)
+  // Decided when the dialog first opens, so the survey cannot vanish mid-dialog.
+  const [survey, setSurvey] = useState<ActiveSurvey | null | undefined>()
+
+  function decideSurvey(): ActiveSurvey | null {
+    // A pending history check falls back to local state alone.
+    if (!userId || history === 'unavailable' || history === 'cooldown') {
       return null
     }
     const decision = evaluate({
@@ -78,8 +89,11 @@ export default function ExitAlert({
       now: new Date(),
     })
     return decision.type === 'NONE' ? null : decision
-  })
-  const shouldShowSurvey = survey !== null
+  }
+  if (isOpen && survey === undefined) {
+    setSurvey(decideSurvey())
+  }
+  const shouldShowSurvey = !!survey
 
   const handleExit = () => {
     if (survey && userId) {
@@ -89,7 +103,7 @@ export default function ExitAlert({
       }
       // A survey that timed out unseen must not start cooldowns.
       if (confettiRef.current?.hasLoaded()) {
-        recordPrompt(userId, { type: 'seq', flow: 'aiBuilder' }, new Date())
+        recordActedOn(userId, survey, new Date())
         markSessionPromptShown()
       }
     }
@@ -133,6 +147,7 @@ export default function ExitAlert({
                 publishableKey={appConfig.confettiSurveyPublishableKey}
                 apiBaseUrl={appConfig.confettiApiBaseUrl}
                 respondent={respondentFor(userId, survey)}
+                isSurveyVisible
                 metadata={responseMetadata(survey)}
                 onReadyToSubmitChange={setIsReadyToSubmit}
               />

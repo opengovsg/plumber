@@ -44,6 +44,17 @@ describe('recordPrompt', () => {
   })
 })
 
+describe('recordPrompt with an older date', () => {
+  it('keeps the later dates already stored', () => {
+    recordPrompt(USER_ID, { type: 'csat' }, NOW)
+    recordPrompt(USER_ID, { type: 'csat' }, new Date('2026-05-01T00:00:00Z'))
+
+    const state = loadUserState(USER_ID, null)
+    expect(state.lastPromptAt).toEqual(NOW)
+    expect(state.lastCsatAt).toEqual(NOW)
+  })
+})
+
 describe('loadUserState', () => {
   it('reads corrupt fields as never and keeps valid ones', () => {
     localStorage.setItem(

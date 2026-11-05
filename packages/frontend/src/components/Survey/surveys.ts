@@ -1,7 +1,17 @@
+import { useRespondentState } from '@opengovsg/confetti'
+import { useEffect } from 'react'
+
 import appConfig from '@/config/app'
 
-import type { ActiveSurvey } from './engine'
-import { getSession } from './storage'
+import { SURVEY_CONFIG } from './config'
+import {
+  ActiveSurvey,
+  checkHistory,
+  HistoryCheck,
+  isAlwaysShown,
+  lastActedAt,
+} from './engine'
+import { getSession, recordPrompt } from './storage'
 
 export function surveyMetadata(survey: ActiveSurvey): Record<string, string> {
   if (survey.type === 'CSAT') {
@@ -58,4 +68,47 @@ export function parseApiTimestamp(
   }
   const date = /^\d+$/.test(value) ? new Date(Number(value)) : new Date(value)
   return Number.isNaN(date.getTime()) ? null : date
+}
+
+/** Records that the user submitted or dismissed `survey` at `at`. */
+export function recordActedOn(
+  userId: string,
+  survey: ActiveSurvey,
+  at: Date,
+): void {
+  recordPrompt(
+    userId,
+    survey.type === 'CSAT'
+      ? { type: 'csat' }
+      : { type: 'seq', flow: survey.flow },
+    at,
+    { startsGlobalGate: !isAlwaysShown(survey, SURVEY_CONFIG) },
+  )
+}
+
+/**
+ * Checks Confetti's history for `survey`, so an action on another device
+ * counts here too. A cooldown found there is copied into local state.
+ */
+export function useSurveyHistory(
+  survey: ActiveSurvey,
+  userId: string | undefined,
+): HistoryCheck {
+  // An empty respondent makes the hook return null without a request.
+  const history = useRespondentState({
+    surveyId: surveyIdFor(survey).id,
+    publishableKey: appConfig.confettiSurveyPublishableKey,
+    respondent: userId ? respondentFor(userId, survey) : '',
+    proxyUrl: appConfig.confettiApiBaseUrl,
+  })
+  const check = checkHistory(survey, history, SURVEY_CONFIG, new Date())
+  const actedAtMs = history ? lastActedAt(history)?.getTime() : undefined
+
+  useEffect(() => {
+    if (check === 'cooldown' && userId && actedAtMs !== undefined) {
+      recordActedOn(userId, survey, new Date(actedAtMs))
+    }
+  }, [check, userId, actedAtMs, survey])
+
+  return check
 }

@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { SURVEY_CONFIG } from './config'
 import type { SeqCandidate, SeqFlow, SurveyUserState } from './engine'
 
-// IMPORTANT: Confetti cannot return survey state across surveys, so this state
-// lives in this browser only. The cooldowns do not follow a user across devices.
+// IMPORTANT: Confetti tracks history per survey only, so the cross-survey gates
+// live in this browser. Per-survey history syncs in from Confetti when checked.
 const STATE_KEY_PREFIX = 'plumber:survey:v1:'
 const SESSION_KEY = 'plumber:survey:session'
 
@@ -96,13 +96,16 @@ export function recordPrompt(
 ): void {
   const state = load(userId)
   const iso = now.toISOString()
+  // History synced from Confetti can be older than what this browser holds.
+  const later = (current: string | null) =>
+    current && new Date(current) > now ? current : iso
   if (startsGlobalGate) {
-    state.lastPromptAt = iso
+    state.lastPromptAt = later(state.lastPromptAt)
   }
   if (survey.type === 'csat') {
-    state.lastCsatAt = iso
+    state.lastCsatAt = later(state.lastCsatAt)
   } else {
-    state.lastSeqAt[survey.flow] = iso
+    state.lastSeqAt[survey.flow] = later(state.lastSeqAt[survey.flow])
     if (survey.flow === state.pendingAbandon?.flow) {
       state.pendingAbandon = null
     }
