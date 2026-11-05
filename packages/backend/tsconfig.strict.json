@@ -231,6 +231,7 @@
     "src/types/interfaces/index.d.ts",
     "src/types/interfaces/json-object.ts",
     "src/types/luxon-extensions.ts",
+    "src/types/posthog-ai-otel.d.ts",
     "src/types/step.ts",
     "src/workers/helpers/job-queue-timing.ts",
     "src/db/storage/archived_templates/attendance-taking.ts",
