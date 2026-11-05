@@ -233,6 +233,7 @@ const handleChatStream = observe(
       const workflowError = 'Unable to generate the workflow.'
 
       let activePipeId: string | null = pipeSubject.seedPipeId
+      let pipeToolRan = false
 
       // AI SDK 5 defaults onError to getErrorMessage, which forwards raw
       // litellm/provider dumps to the client. Override both stream constructors
@@ -245,6 +246,7 @@ const handleChatStream = observe(
             traceId,
             (pipeId) => {
               activePipeId = pipeId
+              pipeToolRan = true
             },
             (stepId, parameters, parameterLabels) => {
               writer.write({
@@ -345,7 +347,9 @@ const handleChatStream = observe(
                       }
                     }
 
-                    if (activePipeId) {
+                    // The client drops a proposal when pipe state rides in the same message.
+                    const seedOnly = !pipeToolRan
+                    if (activePipeId && !(seedOnly && hasWorkflowMetadata)) {
                       const flow = await loadPipeForChatPreview(
                         context.currentUser,
                         activePipeId,
