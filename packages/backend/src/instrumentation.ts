@@ -1,14 +1,29 @@
 import { LangfuseSpanProcessor } from '@langfuse/otel'
+import { diag, DiagLogLevel } from '@opentelemetry/api'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 
 import appConfig from '@/config/app'
+import {
+  createPostHogSpanProcessor,
+  PAIR_ACTION_RESOURCE_NAMES,
+} from '@/helpers/ai/posthog-telemetry'
+import logger from '@/helpers/logger'
+
+// Rejected exports otherwise disappear without a backend log.
+diag.setLogger(
+  {
+    error: (message, ...args) =>
+      logger.error(`OpenTelemetry: ${message}`, { args }),
+    warn: (message, ...args) =>
+      logger.warn(`OpenTelemetry: ${message}`, { args }),
+    info: () => undefined,
+    debug: () => undefined,
+    verbose: () => undefined,
+  },
+  DiagLogLevel.WARN,
+)
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
-
-const PAIR_ACTION_RESOURCE_NAMES = [
-  'pair-action-generate-object',
-  'pair-action-process-image',
-]
 
 const BASE_CONFIG = {
   baseUrl: appConfig.pair.rome.baseUrl,
@@ -60,8 +75,21 @@ const pairActionSpanProcessor = new LangfuseSpanProcessor({
   },
 })
 
+const posthogSpanProcessor = createPostHogSpanProcessor(
+  appConfig.posthog,
+  appConfig.appEnv,
+)
+
 const sdk = new NodeSDK({
-  spanProcessors: [aiBuilderSpanProcessor, pairActionSpanProcessor],
+  spanProcessors: [
+    aiBuilderSpanProcessor,
+    pairActionSpanProcessor,
+    ...(posthogSpanProcessor ? [posthogSpanProcessor] : []),
+  ],
 })
 
 sdk.start()
+
+export function shutdownTelemetry(): Promise<void> {
+  return sdk.shutdown()
+}
