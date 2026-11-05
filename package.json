@@ -15,6 +15,7 @@
     "build": "turbo run build",
     "start": "pnpm --filter backend run start",
     "start:worker": "pnpm --filter backend run start:worker",
+    "start:reconciler": "pnpm --filter backend run start:reconciler",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "turbo run format",

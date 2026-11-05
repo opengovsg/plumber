@@ -1,6 +1,6 @@
 import tracer from 'dd-trace'
 
-import appConfig from '@/config/app'
+import appEnvConfig from '@/config/app/load-app-env'
 
 import logger from './logger'
 
@@ -8,7 +8,7 @@ tracer.init({
   logInjection: true,
   service: 'plumber',
   logger,
-  env: appConfig.appEnv,
+  env: appEnvConfig.appEnv,
 })
 
 export default tracer

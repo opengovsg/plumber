@@ -1,0 +1,106 @@
+/**
+ * Business rules (user decisions), quoted verbatim:
+ *
+ * - "Prevent the reconciler from processing jobs by preventing importing
+ *   worker code."
+ * - "`src/reconciler.ts` must not import `workers/*` (only `worker.ts` may)."
+ * - "The reconciler must not load the full app config, so its task declares
+ *   only the env vars it uses."
+ * - "Add a datetime.ts, in case later reconciler code calls into Luxon."
+ */
+import fs from 'fs'
+import path from 'path'
+
+import ts from 'typescript'
+import { describe, expect, it } from 'vitest'
+
+const SRC_DIR = path.resolve(__dirname, '../../..')
+
+const FORBIDDEN_FILES = ['worker.ts', 'server.ts', 'app.ts'].map((file) =>
+  path.join(SRC_DIR, file),
+)
+const FORBIDDEN_DIR = path.join(SRC_DIR, 'workers') + path.sep
+
+function resolveImport(fromFile: string, specifier: string): string | null {
+  let basePath: string
+  if (specifier.startsWith('@/')) {
+    basePath = path.join(SRC_DIR, specifier.slice(2))
+  } else if (specifier.startsWith('.')) {
+    basePath = path.resolve(path.dirname(fromFile), specifier)
+  } else {
+    return null
+  }
+
+  const candidates = [
+    basePath,
+    `${basePath}.ts`,
+    `${basePath}.tsx`,
+    path.join(basePath, 'index.ts'),
+  ]
+  return (
+    candidates.find(
+      (candidate) =>
+        /\.tsx?$/.test(candidate) &&
+        fs.existsSync(candidate) &&
+        fs.statSync(candidate).isFile(),
+    ) ?? null
+  )
+}
+
+function collectReachableFiles(entryFile: string): Set<string> {
+  const reached = new Set<string>([entryFile])
+  const queue = [entryFile]
+
+  while (queue.length > 0) {
+    const file = queue.pop() as string
+    const { importedFiles } = ts.preProcessFile(
+      fs.readFileSync(file, 'utf8'),
+      true,
+      true,
+    )
+
+    for (const { fileName } of importedFiles) {
+      const resolved = resolveImport(file, fileName)
+      if (resolved && !reached.has(resolved)) {
+        reached.add(resolved)
+        queue.push(resolved)
+      }
+    }
+  }
+
+  return reached
+}
+
+function isForbidden(file: string): boolean {
+  return FORBIDDEN_FILES.includes(file) || file.startsWith(FORBIDDEN_DIR)
+}
+
+describe('reconciler entry imports', () => {
+  it('resolves `@/` imports, so the walk from the worker reaches its workers', () => {
+    const reached = collectReachableFiles(path.join(SRC_DIR, 'worker.ts'))
+
+    expect(reached).toContain(path.join(SRC_DIR, 'workers/flow.ts'))
+  })
+
+  it('never reaches the worker, server or app entry files', () => {
+    const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
+
+    expect(reached).toContain(
+      path.join(SRC_DIR, 'services/reconciler/run-checks.ts'),
+    )
+    expect([...reached].filter(isForbidden)).toEqual([])
+  })
+
+  it('never loads the full app config, whose required env vars the task omits', () => {
+    const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
+
+    expect(reached).not.toContain(path.join(SRC_DIR, 'config/app/core.ts'))
+    expect(reached).not.toContain(path.join(SRC_DIR, 'config/app/index.ts'))
+  })
+
+  it('sets up Luxon like the app does', () => {
+    const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
+
+    expect(reached).toContain(path.join(SRC_DIR, 'config/datetime.ts'))
+  })
+})

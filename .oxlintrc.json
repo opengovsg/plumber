@@ -95,6 +95,27 @@
           { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
         ]
       }
+    },
+    {
+      // Importing worker code would make the reconciler process jobs.
+      "files": [
+        "packages/backend/src/reconciler.ts",
+        "packages/backend/src/services/reconciler/**/*.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              "@/worker",
+              "@/server",
+              "@/app",
+              "@/helpers/check-worker-readiness"
+            ],
+            "patterns": ["@/workers/**", "**/workers/**"]
+          }
+        ]
+      }
     }
   ]
 }
