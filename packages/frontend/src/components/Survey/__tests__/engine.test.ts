@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { SURVEY_CONFIG } from './config'
+import { SURVEY_CONFIG } from '../config'
 import {
   checkHistory,
   evaluate,
   lastActedAt,
   SurveyTrigger,
   SurveyUserState,
-} from './engine'
+} from '../engine'
 
 // Interval rules live in engine.critical.test.ts. This file covers priority,
 // expiry and edge cases.

@@ -8,14 +8,14 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { SURVEY_CONFIG } from './config'
+import { SURVEY_CONFIG } from '../config'
 import {
   ActiveSurvey,
   checkHistory,
   evaluate,
   SurveyTrigger,
   SurveyUserState,
-} from './engine'
+} from '../engine'
 
 const NOW = new Date('2026-06-01T00:00:00Z')
 

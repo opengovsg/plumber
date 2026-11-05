@@ -6,7 +6,7 @@ import {
   loadUserState,
   queueAbandon,
   recordPrompt,
-} from './storage'
+} from '../storage'
 
 const USER_ID = 'user-1'
 const NOW = new Date('2026-06-01T00:00:00Z')

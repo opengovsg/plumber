@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseApiTimestamp, surveyMetadata } from './surveys'
+import { parseApiTimestamp, surveyMetadata } from '../surveys'
 
 describe('parseApiTimestamp', () => {
   it('parses epoch milliseconds from the API', () => {

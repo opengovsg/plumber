@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isStillOnPipe } from './abandon'
+import { isStillOnPipe } from '../abandon'
 
 const FLOW_ID = '8fed2151-8753-458f-82a5-76ba8db08725'
 
