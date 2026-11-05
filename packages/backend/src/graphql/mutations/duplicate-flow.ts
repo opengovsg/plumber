@@ -2,10 +2,6 @@ import { isEmpty } from 'lodash'
 
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
 import { getStepVersion } from '@/helpers/get-step-version'
-import {
-  assertSlackFindMessageCreatable,
-  isSlackFindMessageAction,
-} from '@/helpers/slack-find-message-access'
 import logger from '@/helpers/logger'
 import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
@@ -29,14 +25,6 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
 
   // Editors and Viewers must not receive the owner's connections or secrets.
   const isOwner = flow.role === 'owner'
-
-  if (flow.steps.some((step) => isSlackFindMessageAction(step.appKey, step.key))) {
-    await assertSlackFindMessageCreatable({
-      email: context.currentUser.email,
-      appKey: 'slack',
-      actionKey: 'findMessage',
-    })
-  }
 
   return await Flow.transaction(async (trx) => {
     const prevConfig = { ...flow.config }

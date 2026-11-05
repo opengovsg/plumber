@@ -3,7 +3,6 @@ import z from 'zod'
 
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
-import { assertSlackFindMessageCreatable } from '@/helpers/slack-find-message-access'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import { createStepAiBuilderConfig } from '@/services/mcp/step-ai-builder-config'
@@ -24,17 +23,6 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   const restrictedApps = getRestrictedAppKeys(
     await getAllLdFlags(context.currentUser.email),
   )
-
-  for (const step of steps) {
-    if (!step.key) {
-      continue
-    }
-    await assertSlackFindMessageCreatable({
-      email: context.currentUser.email,
-      appKey: step.appKey,
-      actionKey: step.key,
-    })
-  }
 
   // Generate schema to validate trigger step against the available triggers in apps
   // we also pass restricted apps into the schema so the assistant knows which apps the user cannot use

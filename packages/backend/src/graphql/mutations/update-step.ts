@@ -2,7 +2,6 @@ import { IAction } from '@/../../types'
 import apps from '@/apps'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
-import { assertSlackFindMessageCreatable } from '@/helpers/slack-find-message-access'
 import {
   addFlowConnection,
   addFlowTableConnection,
@@ -45,14 +44,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
     if (!step) {
       throw new BadUserInputError('Step not found')
     }
-
-    await assertSlackFindMessageCreatable({
-      email: context.currentUser.email,
-      appKey: input.appKey,
-      actionKey: input.key,
-      existingAppKey: step.appKey,
-      existingActionKey: step.key,
-    })
 
     step.flow.assertNotUpdatedSince(
       input.flow.updatedAt,
