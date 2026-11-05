@@ -24,6 +24,7 @@ export const GET_TEMPLATES = gql`
       }
       iconName
       tags
+      isBuiltIn
     }
   }
 `
