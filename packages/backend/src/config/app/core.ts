@@ -103,6 +103,10 @@ export type CoreConfig = {
      */
     credentials?: AwsCredentialIdentity
   }
+  templateDescription: {
+    apiKey?: string
+    model: string
+  }
   archiveEnabled: boolean
   aiGateway: {
     apiKey?: string
@@ -124,6 +128,10 @@ let webhookUrl = new URL(
 webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1) // remove trailing slash
 
 const coreConfig: CoreConfig = {
+  templateDescription: {
+    apiKey: process.env.AI_GATEWAY_API_KEY,
+    model: process.env.AI_GATEWAY_MODEL || 'openai/gpt-4o-mini',
+  },
   port,
   version: getVersion(),
   baseUrl: requireEnv('BASE_URL', process.env.BASE_URL),
