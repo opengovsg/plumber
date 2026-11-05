@@ -19,7 +19,7 @@ export function surveyMetadata(survey: ActiveSurvey): Record<string, string> {
   }
   return {
     survey_type: 'seq',
-    flow_id: survey.flow,
+    seq_source: survey.flow,
     seq_trigger: survey.trigger,
   }
 }
