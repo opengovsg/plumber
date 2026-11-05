@@ -206,28 +206,49 @@ function isSelectionTurn(
   )
 }
 
+export interface PipeSubject {
+  reminder: string
+  seedPipeId: PipeId | null
+  editable: boolean
+}
+
+const NO_PIPE_SUBJECT: PipeSubject = {
+  reminder: '',
+  seedPipeId: null,
+  editable: false,
+}
+
 export async function establishPipeSubject(
   user: User,
   messages: ChatRequest['messages'],
-): Promise<{ reminder: string; seedPipeId: PipeId | null }> {
+  previewPipeId?: string,
+): Promise<PipeSubject> {
   const subject = readLastPipeSubject(toSubjectEntries(messages))
   if (!subject) {
-    return { reminder: '', seedPipeId: null }
+    return NO_PIPE_SUBJECT
+  }
+
+  // History alone cannot show a newer pipe, because tool results are dropped on refresh.
+  const selectionTurn = isSelectionTurn(messages, subject.pipeId)
+  if (!selectionTurn && parsePipeId(previewPipeId ?? '') !== subject.pipeId) {
+    return NO_PIPE_SUBJECT
   }
 
   const row = await loadPipeForChatPreview(user, subject.pipeId)
   if (!row) {
-    return { reminder: refusalReminder(subject.pipeId), seedPipeId: null }
+    return { ...NO_PIPE_SUBJECT, reminder: refusalReminder(subject.pipeId) }
   }
 
   if (row.active) {
-    return { reminder: publishedPipeReminder(subject.pipeId), seedPipeId: null }
+    return {
+      ...NO_PIPE_SUBJECT,
+      reminder: publishedPipeReminder(subject.pipeId),
+    }
   }
 
   return {
     reminder: editablePipeReminder(subject.pipeId),
-    seedPipeId: isSelectionTurn(messages, subject.pipeId)
-      ? subject.pipeId
-      : null,
+    seedPipeId: selectionTurn ? subject.pipeId : null,
+    editable: true,
   }
 }
