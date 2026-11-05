@@ -17,6 +17,7 @@ import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { assignStepConnection, markPipeEdited } from './pipe-edits'
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
 import { verifyConnectionRegistrationService } from './verify-connection-registration'
@@ -204,6 +205,8 @@ export async function updateStepParametersService({
       }),
     })
 
+    await markPipeEdited({ user, pipeId, trx })
+
     return { step: updatedStep, rawApp }
   })
 
@@ -221,9 +224,7 @@ export async function updateStepParametersService({
         )
 
         if (verification.status === 'VERIFIED') {
-          await Step.query()
-            .patchAndFetchById(stepId, { connectionId })
-            .throwIfNotFound()
+          await assignStepConnection({ user, pipeId, stepId, connectionId })
           result.step.connectionId = connectionId
           result.connectionRegistered = true
         } else if (verification.status === 'UNREGISTERED') {
@@ -276,9 +277,7 @@ export async function updateStepParametersService({
         if (verification.status !== 'VERIFIED') {
           await registerConnectionService(user, stepId, connectionId)
         } else {
-          await Step.query()
-            .patchAndFetchById(stepId, { connectionId })
-            .throwIfNotFound()
+          await assignStepConnection({ user, pipeId, stepId, connectionId })
         }
         result.step.connectionId = connectionId
         result.connectionRegistered = true
@@ -287,9 +286,7 @@ export async function updateStepParametersService({
           err instanceof Error ? err.message : String(err)
       }
     } else {
-      await Step.query()
-        .patchAndFetchById(stepId, { connectionId })
-        .throwIfNotFound()
+      await assignStepConnection({ user, pipeId, stepId, connectionId })
       result.step.connectionId = connectionId
     }
   }
