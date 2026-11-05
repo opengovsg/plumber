@@ -1,79 +1,102 @@
+import { parsePipeId } from '@plumber/shared'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
   derivePipeChip,
   pipeHeaderTitle,
+  resolveSubjectName,
   showComposerChips,
   showConnectFormChip,
 } from './pipe-chip'
 
 const onSelect = vi.fn()
 
-describe('derivePipeChip', () => {
-  it('hides the chip once a pipe name is known', () => {
+const PIPE_ID = parsePipeId('123e4567-e89b-12d3-a456-426614174000')
+const OTHER_PIPE_ID = '223e4567-e89b-12d3-a456-426614174000'
+if (!PIPE_ID) {
+  throw new Error('fixture is not a pipe id')
+}
+const subject = { pipeId: PIPE_ID, displayName: 'Leave form' }
+
+describe('resolveSubjectName', () => {
+  it('returns null when no pipe was selected', () => {
     expect(
-      derivePipeChip({
-        pipeCreated: true,
-        selectedName: 'Selected',
-        recoveredName: 'Recovered',
-        onSelect,
+      resolveSubjectName({
+        subject: null,
+        previewPipeId: PIPE_ID,
+        selectionPending: false,
       }),
-    ).toEqual({ kind: 'hidden' })
+    ).toBeNull()
   })
 
-  it('hides the chip when a previous turn already named the pipe', () => {
+  it('returns the name once the preview shows the selected pipe', () => {
     expect(
-      derivePipeChip({
-        pipeCreated: false,
-        selectedName: null,
-        recoveredName: 'Recovered',
-        onSelect,
+      resolveSubjectName({
+        subject,
+        previewPipeId: PIPE_ID,
+        selectionPending: false,
       }),
+    ).toBe('Leave form')
+  })
+
+  it('returns the name while the selection turn is streaming', () => {
+    expect(
+      resolveSubjectName({
+        subject,
+        previewPipeId: null,
+        selectionPending: true,
+      }),
+    ).toBe('Leave form')
+  })
+
+  it('returns null after the server refused the selection', () => {
+    expect(
+      resolveSubjectName({
+        subject,
+        previewPipeId: null,
+        selectionPending: false,
+      }),
+    ).toBeNull()
+  })
+
+  it('returns null once the preview moved to a different pipe', () => {
+    expect(
+      resolveSubjectName({
+        subject,
+        previewPipeId: OTHER_PIPE_ID,
+        selectionPending: false,
+      }),
+    ).toBeNull()
+  })
+})
+
+describe('derivePipeChip', () => {
+  it('hides the chip once a pipe is selected', () => {
+    expect(
+      derivePipeChip({ pipeCreated: true, subjectName: 'Leave form', onSelect }),
     ).toEqual({ kind: 'hidden' })
   })
 
   it('hides the chip when the model created a pipe and nobody selected one', () => {
     expect(
-      derivePipeChip({
-        pipeCreated: true,
-        selectedName: null,
-        recoveredName: null,
-        onSelect,
-      }),
+      derivePipeChip({ pipeCreated: true, subjectName: null, onSelect }),
     ).toEqual({ kind: 'hidden' })
   })
 
-  it('offers a pick when the chat has no pipe and no selection', () => {
+  it('offers the picker before any pipe exists', () => {
     expect(
-      derivePipeChip({
-        pipeCreated: false,
-        selectedName: null,
-        recoveredName: null,
-        onSelect,
-      }),
+      derivePipeChip({ pipeCreated: false, subjectName: null, onSelect }),
     ).toEqual({ kind: 'pick', onSelect })
   })
 })
 
 describe('showComposerChips', () => {
-  const hidden = { kind: 'hidden' as const }
-
-  it('shows the row for form callbacks', () => {
+  it('shows the row when form callbacks exist', () => {
     expect(
       showComposerChips({
         formCallbacks: true,
         attachedForm: false,
-        pipeChip: hidden,
-      }),
-    ).toBe(true)
-  })
-
-  it('shows the row for an attached form', () => {
-    expect(
-      showComposerChips({
-        formCallbacks: false,
-        attachedForm: true,
-        pipeChip: hidden,
+        pipeChip: { kind: 'hidden' },
       }),
     ).toBe(true)
   })
@@ -93,7 +116,7 @@ describe('showComposerChips', () => {
       showComposerChips({
         formCallbacks: false,
         attachedForm: false,
-        pipeChip: hidden,
+        pipeChip: { kind: 'hidden' },
       }),
     ).toBe(false)
   })
@@ -102,31 +125,13 @@ describe('showComposerChips', () => {
 describe('pipeHeaderTitle', () => {
   it('uses the selected pipe title ahead of the default name', () => {
     expect(
-      pipeHeaderTitle({
-        flowName: 'Build with AI',
-        selectedName: 'Leave form',
-        recoveredName: 'Older pipe',
-      }),
-    ).toBe('Leave form')
-  })
-
-  it('uses a recovered pipe title after refresh', () => {
-    expect(
-      pipeHeaderTitle({
-        flowName: 'Build with AI',
-        selectedName: null,
-        recoveredName: 'Leave form',
-      }),
+      pipeHeaderTitle({ flowName: 'Build with AI', subjectName: 'Leave form' }),
     ).toBe('Leave form')
   })
 
   it('keeps the default name when no pipe is selected', () => {
     expect(
-      pipeHeaderTitle({
-        flowName: 'Build with AI',
-        selectedName: null,
-        recoveredName: null,
-      }),
+      pipeHeaderTitle({ flowName: 'Build with AI', subjectName: null }),
     ).toBe('Build with AI')
   })
 })
@@ -134,41 +139,19 @@ describe('pipeHeaderTitle', () => {
 describe('showConnectFormChip', () => {
   it('hides the chip once a pipe is selected', () => {
     expect(
-      showConnectFormChip({
-        pipeCreated: false,
-        selectedName: 'Leave form',
-        recoveredName: null,
-      }),
-    ).toBe(false)
-  })
-
-  it('hides the chip when a previous turn already named the pipe', () => {
-    expect(
-      showConnectFormChip({
-        pipeCreated: false,
-        selectedName: null,
-        recoveredName: 'Leave form',
-      }),
+      showConnectFormChip({ pipeCreated: false, subjectName: 'Leave form' }),
     ).toBe(false)
   })
 
   it('hides the chip once a pipe exists', () => {
-    expect(
-      showConnectFormChip({
-        pipeCreated: true,
-        selectedName: null,
-        recoveredName: null,
-      }),
-    ).toBe(false)
+    expect(showConnectFormChip({ pipeCreated: true, subjectName: null })).toBe(
+      false,
+    )
   })
 
-  it('shows the chip before any pipe is chosen', () => {
-    expect(
-      showConnectFormChip({
-        pipeCreated: false,
-        selectedName: null,
-        recoveredName: null,
-      }),
-    ).toBe(true)
+  it('shows the chip before any pipe is selected or created', () => {
+    expect(showConnectFormChip({ pipeCreated: false, subjectName: null })).toBe(
+      true,
+    )
   })
 })

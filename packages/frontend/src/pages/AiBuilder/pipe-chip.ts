@@ -10,19 +10,37 @@ export type PipeChip =
   | { kind: 'pick'; onSelect: (choice: PipeChoice) => void }
   | { kind: 'hidden' }
 
+// The server confirms a selection by sending that pipe's state. A refused or
+// published pick never does, so the picker must come back.
+export function resolveSubjectName({
+  subject,
+  previewPipeId,
+  selectionPending,
+}: {
+  subject: { pipeId: PipeId; displayName: string } | null
+  previewPipeId: string | null
+  selectionPending: boolean
+}): string | null {
+  if (!subject) {
+    return null
+  }
+  if (selectionPending || previewPipeId === subject.pipeId) {
+    return subject.displayName.trim() || null
+  }
+  return null
+}
+
 export function derivePipeChip({
   pipeCreated,
-  selectedName,
-  recoveredName,
+  subjectName,
   onSelect,
 }: {
   pipeCreated: boolean
-  selectedName: string | null
-  recoveredName: string | null
+  subjectName: string | null
   onSelect: (choice: PipeChoice) => void
 }): PipeChip {
   // The header shows the selected pipe's title, so the composer does not repeat it.
-  if ((selectedName ?? recoveredName)?.trim()) {
+  if (subjectName) {
     return { kind: 'hidden' }
   }
   // A model-created pipe has no selection sentence, so the chip stays hidden.
@@ -34,30 +52,22 @@ export function derivePipeChip({
 
 export function pipeHeaderTitle({
   flowName,
-  selectedName,
-  recoveredName,
+  subjectName,
 }: {
   flowName: string
-  selectedName: string | null
-  recoveredName: string | null
+  subjectName: string | null
 }): string {
-  const pipeTitle = (selectedName ?? recoveredName)?.trim()
-  return pipeTitle || flowName
+  return subjectName || flowName
 }
 
 export function showConnectFormChip({
   pipeCreated,
-  selectedName,
-  recoveredName,
+  subjectName,
 }: {
   pipeCreated: boolean
-  selectedName: string | null
-  recoveredName: string | null
+  subjectName: string | null
 }): boolean {
-  if (pipeCreated) {
-    return false
-  }
-  return !(selectedName ?? recoveredName)?.trim()
+  return !pipeCreated && !subjectName
 }
 
 export function showComposerChips({
