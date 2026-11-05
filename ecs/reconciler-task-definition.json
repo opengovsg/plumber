@@ -1,0 +1,72 @@
+{
+  "family": "plumber-<ENVIRONMENT>-reconciler",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-reconciler-task-exec-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-reconciler-task-role",
+  "containerDefinitions": [
+    {
+      "name": "reconciler",
+      "image": "plumber",
+      "essential": true,
+      "command": ["node", "packages/backend/dist/reconciler.js"],
+      "environment": [
+        { "name": "APP_ENV", "value": "<ENVIRONMENT>" },
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "TZ", "value": "Asia/Singapore" },
+        { "name": "POSTGRES_ENABLE_SSL", "value": "true" },
+        { "name": "REDIS_TLS", "value": "true" },
+        { "name": "REDIS_CLUSTER_MODE", "value": "true" },
+        { "name": "NODE_OPTIONS", "value": "--max-old-space-size=768" },
+        { "name": "DD_TRACE_ENABLED", "value": "false" },
+        { "name": "DD_PROFILING_ENABLED", "value": "false" }
+      ],
+      "secrets": [
+        {
+          "name": "RDS_PROXY_HOST",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-proxy-host"
+        },
+        {
+          "name": "POSTGRES_DATABASE",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-database"
+        },
+        {
+          "name": "POSTGRES_USERNAME",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-username"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-password"
+        },
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-host"
+        },
+        {
+          "name": "REDIS_PORT",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-port"
+        },
+        {
+          "name": "REDIS_USERNAME",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-username"
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "valueFrom": "plumber-<ENVIRONMENT>-redis-password"
+        }
+      ],
+      "stopTimeout": 30,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/reconciler",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs",
+          "mode": "blocking"
+        }
+      }
+    }
+  ]
+}
