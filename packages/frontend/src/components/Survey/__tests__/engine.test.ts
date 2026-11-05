@@ -4,6 +4,7 @@ import { SURVEY_CONFIG } from '../config'
 import {
   checkHistory,
   evaluate,
+  historyGate,
   lastActedAt,
   SurveyTrigger,
   SurveyUserState,
@@ -190,5 +191,17 @@ describe('lastActedAt', () => {
     expect(
       lastActedAt({ lastRespondedAt: daysAgo(3), lastDismissedAt: daysAgo(1) }),
     ).toEqual(daysAgo(1))
+  })
+})
+
+describe('historyGate', () => {
+  it.each([
+    ['pending', false, 'wait'],
+    ['pending', true, 'use_local'],
+    ['show', false, 'use_local'],
+    ['cooldown', false, 'hide'],
+    ['unavailable', true, 'hide'],
+  ] as const)('%s, waited out %s → %s', (check, hasWaitedOut, expected) => {
+    expect(historyGate(check, hasWaitedOut)).toBe(expected)
   })
 })

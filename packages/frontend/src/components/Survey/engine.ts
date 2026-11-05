@@ -109,6 +109,23 @@ export function checkHistory(
     : 'cooldown'
 }
 
+/**
+ * For a survey that must be decided once, such as the AI Builder exit. A
+ * decision taken before history loads cannot be undone later.
+ */
+export function historyGate(
+  check: HistoryCheck,
+  hasWaitedOut: boolean,
+): 'wait' | 'hide' | 'use_local' {
+  if (check === 'unavailable' || check === 'cooldown') {
+    return 'hide'
+  }
+  if (check === 'pending' && !hasWaitedOut) {
+    return 'wait'
+  }
+  return 'use_local'
+}
+
 export function evaluate({
   trigger,
   user,

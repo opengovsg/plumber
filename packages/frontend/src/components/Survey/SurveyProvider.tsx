@@ -16,7 +16,13 @@ import useAuthentication from '@/hooks/useAuthentication'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { SURVEY_CONFIG } from './config'
-import { ActiveSurvey, evaluate, SeqFlow, SurveyTrigger } from './engine'
+import {
+  ActiveSurvey,
+  evaluate,
+  isAlwaysShown,
+  SeqFlow,
+  SurveyTrigger,
+} from './engine'
 import {
   clearAbandonForRef,
   getPendingAbandon,
@@ -155,22 +161,56 @@ function ConfettiPrompt({
   )
 }
 
+/** A survey on screen, tied to the user it was chosen for. */
+interface ShownSurvey {
+  survey: ActiveSurvey
+  userId: string
+}
+
+function promptKey({ survey }: ShownSurvey): string {
+  const pipeId = survey.type === 'SEQ' ? (survey.pipeId ?? '') : ''
+  return `${surveyIdFor(survey).key}:${pipeId}`
+}
+
+function isPublishRequest(trigger: SurveyTrigger): boolean {
+  const candidate = trigger.seqCandidate
+  return (
+    !!candidate &&
+    isAlwaysShown(
+      { type: 'SEQ', flow: candidate.flow, trigger: candidate.type },
+      SURVEY_CONFIG,
+    )
+  )
+}
+
 export function SurveyProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuthentication()
-  const [active, setActive] = useState<ActiveSurvey | null>(null)
-  const activeRef = useRef<ActiveSurvey | null>(null)
+  const [shown, setShown] = useState<ShownSurvey | null>(null)
+  const shownRef = useRef<ShownSurvey | null>(null)
 
   const userId = currentUser?.id
   const createdAt = currentUser?.createdAt
 
-  const show = useCallback((survey: ActiveSurvey | null) => {
-    activeRef.current = survey
-    setActive(survey)
+  const show = useCallback((next: ShownSurvey | null) => {
+    shownRef.current = next
+    setShown(next)
   }, [])
+
+  // IMPORTANT: logout does not reload the page, so a survey left open must not
+  // carry another user's pipe id to the next user.
+  useEffect(() => {
+    if (shownRef.current && shownRef.current.userId !== userId) {
+      show(null)
+    }
+  }, [userId, show])
 
   const requestSurvey = useCallback(
     (trigger: SurveyTrigger) => {
-      if (!userId || activeRef.current) {
+      if (!userId) {
+        return
+      }
+      // Every publish gets its own survey, even over one left open.
+      if (shownRef.current?.userId === userId && !isPublishRequest(trigger)) {
         return
       }
       const seqCandidate =
@@ -193,7 +233,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
         return
       }
       capture('survey_eligible', surveyMetadata(decision))
-      show(decision)
+      show({ survey: decision, userId })
     },
     [userId, createdAt, show],
   )
@@ -218,7 +258,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
 
   const handleBlocked = useCallback(
     (reason: 'unavailable' | 'cooldown') => {
-      const survey = activeRef.current
+      const survey = shownRef.current?.survey
       if (survey) {
         capture('survey_suppressed', {
           ...surveyMetadata(survey),
@@ -245,10 +285,18 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const handleClose = useCallback(() => show(null), [show])
+  // A replaced popover can still close late, so it must not close its successor.
+  const handleClose = useCallback(
+    (closed: ShownSurvey) => {
+      if (shownRef.current === closed) {
+        show(null)
+      }
+    },
+    [show],
+  )
 
   const releaseDashboardSurvey = useCallback(() => {
-    const survey = activeRef.current
+    const survey = shownRef.current?.survey
     // The pipe completion SEQ is the only survey that belongs on another page.
     if (!survey || (survey.type === 'SEQ' && survey.trigger === 'completion')) {
       return
@@ -278,14 +326,14 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
   return (
     <SurveyContext.Provider value={value}>
       {children}
-      {active && userId && (
+      {shown && shown.userId === userId && (
         <ConfettiPrompt
-          key={surveyIdFor(active).key}
-          survey={active}
-          userId={userId}
+          key={promptKey(shown)}
+          survey={shown.survey}
+          userId={shown.userId}
           onBlocked={handleBlocked}
           onActedOn={handleActedOn}
-          onClose={handleClose}
+          onClose={() => handleClose(shown)}
         />
       )}
     </SurveyContext.Provider>

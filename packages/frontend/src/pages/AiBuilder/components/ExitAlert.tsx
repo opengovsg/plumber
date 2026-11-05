@@ -6,16 +6,17 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Button,
+  Skeleton,
   Text,
 } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import ConfettiEmbeddedSurvey, {
   ConfettiEmbeddedSurveyRef,
 } from '@/components/ConfettiEmbeddedSurvey'
 import { SURVEY_CONFIG } from '@/components/Survey/config'
-import { ActiveSurvey, evaluate } from '@/components/Survey/engine'
+import { ActiveSurvey, evaluate, historyGate } from '@/components/Survey/engine'
 import {
   getSession,
   loadUserState,
@@ -52,6 +53,9 @@ const AI_BUILDER_SURVEY: ActiveSurvey = {
   trigger: 'abandon',
 }
 
+// Bounds how long the dialog waits for Confetti history before using local state.
+const HISTORY_WAIT_MS = 2000
+
 const mobileStyles = {
   maxW: '300px' /* Set a maximum width */,
   w: '100%' /* Ensure it takes full width */,
@@ -70,12 +74,23 @@ export default function ExitAlert({
   const { currentUser } = useAuthentication()
   const userId = currentUser?.id
   const history = useSurveyHistory(AI_BUILDER_SURVEY, userId)
-  // Decided when the dialog first opens, so the survey cannot vanish mid-dialog.
+  // Decided once per dialog, so the survey cannot vanish mid-dialog.
   const [survey, setSurvey] = useState<ActiveSurvey | null | undefined>()
+  const [hasWaitedOut, setHasWaitedOut] = useState(false)
 
-  function decideSurvey(): ActiveSurvey | null {
-    // A pending history check falls back to local state alone.
-    if (!userId || history === 'unavailable' || history === 'cooldown') {
+  useEffect(() => {
+    if (!isOpen || history !== 'pending') {
+      return
+    }
+    const timer = window.setTimeout(
+      () => setHasWaitedOut(true),
+      HISTORY_WAIT_MS,
+    )
+    return () => window.clearTimeout(timer)
+  }, [isOpen, history])
+
+  function decideLocally(): ActiveSurvey | null {
+    if (!userId) {
       return null
     }
     const decision = evaluate({
@@ -90,9 +105,11 @@ export default function ExitAlert({
     })
     return decision.type === 'NONE' ? null : decision
   }
-  if (isOpen && survey === undefined) {
-    setSurvey(decideSurvey())
+  const gate = historyGate(history, hasWaitedOut)
+  if (isOpen && survey === undefined && gate !== 'wait') {
+    setSurvey(gate === 'hide' ? null : decideLocally())
   }
+  const isDeciding = isOpen && survey === undefined
   const shouldShowSurvey = !!survey
 
   const handleExit = () => {
@@ -140,6 +157,7 @@ export default function ExitAlert({
               {shouldShowSurvey &&
                 " Before you go, we'd love a quick rating. It takes 5 seconds."}
             </Text>
+            {isDeciding && <Skeleton height="40px" borderRadius="base" />}
             {survey && userId && (
               <ConfettiEmbeddedSurvey
                 ref={confettiRef}
@@ -173,7 +191,7 @@ export default function ExitAlert({
             <Button
               colorScheme="critical"
               w={isMobile ? '100%' : undefined}
-              isDisabled={shouldShowSurvey && !isReadyToSubmit}
+              isDisabled={isDeciding || (shouldShowSurvey && !isReadyToSubmit)}
               onClick={handleExit}
             >
               {shouldShowSurvey ? 'Submit and exit' : 'Exit anyway'}
