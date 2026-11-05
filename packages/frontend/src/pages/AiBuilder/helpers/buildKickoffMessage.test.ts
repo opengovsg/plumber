@@ -4,6 +4,7 @@ import {
   buildFormConnectedMessage,
   buildKickoffMessage,
   formatUserMessageForDisplay,
+  hasFormConnectedMessage,
 } from '../helpers'
 
 describe('buildKickoffMessage', () => {
@@ -67,5 +68,13 @@ describe('buildFormConnectedMessage', () => {
         '(id: 3f2c8e10-1234-5678-9abc-def012345678, ' +
         'form id: 654ab1234abc1a012345f1e0).',
     )
+  })
+})
+
+describe('hasFormConnectedMessage', () => {
+  it('finds the announcement in user messages only', () => {
+    const text = buildFormConnectedMessage('Leave form', 'conn-1', null)
+    expect(hasFormConnectedMessage([{ isUser: true, text }])).toBe(true)
+    expect(hasFormConnectedMessage([{ isUser: false, text }])).toBe(false)
   })
 })
