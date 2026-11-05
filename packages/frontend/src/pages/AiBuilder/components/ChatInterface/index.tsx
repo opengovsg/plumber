@@ -13,7 +13,6 @@ import {
 } from '@/pages/AiBuilder/constants'
 import { buildSupportFormUrl } from '@/pages/AiBuilder/helpers'
 import { createNewChatDraft } from '@/pages/AiBuilder/new-chat'
-import type { PipeChip } from '@/pages/AiBuilder/pipe-chip'
 
 import MessageLimitBanner from './MessageLimitBanner'
 import PromptInput from './PromptInput'
@@ -41,7 +40,6 @@ interface ChatInterfaceProps {
   onNewChat?: () => void
   onSelectExistingForm?: (label: string, connectionId: string) => void
   attachedForm?: { label: string; isConnected?: boolean } | null
-  pipeChip?: PipeChip
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -63,7 +61,6 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     onNewChat,
     onSelectExistingForm,
     attachedForm,
-    pipeChip,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -174,7 +171,6 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             onConnectForm={onConnectForm}
             onSelectExistingForm={onSelectExistingForm}
             attachedForm={attachedForm}
-            pipeChip={pipeChip}
           />
         </Flex>
       </Flex>
@@ -251,7 +247,6 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   onConnectForm={onConnectForm}
                   onSelectExistingForm={onSelectExistingForm}
                   attachedForm={attachedForm}
-                  pipeChip={pipeChip}
                 />
               )}
               {!isMobile && (
