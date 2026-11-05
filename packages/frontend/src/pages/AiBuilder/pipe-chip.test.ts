@@ -104,7 +104,10 @@ describe('derivePipeChip', () => {
 describe('pipeHeaderTitle', () => {
   it('uses the selected title, otherwise the default name', () => {
     expect(
-      pipeHeaderTitle({ flowName: 'Build with AI', subjectName: 'Leave form' }),
+      pipeHeaderTitle({
+        flowName: 'Build with AI',
+        subjectName: 'Leave form',
+      }),
     ).toBe('Leave form')
     expect(
       pipeHeaderTitle({ flowName: 'Build with AI', subjectName: null }),
