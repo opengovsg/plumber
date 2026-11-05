@@ -206,6 +206,7 @@
     "src/helpers/ai/build-support-form-url.ts",
     "src/helpers/ai/get-ai-builder-flag.ts",
     "src/helpers/ai/get-prompt.ts",
+    "src/helpers/ai/posthog-export-processor.ts",
     "src/helpers/ai/types.ts",
     "src/helpers/delay-until-as-milliseconds.ts",
     "src/helpers/format-table-variable.ts",

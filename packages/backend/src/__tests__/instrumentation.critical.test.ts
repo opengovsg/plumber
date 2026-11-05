@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   shutdown: vi.fn().mockResolvedValue(undefined),
   posthogProcessor: vi.fn(),
   posthogClient: vi.fn(),
+  posthogExportProcessor: vi.fn(),
   config: {
     appEnv: 'staging',
     posthog: { projectToken: '', host: '' },
@@ -55,6 +56,12 @@ vi.mock('@posthog/ai/otel', () => ({
     constructor(options: unknown) {
       mocks.posthogProcessor(options)
     }
+  },
+}))
+vi.mock('@/helpers/ai/posthog-export-processor', () => ({
+  createPostHogExportProcessor: (config: unknown) => {
+    mocks.posthogExportProcessor(config)
+    return 'posthog-export-processor'
   },
 }))
 vi.mock('posthog-node', () => ({
@@ -142,6 +149,11 @@ describe('Rome and PostHog instrumentation', () => {
       host: 'https://eu.i.posthog.com/',
       client,
       privacyMode: false,
+      _spanProcessor: 'posthog-export-processor',
+    })
+    expect(mocks.posthogExportProcessor).toHaveBeenCalledWith({
+      projectToken: 'phc-test',
+      host: 'https://eu.i.posthog.com/',
     })
 
     await shutdownTelemetry()

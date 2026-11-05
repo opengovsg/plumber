@@ -5,6 +5,7 @@ import { PostHogSpanProcessor } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
 import { posthogClient } from '@/helpers/ai/posthog-client'
+import { createPostHogExportProcessor } from '@/helpers/ai/posthog-export-processor'
 import logger from '@/helpers/logger'
 
 // Rejected exports otherwise disappear without a backend log.
@@ -99,6 +100,10 @@ const posthogSpanProcessor = missingPostHogConfig
       host: posthogHost,
       client: posthogClient,
       privacyMode: false,
+      _spanProcessor: createPostHogExportProcessor({
+        projectToken: posthogProjectToken,
+        host: posthogHost,
+      }),
     })
 
 const sdk = new NodeSDK({
