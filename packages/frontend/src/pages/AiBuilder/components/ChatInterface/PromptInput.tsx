@@ -31,10 +31,7 @@ import {
   buildNoOptionsFoundMessage,
   containsSecretKey,
 } from '@/pages/AiBuilder/helpers'
-import {
-  showComposerChips,
-  type PipeChip,
-} from '@/pages/AiBuilder/pipe-chip'
+import { showComposerChips, type PipeChip } from '@/pages/AiBuilder/pipe-chip'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { buildColumnTableReply } from './helpers/columnTableReply'

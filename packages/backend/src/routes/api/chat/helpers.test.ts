@@ -216,10 +216,7 @@ function selectedPipeText(id: string, place: 'opening' | 'later' = 'later') {
   })
 }
 
-function selectedPipeMessage(
-  id: string,
-  place: 'opening' | 'later' = 'later',
-) {
+function selectedPipeMessage(id: string, place: 'opening' | 'later' = 'later') {
   return userMessage(selectedPipeText(id, place))
 }
 
