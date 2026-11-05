@@ -117,15 +117,15 @@ describe('pipeHeaderTitle', () => {
 
 describe('showConnectFormChip', () => {
   it('shows the chip only before a pipe is selected or created', () => {
-    expect(
-      showConnectFormChip({ pipeCreated: false, subjectName: null }),
-    ).toBe(true)
+    expect(showConnectFormChip({ pipeCreated: false, subjectName: null })).toBe(
+      true,
+    )
     expect(
       showConnectFormChip({ pipeCreated: false, subjectName: 'Leave form' }),
     ).toBe(false)
-    expect(
-      showConnectFormChip({ pipeCreated: true, subjectName: null }),
-    ).toBe(false)
+    expect(showConnectFormChip({ pipeCreated: true, subjectName: null })).toBe(
+      false,
+    )
   })
 })
 
