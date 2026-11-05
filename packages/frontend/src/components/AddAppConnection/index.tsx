@@ -14,6 +14,7 @@ import {
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 import type { IApp, IField, IJSONObject } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import * as React from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
 
@@ -25,7 +26,6 @@ import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 import Form from '../Form'
 
@@ -61,6 +61,7 @@ function withLabelPrefill(field: IField, labelDefault: string): IField {
 export default function AddAppConnection(
   props: AddAppConnectionProps,
 ): React.ReactElement {
+  const posthog = usePostHog()
   const { application, connectionId, onClose, flowId } = props
   const { name, authDocUrl, key, auth } = application
   const [error, setError] = React.useState<IJSONObject | null>(null)
@@ -185,9 +186,7 @@ export default function AddAppConnection(
         stepIndex++
 
         if (stepIndex === steps.length) {
-          if (isPostHogConfigured) {
-            posthog.capture('app_connection_connected', { app_key: key })
-          }
+          posthog.capture('app_connection_connected', { app_key: key })
           onClose(response)
         }
       }
@@ -200,6 +199,7 @@ export default function AddAppConnection(
       hasConnection,
       key,
       onClose,
+      posthog,
       replaceConnectionCredentials,
       steps,
     ],

@@ -2,12 +2,12 @@ import { FetchResult, useMutation, useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { IUser } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { createContext, useEffect } from 'react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { LOGOUT } from '@/graphql/mutations/logout'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 type CurrentUser = Pick<
   IUser,
@@ -30,6 +30,7 @@ type AuthenticationProviderProps = {
 export const AuthenticationProvider = ({
   children,
 }: AuthenticationProviderProps) => {
+  const posthog = usePostHog()
   const { data, loading: fetchingCurrentUser } = useQuery<{
     getCurrentUser: CurrentUser
   }>(GET_CURRENT_USER, {
@@ -42,9 +43,7 @@ export const AuthenticationProvider = ({
     onCompleted: () => {
       // force datadog rum to stop tracking once logged out
       datadogRum.setTrackingConsent('not-granted')
-      if (isPostHogConfigured) {
-        posthog.reset()
-      }
+      posthog.reset()
     },
   })
 
@@ -53,11 +52,9 @@ export const AuthenticationProvider = ({
       datadogRum.setUser(currentUser)
       // grant consent to start tracking once logged in
       datadogRum.setTrackingConsent('granted')
-      if (isPostHogConfigured) {
-        posthog.identify(currentUser.id, { email: currentUser.email })
-      }
+      posthog.identify(currentUser.id, { email: currentUser.email })
     }
-  }, [currentUser])
+  }, [currentUser, posthog])
 
   if (fetchingCurrentUser) {
     return (

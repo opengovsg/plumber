@@ -1,12 +1,12 @@
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 import { IStep } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { BiPlus } from 'react-icons/bi'
 
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 import UnsavedChangesAlert from './UnsavedChangesAlert'
 
@@ -19,6 +19,7 @@ interface AddStepButtonProps {
 }
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
+  const posthog = usePostHog()
   const { isHidden, isLastStep, step, isDisabled, showEmptyAction } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -81,9 +82,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             <IconButton
               onClick={() => {
                 handleProceed()
-                if (isPostHogConfigured) {
-                  posthog.capture('flow_editor:add_step_clicked')
-                }
+                posthog.capture('flow_editor:add_step_clicked')
               }}
               aria-label="Add Step"
               isDisabled={isDisabled || showEmptyAction}

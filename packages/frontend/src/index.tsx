@@ -1,8 +1,8 @@
 import '@fontsource/space-grotesk'
 import '@opengovsg/confetti/confetti.css'
-import './posthog'
 import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
+import { PostHogProvider } from 'posthog-js/react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 
@@ -13,6 +13,7 @@ import TimezoneProvider from '@/components/TimezoneProvider'
 import appConfig from '@/config/app'
 import { AuthenticationProvider } from '@/contexts/Authentication'
 import { LaunchDarklyProvider } from '@/contexts/LaunchDarkly'
+import posthog from '@/posthog'
 
 const container = document.getElementById('root')
 
@@ -45,17 +46,19 @@ if (['prod', 'staging'].includes(appConfig.env)) {
   })
 }
 root.render(
-  <ThemeProvider>
-    <MotionConfig reducedMotion="always">
-      <ApolloProvider>
-        <AuthenticationProvider>
-          <TimezoneProvider>
-            <LaunchDarklyProvider>
-              <RouterProvider router={router} />
-            </LaunchDarklyProvider>
-          </TimezoneProvider>
-        </AuthenticationProvider>
-      </ApolloProvider>
-    </MotionConfig>
-  </ThemeProvider>,
+  <PostHogProvider client={posthog}>
+    <ThemeProvider>
+      <MotionConfig reducedMotion="always">
+        <ApolloProvider>
+          <AuthenticationProvider>
+            <TimezoneProvider>
+              <LaunchDarklyProvider>
+                <RouterProvider router={router} />
+              </LaunchDarklyProvider>
+            </TimezoneProvider>
+          </AuthenticationProvider>
+        </ApolloProvider>
+      </MotionConfig>
+    </ThemeProvider>
+  </PostHogProvider>,
 )

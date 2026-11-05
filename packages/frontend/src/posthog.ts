@@ -5,8 +5,6 @@ import appConfig from '@/config/app'
 const projectToken = appConfig.posthogProjectToken
 const host = appConfig.posthogHost
 
-export const isPostHogConfigured = projectToken && host
-
 if (projectToken && host) {
   posthog.init(projectToken, {
     api_host: host,
