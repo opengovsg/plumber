@@ -268,7 +268,7 @@ describe('establishPipeSubject', () => {
           parts: [{ type: 'text', text: selectedPipeText(PIPE_ID) }],
         },
       ]),
-    ).resolves.toEqual({ reminder: '', seedPipeId: null })
+    ).resolves.toEqual({ reminder: '', seedPipeId: null, editable: false })
     expect(access.withAccessibleFlows).not.toHaveBeenCalled()
   })
 
@@ -309,15 +309,28 @@ describe('establishPipeSubject', () => {
     expectReminderOmitsNames(result.reminder)
   })
 
-  it('does not seed the preview after the selection turn', async () => {
+  const laterTurn: ChatRequest['messages'] = [
+    selectedPipeMessage(PIPE_ID),
+    { role: 'assistant', parts: [{ type: 'text', text: 'Done.' }] },
+    userMessage('add a Slack step'),
+  ]
+
+  it('keeps the subject without a seed while the preview shows it', async () => {
     const access = userForPipe({ active: false, name: ROW_NAME })
-    const result = await establishPipeSubject(access.user, [
-      selectedPipeMessage(PIPE_ID),
-      { role: 'assistant', parts: [{ type: 'text', text: 'Here it is.' }] },
-      userMessage('add a Slack step'),
-    ])
+    const result = await establishPipeSubject(access.user, laterTurn, PIPE_ID)
     expect(result.seedPipeId).toBeNull()
+    expect(result.editable).toBe(true)
     expect(result.reminder).toContain(PIPE_ID)
-    expect(result.reminder).toContain('they can edit it')
+  })
+
+  it.each([
+    ['the preview moved to another pipe', OTHER_PIPE_ID],
+    ['the preview never opened the pipe', undefined],
+  ])('drops the subject when %s', async (_case, previewPipeId) => {
+    const access = userForPipe({ active: false, name: ROW_NAME })
+    await expect(
+      establishPipeSubject(access.user, laterTurn, previewPipeId),
+    ).resolves.toEqual({ reminder: '', seedPipeId: null, editable: false })
+    expect(access.withAccessibleFlows).not.toHaveBeenCalled()
   })
 })
