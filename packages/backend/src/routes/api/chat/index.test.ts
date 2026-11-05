@@ -57,9 +57,14 @@ vi.mock('@/models/connection', () => ({
   default: { query: vi.fn() },
 }))
 
-vi.mock('@/services/mcp/list-connections', () => ({
-  listConnectionsService: mocks.listConnections,
-}))
+vi.mock('@/services/mcp/list-connections', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/services/mcp/list-connections')>()
+  return {
+    ...actual,
+    listConnectionsService: mocks.listConnections,
+  }
+})
 
 vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: vi.fn().mockResolvedValue({
