@@ -30,6 +30,8 @@ export interface ConfettiEmbeddedSurveyRef {
    * on the survey.
    */
   submitIfComplete: () => boolean
+  /** Whether the survey rendered, as opposed to timing out unseen. */
+  hasLoaded: () => boolean
 }
 
 interface ConfettiEmbeddedSurveyProps {
@@ -37,6 +39,8 @@ interface ConfettiEmbeddedSurveyProps {
   publishableKey: string
   apiBaseUrl?: string
   respondent?: string
+  /** Pass `true` when the caller already checked history, to skip a fetch. */
+  isSurveyVisible?: boolean
   metadata?: Record<string, string>
   onReadyToSubmitChange?: (isReady: boolean) => void
 }
@@ -60,6 +64,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
       publishableKey,
       apiBaseUrl,
       respondent,
+      isSurveyVisible,
       metadata,
       onReadyToSubmitChange,
     },
@@ -84,6 +89,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
     }, [isLoaded, hasLoadTimedOut, onReadyToSubmitChange])
 
     useImperativeHandle(ref, () => ({
+      hasLoaded: () => isLoaded,
       submitIfComplete: () =>
         resolveSubmit({ isLoaded, hasLoadTimedOut, submit: submitRef.current }),
     }))
@@ -102,6 +108,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
             publishableKey={publishableKey}
             apiBaseUrl={apiBaseUrl}
             respondent={respondent}
+            isSurveyVisible={isSurveyVisible}
             metadata={metadata}
           >
             <ConfettiController>

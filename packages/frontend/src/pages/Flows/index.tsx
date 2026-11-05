@@ -13,6 +13,7 @@ import FlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
+import { useSurvey } from '@/components/Survey/SurveyProvider'
 import * as URLS from '@/config/urls'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
@@ -102,6 +103,13 @@ export default function Flows(): ReactElement {
   const totalCount: number = pageInfo?.totalCount ?? 0
   const hasPagination = !loading && totalCount > FLOWS_PER_PAGE
   const hasNoUserFlows = flows.length === 0 && !isSearching
+
+  // The dashboard is the natural pause point for CSAT and queued abandon SEQ.
+  const { requestSurvey, releaseDashboardSurvey } = useSurvey()
+  useEffect(() => {
+    requestSurvey({ isPausePoint: true })
+  }, [requestSurvey])
+  useEffect(() => releaseDashboardSurvey, [releaseDashboardSurvey])
 
   // ensure invalid pages won't be accessed even after deleting flows
   const lastPage = Math.ceil(totalCount / FLOWS_PER_PAGE)
