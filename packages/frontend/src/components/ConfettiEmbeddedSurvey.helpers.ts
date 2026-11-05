@@ -1,77 +1,46 @@
-import type { Answer, Question } from '@opengovsg/confetti'
+type SubmitDecision = 'submit' | 'skip' | 'loading'
 
-// Confetti reports an unanswered required rating as "Invalid input", which
-// reads like a broken widget rather than a skipped question.
-export const MISSING_ANSWER_ERROR = 'This field is required'
-
-/**
- * Confetti's verdict on whether every visible required question is answered.
- * Null until the survey renders, which covers both a slow load and a survey
- * that never arrives.
- */
-export type SurveyCompleteness = boolean | null
-
-export type SubmitDecision = 'submit' | 'incomplete' | 'loading'
-
-export function decideSubmit({
-  completeness,
+function decideSubmit({
+  isLoaded,
   hasLoadTimedOut,
 }: {
-  completeness: SurveyCompleteness
+  isLoaded: boolean
   hasLoadTimedOut: boolean
 }): SubmitDecision {
-  if (completeness === false) {
-    return 'incomplete'
+  if (isLoaded) {
+    return 'submit'
   }
   // A survey that never arrives must not strand the user in the builder, but
   // one that is merely slow must not wave them past a required question.
-  if (completeness === null) {
-    return hasLoadTimedOut ? 'submit' : 'loading'
-  }
-  return 'submit'
+  return hasLoadTimedOut ? 'skip' : 'loading'
 }
 
-export function isReadyToSubmit({
-  completeness,
-  hasLoadTimedOut,
-}: {
-  completeness: SurveyCompleteness
+export function isReadyToSubmit(state: {
+  isLoaded: boolean
   hasLoadTimedOut: boolean
 }): boolean {
-  return decideSubmit({ completeness, hasLoadTimedOut }) === 'submit'
+  return decideSubmit(state) !== 'loading'
 }
 
-export function isAnswered(answer: Answer | undefined): boolean {
-  if (answer === undefined || answer === null) {
-    return false
-  }
-  if (typeof answer === 'string') {
-    return answer.trim().length > 0
-  }
-  if (Array.isArray(answer)) {
-    return answer.length > 0
-  }
-  return true
-}
-
-export function resolveQuestionError({
-  question,
-  error,
-  answer,
-  showRequiredError,
+/**
+ * Returns whether the user may leave. Confetti's `submit()` refuses a survey
+ * with an unanswered required question and shows the errors itself.
+ */
+export function resolveSubmit({
+  isLoaded,
+  hasLoadTimedOut,
+  submit,
 }: {
-  question: Pick<Question, 'required'>
-  error: string | undefined
-  answer: Answer | undefined
-  showRequiredError: boolean
-}): string | undefined {
-  // Confetti validates each question as it mounts, so an unanswered required
-  // question is already errored before the user touches anything.
-  if (!showRequiredError) {
-    return undefined
+  isLoaded: boolean
+  hasLoadTimedOut: boolean
+  submit: (() => boolean) | undefined
+}): boolean {
+  switch (decideSubmit({ isLoaded, hasLoadTimedOut })) {
+    case 'submit':
+      return submit?.() ?? false
+    case 'skip':
+      return true
+    case 'loading':
+      return false
   }
-  if (question.required && !isAnswered(answer)) {
-    return MISSING_ANSWER_ERROR
-  }
-  return error
 }

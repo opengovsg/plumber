@@ -1,6 +1,6 @@
 import './ConfettiSurvey.css'
 import { useQuery } from '@apollo/client'
-import { PopoverConfetti } from '@opengovsg/confetti'
+import { PopoverConfetti } from '@opengovsg/confetti/static'
 import { useContext } from 'react'
 
 import appConfig from '@/config/app'
@@ -32,7 +32,7 @@ export function ConfettiSurvey() {
   return (
     <div className="confetti-survey">
       <PopoverConfetti
-        apiBaseUrl={appConfig.confettiApiBaseUrl}
+        proxyUrl={appConfig.confettiApiBaseUrl}
         surveyId={appConfig.confettiSurveyId}
         publishableKey={appConfig.confettiSurveyPublishableKey}
         respondent={`${userEmail}-${flowId}`} // key to maintain the state
