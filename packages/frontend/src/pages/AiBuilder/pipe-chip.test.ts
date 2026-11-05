@@ -1,8 +1,9 @@
-import { parsePipeId } from '@plumber/shared'
+import { buildPipeSubjectSentence, parsePipeId } from '@plumber/shared'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
   derivePipeChip,
+  isSelectionPending,
   pipeHeaderTitle,
   resolveSubjectName,
   showComposerChips,
@@ -50,21 +51,53 @@ describe('resolveSubjectName', () => {
   })
 })
 
-describe('derivePipeChip', () => {
-  it('hides the chip once a pipe is selected or created', () => {
+describe('isSelectionPending', () => {
+  const selection = buildPipeSubjectSentence({
+    displayName: 'Leave form',
+    pipeId: PIPE_ID,
+    place: 'opening',
+  })
+
+  it('is pending only while the selection turn streams', () => {
     expect(
-      derivePipeChip({
-        pipeCreated: false,
-        subjectName: 'Leave form',
-        onSelect,
+      isSelectionPending({
+        isStreaming: true,
+        latestUserText: selection,
+        subject,
       }),
-    ).toEqual({ kind: 'hidden' })
+    ).toBe(true)
     expect(
-      derivePipeChip({ pipeCreated: true, subjectName: null, onSelect }),
-    ).toEqual({ kind: 'hidden' })
+      isSelectionPending({
+        isStreaming: false,
+        latestUserText: selection,
+        subject,
+      }),
+    ).toBe(false)
     expect(
-      derivePipeChip({ pipeCreated: false, subjectName: null, onSelect }),
-    ).toEqual({ kind: 'pick', onSelect })
+      isSelectionPending({
+        isStreaming: true,
+        latestUserText: 'add a Slack step',
+        subject,
+      }),
+    ).toBe(false)
+  })
+})
+
+describe('derivePipeChip', () => {
+  const chip = (change: Partial<Parameters<typeof derivePipeChip>[0]>) =>
+    derivePipeChip({
+      pipeCreated: false,
+      subjectName: null,
+      formInPlay: false,
+      onSelect,
+      ...change,
+    })
+
+  it('hides the chip once a pipe or form is in play', () => {
+    expect(chip({})).toEqual({ kind: 'pick', onSelect })
+    expect(chip({ subjectName: 'Leave form' })).toEqual({ kind: 'hidden' })
+    expect(chip({ pipeCreated: true })).toEqual({ kind: 'hidden' })
+    expect(chip({ formInPlay: true })).toEqual({ kind: 'hidden' })
   })
 })
 

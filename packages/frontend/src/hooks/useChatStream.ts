@@ -279,6 +279,7 @@ export function useChatStream(options: UseChatStreamOptions) {
           // metadata for cross-referencing (no longer the session driver).
           chatId: chatIdRef.current,
           ddRumSessionId: ddSessionId,
+          previewPipeId: outputRef.current?.pipeId || undefined,
         }
         return { body }
       },

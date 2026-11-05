@@ -1,4 +1,4 @@
-import type { PipeId } from '@plumber/shared'
+import { type PipeId, readLastPipeSubject } from '@plumber/shared'
 
 export interface PipeChoice {
   pipeId: PipeId
@@ -30,13 +30,32 @@ export function resolveSubjectName({
   return null
 }
 
+// The confirming pipe state arrives only when the turn ends.
+export function isSelectionPending({
+  isStreaming,
+  latestUserText,
+  subject,
+}: {
+  isStreaming: boolean
+  latestUserText: string | undefined
+  subject: { pipeId: PipeId } | null
+}): boolean {
+  if (!isStreaming || !subject || latestUserText === undefined) {
+    return false
+  }
+  const latest = readLastPipeSubject([{ author: 'user', text: latestUserText }])
+  return latest?.pipeId === subject.pipeId
+}
+
 export function derivePipeChip({
   pipeCreated,
   subjectName,
+  formInPlay,
   onSelect,
 }: {
   pipeCreated: boolean
   subjectName: string | null
+  formInPlay: boolean
   onSelect: (choice: PipeChoice) => void
 }): PipeChip {
   // The header shows the selected pipe's title, so the composer does not repeat it.
@@ -45,6 +64,10 @@ export function derivePipeChip({
   }
   // A model-created pipe has no selection sentence, so the chip stays hidden.
   if (pipeCreated) {
+    return { kind: 'hidden' }
+  }
+  // IMPORTANT: A form chat builds a new pipe. Selecting an existing one would point it at that form.
+  if (formInPlay) {
     return { kind: 'hidden' }
   }
   return { kind: 'pick', onSelect }

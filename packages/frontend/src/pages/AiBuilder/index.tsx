@@ -34,11 +34,13 @@ import {
   extractFormIdFromLabel,
   extractLastFormUrl,
   formatFormUrlLabel,
+  hasFormConnectedMessage,
   stripFormIdPrefix,
 } from './helpers'
 import { createNewChatDraft } from './new-chat'
 import {
   derivePipeChip,
+  isSelectionPending,
   pipeHeaderTitle,
   resolveSubjectName,
   showConnectFormChip,
@@ -171,15 +173,14 @@ function AiBuilderContent() {
       text: message.text,
     })),
   )
-  const latestUserText = messages.findLast((message) => message.isUser)?.text
   const subjectName = resolveSubjectName({
     subject: recoveredPipe,
     previewPipeId: output?.pipeId ?? null,
-    selectionPending:
-      isStreaming &&
-      latestUserText !== undefined &&
-      readLastPipeSubject([{ author: 'user', text: latestUserText }])
-        ?.pipeId === recoveredPipe?.pipeId,
+    selectionPending: isSelectionPending({
+      isStreaming,
+      latestUserText: messages.findLast((message) => message.isUser)?.text,
+      subject: recoveredPipe,
+    }),
   })
 
   const selectPipe = useCallback(
@@ -197,12 +198,6 @@ function AiBuilderContent() {
 
   const headerTitle = pipeHeaderTitle({ flowName, subjectName })
   const connectFormVisible = showConnectFormChip({ pipeCreated, subjectName })
-
-  const pipeChip = derivePipeChip({
-    pipeCreated,
-    subjectName,
-    onSelect: selectPipe,
-  })
 
   const prefillFormUrl = useMemo(() => extractLastFormUrl(messages), [messages])
 
@@ -228,6 +223,14 @@ function AiBuilderContent() {
     }
     return null
   }, [attachedForm, prefillFormUrl, knownFormSchema])
+
+  const formInPlay = displayedForm !== null || hasFormConnectedMessage(messages)
+  const pipeChip = derivePipeChip({
+    pipeCreated,
+    subjectName,
+    formInPlay,
+    onSelect: selectPipe,
+  })
 
   const handleAddConnection = useCallback(
     (context: { question: string; appKey: string }) => {
