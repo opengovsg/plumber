@@ -131,7 +131,13 @@ const handleChatStream = observe(
     const disabledMcpServerSet = new Set(disabledMcpServers)
 
     try {
-      const { messages: rawMessages, chatId, ddRumSessionId, sessionId } = body
+      const {
+        messages: rawMessages,
+        chatId,
+        ddRumSessionId,
+        sessionId,
+        previewPipeId,
+      } = body
 
       // The RUM session id, preferring the new field but accepting the legacy
       // `sessionId` from clients deployed before the chatId change.
@@ -179,18 +185,22 @@ const handleChatStream = observe(
         disabledMcpServers,
       })
 
+      const pipeSubject = await establishPipeSubject(
+        context.currentUser,
+        rawMessages,
+        previewPipeId,
+      )
       // Re-derived fresh every turn from the raw message text and verified
       // against this user's own connections — never trust the connectionId a
       // user references in their own chat text without checking ownership
       // first (see resolveEstablishedFormConnection).
-      const establishedFormConnection = await resolveEstablishedFormConnection(
-        context.currentUser,
-        rawMessages,
-      )
-      const pipeSubject = await establishPipeSubject(
-        context.currentUser,
-        rawMessages,
-      )
+      // IMPORTANT: Skipped for an editable pipe. Two verified-fact reminders lead the model to repoint that pipe's trigger.
+      const establishedFormConnection = pipeSubject.editable
+        ? null
+        : await resolveEstablishedFormConnection(
+            context.currentUser,
+            rawMessages,
+          )
 
       const systemMessage = {
         role: 'system' as const,

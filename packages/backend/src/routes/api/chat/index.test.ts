@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   // anything onFinish does asynchronously (Flow/Connection lookups, writes).
   onFinishPromise: Promise.resolve() as Promise<unknown>,
   findAccessibleFlow: vi.fn(),
+  listConnections: vi.fn(),
 }))
 
 vi.mock('@ai-sdk/mcp', () => ({
@@ -54,6 +55,10 @@ vi.mock('@/models/flow', () => ({
 
 vi.mock('@/models/connection', () => ({
   default: { query: vi.fn() },
+}))
+
+vi.mock('@/services/mcp/list-connections', () => ({
+  listConnectionsService: mocks.listConnections,
 }))
 
 vi.mock('@/helpers/ai/get-prompt', () => ({
@@ -847,5 +852,30 @@ describe('chat handler — selected pipe preview seeding', () => {
 
     expect(writtenPartTypes()).toContain('data-isChatReady')
     expect(writtenPartTypes()).not.toContain('data-pipeState')
+  })
+
+  it('drops the connected-form reminder while a selected pipe is editable', async () => {
+    mocks.listConnections.mockResolvedValue([
+      { id: 'conn-1', verified: true, label: 'Leave form' },
+    ])
+    const formMessage = {
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: 'I\'ve connected my FormSG form "Leave form" (id: conn-1).',
+        },
+      ],
+    }
+    function systemPrompt() {
+      const call = vi.mocked(streamText).mock.lastCall
+      return call?.[0].messages?.find((m) => m.role === 'system')?.content
+    }
+
+    await runTurn([formMessage])
+    expect(systemPrompt()).toContain('connection_id "conn-1"')
+
+    await runTurn([formMessage, selectionMessage()])
+    expect(systemPrompt()).not.toContain('connection_id "conn-1"')
   })
 })
