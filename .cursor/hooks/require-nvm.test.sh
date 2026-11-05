@@ -70,6 +70,19 @@ assert_decision "$miss_dir" "$root" "echo 'nvm use &&' && pnpm -v" deny
 assert_decision "$match_dir" "$root" "cd packages/e2e && pnpm test" deny
 assert_decision "$match_dir" "$root" "cd packages/backend && pnpm test" allow
 assert_decision "$match_dir" "$root" "cd packages/e2e && nvm use && pnpm test" allow
+assert_decision "$miss_dir" "$root" $'nvm use &&\npnpm -v' allow
+assert_decision "$miss_dir" "$root" 'echo "$(node -v)"' deny
+assert_decision "$miss_dir" "$root" 'bash -c "pnpm -v"' deny
+assert_decision "$miss_dir" "$root" 'echo "pnpm -v"' allow
+assert_decision "$match_dir" "$root" 'echo "$(node -v)"' allow
+assert_decision "$match_dir" "$root" "pnpm -v && cd packages/e2e && pnpm test" deny
+assert_decision "$match_dir" "$root" "pnpm -v && cd packages/backend && pnpm test" allow
+assert_decision "$match_dir" "$root" "nvm use && cd packages/e2e && pnpm test" deny
+assert_decision "$miss_dir" "$root" "sh -c 'pnpm -v'" deny
+assert_decision "$match_dir" "$root" "sh -c 'pnpm -v'" allow
+assert_decision "$miss_dir" "$root" 'echo `node -v`' deny
+assert_decision "$match_dir" "$root" 'bash -c "cd packages/e2e && pnpm test"' deny
+assert_decision "$match_dir" "$root" "pnpm -v && (cd packages/e2e && pnpm test)" deny
 assert_decision "$miss_dir" "$root/packages/e2e" "pnpm test" deny
 assert_decision "$e2e_dir" "$root/packages/e2e" "pnpm test" allow
 assert_decision "$match_dir" "$root/packages/e2e" "pnpm test" deny

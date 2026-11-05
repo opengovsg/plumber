@@ -44,6 +44,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 version. The Cursor hook allows the command when `node -v` already matches that
 file. Otherwise run `nvm use &&` before the tool. A leading `cd` is fine, for
 example `cd packages/backend && nvm use && pnpm --filter backend run lint`.
+`nvm use &&` applies only to the directory where it runs. A later `cd` into another pin still needs `nvm use &&`.
 Claude Code prepends `nvm use` with its own hook. `packages/e2e` has a separate
 `.nvmrc`. Run `nvm use &&` before the tool after `cd packages/e2e`.
 
