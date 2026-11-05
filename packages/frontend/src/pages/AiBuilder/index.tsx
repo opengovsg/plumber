@@ -1,5 +1,6 @@
 import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
 import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
+import { buildPipeSubjectSentence, readLastPipeSubject } from '@plumber/shared'
 import type { IApp, IJSONObject } from '@plumber/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
@@ -36,6 +37,7 @@ import {
   stripFormIdPrefix,
 } from './helpers'
 import { createNewChatDraft } from './new-chat'
+import { derivePipeChip, type PipeChoice } from './pipe-chip'
 import StepConfigContext from './StepConfigContext'
 
 function AiBuilderContent() {
@@ -156,6 +158,35 @@ function AiBuilderContent() {
   const [attachedForm, setAttachedForm] = useState<{ label: string } | null>(
     null,
   )
+  const [selectedName, setSelectedName] = useState<string | null>(null)
+
+  const recoveredPipe = readLastPipeSubject(
+    messages.map((message) => ({
+      author: message.isUser ? 'user' : 'assistant',
+      text: message.text,
+    })),
+  )
+
+  const selectPipe = useCallback(
+    (choice: PipeChoice) => {
+      setSelectedName(choice.name)
+      sendMessage(
+        buildPipeSubjectSentence({
+          displayName: choice.name,
+          pipeId: choice.pipeId,
+          place: messages.length === 0 ? 'opening' : 'later',
+        }),
+      )
+    },
+    [messages.length, sendMessage],
+  )
+
+  const pipeChip = derivePipeChip({
+    pipeCreated,
+    selectedName,
+    recoveredName: recoveredPipe?.displayName ?? null,
+    onSelect: selectPipe,
+  })
 
   const prefillFormUrl = useMemo(() => extractLastFormUrl(messages), [messages])
 
@@ -281,6 +312,7 @@ function AiBuilderContent() {
   // chip would keep showing the previous conversation's connected form.
   const handleNewChat = useCallback(() => {
     setAttachedForm(null)
+    setSelectedName(null)
     setAddFormContext(null)
     setAddConnectionContext(null)
   }, [])
@@ -402,6 +434,7 @@ function AiBuilderContent() {
                 pipeCreated ? undefined : handleSelectExistingForm
               }
               attachedForm={displayedForm}
+              pipeChip={pipeChip}
             />
           </Container>
         </Flex>

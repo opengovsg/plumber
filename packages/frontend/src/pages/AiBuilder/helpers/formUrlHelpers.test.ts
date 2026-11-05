@@ -103,6 +103,16 @@ describe('formatUserMessageForDisplay', () => {
     ).toBe('Q: Which column?\nA: Score (out of 10)')
   })
 
+  it('strips the pipe id from a selected-pipe sentence', () => {
+    expect(
+      formatUserMessageForDisplay(
+        'I\'ve selected my pipe "Leave form" (id: 123e4567-e89b-12d3-a456-426614174000). Read this pipe and help me change it.',
+      ),
+    ).toBe(
+      'I\'ve selected my pipe "Leave form". Read this pipe and help me change it.',
+    )
+  })
+
   it('strips multiple id suffixes each followed by a colon (column-table reply)', () => {
     expect(
       formatUserMessageForDisplay(
