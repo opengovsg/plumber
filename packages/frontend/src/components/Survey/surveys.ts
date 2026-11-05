@@ -21,6 +21,7 @@ export function surveyMetadata(survey: ActiveSurvey): Record<string, string> {
     survey_type: 'seq',
     seq_source: survey.flow,
     seq_trigger: survey.trigger,
+    ...(survey.pipeId && { pipe_id: survey.pipeId }),
   }
 }
 

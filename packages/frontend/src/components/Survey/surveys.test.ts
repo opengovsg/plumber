@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseApiTimestamp } from './surveys'
+import { parseApiTimestamp, surveyMetadata } from './surveys'
 
 describe('parseApiTimestamp', () => {
   it('parses epoch milliseconds from the API', () => {
@@ -19,4 +19,28 @@ describe('parseApiTimestamp', () => {
       expect(parseApiTimestamp(value)).toBeNull()
     },
   )
+})
+
+describe('surveyMetadata', () => {
+  it('sends the pipe id when the SEQ has one', () => {
+    expect(
+      surveyMetadata({
+        type: 'SEQ',
+        flow: 'pipe',
+        trigger: 'completion',
+        pipeId: 'pipe-1',
+      }),
+    ).toEqual({
+      survey_type: 'seq',
+      seq_source: 'pipe',
+      seq_trigger: 'completion',
+      pipe_id: 'pipe-1',
+    })
+  })
+
+  it('omits the pipe id when there is none', () => {
+    expect(
+      surveyMetadata({ type: 'SEQ', flow: 'aiBuilder', trigger: 'abandon' }),
+    ).not.toHaveProperty('pipe_id')
+  })
 })

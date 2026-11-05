@@ -15,6 +15,8 @@ export interface SeqCandidate {
   flow: SeqFlow
   type: SeqTriggerType
   expiresAt?: Date
+  /** The pipe the SEQ asks about, when there is one. */
+  pipeId?: string
 }
 
 export interface SurveyTrigger {
@@ -32,7 +34,7 @@ export interface SurveyUserState {
 export type SurveyDecision =
   | { type: 'NONE'; reason?: SuppressReason }
   | { type: 'CSAT' }
-  | { type: 'SEQ'; flow: SeqFlow; trigger: SeqTriggerType }
+  | { type: 'SEQ'; flow: SeqFlow; trigger: SeqTriggerType; pipeId?: string }
 
 export type ActiveSurvey = Exclude<SurveyDecision, { type: 'NONE' }>
 
@@ -121,15 +123,14 @@ export function evaluate({
   now: Date
 }): SurveyDecision {
   const candidate = trigger.seqCandidate
-  if (candidate) {
-    const seq = {
-      type: 'SEQ',
-      flow: candidate.flow,
-      trigger: candidate.type,
-    } as const
-    if (isAlwaysShown(seq, config)) {
-      return seq
-    }
+  const seq: ActiveSurvey | undefined = candidate && {
+    type: 'SEQ',
+    flow: candidate.flow,
+    trigger: candidate.type,
+    ...(candidate.pipeId && { pipeId: candidate.pipeId }),
+  }
+  if (seq && isAlwaysShown(seq, config)) {
+    return seq
   }
 
   if (sessionPromptShown) {
@@ -158,8 +159,8 @@ export function evaluate({
       config.seqCooldownDaysPerFlow
     ) {
       seqSuppressReason = 'flow_cooldown'
-    } else {
-      return { type: 'SEQ', flow: candidate.flow, trigger: candidate.type }
+    } else if (seq) {
+      return seq
     }
   }
 

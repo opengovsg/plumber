@@ -97,7 +97,7 @@ export default function EditorLayout() {
         clearAbandonedSeq(flowId)
         requestSurvey({
           isPausePoint: false,
-          seqCandidate: { flow: 'pipe', type: 'completion' },
+          seqCandidate: { flow: 'pipe', type: 'completion', pipeId: flowId },
         })
       }
     },

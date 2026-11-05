@@ -92,6 +92,7 @@ describe('abandon queue', () => {
     expect(getPendingAbandon(USER_ID)).toMatchObject({
       flow: 'regular',
       type: 'abandon',
+      pipeId: 'pipe-1',
     })
   })
 

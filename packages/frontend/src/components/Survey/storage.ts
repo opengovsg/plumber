@@ -143,6 +143,7 @@ export function getPendingAbandon(userId: string): SeqCandidate | null {
     flow: pendingAbandon.flow,
     type: 'abandon',
     expiresAt: new Date(pendingAbandon.expiresAt),
+    pipeId: pendingAbandon.refId,
   }
 }
 

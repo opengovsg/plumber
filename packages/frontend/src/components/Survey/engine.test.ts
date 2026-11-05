@@ -59,6 +59,23 @@ describe('evaluate', () => {
     })
   })
 
+  it('carries the pipe id into the decision', () => {
+    expect(
+      run(
+        {
+          isPausePoint: true,
+          seqCandidate: { flow: 'regular', type: 'abandon', pipeId: 'pipe-1' },
+        },
+        makeUser({ lastCsatAt: daysAgo(1) }),
+      ),
+    ).toEqual({
+      type: 'SEQ',
+      flow: 'regular',
+      trigger: 'abandon',
+      pipeId: 'pipe-1',
+    })
+  })
+
   it('drops an expired abandon', () => {
     expect(
       run(
