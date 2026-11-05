@@ -15,13 +15,19 @@ import ConfettiEmbeddedSurvey, {
   ConfettiEmbeddedSurveyRef,
 } from '@/components/ConfettiEmbeddedSurvey'
 import { SURVEY_CONFIG } from '@/components/Survey/config'
-import { isAiBuilderExitSurveyDue } from '@/components/Survey/engine'
+import { ActiveSurvey, evaluate } from '@/components/Survey/engine'
 import {
-  getLastAiBuilderExitSurveyAt,
+  getSession,
+  loadUserState,
   markSessionPromptShown,
-  recordAiBuilderExitSurvey,
   recordPrompt,
 } from '@/components/Survey/storage'
+import {
+  parseApiTimestamp,
+  respondentFor,
+  responseMetadata,
+  surveyIdFor,
+} from '@/components/Survey/surveys'
 import appConfig from '@/config/app'
 import useAuthentication from '@/hooks/useAuthentication'
 
@@ -56,28 +62,34 @@ export default function ExitAlert({
   const [isReadyToSubmit, setIsReadyToSubmit] = useState(false)
   const { currentUser } = useAuthentication()
   const userId = currentUser?.id
-  // Exits inside the cooldown keep the warning only.
-  const [shouldShowSurvey] = useState(
-    () =>
-      !!userId &&
-      isAiBuilderExitSurveyDue(
-        getLastAiBuilderExitSurveyAt(userId),
-        SURVEY_CONFIG,
-        new Date(),
-      ),
-  )
+  // Decided once per mount so the survey cannot vanish mid-dialog.
+  const [survey] = useState<ActiveSurvey | null>(() => {
+    if (!userId) {
+      return null
+    }
+    const decision = evaluate({
+      trigger: {
+        isPausePoint: false,
+        seqCandidate: { flow: 'aiBuilder', type: 'abandon' },
+      },
+      user: loadUserState(userId, parseApiTimestamp(currentUser?.createdAt)),
+      sessionPromptShown: getSession().promptShown,
+      config: SURVEY_CONFIG,
+      now: new Date(),
+    })
+    return decision.type === 'NONE' ? null : decision
+  })
+  const shouldShowSurvey = survey !== null
 
   const handleExit = () => {
-    if (shouldShowSurvey && userId) {
+    if (survey && userId) {
       const hasSubmitted = confettiRef.current?.submitIfComplete() ?? false
       if (!hasSubmitted) {
         return
       }
       // A survey that timed out unseen must not start cooldowns.
       if (confettiRef.current?.hasLoaded()) {
-        const now = new Date()
-        recordAiBuilderExitSurvey(userId, now)
-        recordPrompt(userId, { type: 'seq', flow: 'regular' }, now)
+        recordPrompt(userId, { type: 'seq', flow: 'aiBuilder' }, new Date())
         markSessionPromptShown()
       }
     }
@@ -114,19 +126,14 @@ export default function ExitAlert({
               {shouldShowSurvey &&
                 " Before you go, we'd love a quick rating. It takes 5 seconds."}
             </Text>
-            {shouldShowSurvey && userId && (
+            {survey && userId && (
               <ConfettiEmbeddedSurvey
                 ref={confettiRef}
-                surveyId={appConfig.confettiSurveyIds.seqRegular}
+                surveyId={surveyIdFor(survey).id}
                 publishableKey={appConfig.confettiSurveyPublishableKey}
                 apiBaseUrl={appConfig.confettiApiBaseUrl}
-                respondent={`${userId}-seq-regular`}
-                metadata={{
-                  survey_type: 'seq',
-                  flow_id: 'regular',
-                  seq_trigger: 'abandon',
-                  app_version: appConfig.version ?? 'unknown',
-                }}
+                respondent={respondentFor(userId, survey)}
+                metadata={responseMetadata(survey)}
                 onReadyToSubmitChange={setIsReadyToSubmit}
               />
             )}

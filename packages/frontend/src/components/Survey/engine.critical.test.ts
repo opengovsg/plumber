@@ -1,19 +1,15 @@
 /**
- * Business rules from the "Instrumentation design" Notion page:
+ * Business rules from the "Instrumentation design" Notion page and its review:
  * - CSAT: "if user closes/respond to CSAT on flows. 14 days interval"
  * - SEQ on AI Builder exit: "14 days interval"
+ * - AI Builder: "ai builder should only show once every 14 days"
  * - SEQ after publish: "same as now" (every publish)
  * - SEQ after leaving a pipe: "same behaviour as ai builder. 14 days interval"
  */
 import { describe, expect, it } from 'vitest'
 
 import { SURVEY_CONFIG } from './config'
-import {
-  evaluate,
-  isAiBuilderExitSurveyDue,
-  SurveyTrigger,
-  SurveyUserState,
-} from './engine'
+import { evaluate, SurveyTrigger, SurveyUserState } from './engine'
 
 const NOW = new Date('2026-06-01T00:00:00Z')
 
@@ -23,26 +19,37 @@ function daysAgo(days: number): Date {
 
 function makeUser(overrides: Partial<SurveyUserState> = {}): SurveyUserState {
   return {
-    userId: 'user-1',
     signupAt: daysAgo(365),
     lastPromptAt: null,
     lastCsatAt: null,
-    lastSeqAt: { pipe: null, regular: null },
+    lastSeqAt: { pipe: null, regular: null, aiBuilder: null },
     ...overrides,
   }
 }
 
-function run(trigger: SurveyTrigger, user: SurveyUserState) {
+function run(
+  trigger: SurveyTrigger,
+  user: SurveyUserState,
+  sessionPromptShown = false,
+) {
   return evaluate({
     trigger,
     user,
-    sessionPromptShown: false,
+    sessionPromptShown,
     config: SURVEY_CONFIG,
     now: NOW,
   })
 }
 
 const dashboard: SurveyTrigger = { isPausePoint: true }
+const aiBuilderExit: SurveyTrigger = {
+  isPausePoint: false,
+  seqCandidate: { flow: 'aiBuilder', type: 'abandon' },
+}
+const leftPipe: SurveyTrigger = {
+  isPausePoint: true,
+  seqCandidate: { flow: 'regular', type: 'abandon' },
+}
 
 describe('CSAT on the dashboard', () => {
   it('shows again 14 days after the user acted on it', () => {
@@ -63,45 +70,40 @@ describe('CSAT on the dashboard', () => {
 describe('SEQ after publish', () => {
   it('shows on every publish', () => {
     expect(
-      evaluate({
-        trigger: {
+      run(
+        {
           isPausePoint: false,
           seqCandidate: { flow: 'pipe', type: 'completion' },
         },
-        user: makeUser({
+        makeUser({
           lastPromptAt: daysAgo(0),
-          lastSeqAt: { pipe: daysAgo(0), regular: null },
+          lastSeqAt: { pipe: daysAgo(0), regular: null, aiBuilder: null },
         }),
-        sessionPromptShown: true,
-        config: SURVEY_CONFIG,
-        now: NOW,
-      }),
+        true,
+      ),
     ).toEqual({ type: 'SEQ', flow: 'pipe', trigger: 'completion' })
   })
 })
 
 describe('SEQ after leaving a pipe', () => {
-  const leftPipe: SurveyTrigger = {
-    isPausePoint: true,
-    seqCandidate: { flow: 'regular', type: 'abandon' },
-  }
   const csatRecent = { lastCsatAt: daysAgo(1) }
 
-  it('shows to every user, without sampling', () => {
-    for (const userId of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
-      expect(run(leftPipe, makeUser({ userId, ...csatRecent }))).toEqual({
-        type: 'SEQ',
-        flow: 'regular',
-        trigger: 'abandon',
-      })
-    }
+  it('shows without sampling', () => {
+    expect(run(leftPipe, makeUser(csatRecent))).toEqual({
+      type: 'SEQ',
+      flow: 'regular',
+      trigger: 'abandon',
+    })
   })
 
   it('shows again 14 days after the last one', () => {
     expect(
       run(
         leftPipe,
-        makeUser({ ...csatRecent, lastSeqAt: { pipe: null, regular: daysAgo(14) } }),
+        makeUser({
+          ...csatRecent,
+          lastSeqAt: { pipe: null, regular: daysAgo(14), aiBuilder: null },
+        }),
       ),
     ).toEqual({ type: 'SEQ', flow: 'regular', trigger: 'abandon' })
   })
@@ -110,26 +112,61 @@ describe('SEQ after leaving a pipe', () => {
     expect(
       run(
         leftPipe,
-        makeUser({ ...csatRecent, lastSeqAt: { pipe: null, regular: daysAgo(13) } }),
+        makeUser({
+          ...csatRecent,
+          lastSeqAt: { pipe: null, regular: daysAgo(13), aiBuilder: null },
+        }),
       ),
     ).toEqual({ type: 'NONE', reason: 'flow_cooldown' })
   })
 })
 
 describe('SEQ on AI Builder exit', () => {
+  const expected = { type: 'SEQ', flow: 'aiBuilder', trigger: 'abandon' }
+
   it('shows on the first exit', () => {
-    expect(isAiBuilderExitSurveyDue(null, SURVEY_CONFIG, NOW)).toBe(true)
+    expect(run(aiBuilderExit, makeUser())).toEqual(expected)
   })
 
   it('shows again 14 days after the last one', () => {
-    expect(isAiBuilderExitSurveyDue(daysAgo(14), SURVEY_CONFIG, NOW)).toBe(
-      true,
-    )
+    const at14 = daysAgo(14)
+    expect(
+      run(
+        aiBuilderExit,
+        makeUser({
+          lastPromptAt: at14,
+          lastSeqAt: { pipe: null, regular: null, aiBuilder: at14 },
+        }),
+      ),
+    ).toEqual(expected)
   })
 
   it('stays hidden within 14 days of the last one', () => {
-    expect(isAiBuilderExitSurveyDue(daysAgo(13), SURVEY_CONFIG, NOW)).toBe(
-      false,
-    )
+    const at13 = daysAgo(13)
+    expect(
+      run(
+        aiBuilderExit,
+        makeUser({
+          lastPromptAt: at13,
+          lastSeqAt: { pipe: null, regular: null, aiBuilder: at13 },
+        }),
+      ),
+    ).toMatchObject({ type: 'NONE' })
+  })
+
+  it('stays hidden within 14 days of any other survey the user acted on', () => {
+    expect(
+      run(
+        aiBuilderExit,
+        makeUser({ lastPromptAt: daysAgo(1), lastCsatAt: daysAgo(1) }),
+      ),
+    ).toEqual({ type: 'NONE', reason: 'global_gate' })
+  })
+
+  it('stays hidden in a session where the user answered the publish SEQ', () => {
+    expect(run(aiBuilderExit, makeUser(), true)).toEqual({
+      type: 'NONE',
+      reason: 'session_gate',
+    })
   })
 })

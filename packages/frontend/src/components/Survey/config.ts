@@ -4,7 +4,6 @@ export interface SurveyConfig {
   csatCooldownDays: number
   csatOverdueDays: number
   csatNewUserSuppressDays: number
-  aiBuilderExitCooldownDays: number
   abandonQueueExpiryHours: number
   // Product decision: ask after every publish, ignoring every gate and cooldown.
   pipeCompletionAlwaysShows: boolean
@@ -16,7 +15,6 @@ export const SURVEY_CONFIG: SurveyConfig = {
   csatCooldownDays: 14,
   csatOverdueDays: 45,
   csatNewUserSuppressDays: 14,
-  aiBuilderExitCooldownDays: 14,
   abandonQueueExpiryHours: 48,
   pipeCompletionAlwaysShows: true,
 }

@@ -15,11 +15,10 @@ function daysAgo(days: number): Date {
 
 function makeUser(overrides: Partial<SurveyUserState> = {}): SurveyUserState {
   return {
-    userId: 'user-1',
     signupAt: daysAgo(365),
     lastPromptAt: null,
     lastCsatAt: null,
-    lastSeqAt: { pipe: null, regular: null },
+    lastSeqAt: { pipe: null, regular: null, aiBuilder: null },
     ...overrides,
   }
 }
@@ -112,7 +111,7 @@ describe('evaluate', () => {
 
   it('9. blocks SEQ within the per-flow cooldown', () => {
     const user = makeUser({
-      lastSeqAt: { pipe: daysAgo(10), regular: null },
+      lastSeqAt: { pipe: daysAgo(10), regular: null, aiBuilder: null },
     })
     expect(run(completion, user)).toEqual({
       type: 'NONE',
@@ -145,7 +144,7 @@ describe('evaluate', () => {
 
   it('does not condition CSAT on SEQ history', () => {
     const user = makeUser({
-      lastSeqAt: { pipe: daysAgo(20), regular: daysAgo(20) },
+      lastSeqAt: { pipe: daysAgo(20), regular: daysAgo(20), aiBuilder: null },
     })
     expect(run(pause, user)).toEqual({ type: 'CSAT' })
   })
@@ -161,7 +160,7 @@ describe('evaluate with pipeCompletionAlwaysShows', () => {
         completion,
         makeUser({
           lastPromptAt: daysAgo(1),
-          lastSeqAt: { pipe: daysAgo(1), regular: null },
+          lastSeqAt: { pipe: daysAgo(1), regular: null, aiBuilder: null },
         }),
         true,
         config,
@@ -191,7 +190,9 @@ describe('evaluate with pipeCompletionAlwaysShows', () => {
 
 describe('after a pipe SEQ that did not start the global gate', () => {
   // The pipe SEQ records its own date but leaves lastPromptAt untouched.
-  const user = makeUser({ lastSeqAt: { pipe: daysAgo(0), regular: null } })
+  const user = makeUser({
+    lastSeqAt: { pipe: daysAgo(0), regular: null, aiBuilder: null },
+  })
 
   it('blocks CSAT for the rest of the session', () => {
     expect(run(pause, user, true)).toEqual({
@@ -207,7 +208,7 @@ describe('after a pipe SEQ that did not start the global gate', () => {
   it('lets an overdue CSAT show in the next session', () => {
     const overdue = makeUser({
       lastCsatAt: daysAgo(50),
-      lastSeqAt: { pipe: daysAgo(0), regular: null },
+      lastSeqAt: { pipe: daysAgo(0), regular: null, aiBuilder: null },
     })
     expect(run(pause, overdue, false)).toEqual({ type: 'CSAT' })
   })

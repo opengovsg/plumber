@@ -1,6 +1,6 @@
 import type { SurveyConfig } from './config'
 
-export type SeqFlow = 'pipe' | 'regular'
+export type SeqFlow = 'pipe' | 'regular' | 'aiBuilder'
 export type SeqTriggerType = 'completion' | 'abandon'
 
 export type SuppressReason =
@@ -23,7 +23,6 @@ export interface SurveyTrigger {
 }
 
 export interface SurveyUserState {
-  userId: string
   signupAt: Date | null
   lastPromptAt: Date | null
   lastCsatAt: Date | null
@@ -35,6 +34,8 @@ export type SurveyDecision =
   | { type: 'CSAT' }
   | { type: 'SEQ'; flow: SeqFlow; trigger: SeqTriggerType }
 
+export type ActiveSurvey = Exclude<SurveyDecision, { type: 'NONE' }>
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 // A user who was never surveyed is treated as infinitely long ago.
@@ -45,12 +46,19 @@ function daysSince(date: Date | null, now: Date): number {
   return (now.getTime() - date.getTime()) / MS_PER_DAY
 }
 
-export function isAiBuilderExitSurveyDue(
-  lastShownAt: Date | null,
+/**
+ * The publish SEQ ignores every gate, so it must also not start the global
+ * gate. Otherwise each publish would push CSAT out by 14 days.
+ */
+export function isAlwaysShown(
+  survey: Pick<SeqCandidate, 'flow' | 'type'> | undefined,
   config: SurveyConfig,
-  now: Date,
 ): boolean {
-  return daysSince(lastShownAt, now) >= config.aiBuilderExitCooldownDays
+  return (
+    config.pipeCompletionAlwaysShows &&
+    survey?.flow === 'pipe' &&
+    survey.type === 'completion'
+  )
 }
 
 export function evaluate({
@@ -67,12 +75,8 @@ export function evaluate({
   now: Date
 }): SurveyDecision {
   const candidate = trigger.seqCandidate
-  if (
-    config.pipeCompletionAlwaysShows &&
-    candidate?.flow === 'pipe' &&
-    candidate.type === 'completion'
-  ) {
-    return { type: 'SEQ', flow: 'pipe', trigger: 'completion' }
+  if (candidate && isAlwaysShown(candidate, config)) {
+    return { type: 'SEQ', flow: candidate.flow, trigger: candidate.type }
   }
 
   if (sessionPromptShown) {

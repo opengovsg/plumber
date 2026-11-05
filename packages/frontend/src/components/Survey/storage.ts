@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import { SURVEY_CONFIG } from './config'
 import type { SeqCandidate, SeqFlow, SurveyUserState } from './engine'
 
@@ -6,55 +8,61 @@ import type { SeqCandidate, SeqFlow, SurveyUserState } from './engine'
 const STATE_KEY_PREFIX = 'plumber:survey:v1:'
 const SESSION_KEY = 'plumber:survey:session'
 
-interface PendingAbandon {
-  flow: SeqFlow
+// A corrupt or outdated field must read as "never", not as an invalid date
+// that slips past every cooldown comparison.
+const isoDate = z.iso.datetime().nullable().catch(null)
+
+const PendingAbandonSchema = z.object({
+  flow: z.enum(['pipe', 'regular', 'aiBuilder']),
   /** Id of the pipe being edited. Clears the abandon if the pipe is published. */
-  refId: string
-  expiresAt: string
+  refId: z.string(),
+  expiresAt: z.iso.datetime(),
+})
+
+const StoredStateSchema = z.object({
+  lastPromptAt: isoDate,
+  lastCsatAt: isoDate,
+  lastSeqAt: z
+    .object({ pipe: isoDate, regular: isoDate, aiBuilder: isoDate })
+    .catch({ pipe: null, regular: null, aiBuilder: null }),
+  pendingAbandon: PendingAbandonSchema.nullable().catch(null),
+})
+
+type StoredState = z.infer<typeof StoredStateSchema>
+
+const SessionStateSchema = z.object({
+  sessionId: z.string().min(1),
+  promptShown: z.boolean(),
+})
+
+type SessionState = z.infer<typeof SessionStateSchema>
+
+function readJson(storage: Storage, key: string): unknown {
+  try {
+    const raw = storage.getItem(key)
+    return raw ? JSON.parse(raw) : undefined
+  } catch {
+    return undefined
+  }
 }
 
-interface StoredState {
-  lastPromptAt: string | null
-  lastCsatAt: string | null
-  lastSeqAt: Record<SeqFlow, string | null>
-  pendingAbandon: PendingAbandon | null
-  lastAiBuilderExitSurveyAt: string | null
-}
-
-function emptyState(): StoredState {
-  return {
-    lastPromptAt: null,
-    lastCsatAt: null,
-    lastSeqAt: { pipe: null, regular: null },
-    pendingAbandon: null,
-    lastAiBuilderExitSurveyAt: null,
+function writeJson(storage: Storage, key: string, value: unknown): void {
+  try {
+    storage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Surveys are best-effort and must never break the app.
   }
 }
 
 function load(userId: string): StoredState {
-  try {
-    const raw = localStorage.getItem(`${STATE_KEY_PREFIX}${userId}`)
-    if (!raw) {
-      return emptyState()
-    }
-    const parsed = JSON.parse(raw) as Partial<StoredState>
-    const base = emptyState()
-    return {
-      ...base,
-      ...parsed,
-      lastSeqAt: { ...base.lastSeqAt, ...parsed.lastSeqAt },
-    }
-  } catch {
-    return emptyState()
-  }
+  const parsed = StoredStateSchema.safeParse(
+    readJson(localStorage, `${STATE_KEY_PREFIX}${userId}`),
+  )
+  return parsed.success ? parsed.data : StoredStateSchema.parse({})
 }
 
 function save(userId: string, state: StoredState): void {
-  try {
-    localStorage.setItem(`${STATE_KEY_PREFIX}${userId}`, JSON.stringify(state))
-  } catch {
-    // Surveys are best-effort and must never break the app.
-  }
+  writeJson(localStorage, `${STATE_KEY_PREFIX}${userId}`, state)
 }
 
 function toDate(value: string | null): Date | null {
@@ -67,13 +75,13 @@ export function loadUserState(
 ): SurveyUserState {
   const state = load(userId)
   return {
-    userId,
     signupAt,
     lastPromptAt: toDate(state.lastPromptAt),
     lastCsatAt: toDate(state.lastCsatAt),
     lastSeqAt: {
       pipe: toDate(state.lastSeqAt.pipe),
       regular: toDate(state.lastSeqAt.regular),
+      aiBuilder: toDate(state.lastSeqAt.aiBuilder),
     },
   }
 }
@@ -95,7 +103,7 @@ export function recordPrompt(
     state.lastCsatAt = iso
   } else {
     state.lastSeqAt[survey.flow] = iso
-    if (survey.flow === 'regular') {
+    if (survey.flow === state.pendingAbandon?.flow) {
       state.pendingAbandon = null
     }
   }
@@ -111,11 +119,7 @@ export function queueAbandon(
   const expiresAt = new Date(
     now.getTime() + SURVEY_CONFIG.abandonQueueExpiryHours * 60 * 60 * 1000,
   )
-  state.pendingAbandon = {
-    flow,
-    refId,
-    expiresAt: expiresAt.toISOString(),
-  }
+  state.pendingAbandon = { flow, refId, expiresAt: expiresAt.toISOString() }
   save(userId, state)
 }
 
@@ -139,47 +143,24 @@ export function getPendingAbandon(userId: string): SeqCandidate | null {
   }
 }
 
-export function getLastAiBuilderExitSurveyAt(userId: string): Date | null {
-  return toDate(load(userId).lastAiBuilderExitSurveyAt)
-}
-
-export function recordAiBuilderExitSurvey(userId: string, now: Date): void {
-  const state = load(userId)
-  state.lastAiBuilderExitSurveyAt = now.toISOString()
-  save(userId, state)
-}
-
-interface SessionState {
-  sessionId: string
-  promptShown: boolean
-}
-
 function loadSession(): SessionState {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
-    if (raw) {
-      return JSON.parse(raw) as SessionState
-    }
-  } catch {
-    // Fall through to a fresh in-memory session.
-  }
-  return { sessionId: crypto.randomUUID(), promptShown: false }
-}
-
-function saveSession(session: SessionState): void {
-  try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
-  } catch {
-    // Best-effort.
-  }
+  const parsed = SessionStateSchema.safeParse(
+    readJson(sessionStorage, SESSION_KEY),
+  )
+  return parsed.success
+    ? parsed.data
+    : { sessionId: crypto.randomUUID(), promptShown: false }
 }
 
 export function getSession(): SessionState {
   const session = loadSession()
-  saveSession(session)
+  writeJson(sessionStorage, SESSION_KEY, session)
   return session
 }
 
 export function markSessionPromptShown(): void {
-  saveSession({ ...loadSession(), promptShown: true })
+  writeJson(sessionStorage, SESSION_KEY, {
+    ...loadSession(),
+    promptShown: true,
+  })
 }

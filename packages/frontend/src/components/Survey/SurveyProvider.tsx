@@ -16,7 +16,13 @@ import useAuthentication from '@/hooks/useAuthentication'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { SURVEY_CONFIG } from './config'
-import { evaluate, SeqFlow, SurveyDecision, SurveyTrigger } from './engine'
+import {
+  ActiveSurvey,
+  evaluate,
+  isAlwaysShown,
+  SeqFlow,
+  SurveyTrigger,
+} from './engine'
 import {
   clearAbandonForRef,
   getPendingAbandon,
@@ -26,6 +32,13 @@ import {
   queueAbandon,
   recordPrompt,
 } from './storage'
+import {
+  parseApiTimestamp,
+  respondentFor,
+  responseMetadata,
+  surveyIdFor,
+  surveyMetadata,
+} from './surveys'
 
 const THANK_YOU_VISIBLE_MS = 3000
 
@@ -51,33 +64,10 @@ const SurveyContext = createContext<SurveyContextParams>({
 
 export const useSurvey = () => useContext(SurveyContext)
 
-type ActiveSurvey = Exclude<SurveyDecision, { type: 'NONE' }>
-
 function capture(event: string, properties: Record<string, string>) {
   if (isPostHogConfigured) {
     posthog.capture(event, properties)
   }
-}
-
-function surveyMetadata(survey: ActiveSurvey): Record<string, string> {
-  if (survey.type === 'CSAT') {
-    return { survey_type: 'csat' }
-  }
-  return {
-    survey_type: 'seq',
-    flow_id: survey.flow,
-    seq_trigger: survey.trigger,
-  }
-}
-
-function surveyIdFor(survey: ActiveSurvey): { id: string; key: string } {
-  const ids = appConfig.confettiSurveyIds
-  if (survey.type === 'CSAT') {
-    return { id: ids.csat, key: 'csat' }
-  }
-  return survey.flow === 'pipe'
-    ? { id: ids.seqPipe, key: 'seq-pipe' }
-    : { id: ids.seqRegular, key: 'seq-regular' }
 }
 
 export function SurveyProvider({ children }: { children: ReactNode }) {
@@ -89,9 +79,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
   const promptRef = useRef<HTMLDivElement>(null)
 
   const userId = currentUser?.id
-  const signupAt = currentUser?.createdAt
-    ? new Date(currentUser.createdAt)
-    : null
+  const createdAt = currentUser?.createdAt
 
   const requestSurvey = useCallback(
     (trigger: SurveyTrigger) => {
@@ -107,7 +95,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
 
       const decision = evaluate({
         trigger: resolvedTrigger,
-        user: loadUserState(userId, signupAt),
+        user: loadUserState(userId, parseApiTimestamp(createdAt)),
         sessionPromptShown: getSession().promptShown,
         config: SURVEY_CONFIG,
         now,
@@ -125,9 +113,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       hasEngagedRef.current = false
       setActive(decision)
     },
-    // signupAt is derived from currentUser.createdAt, which is stable per user.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userId, currentUser?.createdAt],
+    [userId, createdAt],
   )
 
   const queueAbandonedSeq = useCallback(
@@ -166,19 +152,20 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
         return
       }
       hasEngagedRef.current = true
-      // Asking after every publish must not push CSAT out by 14 days each time.
-      const isAlwaysShownSeq =
-        SURVEY_CONFIG.pipeCompletionAlwaysShows &&
+      const startsGlobalGate = !(
         survey.type === 'SEQ' &&
-        survey.flow === 'pipe' &&
-        survey.trigger === 'completion'
+        isAlwaysShown(
+          { flow: survey.flow, type: survey.trigger },
+          SURVEY_CONFIG,
+        )
+      )
       recordPrompt(
         userId,
         survey.type === 'CSAT'
           ? { type: 'csat' }
           : { type: 'seq', flow: survey.flow },
         new Date(),
-        { startsGlobalGate: !isAlwaysShownSeq },
+        { startsGlobalGate },
       )
       markSessionPromptShown()
       capture('survey_engaged', surveyMetadata(survey))
@@ -261,28 +248,20 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
     ],
   )
 
-  const { id: surveyId, key: surveyKey } = active
-    ? surveyIdFor(active)
-    : { id: '', key: '' }
-
   return (
     <SurveyContext.Provider value={value}>
       {children}
       {active && userId && (
         <div className="confetti-survey" ref={promptRef}>
           <PopoverConfetti
-            key={surveyKey}
+            key={surveyIdFor(active).key}
             proxyUrl={appConfig.confettiApiBaseUrl}
-            surveyId={surveyId}
+            surveyId={surveyIdFor(active).id}
             publishableKey={appConfig.confettiSurveyPublishableKey}
-            respondent={`${userId}-${surveyKey}`}
+            respondent={respondentFor(userId, active)}
             onDismiss={() => handleDismiss(active)}
             onFinished={() => handleFinished(active)}
-            metadata={{
-              ...surveyMetadata(active),
-              session_id: getSession().sessionId,
-              app_version: appConfig.version ?? 'unknown',
-            }}
+            metadata={responseMetadata(active)}
           />
         </div>
       )}

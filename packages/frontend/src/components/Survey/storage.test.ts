@@ -53,6 +53,43 @@ describe('recordPrompt', () => {
   })
 })
 
+describe('loadUserState', () => {
+  it('reads corrupt fields as never', () => {
+    localStorage.setItem(
+      `plumber:survey:v1:${USER_ID}`,
+      JSON.stringify({
+        lastPromptAt: 'garbage',
+        lastCsatAt: 42,
+        lastSeqAt: { pipe: 'nope' },
+      }),
+    )
+
+    expect(loadUserState(USER_ID, null)).toEqual({
+      signupAt: null,
+      lastPromptAt: null,
+      lastCsatAt: null,
+      lastSeqAt: { pipe: null, regular: null, aiBuilder: null },
+    })
+  })
+
+  it('reads unparsable JSON as an empty state', () => {
+    localStorage.setItem(`plumber:survey:v1:${USER_ID}`, '{oops')
+
+    expect(loadUserState(USER_ID, null).lastPromptAt).toBeNull()
+  })
+
+  it('keeps valid fields next to corrupt ones', () => {
+    localStorage.setItem(
+      `plumber:survey:v1:${USER_ID}`,
+      JSON.stringify({ lastPromptAt: NOW.toISOString(), lastCsatAt: 'bad' }),
+    )
+
+    const state = loadUserState(USER_ID, null)
+    expect(state.lastPromptAt).toEqual(NOW)
+    expect(state.lastCsatAt).toBeNull()
+  })
+})
+
 describe('abandon queue', () => {
   it('queues an abandon for a pipe', () => {
     queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
