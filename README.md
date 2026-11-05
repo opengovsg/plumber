@@ -42,25 +42,10 @@ See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup ste
 ## AI Builder observability
 
 AI Builder exports traces to Rome through the existing Langfuse processors and Cloudflare Access headers.
-Set both backend variables to export the same traces to PostHog as well:
-
-```text
-POSTHOG_PROJECT_TOKEN=<project token for the frontend's PostHog project>
-POSTHOG_HOST=https://us.i.posthog.com
-```
-
-Use `https://eu.i.posthog.com` for an EU project.
-Use an ingestion host that accepts `/i/v0/ai/otel` if you configure a proxy.
-Leaving either variable empty disables PostHog export.
-Rome still receives traces regardless of whether PostHog export is enabled.
-
-ECS injects these settings from SSM Parameter Store through `ecs/env.json`.
-Before deploying, create `plumber-<ENVIRONMENT>-posthog-project-token` and `plumber-<ENVIRONMENT>-posthog-host` for each environment.
-The environment prefixes are `uat`, `staging`, and `prod` for production.
-Store the project token as a `SecureString` parameter.
-The host can use a `String` parameter.
-Both parameters must exist for ECS to start the task, even when PostHog export is disabled in application configuration.
-Ensure the task execution role can read both parameters and decrypt the token's KMS key.
+It also exports the same traces to PostHog.
+The PostHog project token and host live in `packages/shared/src/constants.ts`.
+The frontend uses the same values.
+The host must accept `/i/v0/ai/otel`.
 
 PostHog receives AI Builder and PAIR action traces, including prompts, responses, and tool calls.
 Base64 images and files are redacted from PostHog's copy. Rome retains the original content.

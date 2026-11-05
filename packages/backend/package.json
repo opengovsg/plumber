@@ -61,6 +61,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "0.219.0",
     "@opentelemetry/sdk-node": "0.219.0",
     "@opentelemetry/sdk-trace-base": "2.8.0",
+    "@plumber/shared": "workspace:*",
     "@plumber/types": "workspace:*",
     "@posthog/ai": "8.16.3",
     "@sesamecare-oss/redlock": "1.4.0",

@@ -20,9 +20,11 @@
       "outputs": []
     },
     "typecheck": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "typecheck:strict": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "build": {
@@ -30,20 +32,25 @@
       "outputs": ["dist/**"]
     },
     "test:unit": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "test:integration": {
+      "dependsOn": ["^build"],
       "cache": false,
       "outputs": []
     },
     "test": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "worker": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     }
