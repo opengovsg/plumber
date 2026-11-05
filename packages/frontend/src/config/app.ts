@@ -1,3 +1,10 @@
+import {
+  confettiApiBaseUrl,
+  confettiSurveyPublishableKey,
+  posthogHost,
+  posthogProjectToken,
+} from '@plumber/shared'
+
 interface AppConfig {
   launchDarklyClientId: string
   sgidClientId: string
@@ -17,13 +24,6 @@ function getAppConfig(): AppConfig {
   // use it as it is not available in development mode
   const env = import.meta.env.MODE
   const version = import.meta.env.PACKAGE_VERSION
-  const confettiSurveyPublishableKey =
-    'cfti_pk_dfde134552a318551e05559024f432ba'
-  // Routed through our own domain, since CSP only allows connecting to
-  // plumber.gov.sg domains directly (see packages/backend/src/helpers/csp.ts).
-  const confettiApiBaseUrl = 'https://confetti.plumber.gov.sg'
-  const posthogProjectToken = 'phc_nwcM6rC7WU7CzdW9Z4zvB3dcZWFM9fn2URbqs35FFQQQ'
-  const posthogHost = 'https://a.plumber.gov.sg'
   const commonEnv = {
     env,
     version,

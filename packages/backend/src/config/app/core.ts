@@ -5,6 +5,7 @@ import path from 'node:path'
 import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
+import { posthogHost, posthogProjectToken } from '@plumber/shared'
 import { z } from 'zod'
 
 import { requireEnv } from './require-env'
@@ -142,8 +143,8 @@ const coreConfig: CoreConfig = {
   s3CommonBucket: requireEnv('S3_COMMON_BUCKET', process.env.S3_COMMON_BUCKET),
   requestBodySizeLimit: '1mb',
   posthog: {
-    projectToken: process.env.POSTHOG_PROJECT_TOKEN?.trim() || '',
-    host: process.env.POSTHOG_HOST?.trim() || '',
+    projectToken: posthogProjectToken,
+    host: posthogHost,
   },
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename ?? ''),
   workerActionConcurrency: parseInt(

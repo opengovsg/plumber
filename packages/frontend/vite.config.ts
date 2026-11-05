@@ -25,6 +25,10 @@ export default defineConfig({
     // disable inline images since we don't allow them in csp
     assetsInlineLimit: 0,
   },
+  // Vite serves linked workspace packages as-is in dev, and the browser cannot run CommonJS.
+  optimizeDeps: {
+    include: ['@plumber/shared'],
+  },
   server: {
     open: `http://localhost:${frontendPort}`,
     port: frontendPort,
