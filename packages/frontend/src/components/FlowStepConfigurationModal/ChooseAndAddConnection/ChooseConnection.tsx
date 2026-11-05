@@ -1,4 +1,4 @@
-import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
+import { Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import { ModalCloseButton } from '@opengovsg/design-system-react'
 import { useContext } from 'react'
 
@@ -80,9 +80,14 @@ export default function ChooseConnection(
           }
         />
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
+      <ModalCloseButton
+        mt={2}
+        size="xs"
+        colorScheme="secondary"
+        sx={{ svg: { boxSize: 6 } }}
+      />
 
-      <ModalBody>
+      <ModalBody pb={0} mb={-2}>
         <Flex flexDir="column" alignItems="center" gap={6}>
           <Flex w="100%" flexDir="column" gap={4}>
             <ChooseConnectionDropdown
@@ -95,6 +100,16 @@ export default function ChooseConnection(
                 patchModalState({ currentScreen: 'add-connection' })
               }
             />
+            {connectionModalLabel?.termsNote && (
+              <Text
+                textStyle="body-2"
+                color="base.content.medium"
+                mt={2}
+                sx={{ textWrap: 'pretty' }}
+              >
+                {connectionModalLabel.termsNote}
+              </Text>
+            )}
             <SetConnectionButton
               onNextStep={async () =>
                 await onCreateOrUpdateStep(selectedConnectionId)

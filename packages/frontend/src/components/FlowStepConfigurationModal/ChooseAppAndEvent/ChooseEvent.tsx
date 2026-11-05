@@ -68,7 +68,12 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
           <Text textStyle="body-1">{selectedApp.description}</Text>
         </Flex>
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
+      <ModalCloseButton
+        mt={2}
+        size="xs"
+        colorScheme="secondary"
+        sx={{ svg: { boxSize: 6 } }}
+      />
 
       {/* Returns second level modal view of triggers or actions: if an app has multiple
        * triggers or actions, it will be shown as a list of items */}

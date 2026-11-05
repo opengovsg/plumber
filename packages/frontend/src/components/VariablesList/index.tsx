@@ -93,6 +93,7 @@ export function VariableItem({
   withViewButton,
   onViewButtonPreload,
   isViewButtonLoading,
+  hideTypeTag,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
@@ -100,6 +101,7 @@ export function VariableItem({
   withViewButton?: boolean
   onViewButtonPreload?: () => void
   isViewButtonLoading?: boolean
+  hideTypeTag?: boolean
 }): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isOverflowing, setIsOverflowing] = useState(false)
@@ -184,7 +186,7 @@ export function VariableItem({
               isTruncated
             >
               {variable.label ?? variable.name}{' '}
-              <VariableTag type={variable.type} />
+              {!hideTypeTag && <VariableTag type={variable.type} />}
             </Text>
           </Flex>
           <Flex flexDirection="column" gap={1}>
@@ -246,10 +248,12 @@ interface VariablesListProps {
   onClick?: (variable: Variable) => void
   customStyles?: SystemStyleObject
   supportTableDisplay?: boolean
+  // For lists where every value has the same type, so the tag adds nothing.
+  hideTypeTags?: boolean
 }
 
 export default function VariablesList(props: VariablesListProps) {
-  const { variables, onClick, supportTableDisplay } = props
+  const { variables, onClick, supportTableDisplay, hideTypeTags } = props
 
   // Separate variables into default and collapsed categories
   const { defaultVariables, collapsedVariables } = useMemo(() => {
@@ -327,6 +331,7 @@ export default function VariablesList(props: VariablesListProps) {
                   variable={variable}
                   onClick={onClick}
                   isLast={isLast}
+                  hideTypeTag={hideTypeTags}
                 />
               )}
             </Box>
