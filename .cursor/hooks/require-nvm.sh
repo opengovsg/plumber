@@ -161,7 +161,9 @@ expose_executed() {
 
 has_tool() {
   local s=$1
-  [[ $s =~ (^|[^[:alnum:]_./])(npm|npx|pnpm|node)([^[:alnum:]_.-]|$) ]]
+  # A leading slash is a path. The next character still cannot be a slash,
+  # so versions/node/v1 does not count as running node.
+  [[ $s =~ (^|[^[:alnum:]_.])(npm|npx|pnpm|node)([^[:alnum:]_./-]|$) ]]
 }
 
 pin_of() {
@@ -229,22 +231,36 @@ apply_cd() {
   fi
 }
 
+# Prints PIN, UNKNOWN, or an explicit version.
+# Only a bare nvm use, or the no-op flags, means the directory pin.
 version_from_nvm_use() {
   local shown=$1
   local rest token
+  local saw_unknown=0
   rest=$(trim "${shown#nvm use}")
   while [ -n "$rest" ]; do
     token=${rest%%[[:space:]]*}
     rest=$(trim "${rest#"$token"}")
     case "$token" in
       --silent|--delete-prefix|--) ;;
-      -*) ;;
+      -*)
+        saw_unknown=1
+        ;;
       *)
-        normalize "$token"
+        if [ "$saw_unknown" -eq 1 ]; then
+          printf '%s' "UNKNOWN"
+        else
+          normalize "$token"
+        fi
         return 0
         ;;
     esac
   done
+  if [ "$saw_unknown" -eq 1 ]; then
+    printf '%s' "UNKNOWN"
+  else
+    printf '%s' "PIN"
+  fi
 }
 
 blocked=0
@@ -273,6 +289,12 @@ consider_segment() {
       apply_cd "$(trim "${opened#cd}")"
       return 0
       ;;
+    pushd|pushd[[:space:]]*|popd|popd[[:space:]]*)
+      # The directory stack is not tracked. A later tool has no known pin.
+      explicit_cd=1
+      dir_known=0
+      return 0
+      ;;
   esac
   shown=$(expose_executed "$raw")
   case "$(trim "$shown")" in
@@ -280,20 +302,23 @@ consider_segment() {
       if [ "$op" = "&&" ] && [ "$dir_known" -eq 1 ]; then
         local picked
         picked=$(version_from_nvm_use "$(trim "$shown")")
-        if [ -n "$picked" ]; then
-          active=$picked
-        else
+        if [ "$picked" = "UNKNOWN" ]; then
+          # --lts and other selectors do not promise the .nvmrc version.
+          active=""
+        elif [ "$picked" = "PIN" ]; then
           local fallback=0
           if [ "$explicit_cd" -eq 0 ]; then
             fallback=1
           fi
           active=$(pin_of "$search" "$fallback")
+        else
+          active=$picked
         fi
       fi
       ;;
   esac
   if has_tool "$shown"; then
-    if printf '%s' "$shown" | grep -Eq '(^|[[:space:];|&|])cd([[:space:]]|$)'; then
+    if printf '%s' "$shown" | grep -Eq '(^|[[:space:];|&|])(cd|pushd|popd)([[:space:]]|$)'; then
       blocked=1
       return 0
     fi

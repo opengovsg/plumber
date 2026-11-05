@@ -13,7 +13,7 @@ cat >"$bin/nvm" <<'EOF'
 #!/bin/sh
 if [ "$1" = "use" ]; then
   case "$2" in
-    v1.2.3|1.2.3)
+    v1.2.3|1.2.3|"")
       printf '%s\n' "v1.2.3" >"$NVM_STUB_STATE"
       ;;
     *)
@@ -102,15 +102,38 @@ expect_fail() {
   fi
 }
 
+expect_rewrite() {
+  local command=$1
+  local out
+  out=$(rewrite "$command")
+  if [ -z "$out" ]; then
+    printf 'FAIL expected a rewrite for: %s\n' "$command" >&2
+    failures=$((failures + 1))
+  fi
+}
+
 expect_empty "echo hello"
 expect_empty "cat pnpm-lock.yaml"
 expect_empty "ls node_modules"
+expect_empty "ls versions/node/v1/bin"
+expect_rewrite "/usr/bin/node -v"
 expect_version "$fixture/repos/checkout" "node -v" "v1.2.3"
 expect_version "$fixture" "node -v" "v1.2.3"
 CLAUDE_PROJECT_DIR=$project expect_version "$outside" "node -v" "v1.2.3"
 expect_fail "$fixture/repos/checkout/packages/other" "node -v"
+expect_fail "$fixture/repos/checkout" "cd packages/other && node -v"
+expect_fail "$fixture/repos/checkout" "pushd packages/other && node -v"
+mkdir -p "$fixture/repos/checkout/packages/same"
+printf '%s\n' "v1.2.3" >"$fixture/repos/checkout/packages/same/.nvmrc"
+expect_version "$fixture/repos/checkout" "cd packages/same && node -v" "v1.2.3"
+expect_version "$fixture/repos/checkout" "cd packages/other && nvm use && node -v" "v1.2.3"
+many=$(mktemp -d)
+mkdir -p "$many/repos/one" "$many/repos/two"
+printf '%s\n' "v1.2.3" >"$many/repos/one/.nvmrc"
+printf '%s\n' "v1.2.3" >"$many/repos/two/.nvmrc"
+expect_fail "$many" "node -v"
 
-rm -rf "$bin" "$fixture" "$project" "$outside" "$state"
+rm -rf "$bin" "$fixture" "$project" "$outside" "$state" "$many"
 
 if [ "$failures" -ne 0 ]; then
   printf '%s failure(s)\n' "$failures" >&2
