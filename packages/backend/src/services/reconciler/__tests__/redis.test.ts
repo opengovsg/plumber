@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createReconcilerRedisClient } from '../redis'
+import { createReconcilerRedisClient, logReconcilerRedisErrors } from '../redis'
 
 const mocks = vi.hoisted(() => ({
   createRedisClient: vi.fn(),
@@ -47,5 +47,17 @@ describe('createReconcilerRedisClient', () => {
       }),
     )
     expect(mocks.logError.mock.calls[0][1]).not.toHaveProperty('error')
+  })
+
+  it('logs connection errors of a client it did not create', () => {
+    const client = new EventEmitter()
+
+    logReconcilerRedisErrors(client)
+    client.emit('error', new Error('ECONNREFUSED'))
+
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Reconciler Redis connection error',
+      expect.objectContaining({ event: 'reconciler-redis-error' }),
+    )
   })
 })

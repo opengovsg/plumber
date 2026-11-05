@@ -4,18 +4,23 @@ import logger from '@/helpers/logger'
 
 import type { ReconcilerCheck } from '../../run-checks'
 import { classifySchedules, parseScheduleEntries } from './classify-schedules'
+import { collectMissedRuns } from './collect-missed-runs'
 import type { SchedulerPipesCheckConfig } from './config'
+import { countMissedRuns } from './count-missed-runs'
 import { fetchPublishedScheduledPipes } from './fetch-published-scheduled-pipes'
+import { FLOW_QUEUE_KEY_PREFIX } from './is-run-time-job-pending'
 
-export const SCHEDULE_ENTRIES_KEY = '{flowQ}:flow:repeat'
+export const SCHEDULE_ENTRIES_KEY = `${FLOW_QUEUE_KEY_PREFIX}:repeat`
 
 interface CreateSchedulerPipesCheckInput {
-  jobsRedis: Pick<Redis, 'zrange'>
+  jobsRedis: Pick<Redis, 'zrange' | 'hmget'>
+  markerRedis: Pick<Redis, 'pipeline'>
   config: SchedulerPipesCheckConfig
 }
 
 export function createSchedulerPipesCheck({
   jobsRedis,
+  markerRedis,
   config,
 }: CreateSchedulerPipesCheckInput): ReconcilerCheck {
   return {
@@ -30,21 +35,38 @@ export function createSchedulerPipesCheck({
         'WITHSCORES',
       )
 
-      const { missingFlowIds, overdueFlowIds } = classifySchedules({
-        publishedFlowIds: publishedPipes.map((pipe) => pipe.flowId),
-        scheduleEntryByFlowId: parseScheduleEntries(zrangeWithScores),
-        nowMillis: Date.now(),
+      const scheduleEntryByFlowId = parseScheduleEntries(zrangeWithScores)
+      const nowMillis = Date.now()
+
+      const { missingPipes, overduePipes } = classifySchedules({
+        publishedPipes,
+        scheduleEntryByFlowId,
+        nowMillis,
         graceSeconds: config.missedRunGraceSeconds,
+      })
+
+      const missedRuns = await collectMissedRuns({
+        jobsRedis,
+        missingPipes,
+        overduePipes,
+        nowMillis,
+        graceSeconds: config.missedRunGraceSeconds,
+      })
+      const newlyCountedMissedRunCount = await countMissedRuns({
+        markerRedis,
+        missedRuns,
+        nowMillis,
       })
 
       // The heartbeat log goes last, so it marks a completed run.
       const logDetails = {
         event: 'reconciler-scheduler-pipes-check',
         publishedPipeCount: publishedPipes.length,
-        missingCount: missingFlowIds.length,
-        overdueCount: overdueFlowIds.length,
+        missingCount: missingPipes.length,
+        overdueCount: overduePipes.length,
+        newlyCountedMissedRunCount,
       }
-      if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
+      if (missingPipes.length > 0 || overduePipes.length > 0) {
         logger.warn('Scheduler pipes check found problem pipes', logDetails)
       } else {
         logger.info('Scheduler pipes check found no problem pipes', logDetails)

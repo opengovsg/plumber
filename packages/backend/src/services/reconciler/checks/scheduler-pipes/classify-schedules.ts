@@ -1,3 +1,5 @@
+import type { PublishedScheduledPipe } from './fetch-published-scheduled-pipes'
+
 // Members are `flow-<id>` since bullmq 5.70.2, or `flow-<id>:<id>:::<cron>` for pipes published under 5.7.8.
 const SCHEDULE_ENTRY_MEMBER_REGEX =
   /^flow-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?::|$)/i
@@ -32,35 +34,39 @@ export function parseScheduleEntries(
 }
 
 interface ClassifySchedulesInput {
-  publishedFlowIds: string[]
+  publishedPipes: PublishedScheduledPipe[]
   scheduleEntryByFlowId: Map<string, ScheduleEntry>
   nowMillis: number
   graceSeconds: number
 }
 
+export interface OverduePipe {
+  pipe: PublishedScheduledPipe
+  scheduleEntry: ScheduleEntry
+}
+
 export interface ScheduleClassification {
-  missingFlowIds: string[]
-  overdueFlowIds: string[]
+  missingPipes: PublishedScheduledPipe[]
+  overduePipes: OverduePipe[]
 }
 
 export function classifySchedules({
-  publishedFlowIds,
+  publishedPipes,
   scheduleEntryByFlowId,
   nowMillis,
   graceSeconds,
 }: ClassifySchedulesInput): ScheduleClassification {
   const overdueBeforeMillis = nowMillis - graceSeconds * 1000
 
-  const missingFlowIds = publishedFlowIds.filter(
-    (flowId) => !scheduleEntryByFlowId.has(flowId),
+  const missingPipes = publishedPipes.filter(
+    (pipe) => !scheduleEntryByFlowId.has(pipe.flowId),
   )
-  const overdueFlowIds = publishedFlowIds.filter((flowId) => {
-    const scheduleEntry = scheduleEntryByFlowId.get(flowId)
-    return (
-      scheduleEntry !== undefined &&
-      scheduleEntry.runTimeMillis < overdueBeforeMillis
-    )
+  const overduePipes = publishedPipes.flatMap((pipe) => {
+    const scheduleEntry = scheduleEntryByFlowId.get(pipe.flowId)
+    return scheduleEntry && scheduleEntry.runTimeMillis < overdueBeforeMillis
+      ? [{ pipe, scheduleEntry }]
+      : []
   })
 
-  return { missingFlowIds, overdueFlowIds }
+  return { missingPipes, overduePipes }
 }

@@ -30,9 +30,30 @@ function scheduleEntries(runTimes: [string, number][]) {
   )
 }
 
+function classify({
+  publishedFlowIds,
+  ...input
+}: Omit<Parameters<typeof classifySchedules>[0], 'publishedPipes'> & {
+  publishedFlowIds: string[]
+}) {
+  const { missingPipes, overduePipes } = classifySchedules({
+    ...input,
+    publishedPipes: publishedFlowIds.map((flowId) => ({
+      flowId,
+      publishedAt: new Date(NOW).toISOString(),
+      triggerKey: 'everyHour',
+      triggerParameters: {},
+    })),
+  })
+  return {
+    missingFlowIds: missingPipes.map((pipe) => pipe.flowId),
+    overdueFlowIds: overduePipes.map(({ pipe }) => pipe.flowId),
+  }
+}
+
 describe('classifySchedules', () => {
   it('marks a published pipe with no schedule entry as missing', () => {
-    const result = classifySchedules({
+    const result = classify({
       publishedFlowIds: [FLOW_A],
       scheduleEntryByFlowId: new Map(),
       nowMillis: NOW,
@@ -42,8 +63,32 @@ describe('classifySchedules', () => {
     expect(result).toEqual({ missingFlowIds: [FLOW_A], overdueFlowIds: [] })
   })
 
+  it('keeps the schedule entry of an overdue pipe', () => {
+    const scheduleEntryByFlowId = scheduleEntries([
+      [FLOW_A, NOW - GRACE_SECONDS * 1000 - 1],
+    ])
+
+    const { overduePipes } = classifySchedules({
+      publishedPipes: [
+        {
+          flowId: FLOW_A,
+          publishedAt: new Date(NOW).toISOString(),
+          triggerKey: 'everyHour',
+          triggerParameters: {},
+        },
+      ],
+      scheduleEntryByFlowId,
+      nowMillis: NOW,
+      graceSeconds: GRACE_SECONDS,
+    })
+
+    expect(overduePipes[0].scheduleEntry).toEqual(
+      scheduleEntryByFlowId.get(FLOW_A),
+    )
+  })
+
   it('marks a pipe whose run time is more than G in the past as overdue', () => {
-    const result = classifySchedules({
+    const result = classify({
       publishedFlowIds: [FLOW_A],
       scheduleEntryByFlowId: scheduleEntries([
         [FLOW_A, NOW - GRACE_SECONDS * 1000 - 1],
@@ -56,7 +101,7 @@ describe('classifySchedules', () => {
   })
 
   it('treats a run time exactly G in the past as healthy', () => {
-    const result = classifySchedules({
+    const result = classify({
       publishedFlowIds: [FLOW_A],
       scheduleEntryByFlowId: scheduleEntries([
         [FLOW_A, NOW - GRACE_SECONDS * 1000],
@@ -69,7 +114,7 @@ describe('classifySchedules', () => {
   })
 
   it('treats past run times within G and future run times as healthy', () => {
-    const result = classifySchedules({
+    const result = classify({
       publishedFlowIds: [FLOW_A, FLOW_B],
       scheduleEntryByFlowId: scheduleEntries([
         [FLOW_A, NOW - 60_000],
@@ -83,7 +128,7 @@ describe('classifySchedules', () => {
   })
 
   it('ignores schedule entries of pipes that are not published', () => {
-    const result = classifySchedules({
+    const result = classify({
       publishedFlowIds: [FLOW_A],
       scheduleEntryByFlowId: scheduleEntries([
         [FLOW_A, NOW + 60_000],
@@ -97,7 +142,7 @@ describe('classifySchedules', () => {
   })
 
   it('classifies several pipes at once', () => {
-    const result = classifySchedules({
+    const result = classify({
       publishedFlowIds: [FLOW_A, FLOW_B, FLOW_C],
       scheduleEntryByFlowId: scheduleEntries([
         [FLOW_B, NOW - 3_600_000],
