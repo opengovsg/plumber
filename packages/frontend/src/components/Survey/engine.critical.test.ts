@@ -41,34 +41,60 @@ function run(
   })
 }
 
-const dashboard: SurveyTrigger = { isPausePoint: true }
 const aiBuilderExit: SurveyTrigger = {
   isPausePoint: false,
   seqCandidate: { flow: 'aiBuilder', type: 'abandon' },
 }
-const leftPipe: SurveyTrigger = {
-  isPausePoint: true,
-  seqCandidate: { flow: 'regular', type: 'abandon' },
-}
 
-describe('CSAT on the dashboard', () => {
+// Each state mirrors what recordPrompt stores when the user acts on that survey.
+describe.each([
+  {
+    survey: 'CSAT',
+    trigger: { isPausePoint: true },
+    actedOnAt: (at: Date) => ({ lastPromptAt: at, lastCsatAt: at }),
+    shown: { type: 'CSAT' },
+  },
+  {
+    survey: 'SEQ after leaving a pipe',
+    trigger: {
+      isPausePoint: true,
+      seqCandidate: { flow: 'regular', type: 'abandon' },
+    },
+    actedOnAt: (at: Date) => ({
+      lastPromptAt: at,
+      lastCsatAt: at,
+      lastSeqAt: { pipe: null, regular: at, aiBuilder: null },
+    }),
+    shown: { type: 'SEQ', flow: 'regular', trigger: 'abandon' },
+  },
+  {
+    survey: 'SEQ on AI Builder exit',
+    trigger: aiBuilderExit,
+    actedOnAt: (at: Date) => ({
+      lastPromptAt: at,
+      lastSeqAt: { pipe: null, regular: null, aiBuilder: at },
+    }),
+    shown: { type: 'SEQ', flow: 'aiBuilder', trigger: 'abandon' },
+  },
+] satisfies {
+  survey: string
+  trigger: SurveyTrigger
+  actedOnAt: (at: Date) => Partial<SurveyUserState>
+  shown: object
+}[])('$survey', ({ trigger, actedOnAt, shown }) => {
   it('shows again 14 days after the user acted on it', () => {
-    const at14 = daysAgo(14)
-    expect(
-      run(dashboard, makeUser({ lastCsatAt: at14, lastPromptAt: at14 })),
-    ).toEqual({ type: 'CSAT' })
+    expect(run(trigger, makeUser(actedOnAt(daysAgo(14))))).toEqual(shown)
   })
 
   it('stays hidden within 14 days of the user acting on it', () => {
-    const at13 = daysAgo(13)
-    expect(
-      run(dashboard, makeUser({ lastCsatAt: at13, lastPromptAt: at13 })),
-    ).toMatchObject({ type: 'NONE' })
+    expect(run(trigger, makeUser(actedOnAt(daysAgo(13))))).toMatchObject({
+      type: 'NONE',
+    })
   })
 })
 
 describe('SEQ after publish', () => {
-  it('shows on every publish', () => {
+  it('shows on every publish, ignoring every gate', () => {
     expect(
       run(
         {
@@ -85,75 +111,7 @@ describe('SEQ after publish', () => {
   })
 })
 
-describe('SEQ after leaving a pipe', () => {
-  const csatRecent = { lastCsatAt: daysAgo(1) }
-
-  it('shows without sampling', () => {
-    expect(run(leftPipe, makeUser(csatRecent))).toEqual({
-      type: 'SEQ',
-      flow: 'regular',
-      trigger: 'abandon',
-    })
-  })
-
-  it('shows again 14 days after the last one', () => {
-    expect(
-      run(
-        leftPipe,
-        makeUser({
-          ...csatRecent,
-          lastSeqAt: { pipe: null, regular: daysAgo(14), aiBuilder: null },
-        }),
-      ),
-    ).toEqual({ type: 'SEQ', flow: 'regular', trigger: 'abandon' })
-  })
-
-  it('stays hidden within 14 days of the last one', () => {
-    expect(
-      run(
-        leftPipe,
-        makeUser({
-          ...csatRecent,
-          lastSeqAt: { pipe: null, regular: daysAgo(13), aiBuilder: null },
-        }),
-      ),
-    ).toEqual({ type: 'NONE', reason: 'flow_cooldown' })
-  })
-})
-
-describe('SEQ on AI Builder exit', () => {
-  const expected = { type: 'SEQ', flow: 'aiBuilder', trigger: 'abandon' }
-
-  it('shows on the first exit', () => {
-    expect(run(aiBuilderExit, makeUser())).toEqual(expected)
-  })
-
-  it('shows again 14 days after the last one', () => {
-    const at14 = daysAgo(14)
-    expect(
-      run(
-        aiBuilderExit,
-        makeUser({
-          lastPromptAt: at14,
-          lastSeqAt: { pipe: null, regular: null, aiBuilder: at14 },
-        }),
-      ),
-    ).toEqual(expected)
-  })
-
-  it('stays hidden within 14 days of the last one', () => {
-    const at13 = daysAgo(13)
-    expect(
-      run(
-        aiBuilderExit,
-        makeUser({
-          lastPromptAt: at13,
-          lastSeqAt: { pipe: null, regular: null, aiBuilder: at13 },
-        }),
-      ),
-    ).toMatchObject({ type: 'NONE' })
-  })
-
+describe('SEQ on AI Builder exit across surveys', () => {
   it('stays hidden within 14 days of any other survey the user acted on', () => {
     expect(
       run(

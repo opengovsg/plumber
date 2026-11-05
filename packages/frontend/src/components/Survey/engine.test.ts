@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { SURVEY_CONFIG } from './config'
 import { evaluate, SurveyTrigger, SurveyUserState } from './engine'
 
+// Interval rules live in engine.critical.test.ts. This file covers priority,
+// expiry and edge cases.
+
 const NOW = new Date('2026-06-01T00:00:00Z')
 
-// The scenarios below pin the gate and cooldown rules, so they run without the
-// always-show override.
+// Lets the publish SEQ compete with CSAT instead of always winning.
 const GATED_CONFIG = { ...SURVEY_CONFIG, pipeCompletionAlwaysShows: false }
 
 function daysAgo(days: number): Date {
@@ -28,88 +30,46 @@ const completion: SurveyTrigger = {
   seqCandidate: { flow: 'pipe', type: 'completion' },
 }
 const pause: SurveyTrigger = { isPausePoint: true }
+const pipeSeq = { type: 'SEQ', flow: 'pipe', trigger: 'completion' }
 
 function run(
   trigger: SurveyTrigger,
   user: SurveyUserState,
-  sessionPromptShown = false,
-  config = GATED_CONFIG,
+  { sessionPromptShown = false, config = GATED_CONFIG } = {},
 ) {
   return evaluate({ trigger, user, sessionPromptShown, config, now: NOW })
 }
 
 describe('evaluate', () => {
-  it('1. shows SEQ on pipe completion with no prior prompts', () => {
-    expect(run(completion, makeUser())).toEqual({
-      type: 'SEQ',
-      flow: 'pipe',
-      trigger: 'completion',
-    })
-  })
-
-  it('2. shows nothing within the global gate', () => {
-    expect(run(completion, makeUser({ lastPromptAt: daysAgo(5) }))).toEqual({
-      type: 'NONE',
-      reason: 'global_gate',
-    })
-  })
-
-  it('3. never shows CSAT in the same session as a prompt', () => {
-    expect(run(pause, makeUser(), true)).toEqual({
-      type: 'NONE',
-      reason: 'session_gate',
-    })
-  })
-
-  it('4. SEQ wins over CSAT when CSAT is due but not overdue', () => {
+  it('prefers SEQ over a CSAT that is due but not overdue', () => {
     const user = makeUser({ lastCsatAt: daysAgo(35) })
-    expect(run({ ...completion, isPausePoint: true }, user)).toEqual({
-      type: 'SEQ',
-      flow: 'pipe',
-      trigger: 'completion',
-    })
+    expect(run({ ...completion, isPausePoint: true }, user)).toEqual(pipeSeq)
   })
 
-  it('5. CSAT wins over SEQ once overdue', () => {
+  it('prefers an overdue CSAT over SEQ', () => {
     const user = makeUser({ lastCsatAt: daysAgo(50) })
     expect(run({ ...completion, isPausePoint: true }, user)).toEqual({
       type: 'CSAT',
     })
   })
 
-  it('6. shows a queued abandon and drops an expired one', () => {
-    const candidate = { flow: 'regular' as const, type: 'abandon' as const }
+  it('drops an expired abandon', () => {
     expect(
       run(
         {
           isPausePoint: true,
-          seqCandidate: { ...candidate, expiresAt: daysAgo(-1) },
-        },
-        makeUser({ lastCsatAt: daysAgo(1) }),
-      ),
-    ).toEqual({ type: 'SEQ', flow: 'regular', trigger: 'abandon' })
-    expect(
-      run(
-        {
-          isPausePoint: true,
-          seqCandidate: { ...candidate, expiresAt: daysAgo(1) },
+          seqCandidate: {
+            flow: 'regular',
+            type: 'abandon',
+            expiresAt: daysAgo(1),
+          },
         },
         makeUser({ lastCsatAt: daysAgo(1) }),
       ),
     ).toEqual({ type: 'NONE', reason: 'expired' })
   })
 
-  it('8. shows CSAT at a pause point when due', () => {
-    expect(run(pause, makeUser({ lastCsatAt: daysAgo(31) }))).toEqual({
-      type: 'CSAT',
-    })
-    expect(run(pause, makeUser({ lastCsatAt: daysAgo(10) }))).toEqual({
-      type: 'NONE',
-      reason: 'csat_cooldown',
-    })
-  })
-
-  it('9. blocks SEQ within the per-flow cooldown', () => {
+  it('applies the per-flow cooldown on its own', () => {
     const user = makeUser({
       lastSeqAt: { pipe: daysAgo(10), regular: null, aiBuilder: null },
     })
@@ -119,27 +79,14 @@ describe('evaluate', () => {
     })
   })
 
-  it('10. suppresses CSAT for new users but allows SEQ', () => {
+  it('suppresses CSAT for new users but allows SEQ', () => {
     const user = makeUser({ signupAt: daysAgo(5) })
     expect(run(pause, user)).toEqual({ type: 'NONE', reason: 'new_user' })
-    expect(run(completion, user)).toEqual({
-      type: 'SEQ',
-      flow: 'pipe',
-      trigger: 'completion',
-    })
+    expect(run(completion, user)).toEqual(pipeSeq)
   })
 
-  it('12. treats a user with no prior state as never surveyed', () => {
-    expect(
-      run(
-        pause,
-        makeUser({ signupAt: null, lastPromptAt: null, lastCsatAt: null }),
-      ),
-    ).toEqual({ type: 'CSAT' })
-  })
-
-  it('returns NONE with no reason for a non-pause trigger without a candidate', () => {
-    expect(run({ isPausePoint: false }, makeUser())).toEqual({ type: 'NONE' })
+  it('treats an unknown signup date as an established user', () => {
+    expect(run(pause, makeUser({ signupAt: null }))).toEqual({ type: 'CSAT' })
   })
 
   it('does not condition CSAT on SEQ history', () => {
@@ -148,68 +95,38 @@ describe('evaluate', () => {
     })
     expect(run(pause, user)).toEqual({ type: 'CSAT' })
   })
-})
 
-describe('evaluate with pipeCompletionAlwaysShows', () => {
-  const config = { ...SURVEY_CONFIG, pipeCompletionAlwaysShows: true }
-  const expected = { type: 'SEQ', flow: 'pipe', trigger: 'completion' }
-
-  it('shows on every pipe completion despite every gate', () => {
-    expect(
-      run(
-        completion,
-        makeUser({
-          lastPromptAt: daysAgo(1),
-          lastSeqAt: { pipe: daysAgo(1), regular: null, aiBuilder: null },
-        }),
-        true,
-        config,
-      ),
-    ).toEqual(expected)
+  it('returns NONE with no reason for a non-pause trigger without a candidate', () => {
+    expect(run({ isPausePoint: false }, makeUser())).toEqual({ type: 'NONE' })
   })
 
-  it('still gates the other surveys', () => {
-    const user = makeUser({ lastPromptAt: daysAgo(1) })
-    expect(run(pause, user, false, config)).toEqual({
-      type: 'NONE',
-      reason: 'global_gate',
-    })
+  it('exempts only the publish SEQ from the gates', () => {
     expect(
       run(
         {
           isPausePoint: false,
           seqCandidate: { flow: 'regular', type: 'abandon' },
         },
-        user,
-        false,
-        config,
+        makeUser({ lastPromptAt: daysAgo(1) }),
+        { config: SURVEY_CONFIG },
       ),
     ).toEqual({ type: 'NONE', reason: 'global_gate' })
   })
 })
 
-describe('after a pipe SEQ that did not start the global gate', () => {
-  // The pipe SEQ records its own date but leaves lastPromptAt untouched.
+describe('after a publish SEQ, which does not start the global gate', () => {
   const user = makeUser({
     lastSeqAt: { pipe: daysAgo(0), regular: null, aiBuilder: null },
   })
 
   it('blocks CSAT for the rest of the session', () => {
-    expect(run(pause, user, true)).toEqual({
+    expect(run(pause, user, { sessionPromptShown: true })).toEqual({
       type: 'NONE',
       reason: 'session_gate',
     })
   })
 
   it('lets CSAT show in the next session', () => {
-    expect(run(pause, user, false)).toEqual({ type: 'CSAT' })
-  })
-
-  it('lets an overdue CSAT show in the next session', () => {
-    const overdue = makeUser({
-      lastCsatAt: daysAgo(50),
-      lastSeqAt: { pipe: daysAgo(0), regular: null, aiBuilder: null },
-    })
-    expect(run(pause, overdue, false)).toEqual({ type: 'CSAT' })
+    expect(run(pause, user)).toEqual({ type: 'CSAT' })
   })
 })

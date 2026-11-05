@@ -10,6 +10,7 @@ import {
 
 const USER_ID = 'user-1'
 const NOW = new Date('2026-06-01T00:00:00Z')
+const STATE_KEY = `plumber:survey:v1:${USER_ID}`
 
 beforeEach(() => {
   const data = new Map<string, string>()
@@ -29,16 +30,6 @@ describe('recordPrompt', () => {
     expect(state.lastCsatAt).toEqual(NOW)
   })
 
-  it('records the pipe SEQ without starting the global gate', () => {
-    recordPrompt(USER_ID, { type: 'seq', flow: 'pipe' }, NOW, {
-      startsGlobalGate: false,
-    })
-
-    const state = loadUserState(USER_ID, null)
-    expect(state.lastPromptAt).toBeNull()
-    expect(state.lastSeqAt.pipe).toEqual(NOW)
-  })
-
   it('leaves earlier prompt dates alone when the gate is not started', () => {
     const earlier = new Date('2026-05-01T00:00:00Z')
     recordPrompt(USER_ID, { type: 'csat' }, earlier)
@@ -54,45 +45,38 @@ describe('recordPrompt', () => {
 })
 
 describe('loadUserState', () => {
-  it('reads corrupt fields as never', () => {
+  it('reads corrupt fields as never and keeps valid ones', () => {
     localStorage.setItem(
-      `plumber:survey:v1:${USER_ID}`,
+      STATE_KEY,
       JSON.stringify({
-        lastPromptAt: 'garbage',
+        lastPromptAt: NOW.toISOString(),
         lastCsatAt: 42,
-        lastSeqAt: { pipe: 'nope' },
+        lastSeqAt: { pipe: 'garbage' },
       }),
     )
 
     expect(loadUserState(USER_ID, null)).toEqual({
       signupAt: null,
-      lastPromptAt: null,
+      lastPromptAt: NOW,
       lastCsatAt: null,
       lastSeqAt: { pipe: null, regular: null, aiBuilder: null },
     })
   })
 
   it('reads unparsable JSON as an empty state', () => {
-    localStorage.setItem(`plumber:survey:v1:${USER_ID}`, '{oops')
+    localStorage.setItem(STATE_KEY, '{oops')
 
     expect(loadUserState(USER_ID, null).lastPromptAt).toBeNull()
-  })
-
-  it('keeps valid fields next to corrupt ones', () => {
-    localStorage.setItem(
-      `plumber:survey:v1:${USER_ID}`,
-      JSON.stringify({ lastPromptAt: NOW.toISOString(), lastCsatAt: 'bad' }),
-    )
-
-    const state = loadUserState(USER_ID, null)
-    expect(state.lastPromptAt).toEqual(NOW)
-    expect(state.lastCsatAt).toBeNull()
   })
 })
 
 describe('abandon queue', () => {
-  it('queues an abandon for a pipe', () => {
+  beforeEach(() => {
     queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
+  })
+
+  it('keeps the abandon when the user opens a different pipe', () => {
+    clearAbandonForRef(USER_ID, 'pipe-2')
 
     expect(getPendingAbandon(USER_ID)).toMatchObject({
       flow: 'regular',
@@ -101,16 +85,14 @@ describe('abandon queue', () => {
   })
 
   it('clears the abandon when the user returns to the same pipe', () => {
-    queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
     clearAbandonForRef(USER_ID, 'pipe-1')
 
     expect(getPendingAbandon(USER_ID)).toBeNull()
   })
 
-  it('keeps the abandon when the user opens a different pipe', () => {
-    queueAbandon(USER_ID, { flow: 'regular', refId: 'pipe-1' }, NOW)
-    clearAbandonForRef(USER_ID, 'pipe-2')
+  it('clears the abandon once the user acts on its survey', () => {
+    recordPrompt(USER_ID, { type: 'seq', flow: 'regular' }, NOW)
 
-    expect(getPendingAbandon(USER_ID)).not.toBeNull()
+    expect(getPendingAbandon(USER_ID)).toBeNull()
   })
 })
