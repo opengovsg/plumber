@@ -140,81 +140,79 @@ export default function SelectPipePopover({
       </Tooltip>
       <PopoverContent w="320px" border="none" boxShadow="lg" borderRadius="lg">
         <PopoverBody p={2}>
-          {error && !data ? (
-            <Text textStyle="body-2" color="gray.400" px={3} py={2}>
-              Couldn&apos;t load your pipes.
+          <Flex direction="column">
+            <Text textStyle="caption-1" color="gray.500" px={2} py={1}>
+              Choose a pipe
             </Text>
-          ) : loading && !data ? (
-            <Flex justify="center" py={3}>
-              <Spinner size="sm" color="primary.500" />
-            </Flex>
-          ) : (
-            <Flex direction="column">
-              <Text textStyle="caption-1" color="gray.500" px={2} py={1}>
-                Choose a pipe
-              </Text>
-              <Input
-                ref={searchInputRef}
-                size="sm"
-                mb={1}
-                placeholder="Search pipes"
-                value={searchQuery}
-                onChange={(event) => {
-                  const value = event.target.value
-                  setSearchQuery(value)
-                  debounceSearch(value)
-                }}
-                aria-label="Search pipes"
-              />
-              <Flex direction="column" maxH="240px" overflowY="auto">
-                {choices.length === 0 ? (
-                  <Text textStyle="body-2" color="gray.400" px={3} py={2}>
-                    {searchActive
-                      ? 'No pipes match this search.'
-                      : 'You have no pipes you can edit yet.'}
-                  </Text>
-                ) : (
-                  choices.map((choice, idx) => (
-                    <Box
-                      key={choice.pipeId}
-                      as="button"
-                      type="button"
-                      w="full"
-                      textAlign="left"
-                      px={3}
-                      py={2}
-                      borderRadius="md"
-                      bg={idx % 2 === 0 ? 'gray.50' : 'white'}
-                      aria-disabled={choice.published}
-                      cursor={choice.published ? 'not-allowed' : 'pointer'}
-                      _hover={choice.published ? {} : { bg: 'primary.50' }}
-                      _active={choice.published ? {} : { bg: 'primary.100' }}
-                      onClick={() => {
-                        if (choice.published) {
-                          return
-                        }
-                        handleClose()
-                        onSelect(choice)
-                      }}
+            <Input
+              ref={searchInputRef}
+              size="sm"
+              mb={1}
+              placeholder="Search pipes"
+              value={searchQuery}
+              onChange={(event) => {
+                const value = event.target.value
+                setSearchQuery(value)
+                debounceSearch(value)
+              }}
+              aria-label="Search pipes"
+            />
+            <Flex direction="column" maxH="240px" overflowY="auto">
+              {error && !data ? (
+                <Text textStyle="body-2" color="gray.400" px={3} py={2}>
+                  Couldn&apos;t load your pipes.
+                </Text>
+              ) : loading && !data ? (
+                <Flex justify="center" py={3}>
+                  <Spinner size="sm" color="primary.500" />
+                </Flex>
+              ) : choices.length === 0 ? (
+                <Text textStyle="body-2" color="gray.400" px={3} py={2}>
+                  {searchActive
+                    ? 'No pipes match this search.'
+                    : 'You have no pipes you can edit yet.'}
+                </Text>
+              ) : (
+                choices.map((choice, idx) => (
+                  <Box
+                    key={choice.pipeId}
+                    as="button"
+                    type="button"
+                    w="full"
+                    textAlign="left"
+                    px={3}
+                    py={2}
+                    borderRadius="md"
+                    bg={idx % 2 === 0 ? 'gray.50' : 'white'}
+                    aria-disabled={choice.published}
+                    cursor={choice.published ? 'not-allowed' : 'pointer'}
+                    _hover={choice.published ? {} : { bg: 'primary.50' }}
+                    _active={choice.published ? {} : { bg: 'primary.100' }}
+                    onClick={() => {
+                      if (choice.published) {
+                        return
+                      }
+                      handleClose()
+                      onSelect(choice)
+                    }}
+                  >
+                    <Text
+                      textStyle="body-2"
+                      whiteSpace="normal"
+                      color={choice.published ? 'gray.400' : 'gray.800'}
                     >
-                      <Text
-                        textStyle="body-2"
-                        whiteSpace="normal"
-                        color={choice.published ? 'gray.400' : 'gray.800'}
-                      >
-                        {choice.name}
+                      {choice.name}
+                    </Text>
+                    {choice.published ? (
+                      <Text textStyle="caption-1" color="gray.500">
+                        Published. Unpublish it in the editor to edit it here.
                       </Text>
-                      {choice.published ? (
-                        <Text textStyle="caption-1" color="gray.500">
-                          Published. Unpublish it in the editor to edit it here.
-                        </Text>
-                      ) : null}
-                    </Box>
-                  ))
-                )}
-              </Flex>
+                    ) : null}
+                  </Box>
+                ))
+              )}
             </Flex>
-          )}
+          </Flex>
         </PopoverBody>
       </PopoverContent>
     </Popover>
