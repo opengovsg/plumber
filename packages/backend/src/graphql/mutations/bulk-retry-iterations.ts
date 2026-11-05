@@ -1,4 +1,4 @@
-import { chunk } from 'lodash'
+import { chunk, omit } from 'lodash'
 import { raw, ref } from 'objection'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
@@ -171,7 +171,8 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
           appKey: appKey,
           actionKey: key,
           jobName: job.name,
-          jobData: job.data,
+          // Omit scheduledAt on manual retry, otherwise this is counted towards SLO. (manual retries are out of scope for SLO)
+          jobData: omit(job.data, 'scheduledAt'),
           jobOptions: DEFAULT_JOB_OPTIONS,
         })
         await Execution.query().findById(executionId).patch({ status: null })

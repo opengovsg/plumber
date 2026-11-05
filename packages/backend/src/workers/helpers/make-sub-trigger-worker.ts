@@ -20,6 +20,7 @@ import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 interface MakeSubTriggerWorkerParams {
@@ -78,6 +79,8 @@ export function makeSubTriggerWorker(
         ...getJobQueueTimingTags(job),
         workerVersion: appConfig.version,
       })
+
+      await recordLateScheduledStart({ job, queueName, rateLimited: false })
 
       const $ = await globalVariable({
         flow,
