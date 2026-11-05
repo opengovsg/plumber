@@ -10,7 +10,6 @@ import {
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 
-import { PipeIcon } from '@/components/Icons'
 import {
   type ClarificationQuestion,
   type ColumnTablePart,
@@ -99,25 +98,6 @@ function FormChip({
           · not connected
         </Text>
       )}
-    </Flex>
-  )
-}
-
-function SelectedPipePill({ name }: { name: string }) {
-  return (
-    <Flex
-      align="center"
-      gap={1.5}
-      bg="gray.50"
-      borderRadius="full"
-      px={2.5}
-      py={1}
-      maxW="full"
-    >
-      <PipeIcon boxSize="14px" color="gray.700" />
-      <Text textStyle="caption-1" noOfLines={1} color="gray.700">
-        {name}
-      </Text>
     </Flex>
   )
 }
@@ -451,9 +431,7 @@ export default function PromptInput({
                 // before the LLM's connection picker has fired).
                 <FormChip form={attachedForm} />
               ) : null}
-              {pipeChip?.kind === 'named' ? (
-                <SelectedPipePill name={pipeChip.name} />
-              ) : pipeChip?.kind === 'pick' ? (
+              {pipeChip?.kind === 'pick' ? (
                 <SelectPipePopover
                   isStreaming={isStreaming}
                   onSelect={pipeChip.onSelect}
