@@ -230,14 +230,17 @@ function userForPipe(row: { active: boolean; name: string } | null) {
   }
 }
 
-function editableReminder(pipeId: string, published: boolean): string {
-  const publishedNote = published
-    ? ' This pipe is published. Step changes fail until the user confirms and you call unpublish_pipe.'
-    : ''
+function editableReminder(pipeId: string): string {
   return (
     '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. ' +
-    `The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.` +
-    publishedNote
+    `The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.`
+  )
+}
+
+function publishedReminder(pipeId: string): string {
+  return (
+    '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. ' +
+    `The user selected pipe_id "${pipeId}", but it is published. This chat cannot change published pipes. Do not call unpublish_pipe or any tool with that id. Tell the user to unpublish the pipe in the Plumber editor, then select it again here.`
   )
 }
 
@@ -291,21 +294,20 @@ describe('establishPipeSubject', () => {
       selectedPipeMessage(PIPE_ID, 'opening'),
     ])
     expect(result.seedPipeId).toBe(PIPE_ID)
-    expect(result.reminder).toBe(editableReminder(PIPE_ID, false))
+    expect(result.reminder).toBe(editableReminder(PIPE_ID))
     expect(result.reminder).not.toContain(SENTENCE_NAME)
     expect(result.reminder).not.toContain(ROW_NAME)
     expect(result.reminder).not.toContain('unpublish_pipe')
   })
 
-  it('adds the published warning when the pipe is live', async () => {
+  it('refuses to edit a published pipe and does not seed the preview', async () => {
     const access = userForPipe({ active: true, name: ROW_NAME })
     const result = await establishPipeSubject(access.user, [
       selectedPipeMessage(OTHER_PIPE_ID),
       selectedPipeMessage(PIPE_ID),
     ])
-    expect(result.seedPipeId).toBe(PIPE_ID)
-    expect(result.reminder).toBe(editableReminder(PIPE_ID, true))
-    expect(result.reminder).toContain('unpublish_pipe')
+    expect(result.seedPipeId).toBeNull()
+    expect(result.reminder).toBe(publishedReminder(PIPE_ID))
     expect(result.reminder).not.toContain(OTHER_PIPE_ID)
     expect(result.reminder).not.toContain(SENTENCE_NAME)
     expect(result.reminder).not.toContain(ROW_NAME)
@@ -331,6 +333,6 @@ describe('establishPipeSubject', () => {
       userMessage('add a Slack step'),
     ])
     expect(result.seedPipeId).toBeNull()
-    expect(result.reminder).toBe(editableReminder(PIPE_ID, false))
+    expect(result.reminder).toBe(editableReminder(PIPE_ID))
   })
 })

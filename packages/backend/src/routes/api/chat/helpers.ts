@@ -168,11 +168,13 @@ export async function loadPipeForChatPreview(
 const VERIFIED_PREFIX =
   '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. '
 
-function editablePipeReminder(pipeId: PipeId, published: boolean): string {
-  const publishedNote = published
-    ? ' This pipe is published. Step changes fail until the user confirms and you call unpublish_pipe.'
-    : ''
-  return `${VERIFIED_PREFIX}The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.${publishedNote}`
+function editablePipeReminder(pipeId: PipeId): string {
+  return `${VERIFIED_PREFIX}The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.`
+}
+
+// IMPORTANT: Selecting a live pipe must not lead the model to unpublish_pipe. Any editor could stop another owner's pipe.
+function publishedPipeReminder(pipeId: PipeId): string {
+  return `${VERIFIED_PREFIX}The user selected pipe_id "${pipeId}", but it is published. This chat cannot change published pipes. Do not call unpublish_pipe or any tool with that id. Tell the user to unpublish the pipe in the Plumber editor, then select it again here.`
 }
 
 function refusalReminder(pipeId: PipeId): string {
@@ -218,8 +220,12 @@ export async function establishPipeSubject(
     return { reminder: refusalReminder(subject.pipeId), seedPipeId: null }
   }
 
+  if (row.active) {
+    return { reminder: publishedPipeReminder(subject.pipeId), seedPipeId: null }
+  }
+
   return {
-    reminder: editablePipeReminder(subject.pipeId, row.active === true),
+    reminder: editablePipeReminder(subject.pipeId),
     seedPipeId: isSelectionTurn(messages, subject.pipeId)
       ? subject.pipeId
       : null,
