@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => {
   return {
     finishListeners,
     runChecksOnce: vi.fn(async (): Promise<boolean> => true),
-    createReconcilerChecks: vi.fn(() => ['schedule check']),
+    createReconcilerChecks: vi.fn(() => ['scheduler pipes check']),
     redisQuit: vi.fn(async () => 'OK'),
     knexDestroy: vi.fn(async () => undefined),
     logInfo: vi.fn(),
@@ -109,7 +109,7 @@ describe('reconciler entry', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     expect(mocks.runChecksOnce).toHaveBeenCalledWith({
-      checks: ['schedule check'],
+      checks: ['scheduler pipes check'],
     })
     expect(processExit).toHaveBeenCalledTimes(1)
     expect(processExit).toHaveBeenCalledWith(0)

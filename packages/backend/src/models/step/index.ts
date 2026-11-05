@@ -1,6 +1,5 @@
 import { URL } from 'url'
 
-import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
 import {
   raw,
   RelatedQueryBuilder,
@@ -12,55 +11,20 @@ import {
 import apps from '@/apps'
 import appConfig from '@/config/app'
 
-import Base from './base'
-import Connection from './connection'
-import ExecutionStep from './execution-step'
-import Flow from './flow'
+import Base from '../base'
+import Connection from '../connection'
+import ExecutionStep from '../execution-step'
+import Flow from '../flow'
+import BaseStep from './base'
 
 export interface StepContext {
   shouldBypassBeforeUpdateHook?: boolean
 }
 
-class Step extends Base {
-  id!: string
-  flowId!: string
-  key?: string
-  appKey?: string
-  type!: IStep['type']
-  connectionId?: string
-  status!: 'incomplete' | 'completed'
-  position!: number
-  parameters!: IJSONObject
+class Step extends BaseStep {
   connection?: Connection
   flow!: Flow
   executionSteps!: ExecutionStep[]
-  config!: IStepConfig
-  updatedBy?: string
-  version!: number
-
-  static tableName = 'steps'
-
-  static jsonSchema = {
-    type: 'object',
-    required: ['type'],
-
-    properties: {
-      id: { type: 'string', format: 'uuid' },
-      flowId: { type: 'string', format: 'uuid' },
-      key: { type: ['string', 'null'] },
-      appKey: { type: ['string', 'null'], minLength: 1, maxLength: 255 },
-      type: { type: 'string', enum: ['action', 'trigger'] },
-      connectionId: { type: ['string', 'null'], format: 'uuid' },
-      status: {
-        type: 'string',
-        enum: ['incomplete', 'completed'],
-        default: 'incomplete',
-      },
-      position: { type: 'integer' },
-      parameters: { type: 'object' },
-      version: { type: 'integer', default: 1 },
-    },
-  }
 
   static get virtualAttributes() {
     return ['iconUrl', 'webhookUrl']
