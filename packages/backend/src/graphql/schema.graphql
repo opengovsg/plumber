@@ -79,6 +79,7 @@ type Mutation {
   createFlow(input: CreateFlowInput): Flow
   createFlowWithSteps(input: CreateFlowWithStepsInput): Flow
   createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
+  createTemplateFromFlow(input: CreateTemplateFromFlowInput!): Template!
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
@@ -642,6 +643,12 @@ input CreateFlowInput {
 
 input CreateTemplatedFlowInput {
   templateId: String!
+}
+
+input CreateTemplateFromFlowInput {
+  flowId: String!
+  name: String
+  description: String
 }
 
 input UpdateFlowInput {
