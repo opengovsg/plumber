@@ -4,9 +4,9 @@ import apps from '@/apps'
 import { UserFacingError } from '@/errors/user-facing-error'
 import globalVariable from '@/helpers/global-variable'
 import Flow from '@/models/flow'
-import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { assignStepConnection } from './pipe-edits'
 import { PublishedPipeError } from './published-pipe-error'
 
 export interface RegisterConnectionResult {
@@ -80,7 +80,7 @@ export async function registerConnectionService(
 
   await app.auth.registerConnection?.($)
 
-  await Step.query().patchAndFetchById(stepId, { connectionId })
+  await assignStepConnection({ user, pipeId: flow.id, stepId, connectionId })
 
   return { registered: true, message: 'Connection registered successfully' }
 }

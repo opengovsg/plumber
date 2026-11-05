@@ -97,6 +97,23 @@ describe('registerConnectionService', () => {
     expect(updatedStep?.connectionId).toBe(connection.id)
   })
 
+  it('bumps the pipe updatedAt so stale collaborator saves are rejected', async () => {
+    const step = await Step.query().findById(triggerStepId).throwIfNotFound()
+    const staleUpdatedAt = '2020-01-01T00:00:00.000Z'
+    // Raw update: the model hook would overwrite updated_at with now().
+    await Flow.knex()('flows')
+      .where('id', step.flowId)
+      .update({ updated_at: staleUpdatedAt, updated_by: null })
+
+    await registerConnectionService(user, triggerStepId, connection.id)
+
+    const flow = await Flow.query().findById(step.flowId).throwIfNotFound()
+    expect(flow.updatedBy).toBe(user.id)
+    expect(new Date(flow.updatedAt).getTime()).toBeGreaterThan(
+      new Date(staleUpdatedAt).getTime(),
+    )
+  })
+
   it('throws when isStillVerified returns false and does not write connectionId', async () => {
     mocks.isStillVerified.mockResolvedValue(false)
 
