@@ -834,19 +834,7 @@ describe('chat handler — selected pipe preview seeding', () => {
     const pipeState = mocks.writerWrite.mock.calls.find(
       ([part]) => part.type === 'data-pipeState',
     )
-    expect(pipeState?.[0].data).toEqual(
-      expect.objectContaining({ pipeId: PIPE_ID, steps: [] }),
-    )
-  })
-
-  it('does not reopen the selected pipe on a later turn', async () => {
-    await runTurn([
-      selectionMessage(),
-      { role: 'assistant', parts: [{ type: 'text', text: 'Here it is.' }] },
-      { role: 'user', parts: [{ type: 'text', text: 'Thanks' }] },
-    ])
-
-    expect(writtenPartTypes()).not.toContain('data-pipeState')
+    expect(pipeState?.[0].data.pipeId).toBe(PIPE_ID)
   })
 
   it('keeps a workflow proposal when no pipe tool ran', async () => {

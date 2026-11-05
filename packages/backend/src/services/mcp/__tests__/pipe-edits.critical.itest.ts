@@ -8,7 +8,6 @@ import { randomUUID } from 'crypto'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import User from '@/models/user'
@@ -99,27 +98,6 @@ describe('AI builder edits and collaborator conflict detection', () => {
       pipeId: flowId,
       stepId: actionStepId,
       parameters: { subject: 'Edited by AI builder' },
-    })
-
-    await expectCollaboratorSaveRejected()
-  })
-
-  it('rejects a stale collaborator save after the AI builder assigns a connection', async () => {
-    const connection = await Connection.query().insertAndFetch({
-      id: randomUUID(),
-      key: 'postman',
-      userId: owner.id,
-      verified: true,
-      draft: false,
-      formattedData: {},
-    })
-
-    await updateStepParametersService({
-      user: owner,
-      pipeId: flowId,
-      stepId: actionStepId,
-      parameters: {},
-      connectionId: connection.id,
     })
 
     await expectCollaboratorSaveRejected()

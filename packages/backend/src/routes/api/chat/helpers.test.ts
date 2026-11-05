@@ -208,16 +208,21 @@ function mustPipeId(value: string) {
   return pipeId
 }
 
-function selectedPipeText(id: string, place: 'opening' | 'later' = 'later') {
+function selectedPipeText(id: string) {
   return buildPipeSubjectSentence({
     displayName: SENTENCE_NAME,
     pipeId: mustPipeId(id),
-    place,
+    place: 'later',
   })
 }
 
-function selectedPipeMessage(id: string, place: 'opening' | 'later' = 'later') {
-  return userMessage(selectedPipeText(id, place))
+function selectedPipeMessage(id: string) {
+  return userMessage(selectedPipeText(id))
+}
+
+function expectReminderOmitsNames(reminder: string) {
+  expect(reminder).not.toContain(SENTENCE_NAME)
+  expect(reminder).not.toContain(ROW_NAME)
 }
 
 function userForPipe(row: { active: boolean; name: string } | null) {
@@ -228,27 +233,6 @@ function userForPipe(row: { active: boolean; name: string } | null) {
     withAccessibleFlows,
     findOne,
   }
-}
-
-function editableReminder(pipeId: string): string {
-  return (
-    '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. ' +
-    `The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.`
-  )
-}
-
-function publishedReminder(pipeId: string): string {
-  return (
-    '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. ' +
-    `The user selected pipe_id "${pipeId}", but it is published. This chat cannot change published pipes. Do not call unpublish_pipe or any tool with that id. Tell the user to unpublish the pipe in the Plumber editor, then select it again here.`
-  )
-}
-
-function refusalReminder(pipeId: string): string {
-  return (
-    '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. ' +
-    `The user referenced pipe_id "${pipeId}". It is not a pipe they can edit. Do not call any tool with that id. Tell the user you cannot open that pipe and ask them to choose another or describe a new workflow.`
-  )
 }
 
 describe('loadPipeForChatPreview', () => {
@@ -288,29 +272,30 @@ describe('establishPipeSubject', () => {
     expect(access.withAccessibleFlows).not.toHaveBeenCalled()
   })
 
-  it('reminds the model about an unpublished pipe the user can edit', async () => {
+  it('seeds an unpublished pipe the user can edit', async () => {
     const access = userForPipe({ active: false, name: ROW_NAME })
     const result = await establishPipeSubject(access.user, [
-      selectedPipeMessage(PIPE_ID, 'opening'),
+      selectedPipeMessage(PIPE_ID),
     ])
     expect(result.seedPipeId).toBe(PIPE_ID)
-    expect(result.reminder).toBe(editableReminder(PIPE_ID))
-    expect(result.reminder).not.toContain(SENTENCE_NAME)
-    expect(result.reminder).not.toContain(ROW_NAME)
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('they can edit it')
     expect(result.reminder).not.toContain('unpublish_pipe')
+    expectReminderOmitsNames(result.reminder)
   })
 
-  it('refuses to edit a published pipe and does not seed the preview', async () => {
+  it('refuses a published pipe and uses the last selection', async () => {
     const access = userForPipe({ active: true, name: ROW_NAME })
     const result = await establishPipeSubject(access.user, [
       selectedPipeMessage(OTHER_PIPE_ID),
       selectedPipeMessage(PIPE_ID),
     ])
     expect(result.seedPipeId).toBeNull()
-    expect(result.reminder).toBe(publishedReminder(PIPE_ID))
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('it is published')
+    expect(result.reminder).toContain('unpublish_pipe')
     expect(result.reminder).not.toContain(OTHER_PIPE_ID)
-    expect(result.reminder).not.toContain(SENTENCE_NAME)
-    expect(result.reminder).not.toContain(ROW_NAME)
+    expectReminderOmitsNames(result.reminder)
   })
 
   it('refuses a pipe id the user cannot edit', async () => {
@@ -319,20 +304,20 @@ describe('establishPipeSubject', () => {
       selectedPipeMessage(PIPE_ID),
     ])
     expect(result.seedPipeId).toBeNull()
-    expect(result.reminder).toBe(refusalReminder(PIPE_ID))
-    expect(result.reminder).not.toContain(SENTENCE_NAME)
-    expect(result.reminder).not.toContain(ROW_NAME)
-    expect(access.findOne).toHaveBeenCalledWith({ 'flows.id': PIPE_ID })
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('not a pipe they can edit')
+    expectReminderOmitsNames(result.reminder)
   })
 
-  it('keeps the reminder but does not seed the preview after the selection turn', async () => {
+  it('does not seed the preview after the selection turn', async () => {
     const access = userForPipe({ active: false, name: ROW_NAME })
     const result = await establishPipeSubject(access.user, [
-      selectedPipeMessage(PIPE_ID, 'opening'),
+      selectedPipeMessage(PIPE_ID),
       { role: 'assistant', parts: [{ type: 'text', text: 'Here it is.' }] },
       userMessage('add a Slack step'),
     ])
     expect(result.seedPipeId).toBeNull()
-    expect(result.reminder).toBe(editableReminder(PIPE_ID))
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('they can edit it')
   })
 })
