@@ -1,3 +1,5 @@
+import type { IFlowConfig } from '@plumber/types'
+
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
@@ -14,6 +16,20 @@ import type Step from '@/models/step'
 import flowQueue from '@/queues/flow'
 
 const JOB_NAME = 'flow'
+
+// IMPORTANT: Must be on or after the day this code reaches production.
+// A pipe created earlier may have been published under code that kept no first publish.
+export const FIRST_PUBLISH_TRACKED_FROM = new Date('2026-11-16T00:00:00+08:00')
+
+function firstPublishConfig(flow: Flow, now: string): IFlowConfig {
+  if (flow.config?.firstPublishedAt) {
+    return {}
+  }
+  if (new Date(flow.createdAt) < FIRST_PUBLISH_TRACKED_FROM) {
+    return {}
+  }
+  return { firstPublishedAt: now }
+}
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 
 export interface UpdateFlowStatusInput {
@@ -94,7 +110,7 @@ export async function updateFlowStatusService({
       config: {
         ...flow.config,
         ...(active
-          ? { firstPublishedAt: flow.config?.firstPublishedAt ?? now }
+          ? firstPublishConfig(flow, now)
           : { lastUnpublishedAt: now }),
       },
     })
