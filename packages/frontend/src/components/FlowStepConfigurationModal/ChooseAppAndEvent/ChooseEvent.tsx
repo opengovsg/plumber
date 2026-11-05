@@ -40,10 +40,7 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
       if (!selectedApp.key) {
         return true
       }
-      return getFlagValue(
-        getAppTriggerFlag(selectedApp.key, trigger.key),
-        true,
-      )
+      return getFlagValue(getAppTriggerFlag(selectedApp.key, trigger.key), true)
     })
   }, [selectedApp, isTrigger, getFlagValue])
 
