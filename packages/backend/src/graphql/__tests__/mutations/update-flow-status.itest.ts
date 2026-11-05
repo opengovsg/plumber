@@ -714,6 +714,24 @@ describe('updateFlowStatus', () => {
       expect(unpublished.config?.lastUnpublishedAt).toBeDefined()
     })
 
+    it('records no first publish for a pipe already published before this code ran', async () => {
+      await setCreatedAt(AFTER_TRACKING_START)
+      // Simulates the old code: it published the pipe but wrote no first publish.
+      const oldPublishedAt = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      await Flow.knex()('flows')
+        .where('id', fakeFlow.id)
+        .update({ active: true, published_at: oldPublishedAt })
+
+      const unpublished = await setStatus(false)
+      expect(unpublished.config?.lastUnpublishedAt).toBeDefined()
+
+      const republished = await setStatus(true)
+      expect(republished.config?.firstPublishedAt).toBeUndefined()
+      expect(new Date(republished.publishedAt).getTime()).toBeGreaterThan(
+        new Date(oldPublishedAt).getTime(),
+      )
+    })
+
     it('keeps the first publish time across an unpublish and a republish', async () => {
       await setCreatedAt(AFTER_TRACKING_START)
       const published = await setStatus(true)

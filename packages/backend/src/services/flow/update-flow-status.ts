@@ -17,7 +17,7 @@ import flowQueue from '@/queues/flow'
 
 const JOB_NAME = 'flow'
 
-// IMPORTANT: Must be on or after the day this code reaches production.
+// IMPORTANT: Set to the end of the production release day (SGT) in the last commit before merge.
 // A pipe created earlier may have been published under code that kept no first publish.
 export const FIRST_PUBLISH_TRACKED_FROM = new Date('2026-11-16T00:00:00+08:00')
 
@@ -25,11 +25,17 @@ function firstPublishConfig(flow: Flow, now: string): IFlowConfig {
   if (flow.config?.firstPublishedAt) {
     return {}
   }
+  // Unpublish no longer clears published_at, so a set value means an earlier publish.
+  // Without this, a pipe the old code published would record its republish as the first.
+  if (flow.publishedAt) {
+    return {}
+  }
   if (new Date(flow.createdAt) < FIRST_PUBLISH_TRACKED_FROM) {
     return {}
   }
   return { firstPublishedAt: now }
 }
+
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 
 export interface UpdateFlowStatusInput {
