@@ -67,7 +67,11 @@ interface ConfettiPromptProps {
   survey: ActiveSurvey
   userId: string
   onBlocked: (reason: 'unavailable' | 'cooldown') => void
-  onActedOn: (action: 'submitted' | 'dismissed') => void
+  onActedOn: (
+    userId: string,
+    survey: ActiveSurvey,
+    action: 'submitted' | 'dismissed',
+  ) => void
   onClose: () => void
 }
 
@@ -80,6 +84,20 @@ function ConfettiPrompt({
 }: ConfettiPromptProps) {
   const check = useSurveyHistory(survey, userId)
   const promptRef = useRef<HTMLDivElement>(null)
+  const hasActedRef = useRef(false)
+  const metadata = useMemo(
+    () => responseMetadata(userId, survey),
+    [userId, survey],
+  )
+
+  // IMPORTANT: closing the thank-you message can unmount this prompt before
+  // onFinished fires, so the action is tied to this survey, not the active one.
+  const actOn = (action: 'submitted' | 'dismissed') => {
+    if (!hasActedRef.current) {
+      hasActedRef.current = true
+      onActedOn(userId, survey, action)
+    }
+  }
 
   useEffect(() => {
     if (check === 'unavailable' || check === 'cooldown') {
@@ -118,12 +136,12 @@ function ConfettiPrompt({
         respondent={respondentFor(userId, survey)}
         // History was already checked, so skip the widget's second fetch.
         isSurveyVisible
-        metadata={responseMetadata(userId, survey)}
-        onDismiss={() => onActedOn('dismissed')}
+        metadata={metadata}
+        onDismiss={() => actOn('dismissed')}
         // An undefined result means the response was not saved.
         onFinished={(result?: FinishResult) => {
           if (result) {
-            onActedOn('submitted')
+            actOn('submitted')
           }
         }}
         onClose={onClose}
@@ -136,14 +154,12 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuthentication()
   const [active, setActive] = useState<ActiveSurvey | null>(null)
   const activeRef = useRef<ActiveSurvey | null>(null)
-  const hasActedRef = useRef(false)
 
   const userId = currentUser?.id
   const createdAt = currentUser?.createdAt
 
   const show = useCallback((survey: ActiveSurvey | null) => {
     activeRef.current = survey
-    hasActedRef.current = false
     setActive(survey)
   }, [])
 
@@ -212,17 +228,16 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
   // IMPORTANT: cooldowns start only on a submit or a dismissal, matching
   // Confetti's history, so a survey the user ignores comes back.
   const handleActedOn = useCallback(
-    (action: 'submitted' | 'dismissed') => {
-      const survey = activeRef.current
-      if (!userId || !survey || hasActedRef.current) {
-        return
-      }
-      hasActedRef.current = true
+    (
+      userId: string,
+      survey: ActiveSurvey,
+      action: 'submitted' | 'dismissed',
+    ) => {
       recordActedOn(userId, survey, new Date())
       markSessionPromptShown(userId)
       capture(`survey_${action}`, surveyMetadata(survey))
     },
-    [userId],
+    [],
   )
 
   const handleClose = useCallback(() => show(null), [show])
