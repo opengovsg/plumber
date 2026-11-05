@@ -123,9 +123,8 @@ vi.mock('@opentelemetry/api', async (importOriginal) => {
 })
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
-
 import { buildPipeSubjectSentence, parsePipeId } from '@plumber/shared'
+import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import logger from '@/helpers/logger'
@@ -787,7 +786,7 @@ describe('chat handler — selected pipe preview seeding', () => {
   }
 
   function finishWithText(text: string) {
-    vi.mocked(streamText).mockImplementationOnce((({
+    const finish = ({
       onFinish,
     }: {
       onFinish?: (event: { text: string }) => Promise<void>
@@ -796,7 +795,10 @@ describe('chat handler — selected pipe preview seeding', () => {
         mocks.onFinishPromise = onFinish({ text })
       }
       return { toUIMessageStream: vi.fn().mockReturnValue({}) }
-    }) as unknown as typeof streamText)
+    }
+    vi.mocked(streamText).mockImplementationOnce(
+      finish as unknown as typeof streamText,
+    )
   }
 
   async function runTurn(messages: unknown[]) {
@@ -817,9 +819,10 @@ describe('chat handler — selected pipe preview seeding', () => {
         disabledMcpServers: [],
       },
     })
-    vi.mocked(createMcpBridgeTools).mockReturnValue({
-      plumber_tool: vi.fn(),
-    } as unknown as ReturnType<typeof createMcpBridgeTools>)
+    const bridgeTools = { plumber_tool: vi.fn() }
+    vi.mocked(createMcpBridgeTools).mockReturnValue(
+      bridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
+    )
     mocks.findAccessibleFlow.mockResolvedValue({
       active: false,
       $relatedQuery: vi.fn().mockReturnValue({
