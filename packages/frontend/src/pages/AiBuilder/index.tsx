@@ -1,5 +1,6 @@
 import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
 import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
+import { buildPipeSubjectSentence, readLastPipeSubject } from '@plumber/shared'
 import type { IApp, IJSONObject } from '@plumber/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
@@ -36,6 +37,13 @@ import {
   stripFormIdPrefix,
 } from './helpers'
 import { createNewChatDraft } from './new-chat'
+import {
+  derivePipeChip,
+  pipeHeaderTitle,
+  resolveSubjectName,
+  showConnectFormChip,
+  type PipeChoice,
+} from './pipe-chip'
 import StepConfigContext from './StepConfigContext'
 
 function AiBuilderContent() {
@@ -156,6 +164,45 @@ function AiBuilderContent() {
   const [attachedForm, setAttachedForm] = useState<{ label: string } | null>(
     null,
   )
+
+  const recoveredPipe = readLastPipeSubject(
+    messages.map((message) => ({
+      author: message.isUser ? 'user' : 'assistant',
+      text: message.text,
+    })),
+  )
+  const latestUserText = messages.findLast((message) => message.isUser)?.text
+  const subjectName = resolveSubjectName({
+    subject: recoveredPipe,
+    previewPipeId: output?.pipeId ?? null,
+    selectionPending:
+      isStreaming &&
+      latestUserText !== undefined &&
+      readLastPipeSubject([{ author: 'user', text: latestUserText }])
+        ?.pipeId === recoveredPipe?.pipeId,
+  })
+
+  const selectPipe = useCallback(
+    (choice: PipeChoice) => {
+      sendMessage(
+        buildPipeSubjectSentence({
+          displayName: choice.name,
+          pipeId: choice.pipeId,
+          place: messages.length === 0 ? 'opening' : 'later',
+        }),
+      )
+    },
+    [messages.length, sendMessage],
+  )
+
+  const headerTitle = pipeHeaderTitle({ flowName, subjectName })
+  const connectFormVisible = showConnectFormChip({ pipeCreated, subjectName })
+
+  const pipeChip = derivePipeChip({
+    pipeCreated,
+    subjectName,
+    onSelect: selectPipe,
+  })
 
   const prefillFormUrl = useMemo(() => extractLastFormUrl(messages), [messages])
 
@@ -325,7 +372,7 @@ function AiBuilderContent() {
     >
       <>
         <Helmet>
-          <title>{flowName} | WIP</title>
+          <title>{headerTitle} | WIP</title>
         </Helmet>
         <Flex h="100vh" flexDirection="column">
           {!(isMobile && isDrawerOpen) && (
@@ -358,7 +405,7 @@ function AiBuilderContent() {
                 </Box>
 
                 <Text noOfLines={1} fontWeight={500}>
-                  {flowName}
+                  {headerTitle}
                 </Text>
               </Flex>
               <Tag
@@ -396,12 +443,13 @@ function AiBuilderContent() {
               hasHitStepLimit={hasHitStepLimit}
               onAddConnection={flowId ? handleAddConnection : undefined}
               knownFormUrl={prefillFormUrl}
-              onConnectForm={pipeCreated ? undefined : handleConnectForm}
+              onConnectForm={connectFormVisible ? handleConnectForm : undefined}
               onNewChat={handleNewChat}
               onSelectExistingForm={
-                pipeCreated ? undefined : handleSelectExistingForm
+                connectFormVisible ? handleSelectExistingForm : undefined
               }
               attachedForm={displayedForm}
+              pipeChip={pipeChip}
             />
           </Container>
         </Flex>
