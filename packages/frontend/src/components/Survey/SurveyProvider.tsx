@@ -100,6 +100,11 @@ function ConfettiPrompt({
   }
 
   useEffect(() => {
+    // Confetti refetches history when the tab regains focus, so the user's own
+    // action here reads back as a cooldown.
+    if (hasActedRef.current) {
+      return
+    }
     if (check === 'unavailable' || check === 'cooldown') {
       onBlocked(check)
     }
@@ -170,7 +175,7 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       }
       const seqCandidate =
         trigger.seqCandidate ??
-        (trigger.isPausePoint ? getPendingAbandon(userId) : null) ??
+        (trigger.isPausePoint ? getPendingAbandon(userId, new Date()) : null) ??
         undefined
 
       const decision = evaluate({

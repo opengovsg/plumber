@@ -135,9 +135,20 @@ export function clearAbandonForRef(userId: string, refId: string): void {
   }
 }
 
-export function getPendingAbandon(userId: string): SeqCandidate | null {
-  const { pendingAbandon } = load(userId)
+export function getPendingAbandon(
+  userId: string,
+  now: Date,
+): SeqCandidate | null {
+  const state = load(userId)
+  const { pendingAbandon } = state
   if (!pendingAbandon) {
+    return null
+  }
+  // Left in place, an expired abandon masks the real suppression reason on
+  // every later dashboard visit.
+  if (new Date(pendingAbandon.expiresAt) <= now) {
+    state.pendingAbandon = null
+    save(userId, state)
     return null
   }
   return {

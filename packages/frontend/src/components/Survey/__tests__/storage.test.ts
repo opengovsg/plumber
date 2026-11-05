@@ -96,7 +96,7 @@ describe('abandon queue', () => {
   it('keeps the abandon when the user opens a different pipe', () => {
     clearAbandonForRef(USER_ID, 'pipe-2')
 
-    expect(getPendingAbandon(USER_ID)).toMatchObject({
+    expect(getPendingAbandon(USER_ID, NOW)).toMatchObject({
       flow: 'regular',
       type: 'abandon',
       pipeId: 'pipe-1',
@@ -106,13 +106,22 @@ describe('abandon queue', () => {
   it('clears the abandon when the user returns to the same pipe', () => {
     clearAbandonForRef(USER_ID, 'pipe-1')
 
-    expect(getPendingAbandon(USER_ID)).toBeNull()
+    expect(getPendingAbandon(USER_ID, NOW)).toBeNull()
+  })
+
+  it('drops an expired abandon from storage', () => {
+    const afterExpiry = new Date(NOW.getTime() + 49 * 60 * 60 * 1000)
+
+    expect(getPendingAbandon(USER_ID, afterExpiry)).toBeNull()
+    expect(JSON.parse(localStorage.getItem(STATE_KEY)!).pendingAbandon).toBe(
+      null,
+    )
   })
 
   it('clears the abandon once the user acts on its survey', () => {
     recordPrompt(USER_ID, { type: 'seq', flow: 'regular' }, NOW)
 
-    expect(getPendingAbandon(USER_ID)).toBeNull()
+    expect(getPendingAbandon(USER_ID, NOW)).toBeNull()
   })
 })
 
