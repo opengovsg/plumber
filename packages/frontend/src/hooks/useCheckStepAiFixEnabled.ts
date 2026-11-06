@@ -5,6 +5,16 @@ import posthog, { isPostHogConfigured } from '@/posthog'
 export const CHECK_STEP_AI_FIX_FLAG = 'fix-with-ai-check-step-error'
 const CHECK_STEP_AI_FIX_CONTROL = 'control'
 
+export function isCheckStepAiFixVariantEnabled(
+  variant: string | boolean | undefined,
+): boolean {
+  return (
+    variant !== undefined &&
+    variant !== false &&
+    variant !== CHECK_STEP_AI_FIX_CONTROL
+  )
+}
+
 /**
  * Reads the PostHog experiment variant. Pass `enabled` only when the button
  * would show, because reading the flag records a `$feature_flag_called`
@@ -31,9 +41,5 @@ export function useCheckStepAiFixEnabled(enabled: boolean): boolean {
   }, [isActive])
 
   const variant = useSyncExternalStore(subscribe, getVariant)
-  return (
-    variant !== undefined &&
-    variant !== false &&
-    variant !== CHECK_STEP_AI_FIX_CONTROL
-  )
+  return isCheckStepAiFixVariantEnabled(variant)
 }
