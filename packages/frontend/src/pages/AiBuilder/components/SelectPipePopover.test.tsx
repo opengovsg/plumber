@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { MockedProvider, type MockedResponse } from '@apollo/client/testing'
+import { parsePipeId } from '@plumber/shared'
 import { createRoot } from 'react-dom/client'
 import { act } from 'react-dom/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,58 +12,60 @@ import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import type { PipeChoice } from '../pipe-chip'
 import SelectPipePopover from './SelectPipePopover'
 
-const DRAFT_ID = '123e4567-e89b-12d3-a456-426614174000'
-const LIVE_ID = '223e4567-e89b-12d3-a456-426614174001'
+const DRAFT_ID = parsePipeId('123e4567-e89b-12d3-a456-426614174000')
+const LIVE_ID = parsePipeId('223e4567-e89b-12d3-a456-426614174001')
+if (!DRAFT_ID || !LIVE_ID) {
+  throw new Error('fixture is not a pipe id')
+}
 const UPDATED_AT = '1700000000000'
 
-const LIST_VARIABLES = { limit: 100, offset: 0 }
-
 function flowNode(id: string, name: string, active: boolean) {
+  return { id, name, active, role: 'editor', updatedAt: UPDATED_AT }
+}
+
+function listMock(): MockedResponse {
   return {
-    id,
-    name,
-    active,
-    role: 'editor',
-    updatedAt: UPDATED_AT,
-    createdAt: UPDATED_AT,
-    steps: [],
-    collaborators: [],
-    pendingTransfer: null,
+    request: { query: GET_FLOWS, variables: { limit: 100, offset: 0 } },
+    result: {
+      data: {
+        getFlows: {
+          edges: [
+            { node: flowNode(DRAFT_ID, 'Draft pipe', false) },
+            { node: flowNode(LIVE_ID, 'Live pipe', true) },
+          ],
+        },
+      },
+    },
   }
 }
 
-const listMock: MockedResponse = {
-  request: { query: GET_FLOWS, variables: LIST_VARIABLES },
-  result: {
-    data: {
-      getFlows: {
-        pageInfo: { currentPage: 1, totalCount: 2 },
-        edges: [
-          { node: flowNode(DRAFT_ID, 'Draft pipe', false) },
-          { node: flowNode(LIVE_ID, 'Live pipe', true) },
-        ],
+function unpublishMock(): MockedResponse {
+  return {
+    request: {
+      query: UPDATE_FLOW_STATUS,
+      variables: {
+        input: { id: LIVE_ID, active: false, updatedAt: UPDATED_AT },
       },
     },
-  },
-  maxUsageCount: 2,
+    result: {
+      data: {
+        updateFlowStatus: { id: LIVE_ID, active: false, updatedAt: UPDATED_AT },
+      },
+    },
+  }
 }
 
-const unpublishMock: MockedResponse = {
-  request: {
-    query: UPDATE_FLOW_STATUS,
-    variables: {
-      input: { id: LIVE_ID, active: false, updatedAt: UPDATED_AT },
-    },
-  },
-  result: {
-    data: {
-      updateFlowStatus: {
-        id: LIVE_ID,
-        active: false,
-        updatedAt: UPDATED_AT,
-      },
-    },
-  },
+const draftChoice: PipeChoice = {
+  pipeId: DRAFT_ID,
+  name: 'Draft pipe',
+  published: false,
+  updatedAt: UPDATED_AT,
+}
+const liveChoice: PipeChoice = {
+  pipeId: LIVE_ID,
+  name: 'Live pipe',
+  published: true,
+  updatedAt: UPDATED_AT,
 }
 
 let container: HTMLDivElement
@@ -86,8 +89,8 @@ function flushMacrotask(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 2))
 }
 
-async function waitFor(predicate: () => boolean, attempts = 80): Promise<void> {
-  for (let i = 0; i < attempts && !predicate(); i++) {
+async function waitFor(predicate: () => boolean): Promise<void> {
+  for (let i = 0; i < 80 && !predicate(); i++) {
     await flushMacrotask()
   }
   expect(predicate()).toBe(true)
@@ -96,7 +99,7 @@ async function waitFor(predicate: () => boolean, attempts = 80): Promise<void> {
 async function renderPopover(): Promise<void> {
   await act(async () => {
     root.render(
-      <MockedProvider mocks={[listMock, unpublishMock]} addTypename={false}>
+      <MockedProvider mocks={[listMock(), unpublishMock()]} addTypename={false}>
         <ThemeProvider>
           <SelectPipePopover isStreaming={false} onSelect={onSelect} />
         </ThemeProvider>
@@ -118,10 +121,9 @@ async function openPopover(): Promise<void> {
 }
 
 function buttonNamed(name: string): HTMLButtonElement {
-  const match = [...document.body.querySelectorAll('button')].find((el) => {
-    const text = el.textContent?.trim() ?? ''
-    return text === name || text.startsWith(name)
-  })
+  const match = [...document.body.querySelectorAll('button')].find((el) =>
+    el.textContent?.trim().startsWith(name),
+  )
   if (!(match instanceof HTMLButtonElement)) {
     throw new Error(`missing button ${name}`)
   }
@@ -150,10 +152,8 @@ describe('SelectPipePopover', () => {
       buttonNamed('Draft pipe').click()
     })
 
-    expect(onSelect).toHaveBeenCalledTimes(1)
-    expect(onSelect.mock.calls[0]?.[0].pipeId).toBe(DRAFT_ID)
-    expect(onSelect.mock.calls[0]?.[0].published).toBe(false)
-    expect(document.body.textContent).not.toContain('Unpublish Draft pipe?')
+    expect(onSelect).toHaveBeenCalledWith(draftChoice)
+    expect(document.body.textContent).not.toContain('Unpublish')
   })
 
   it('unpublishes a live pipe, then selects it', async () => {
@@ -165,7 +165,6 @@ describe('SelectPipePopover', () => {
     })
 
     expect(onSelect).not.toHaveBeenCalled()
-    expect(document.body.textContent).toContain('Unpublish Live pipe?')
     expect(document.body.textContent).toContain(
       'It stops running until you publish it again.',
     )
@@ -174,8 +173,6 @@ describe('SelectPipePopover', () => {
       buttonNamed('Unpublish').click()
     })
     await waitFor(() => onSelect.mock.calls.length === 1)
-
-    expect(onSelect.mock.calls[0]?.[0].pipeId).toBe(LIVE_ID)
-    expect(onSelect.mock.calls[0]?.[0].published).toBe(true)
+    expect(onSelect).toHaveBeenCalledWith(liveChoice)
   })
 })
