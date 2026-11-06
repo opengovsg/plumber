@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import createStep from '@/graphql/mutations/create-step'
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
@@ -266,6 +267,43 @@ describe('createStep mutation integration tests', async () => {
     }
 
     await expect(createStep(null, params, context)).rejects.toThrow()
+  })
+
+  describe('step definition checks', () => {
+    it.each([
+      ['an unknown app', 'no-such-app', 'sendTransactionalEmail'],
+      ['an unknown key', 'postman', 'noSuchKey'],
+    ])('rejects %s and logs the lookup failure', async (_name, appKey, key) => {
+      const loggerSpy = vi.spyOn(logger, 'error')
+      const params = {
+        input: { ...genericNewStepParams.input, appKey, key },
+      }
+
+      const rejection = expect(createStep(null, params, context)).rejects
+      await rejection.toThrow(BadUserInputError)
+      await rejection.toThrow(/^No such trigger or action$/)
+      expect(loggerSpy).toHaveBeenCalledWith({
+        event: 'createStep: no such trigger or action',
+        appKey,
+        key,
+      })
+      expect(await testFlow.$relatedQuery('steps')).toHaveLength(3)
+    })
+
+    it('rejects a hidden action', async () => {
+      const params = {
+        input: {
+          ...genericNewStepParams.input,
+          appKey: 'formsg',
+          key: 'mrfSubmission',
+        },
+      }
+
+      const rejection = expect(createStep(null, params, context)).rejects
+      await rejection.toThrow(BadUserInputError)
+      await rejection.toThrow(/^Action can only be created by system$/)
+      expect(await testFlow.$relatedQuery('steps')).toHaveLength(3)
+    })
   })
 
   it('owner can create a new step', async () => {

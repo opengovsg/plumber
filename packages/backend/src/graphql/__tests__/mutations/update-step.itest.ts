@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStep from '@/graphql/mutations/update-step'
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
@@ -260,6 +261,48 @@ describe('updateStep mutation', () => {
     await expect(updateStep(null, { input: input2 }, context)).rejects.toThrow(
       BadUserInputError,
     )
+  })
+
+  describe('step definition checks', () => {
+    it.each([
+      ['an unknown app', 'no-such-app', 'sendTransactionalEmail'],
+      ['an unknown key', 'postman', 'noSuchKey'],
+    ])('rejects %s and logs the lookup failure', async (_name, appKey, key) => {
+      const loggerSpy = vi.spyOn(logger, 'error')
+      const input = { ...genericInputParams, appKey, key }
+
+      const rejection = expect(updateStep(null, { input }, context)).rejects
+      await rejection.toThrow(BadUserInputError)
+      await rejection.toThrow(/^No such trigger or action$/)
+      expect(loggerSpy).toHaveBeenCalledWith({
+        event: 'updateStep: no such trigger or action',
+        appKey,
+        key,
+      })
+      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
+    })
+
+    it('rejects a hidden action on an action step', async () => {
+      context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
+        owner,
+        currentUser: context.currentUser,
+        flowId: mockFlowId,
+        stepKey: 'sendTransactionalEmail',
+        stepAppKey: 'postman',
+        stepType: 'action',
+      })
+      const input = {
+        ...genericInputParams,
+        appKey: 'formsg',
+        key: 'mrfSubmission',
+        connection: { id: null } as any,
+      }
+
+      const rejection = expect(updateStep(null, { input }, context)).rejects
+      await rejection.toThrow(BadUserInputError)
+      await rejection.toThrow(/^Action can only be updated by system$/)
+      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
+    })
   })
 
   it('should set status to incomplete when explicitly requested', async () => {

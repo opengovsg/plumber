@@ -23,6 +23,9 @@ export class InvalidApprovalConfigError extends Error {}
  * Shared by the GraphQL createStep resolver and the AI Builder's create_step
  * MCP tool, so approval-branch position math (see validateApprovalConfig)
  * can't drift between the two independently-maintained call sites.
+ *
+ * IMPORTANT: callers keep the If-block upgrade and end-step fixup. GraphQL
+ * upgrades after this insert and MCP upgrades before it, so the order differs.
  */
 export async function createActionStepCore({
   trx,

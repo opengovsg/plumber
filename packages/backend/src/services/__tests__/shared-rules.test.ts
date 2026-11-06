@@ -28,10 +28,6 @@ const RULES: SharedRule[] = [
     use: 'lookupStepDefinition or isUserVisible from services/step-definition.ts',
     allowed: {
       'services/step-definition.ts': 'owner',
-      'graphql/mutations/create-step.ts':
-        'GraphQL createStep moves to lookupStepDefinition in PLU-1098 PR-C',
-      'graphql/mutations/update-step.ts':
-        'GraphQL updateStep moves to lookupStepDefinition in PLU-1098 PR-C',
     },
   },
   {
@@ -41,6 +37,16 @@ const RULES: SharedRule[] = [
     allowed: {
       'services/step-parameters.ts': 'owner',
     },
+  },
+  {
+    kind: 'never-in',
+    pattern: /connections\.user_id/,
+    use: 'getConnection from services/connection.ts',
+    files: [
+      'graphql/mutations/create-step.ts',
+      'graphql/mutations/update-step.ts',
+      'services/mcp/update-step-parameters.ts',
+    ],
   },
 ]
 
