@@ -118,15 +118,19 @@ async function runTwoSteps({
     stopWhen: stepCountIs(2),
   })
 
-  return fetchMock.mock.calls.map(
-    ([, init]) => JSON.parse((init as RequestInit).body as string),
+  return fetchMock.mock.calls.map(([, init]) =>
+    JSON.parse((init as RequestInit).body as string),
   )
 }
 
 function cachedBlockPaths(body: AnthropicRequestBody): string[] {
   const paths: string[] = []
-  body.tools.forEach((block, i) => block.cache_control && paths.push(`tools.${i}`))
-  body.system.forEach((block, i) => block.cache_control && paths.push(`system.${i}`))
+  body.tools.forEach(
+    (block, i) => block.cache_control && paths.push(`tools.${i}`),
+  )
+  body.system.forEach(
+    (block, i) => block.cache_control && paths.push(`system.${i}`),
+  )
   body.messages.forEach((message, i) =>
     message.content.forEach(
       (block, j) => block.cache_control && paths.push(`messages.${i}.${j}`),

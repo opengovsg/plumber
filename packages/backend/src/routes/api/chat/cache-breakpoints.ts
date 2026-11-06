@@ -22,7 +22,9 @@ function withCacheBreakpoint<T extends ModelMessage>(message: T): T {
  *
  * Tools sit at the start of the cached prefix, so a reordered GitBook tool list would miss the cache.
  */
-export function sortToolsByName<T extends Record<string, unknown>>(tools: T): T {
+export function sortToolsByName<T extends Record<string, unknown>>(
+  tools: T,
+): T {
   return Object.fromEntries(
     Object.entries(tools).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
   ) as T

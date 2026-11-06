@@ -61,7 +61,9 @@ describe('buildChatSystemMessages permissions', () => {
 
     expect(unrestricted.content).toContain('| M365 Excel |')
     expect(unrestricted.content).not.toContain('does not have access')
-    expect(new Set([unrestricted, noExcel, noSlack].map((m) => m.content)).size).toBe(3)
+    expect(
+      new Set([unrestricted, noExcel, noSlack].map((m) => m.content)).size,
+    ).toBe(3)
   })
 
   it('keeps permission instructions out of the chat-specific block', () => {
