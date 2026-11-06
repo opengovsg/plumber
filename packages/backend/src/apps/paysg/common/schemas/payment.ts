@@ -17,7 +17,7 @@ export const schema = z
   .transform((data) => ({
     id: data.id,
     paymentUrl: data.payment_url,
-    stripePaymentIntentId: data.stripe_payment_intent_id,
+    stripePaymentIntentId: data.stripe_payment_intent_id ?? null,
     paymentQrCodeUrl: data.payment_qr_code_url,
     amountInDollars: (data.amount_in_cents / 100).toFixed(2),
     amountInCents: data.amount_in_cents,
