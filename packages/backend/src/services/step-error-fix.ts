@@ -1,9 +1,14 @@
 import { generateText, stepCountIs, tool } from 'ai'
 import { z } from 'zod/v4'
 
-import { openGitBookMcp } from '@/helpers/ai/gitbook-mcp'
+import {
+  closeQuietly,
+  connectGitbookMcp,
+  type GitbookMcpClient,
+} from '@/helpers/ai/connect-gitbook-mcp'
 import { repairMalformedToolName } from '@/helpers/ai/repair-tool-call'
 import logger from '@/helpers/logger'
+import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import { model } from '@/helpers/pair'
 import type User from '@/models/user'
 import { listColumnsService } from '@/services/mcp/list-columns'
@@ -13,11 +18,7 @@ import {
   updateFailedStepParameters,
 } from '@/services/read-failed-step'
 
-const GUIDE_HOST = 'guide.plumber.gov.sg'
 const GUIDE_SEARCH_TOOL = 'searchDocumentation'
-const GUIDE_URL_PATTERN = /https:\/\/guide\.plumber\.gov\.sg\/[^\s)\]>"']+/g
-const MAX_SOURCES = 3
-const MAX_SUMMARY_LENGTH = 1000
 
 export const stepErrorFixRequestSchema = z.object({
   stepId: z.uuid(),
@@ -31,18 +32,9 @@ export const stepErrorFixRequestSchema = z.object({
 
 export type StepErrorFixRequest = z.infer<typeof stepErrorFixRequestSchema>
 
-const sourceSchema = z.object({
-  title: z.string().min(1).max(200),
-  url: z
-    .string()
-    .url()
-    .refine((url) => isGuideUrl(url)),
-})
-
 export const stepErrorFixResponseSchema = z.object({
   fixed: z.boolean(),
-  summary: z.string().trim().min(1).max(MAX_SUMMARY_LENGTH),
-  sources: z.array(sourceSchema).max(MAX_SOURCES),
+  summary: z.string().trim().min(1),
 })
 
 export type StepErrorFixResponse = z.infer<typeof stepErrorFixResponseSchema>
@@ -70,7 +62,7 @@ If you cannot update the step, call explain_result with one plain sentence.
 After an update, the update summary is one plain sentence. Name the wrong value and the correct value.
 Do not quote the step configuration. Do not mention the guide. Do not say to check the step again.
 If no update is made, use one plain sentence to say why.
-Do not repeat values marked [redacted].
+Values marked [REDACTED] or [TRUNCATED] are hidden. Do not repeat or update them.
 Do not ask the user to paste secrets, tokens, or request headers.`
 
 export function toUserSentence(summary: string): string {
@@ -89,80 +81,6 @@ export function toUserSentence(summary: string): string {
     .slice(0, 220)
 }
 
-function isGuideUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'https:' && url.hostname === GUIDE_HOST
-  } catch {
-    return false
-  }
-}
-
-function titleFromGuideUrl(url: string): string {
-  const segment = new URL(url).pathname.split('/').filter(Boolean).pop()
-  if (!segment) {
-    return 'Plumber guide'
-  }
-  const title = decodeURIComponent(segment).replace(/[-_]/g, ' ')
-  return title.charAt(0).toUpperCase() + title.slice(1)
-}
-
-export function collectGuideLinks(
-  value: unknown,
-): StepErrorFixResponse['sources'] {
-  const urls = new Set<string>()
-
-  const visit = (current: unknown) => {
-    if (typeof current === 'string') {
-      for (const match of current.matchAll(GUIDE_URL_PATTERN)) {
-        const url = match[0].replace(/[.,]+$/, '')
-        if (isGuideUrl(url)) {
-          urls.add(url)
-        }
-      }
-      return
-    }
-    if (Array.isArray(current)) {
-      current.forEach(visit)
-      return
-    }
-    if (current && typeof current === 'object') {
-      Object.values(current).forEach(visit)
-    }
-  }
-
-  visit(value)
-
-  return [...urls].slice(0, MAX_SOURCES).map((url) => ({
-    title: titleFromGuideUrl(url).slice(0, 200),
-    url,
-  }))
-}
-
-export function sanitizeGuideAnswer(
-  answer: string,
-  sources: StepErrorFixResponse['sources'],
-): string {
-  const allowed = new Set(sources.map((source) => source.url))
-  const withoutForeignLinks = answer.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    (match, label: string, href: string) => {
-      if (allowed.has(href) || isGuideUrl(href)) {
-        return match
-      }
-      return label
-    },
-  )
-  const withoutForeignUrls = withoutForeignLinks.replace(
-    /https?:\/\/[^\s)\]>"']+/g,
-    (url) => (isGuideUrl(url.replace(/[.,]+$/, '')) ? url : ''),
-  )
-  return withoutForeignUrls
-    .replace(/[ \t]{2,}/g, ' ')
-    .trim()
-    .slice(0, MAX_SUMMARY_LENGTH)
-}
-
 function buildPrompt(input: StepErrorFixRequest): string {
   const lines = [
     `App: ${input.appName} (${input.appKey})`,
@@ -179,22 +97,23 @@ export async function fixStepError(
   input: StepErrorFixRequest,
   meta: { traceId: string; user: User },
 ): Promise<StepErrorFixResponse> {
-  let gitbook: Awaited<ReturnType<typeof openGitBookMcp>> | null = null
+  let gitbookClient: GitbookMcpClient | null = null
   let appliedFixSummary: string | null = null
   let explanation: string | null = null
 
   try {
-    gitbook = await openGitBookMcp({
-      source: 'gitbook',
-      traceId: meta.traceId,
-      userId: meta.user.email,
-    })
+    const gitbook = await connectGitbookMcp()
+    gitbookClient = gitbook.client
     if (!Object.hasOwn(gitbook.tools, GUIDE_SEARCH_TOOL)) {
       throw new GuideUnavailableError()
     }
 
     const tools = {
-      ...gitbook.tools,
+      ...wrapMcpToolsWithUsageLogs(gitbook.tools, {
+        source: 'gitbook',
+        traceId: meta.traceId,
+        userId: meta.user.email,
+      }),
       get_step: tool({
         description:
           'Read the saved configuration of the step that failed Check step. Use the field labels and values to name the specific setting that is wrong.',
@@ -320,10 +239,6 @@ export async function fixStepError(
       },
     })
 
-    const sources = collectGuideLinks({
-      text: result.text,
-      steps: result.steps,
-    })
     const summary = toUserSentence(
       replaceParameterKeysWithLabels(
         appliedFixSummary ||
@@ -337,7 +252,6 @@ export async function fixStepError(
     const parsed = stepErrorFixResponseSchema.safeParse({
       fixed: Boolean(appliedFixSummary),
       summary,
-      sources,
     })
     if (!parsed.success) {
       logger.error('Step error fix returned an unusable summary', {
@@ -353,7 +267,7 @@ export async function fixStepError(
     if (error instanceof GuideUnavailableError) {
       throw error
     }
-    if (!gitbook) {
+    if (!gitbookClient) {
       logger.error('Failed to connect to GitBook MCP server', {
         event: 'step-error-fix-gitbook-failed',
         traceId: meta.traceId,
@@ -363,6 +277,8 @@ export async function fixStepError(
     }
     throw error
   } finally {
-    await gitbook?.close()
+    if (gitbookClient) {
+      closeQuietly(gitbookClient)
+    }
   }
 }

@@ -1,48 +1,38 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  openGitBookMcp: vi.fn(),
+  connectGitbookMcp: vi.fn(),
+  closeQuietly: vi.fn(),
   generateText: vi.fn(),
-  readFailedStep: vi.fn(),
   updateFailedStepParameters: vi.fn(),
 }))
 
-vi.mock('@/helpers/ai/gitbook-mcp', () => ({
-  openGitBookMcp: mocks.openGitBookMcp,
+vi.mock('@/helpers/ai/connect-gitbook-mcp', () => ({
+  connectGitbookMcp: mocks.connectGitbookMcp,
+  closeQuietly: mocks.closeQuietly,
 }))
 
 vi.mock('@/services/read-failed-step', () => ({
-  readFailedStep: mocks.readFailedStep,
+  readFailedStep: vi.fn(),
   updateFailedStepParameters: mocks.updateFailedStepParameters,
   replaceParameterKeysWithLabels: (summary: string) => summary,
 }))
 
-vi.mock('ai', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('ai')>()
-  return {
-    ...actual,
-    generateText: mocks.generateText,
-  }
-})
+vi.mock('ai', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('ai')>()),
+  generateText: mocks.generateText,
+}))
 
-vi.mock('@/helpers/pair', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/helpers/pair')>()
-  return {
-    ...actual,
-    model: 'mock-model',
-  }
-})
+vi.mock('@/helpers/pair', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/helpers/pair')>()),
+  model: 'mock-model',
+}))
 
-import { generateText } from 'ai'
-
-import { openGitBookMcp } from '@/helpers/ai/gitbook-mcp'
 import type User from '@/models/user'
 
 import {
-  collectGuideLinks,
   fixStepError,
   GuideUnavailableError,
-  sanitizeGuideAnswer,
   stepErrorFixRequestSchema,
   toUserSentence,
 } from '../step-error-fix'
@@ -54,61 +44,23 @@ const request = {
   stepKey: 'createTableRow',
   stepName: 'Create table row',
   errorName: 'Column not found',
-  errorSolution: 'Check the column name in Excel.',
 }
 
 const user = { email: 'user@example.gov.sg' } as User
+const gitbookClient = { close: vi.fn() }
+
+type GenerateTextOptions = {
+  tools: Record<string, { execute: (input: unknown) => Promise<unknown> }>
+  prepareStep: (args: { stepNumber: number }) => { toolChoice: unknown }
+}
 
 describe('toUserSentence', () => {
   it('keeps the first sentence and removes ids', () => {
     expect(
       toUserSentence(
-        'The saved columns no longer exist. Tile 60eb454c-4246-464d-a6ff-e41d66555acf changed. **Select the columns again.**',
+        'Tile 60eb454c-4246-464d-a6ff-e41d66555acf columns changed. **Select them again.**',
       ),
-    ).toBe('The saved columns no longer exist')
-  })
-})
-
-describe('collectGuideLinks', () => {
-  it('keeps Plumber guide links and drops other urls', () => {
-    const sources = collectGuideLinks({
-      toolResults: [
-        {
-          url: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
-        },
-        { url: 'https://example.com/secret' },
-        'See https://guide.plumber.gov.sg/user-guides/actions/formsg.',
-      ],
-    })
-
-    expect(sources).toEqual([
-      {
-        title: 'M365 excel',
-        url: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
-      },
-      {
-        title: 'Formsg',
-        url: 'https://guide.plumber.gov.sg/user-guides/actions/formsg',
-      },
-    ])
-  })
-})
-
-describe('sanitizeGuideAnswer', () => {
-  it('removes links outside the Plumber guide', () => {
-    const answer = sanitizeGuideAnswer(
-      'Read the [guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) and ignore [this](https://evil.example/phish).',
-      [
-        {
-          title: 'M365 excel',
-          url: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
-        },
-      ],
-    )
-
-    expect(answer).toContain('guide.plumber.gov.sg')
-    expect(answer).not.toContain('evil.example')
-    expect(answer).toContain('ignore this')
+    ).toBe('Tile columns changed')
   })
 })
 
@@ -123,103 +75,57 @@ describe('stepErrorFixRequestSchema', () => {
 })
 
 describe('fixStepError', () => {
-  const close = vi.fn()
-
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.openGitBookMcp.mockResolvedValue({
-      tools: { searchDocumentation: vi.fn() },
-      close,
+    mocks.connectGitbookMcp.mockResolvedValue({
+      client: gitbookClient,
+      tools: { searchDocumentation: { execute: vi.fn() } },
     })
-    mocks.generateText.mockResolvedValue({
-      text: 'No safe automatic fix. See https://guide.plumber.gov.sg/user-guides/actions/m365-excel.',
-      steps: [],
-    })
+    mocks.generateText.mockResolvedValue({ text: 'No safe fix.', steps: [] })
     mocks.updateFailedStepParameters.mockResolvedValue({ updated: true })
   })
 
-  it('reads the failed step and then searches the guide', async () => {
-    const result = await fixStepError(request, {
-      traceId: 'trace-1',
-      user,
-    })
+  it('reads the step, then searches the guide, then must explain', async () => {
+    const result = await fixStepError(request, { traceId: 'trace-1', user })
 
-    expect(openGitBookMcp).toHaveBeenCalledWith({
-      source: 'gitbook',
-      traceId: 'trace-1',
-      userId: 'user@example.gov.sg',
-    })
-    expect(generateText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        tools: expect.objectContaining({
-          searchDocumentation: expect.any(Function),
-          get_step: expect.objectContaining({
-            execute: expect.any(Function),
-          }),
-          update_step_parameters: expect.objectContaining({
-            execute: expect.any(Function),
-          }),
-          list_columns: expect.objectContaining({
-            execute: expect.any(Function),
-          }),
-          explain_result: expect.objectContaining({
-            execute: expect.any(Function),
-          }),
-        }),
-        prompt: expect.stringContaining('Column not found'),
-      }),
-    )
-    const options = vi.mocked(generateText).mock.calls[0][0]
-    expect(options.prompt).not.toContain('details')
-    const prepareStep = options.prepareStep as
-      | ((args: { stepNumber: number }) => { toolChoice: unknown })
-      | undefined
-    expect(prepareStep?.({ stepNumber: 0 })).toEqual({
-      toolChoice: { type: 'tool', toolName: 'get_step' },
-    })
-    expect(prepareStep?.({ stepNumber: 1 })).toEqual({
-      toolChoice: {
-        type: 'tool',
-        toolName: 'searchDocumentation',
-      },
-    })
-    expect(prepareStep?.({ stepNumber: 4 })).toEqual({
-      toolChoice: { type: 'tool', toolName: 'explain_result' },
-    })
-    expect(result.fixed).toBe(false)
-    expect(result.sources[0]?.url).toBe(
-      'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
-    )
+    const options = mocks.generateText.mock.calls[0][0] as GenerateTextOptions
+    expect(Object.keys(options.tools).sort()).toEqual([
+      'explain_result',
+      'get_step',
+      'list_columns',
+      'searchDocumentation',
+      'update_step_parameters',
+    ])
+    expect(
+      [0, 1, 4].map((stepNumber) => options.prepareStep({ stepNumber })),
+    ).toEqual([
+      { toolChoice: { type: 'tool', toolName: 'get_step' } },
+      { toolChoice: { type: 'tool', toolName: 'searchDocumentation' } },
+      { toolChoice: { type: 'tool', toolName: 'explain_result' } },
+    ])
+    expect(result).toEqual({ fixed: false, summary: 'No safe fix' })
+    expect(mocks.closeQuietly).toHaveBeenCalledWith(gitbookClient)
   })
 
-  it('updates only the failed step and returns a summary', async () => {
-    mocks.generateText.mockImplementation(async (options) => {
-      const updateTool = options.tools?.update_step_parameters as {
-        execute: (input: unknown) => Promise<unknown>
-      }
-      await updateTool.execute({
-        parameters: { columnValues: { Name: '{{trigger.name}}' } },
-        summary: 'Updated the Name column mapping.',
-      })
-      const prepareStep = options.prepareStep as (args: {
-        stepNumber: number
-      }) => { toolChoice: unknown }
-      expect(prepareStep({ stepNumber: 3 })).toEqual({ toolChoice: 'auto' })
-      const stopWhen = options.stopWhen as Array<
-        (args: { steps: unknown[] }) => boolean
-      >
-      expect(stopWhen.some((condition) => condition({ steps: [] }))).toBe(true)
-      return {
-        text: 'I can see the issue. The step configuration shows a long explanation.',
-        steps: [],
-      } as Awaited<ReturnType<typeof generateText>>
-    })
+  it('updates only the failed step once and returns its summary', async () => {
+    mocks.generateText.mockImplementation(
+      async (options: GenerateTextOptions) => {
+        const update = options.tools.update_step_parameters
+        const input = {
+          parameters: { columnValues: { Name: '{{trigger.name}}' } },
+          summary: 'Updated the Name column mapping.',
+        }
+        await update.execute(input)
+        await expect(update.execute(input)).resolves.toEqual({
+          error: 'This step was already updated.',
+        })
+        return { text: 'A long explanation. More text.', steps: [] }
+      },
+    )
 
-    const result = await fixStepError(request, {
-      traceId: 'trace-1',
-      user,
-    })
+    const result = await fixStepError(request, { traceId: 'trace-1', user })
 
+    expect(mocks.updateFailedStepParameters).toHaveBeenCalledOnce()
     expect(mocks.updateFailedStepParameters).toHaveBeenCalledWith(
       user,
       request.stepId,
@@ -227,7 +133,7 @@ describe('fixStepError', () => {
       { columnValues: { Name: '{{trigger.name}}' } },
       'trace-1',
     )
-    expect(result).toMatchObject({
+    expect(result).toEqual({
       fixed: true,
       summary: 'Updated the Name column mapping',
     })
@@ -237,23 +143,17 @@ describe('fixStepError', () => {
     mocks.generateText.mockRejectedValue(new Error('model down'))
 
     await expect(
-      fixStepError(request, {
-        traceId: 'trace-1',
-        user,
-      }),
+      fixStepError(request, { traceId: 'trace-1', user }),
     ).rejects.toThrow('model down')
-    expect(close).toHaveBeenCalledTimes(1)
+    expect(mocks.closeQuietly).toHaveBeenCalledWith(gitbookClient)
   })
 
   it('fails closed when GitBook cannot be reached', async () => {
-    mocks.openGitBookMcp.mockRejectedValue(new Error('connection refused'))
+    mocks.connectGitbookMcp.mockRejectedValue(new Error('connection refused'))
 
     await expect(
-      fixStepError(request, {
-        traceId: 'trace-1',
-        user,
-      }),
+      fixStepError(request, { traceId: 'trace-1', user }),
     ).rejects.toBeInstanceOf(GuideUnavailableError)
-    expect(generateText).not.toHaveBeenCalled()
+    expect(mocks.generateText).not.toHaveBeenCalled()
   })
 })

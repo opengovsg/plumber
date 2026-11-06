@@ -60,21 +60,12 @@ describe('postStepErrorFix', () => {
   })
 
   it('returns the fix summary', async () => {
-    mocks.fixStepError.mockResolvedValue({
-      fixed: true,
-      summary: 'Updated the column mapping.',
-      sources: [],
-    })
+    const data = { fixed: true, summary: 'Updated the column mapping.' }
+    mocks.fixStepError.mockResolvedValue(data)
 
     const res = await post(validBody)
 
-    expect(res.json).toHaveBeenCalledWith({
-      data: {
-        fixed: true,
-        summary: 'Updated the column mapping.',
-        sources: [],
-      },
-    })
+    expect(res.json).toHaveBeenCalledWith({ data })
   })
 
   it('returns 503 when the guide cannot be reached', async () => {

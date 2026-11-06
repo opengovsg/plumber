@@ -3,7 +3,7 @@ import { withTimeout } from '@/helpers/with-timeout'
 
 export type McpToolSource = 'plumber' | 'gitbook'
 
-export type McpToolUsageMeta = {
+type McpToolUsageMeta = {
   source: McpToolSource
   traceId: string
   userId?: string
