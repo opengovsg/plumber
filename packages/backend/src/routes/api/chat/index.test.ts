@@ -225,7 +225,7 @@ describe('chat handler — GitBook MCP integration', () => {
     )
   })
 
-  it('substitutes the support form URL placeholder with the chat ID pre-filled', async () => {
+  it('puts the support form URL with the chat ID pre-filled in the system messages', async () => {
     const handler = router.stack[0].route.stack[0].handle
     await handler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -255,28 +255,55 @@ describe('chat handler — GitBook MCP integration', () => {
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
     const [[{ messages }]] = vi.mocked(streamText).mock.calls
-    const systemMessage = messages.find((m) => m.role === 'system')
-    expect(systemMessage?.content).toContain(
-      'Support: https://form.gov.sg/64929532701266001209ac32',
+    const chatContext = messages[1]
+    expect(chatContext.content).toContain(
+      'Support form URL for this chat: https://form.gov.sg/64929532701266001209ac32',
     )
-    expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
+    expect(chatContext.content).not.toContain('6a979221b8ae314641032f5c=')
   })
 
-  it('caches the system prompt and moves conversation cache breakpoints each step', async () => {
+  it('wires the cache checkpoints and support URL transform into streamText', async () => {
     const handler = router.stack[0].route.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
-    const [[{ messages, prepareStep }]] = vi.mocked(streamText).mock.calls
+    const [[{ messages, prepareStep, experimental_transform }]] =
+      vi.mocked(streamText).mock.calls
     expect(messages[0]).toEqual(
       expect.objectContaining({
         role: 'system',
+        content: expect.stringContaining('Support: {{SUPPORT_FORM_URL}}'),
         providerOptions: {
           anthropic: { cacheControl: { type: 'ephemeral' } },
         },
       }),
     )
     expect(prepareStep).toEqual(expect.any(Function))
+    expect(experimental_transform).toHaveLength(3)
+  })
+
+  it('passes tools to streamText in name order', async () => {
+    vi.mocked(createMcpBridgeTools).mockReturnValueOnce({
+      update_step: vi.fn(),
+      create_pipe: vi.fn(),
+    } as unknown as ReturnType<typeof createMcpBridgeTools>)
+    vi.mocked(experimental_createMCPClient).mockResolvedValueOnce({
+      tools: vi
+        .fn()
+        .mockResolvedValue({ search_docs: vi.fn(), get_page: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ tools }]] = vi.mocked(streamText).mock.calls
+    expect(Object.keys(tools ?? {})).toEqual([
+      'create_pipe',
+      'get_page',
+      'search_docs',
+      'update_step',
+    ])
   })
 })
 
@@ -462,6 +489,7 @@ describe('chat handler continuation', () => {
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: [
+          expect.objectContaining({ role: 'system' }),
           expect.objectContaining({ role: 'system' }),
           { role: 'user', content: [{ type: 'text', text: 'Create a pipe' }] },
           {
