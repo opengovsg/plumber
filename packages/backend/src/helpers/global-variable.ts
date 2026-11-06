@@ -110,6 +110,10 @@ const globalVariable = async (
     execution: {
       id: execution?.id,
       testRun,
+      // pg returns timestamptz as a Date, despite the model's string type.
+      createdAt: execution?.createdAt
+        ? new Date(execution.createdAt).toISOString()
+        : undefined,
     },
     /**
      * This function is mainly used in testRuns for triggers

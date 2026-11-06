@@ -1377,6 +1377,8 @@ export type IGlobalVariable = {
   execution: {
     id: string
     testRun: boolean
+    // ISO 8601. Undefined outside an execution, e.g. in dynamic data.
+    createdAt?: string
   }
   metadata?: IJSONObject
   webhookUrl?: string
