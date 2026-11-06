@@ -164,10 +164,11 @@ const handle504: ThrowingHandler = function ($, error) {
 
   // For test runs, fail immediately with user-friendly message
   if ($.execution?.testRun) {
-    throw new StepError(
-      EXCEL_504_ERROR_MESSAGE.name,
-      EXCEL_504_ERROR_MESSAGE.solution,
-    )
+    throw new StepError({
+      name: EXCEL_504_ERROR_MESSAGE.name,
+      solution: EXCEL_504_ERROR_MESSAGE.solution,
+      kind: 'third-party',
+    })
   }
 
   // For live runs, throw RetriableError with user-friendly message

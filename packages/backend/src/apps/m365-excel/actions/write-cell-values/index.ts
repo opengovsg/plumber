@@ -90,10 +90,11 @@ const action: IRawAction = {
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'Action is set up incorrectly.',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'Action is set up incorrectly.',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
 
     const { fileId, worksheetId, cells } = parametersParseResult.data
