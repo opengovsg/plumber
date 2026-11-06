@@ -53,12 +53,13 @@ import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import { model } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
-import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
 import {
   buildEstablishedConnectionReminder,
+  establishPipeSubject,
+  loadPipeForChatPreview,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
   stripReasoningParts,
@@ -130,7 +131,13 @@ const handleChatStream = observe(
     const disabledMcpServerSet = new Set(disabledMcpServers)
 
     try {
-      const { messages: rawMessages, chatId, ddRumSessionId, sessionId } = body
+      const {
+        messages: rawMessages,
+        chatId,
+        ddRumSessionId,
+        sessionId,
+        previewPipeId,
+      } = body
 
       // The RUM session id, preferring the new field but accepting the legacy
       // `sessionId` from clients deployed before the chatId change.
@@ -178,14 +185,22 @@ const handleChatStream = observe(
         disabledMcpServers,
       })
 
+      const pipeSubject = await establishPipeSubject(
+        context.currentUser,
+        rawMessages,
+        previewPipeId,
+      )
       // Re-derived fresh every turn from the raw message text and verified
       // against this user's own connections — never trust the connectionId a
       // user references in their own chat text without checking ownership
       // first (see resolveEstablishedFormConnection).
-      const establishedFormConnection = await resolveEstablishedFormConnection(
-        context.currentUser,
-        rawMessages,
-      )
+      // IMPORTANT: Skipped for an editable pipe. Two verified-fact reminders lead the model to repoint that pipe's trigger.
+      const establishedFormConnection = pipeSubject.editable
+        ? null
+        : await resolveEstablishedFormConnection(
+            context.currentUser,
+            rawMessages,
+          )
 
       const systemMessage = {
         role: 'system' as const,
@@ -193,7 +208,9 @@ const handleChatStream = observe(
           buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
             SUPPORT_FORM_URL_PLACEHOLDER,
             buildSupportFormUrl(chatId),
-          ) + buildEstablishedConnectionReminder(establishedFormConnection),
+          ) +
+          buildEstablishedConnectionReminder(establishedFormConnection) +
+          pipeSubject.reminder,
         // The system prompt is large and stable across turns; Bedrock's native
         // cache breakpoint replaces PAIR Foundry's OpenAI-body-rewrite workaround.
         providerOptions: {
@@ -230,7 +247,8 @@ const handleChatStream = observe(
 
       const workflowError = 'Unable to generate the workflow.'
 
-      let activePipeId: string | null = null
+      let activePipeId: string | null = pipeSubject.seedPipeId
+      let pipeToolRan = false
 
       // AI SDK 5 defaults onError to getErrorMessage, which forwards raw
       // litellm/provider dumps to the client. Override both stream constructors
@@ -243,6 +261,7 @@ const handleChatStream = observe(
             traceId,
             (pipeId) => {
               activePipeId = pipeId
+              pipeToolRan = true
             },
             (stepId, parameters, parameterLabels) => {
               writer.write({
@@ -336,66 +355,74 @@ const handleChatStream = observe(
                       }
                     }
 
-                    // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
-                    if (activePipeId) {
-                      const flow = await Flow.query()
-                        .findById(activePipeId)
-                        .where('user_id', context.currentUser.id)
-                      const steps = flow
-                        ? await flow
-                            .$relatedQuery('steps')
-                            .orderBy('position', 'asc')
-                        : []
+                    // The client drops a proposal when pipe state rides in the same message.
+                    const seedOnly = !pipeToolRan
+                    if (activePipeId && !(seedOnly && hasWorkflowMetadata)) {
+                      const flow = await loadPipeForChatPreview(
+                        context.currentUser,
+                        activePipeId,
+                      )
+                      // A viewer, a stranger, or a bad id gets no preview payload.
+                      if (flow) {
+                        const steps = await flow
+                          .$relatedQuery('steps')
+                          .orderBy('position', 'asc')
 
-                      // Resolve connection labels fresh each turn. A step's
-                      // connection can be repointed independently of the step row.
-                      const connectionIds = [
-                        ...new Set(
-                          steps
-                            .map((step) => step.connectionId)
-                            .filter((id): id is string => !!id),
-                        ),
-                      ]
-                      const connectionsById = connectionIds.length
-                        ? new Map(
-                            (
-                              await Connection.query().findByIds(connectionIds)
-                            ).map((connection) => [connection.id, connection]),
-                          )
-                        : new Map<string, Connection>()
+                        // Resolve connection labels fresh each turn. A step's
+                        // connection can be repointed independently of the step row.
+                        const connectionIds = [
+                          ...new Set(
+                            steps
+                              .map((step) => step.connectionId)
+                              .filter((id): id is string => !!id),
+                          ),
+                        ]
+                        const connectionsById = connectionIds.length
+                          ? new Map(
+                              (
+                                await Connection.query().findByIds(
+                                  connectionIds,
+                                )
+                              ).map((connection) => [
+                                connection.id,
+                                connection,
+                              ]),
+                            )
+                          : new Map<string, Connection>()
 
-                      writer.write({
-                        type: 'data-pipeState',
-                        data: {
-                          pipeId: activePipeId,
-                          steps: steps.map((step) => {
-                            const connection = step.connectionId
-                              ? connectionsById.get(step.connectionId)
-                              : undefined
-                            return {
-                              id: step.id,
-                              appKey: step.appKey,
-                              key: step.key,
-                              type: step.type,
-                              position: step.position,
-                              status: step.status,
-                              parameters: step.parameters,
-                              connectionId: step.connectionId ?? null,
-                              connectionLabel: connection
-                                ? connectionLabel(connection)
-                                : null,
-                              // Lets the preview draw an If block's extent
-                              // the same way the editor does.
-                              endStepId: step.config?.endStepId ?? null,
-                              // MRF stage steps are named after the form's stages.
-                              stepName: step.config?.stepName ?? null,
-                              // Lets the preview hide a reject path the same way
-                              // the editor does.
-                              approval: step.config?.approval ?? null,
-                            }
-                          }),
-                        },
-                      })
+                        writer.write({
+                          type: 'data-pipeState',
+                          data: {
+                            pipeId: activePipeId,
+                            steps: steps.map((step) => {
+                              const connection = step.connectionId
+                                ? connectionsById.get(step.connectionId)
+                                : undefined
+                              return {
+                                id: step.id,
+                                appKey: step.appKey,
+                                key: step.key,
+                                type: step.type,
+                                position: step.position,
+                                status: step.status,
+                                parameters: step.parameters,
+                                connectionId: step.connectionId ?? null,
+                                connectionLabel: connection
+                                  ? connectionLabel(connection)
+                                  : null,
+                                // Lets the preview draw an If block's extent
+                                // the same way the editor does.
+                                endStepId: step.config?.endStepId ?? null,
+                                // MRF stage steps are named after the form's stages.
+                                stepName: step.config?.stepName ?? null,
+                                // Lets the preview hide a reject path the same way
+                                // the editor does.
+                                approval: step.config?.approval ?? null,
+                              }
+                            }),
+                          },
+                        })
+                      }
                     }
 
                     // Clarification blocks on both phases
