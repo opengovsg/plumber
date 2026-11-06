@@ -52,6 +52,8 @@ export const buildSupportFormUrl = (chatId: string | undefined): string => {
   return `${SUPPORT_FORM_BASE_URL}?${params.toString()}`
 }
 
+const FORM_CONNECTED_PREFIX = "I've connected my FormSG form "
+
 // First user message sent after connecting a form from the empty state.
 // The parenthetical carries the connection id (for assigning the trigger in
 // Phase 2b) and form id (for get_form_schema); it follows the same "(id: …)"
@@ -67,8 +69,16 @@ export const buildFormConnectedMessage = (
   const technicalRef = formId
     ? `(id: ${connectionId}, form id: ${formId})`
     : `(id: ${connectionId})`
-  return `I've connected my FormSG form "${formTitle}" ${technicalRef}.`
+  return `${FORM_CONNECTED_PREFIX}"${formTitle}" ${technicalRef}.`
 }
+
+export const hasFormConnectedMessage = (
+  messages: { isUser: boolean; text: string }[],
+): boolean =>
+  messages.some(
+    (message) =>
+      message.isUser && message.text.startsWith(FORM_CONNECTED_PREFIX),
+  )
 
 export const buildKickoffMessage = (
   formTitle: string,
