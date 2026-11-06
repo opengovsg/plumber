@@ -4,12 +4,18 @@ import type { Response } from 'express'
 import { Router } from 'express'
 import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
 
+import {
+  CHECK_STEP_AI_FIX_CONTROL,
+  CHECK_STEP_AI_FIX_FLAG,
+  CHECK_STEP_AI_FIX_TREATMENT,
+} from '@/config/flags'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import {
   AI_CHAT_GENERIC_ERROR_MESSAGE,
   getAiChatErrorMessage,
 } from '@/helpers/ai/get-ai-chat-error-message'
 import { getClientIp } from '@/helpers/get-client-ip'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import {
   fixStepError,
@@ -29,6 +35,16 @@ export async function postStepErrorFix(
   req: AuthenticatedRequest,
   res: Response,
 ) {
+  const variant = await getLdFlagValue(
+    CHECK_STEP_AI_FIX_FLAG,
+    req.context.currentUser.email,
+    CHECK_STEP_AI_FIX_CONTROL,
+  )
+  if (variant !== CHECK_STEP_AI_FIX_TREATMENT) {
+    res.status(404).json({ error: 'Not found' })
+    return
+  }
+
   const parsed = stepErrorFixRequestSchema.safeParse(req.body)
   if (!parsed.success) {
     res

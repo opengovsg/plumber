@@ -12,6 +12,14 @@ export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
 
 /**
+ * String flag for the Check step "Fix with AI" A/B test. Only the treatment
+ * variation enables the feature. A missing or unknown value falls back to control.
+ */
+export const CHECK_STEP_AI_FIX_FLAG = 'check-step-ai-fix'
+export const CHECK_STEP_AI_FIX_CONTROL = 'control'
+export const CHECK_STEP_AI_FIX_TREATMENT = 'treatment'
+
+/**
  * App flags regex
  */
 export const APP_FLAG_REGEX = /^app_.*$/

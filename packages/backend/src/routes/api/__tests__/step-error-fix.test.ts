@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   fixStepError: vi.fn(),
+  getLdFlagValue: vi.fn(),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 vi.mock('@/config/redis', () => ({
@@ -23,6 +28,7 @@ vi.mock('@/services/step-error-fix', () => ({
   },
 }))
 
+import { CHECK_STEP_AI_FIX_FLAG } from '@/config/flags'
 import { GuideUnavailableError } from '@/services/step-error-fix'
 
 import { postStepErrorFix } from '../step-error-fix'
@@ -57,6 +63,28 @@ const validBody = {
 describe('postStepErrorFix', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue('treatment')
+  })
+
+  it('returns 404 and skips the fix for the control variation', async () => {
+    mocks.getLdFlagValue.mockResolvedValue('control')
+
+    const res = await post(validBody)
+
+    expect(res.status).toHaveBeenCalledWith(404)
+    expect(mocks.fixStepError).not.toHaveBeenCalled()
+  })
+
+  it('evaluates the flag for the requesting user', async () => {
+    mocks.fixStepError.mockResolvedValue({ fixed: false, summary: 'No fix.' })
+
+    await post(validBody)
+
+    expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+      CHECK_STEP_AI_FIX_FLAG,
+      'user@example.gov.sg',
+      'control',
+    )
   })
 
   it('returns the fix summary', async () => {
