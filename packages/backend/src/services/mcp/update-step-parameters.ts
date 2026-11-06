@@ -102,7 +102,7 @@ export async function updateStepParametersService({
       throw new Error('Step cannot be updated')
     }
 
-    const lookup = lookupStepDefinition(step.appKey, step.key)
+    const lookup = lookupStepDefinition(step.appKey, step.key, step.type)
 
     if (lookup.kind === 'unknown') {
       throw new Error('No such trigger or action')
