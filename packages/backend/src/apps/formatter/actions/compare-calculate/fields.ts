@@ -125,12 +125,8 @@ const gapOperatorOptions = [
 //
 // Field definitions
 //
-// NOTE (prototype): `hiddenIf` currently supports only ONE condition, so:
-// - The two date operands are always shown (not gated on the operation), which
-//   lets each value field use its single condition to hide itself when its
-//   format is "Now".
-// - Each operation's extra fields are gated on the operation dropdown.
-// See prototype notes for the field-visibility constraint discussion.
+// NOTE: `hiddenIf` supports only ONE condition. The date fields are always shown,
+// and each operation's extra fields are gated on the operation dropdown.
 //
 
 const hiddenUnlessOperation = (op: string): IField['hiddenIf'] => ({
@@ -138,6 +134,11 @@ const hiddenUnlessOperation = (op: string): IField['hiddenIf'] => ({
   op: 'not_equals',
   fieldValue: op,
 })
+
+// "Now" is picked with its own shortcut, so it is not a format to choose.
+const dateFormatOptions = inputFormatOptions.filter(
+  (option) => option.value !== supportedFormats.enum.now,
+)
 
 export const fields: IField[] = [
   {
@@ -150,55 +151,31 @@ export const fields: IField[] = [
     options: operationOptions,
   },
 
-  // ---- First date (operand A) ----
-  // Format first, then value. Choosing "Now" as the format hides the
-  // value field, so format must come first or users face a value
-  // question that does not apply.
-  {
-    label: 'Format of the first date',
-    key: key('firstDateFormat'),
-    type: 'dropdown',
-    required: true,
-    variables: false,
-    showOptionValue: false,
-    options: inputFormatOptions,
-  },
+  // ---- Dates ----
+  // Each date comes first and its format is detected from it. "Now" is a time,
+  // not a format, so it is offered as a shortcut on the date and stored as the
+  // `now` format.
   {
     label: 'First date',
-    placeholder: 'Pick or type the first date',
     key: key('firstDateValue'),
-    type: 'string',
+    type: 'date-operand',
     required: true,
-    variables: true,
-    hiddenIf: {
-      fieldKey: key('firstDateFormat'),
-      op: 'equals',
-      fieldValue: supportedFormats.enum.now,
-    },
-  },
-
-  // ---- Second date (operand B) ----
-  {
-    label: 'Format of the second date',
-    key: key('secondDateFormat'),
-    type: 'dropdown',
-    required: true,
-    variables: false,
-    showOptionValue: false,
-    options: inputFormatOptions,
+    valueKey: key('firstDateValue'),
+    formatKey: key('firstDateFormat'),
+    nowValue: supportedFormats.enum.now,
+    formatOptions: dateFormatOptions,
+    valuePlaceholder: 'Pick or type the first date',
   },
   {
     label: 'Second date',
-    placeholder: 'Pick or type the second date',
     key: key('secondDateValue'),
-    type: 'string',
+    type: 'date-operand',
     required: true,
-    variables: true,
-    hiddenIf: {
-      fieldKey: key('secondDateFormat'),
-      op: 'equals',
-      fieldValue: supportedFormats.enum.now,
-    },
+    valueKey: key('secondDateValue'),
+    formatKey: key('secondDateFormat'),
+    nowValue: supportedFormats.enum.now,
+    formatOptions: dateFormatOptions,
+    valuePlaceholder: 'Pick or type the second date',
   },
 
   // ---- Compare ----

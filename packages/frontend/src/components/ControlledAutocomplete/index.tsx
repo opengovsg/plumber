@@ -1,4 +1,11 @@
-import { As, Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
+import {
+  As,
+  Badge,
+  Box,
+  Flex,
+  FormControl,
+  useDisclosure,
+} from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
@@ -65,6 +72,17 @@ const formComboboxOptions = (
         option['description'] ??
         (showOptionValue ? option['value'].toString() : ''),
       icon: option.icon ? OPTION_ICONS[option.icon] : undefined,
+      badge: option.tag ? (
+        <Badge
+          fontSize="xs"
+          fontWeight={500}
+          textTransform="none"
+          variant="subtle"
+          colorScheme="secondary"
+        >
+          {option.tag}
+        </Badge>
+      ) : undefined,
     } satisfies ComboboxItem
     result.push(item)
   }

@@ -511,6 +511,12 @@ export interface IFieldDropdownOption {
   description?: string
 
   icon?: TFieldDropdownOptionIcon
+
+  /**
+   * Short label shown beside the option label, e.g. the app it is meant for,
+   * so frequent options are quick to recognise.
+   */
+  tag?: string
 }
 
 export interface IFieldText extends IBaseField {
@@ -711,8 +717,26 @@ export interface IFieldBooleanRadioOption {
   value: boolean
 }
 
+/**
+ * A date together with its format, shown as one field: the date first, then a
+ * format that is detected from it. Two form values are written, `valueKey` for
+ * the date and `formatKey` for its format.
+ */
+export interface IFieldDateOperand extends IBaseField {
+  type: 'date-operand'
+  value?: string
+  valueKey: string
+  formatKey: string
+  /** Format value that means "the current date and time"; the date is then unused. */
+  nowValue: string
+  /** Formats to pick from. Must not include `nowValue`. */
+  formatOptions: IFieldDropdownOption[]
+  valuePlaceholder?: string
+}
+
 export type IField =
   | IFieldDropdown
+  | IFieldDateOperand
   | IFieldText
   | IFieldAttachment
   | IFieldMultiline

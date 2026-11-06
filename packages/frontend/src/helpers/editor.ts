@@ -150,6 +150,18 @@ export function validateSubstep(substep: ISubstep, step: IStep): boolean {
       return isGroupedMultiRowComplete(groups, arg.subFields)
     }
 
+    // A date and its format: "Now" needs no date, any other format needs both.
+    if (arg.type === 'date-operand') {
+      const format = step.parameters[arg.formatKey]
+      if (!isValidArgValue(format)) {
+        return false
+      }
+      return (
+        format === arg.nowValue ||
+        isValidArgValue(step.parameters[arg.valueKey])
+      )
+    }
+
     return isValidArgValue(step.parameters[arg.key])
   })
 }

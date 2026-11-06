@@ -169,25 +169,27 @@ export const fieldSchema = z.object({
 // compare / calculate action) can reuse the exact same list.
 export const inputFormatOptions = [
   {
-    label: 'Now (current date / time)',
-    description: 'Uses the current date and time in Singapore',
+    label: 'Now',
+    description: 'Current date and time in Singapore',
     value: supportedFormats.enum.now,
   },
   {
-    label: 'FormSG Submission Time',
-    description: '2024-03-25T08:15:30.250+08:00',
+    label: 'YYYY-MM-DDTHH:mm:ssZ',
+    description: '2024-03-25T08:15:30+08:00',
+    tag: 'Used in FormSG',
     value: supportedFormats.enum.formsgSubmissionTime,
   },
   {
     // FormSG UI is a bit misleading; although the field shows dd/mm/yyyy,
     // date fields are sent as dd MMM yyyy over webhooks.
-    label: 'FormSG Date Field - DD MMM YYYY',
+    label: 'DD MMM YYYY',
     description: '25 Mar 2024',
+    tag: 'Used in FormSG',
     value: supportedFormats.enum.formsgDateField,
   },
   {
-    label: 'Excel formatted date',
-    description: 'e.g. 45292 → 1 Jan 2024',
+    label: 'Excel serial number',
+    description: '45292 → 1 Jan 2024',
     value: supportedFormats.enum.excelFormattedDate,
   },
   // Exclude repeated option due to formsgDateField

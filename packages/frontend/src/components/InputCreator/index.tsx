@@ -4,6 +4,7 @@ import { useFormContext } from 'react-hook-form'
 
 import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
+import DateOperandInput from '@/components/DateOperandInput'
 import DragDropInput from '@/components/DragDropInput'
 import GroupedMultiRow from '@/components/GroupedMultiRow'
 import MultiRowInput from '@/components/InputCreator/MultiRowInput'
@@ -83,6 +84,16 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const isHidden = useIsFieldHidden(namePrefix, schema)
   if (isHidden) {
     return <></>
+  }
+
+  if (type === 'date-operand') {
+    return (
+      <DateOperandInput
+        schema={schema}
+        namePrefix={namePrefix}
+        stepId={stepId}
+      />
+    )
   }
 
   if (type === 'boolean-radio') {
