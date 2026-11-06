@@ -31,7 +31,7 @@ import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
 import { TOP_NAV_HEIGHT_NUM } from '@/config/layout'
 import { EditorContext } from '@/contexts/Editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
-import { useCheckStepAiFixEnabled } from '@/hooks/useCheckStepAiFixEnabled'
+import { usePostHogFeatureFlag } from '@/hooks/usePostHogFeatureFlag'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
@@ -47,6 +47,8 @@ import {
   isSameAppAndAppKey,
   matchParamsToDataIn,
 } from './utils'
+
+const FIX_WITH_AI_FLAG = 'fix-with-ai-check-step-error'
 
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
@@ -246,7 +248,11 @@ export default function FlowStepTestController(
     checkStepError && step.appKey && step.key && !readOnly
       ? { ...checkStepError, appKey: step.appKey, stepKey: step.key }
       : null
-  const isAiFixEnabled = useCheckStepAiFixEnabled(aiFixTarget !== null)
+  const aiFixVariant = usePostHogFeatureFlag(
+    FIX_WITH_AI_FLAG,
+    aiFixTarget !== null,
+  )
+  const isAiFixEnabled = aiFixVariant === 'test'
 
   const hasShownErrorRef = useRef(false)
   useEffect(() => {
