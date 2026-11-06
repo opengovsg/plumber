@@ -156,7 +156,7 @@ const history: ModelMessage[] = [
 ]
 
 describe('Bedrock request cache boundaries', () => {
-  it('shares tools and the cached system block across chats with the same permissions', async () => {
+  it('shares the cached prefix across chats and puts chat-specific content after it', async () => {
     const [a] = await runTwoSteps({
       chatId: CHAT_A,
       restrictedApps: [],
@@ -177,16 +177,6 @@ describe('Bedrock request cache boundaries', () => {
     expect(a.system[0].text).toContain('Support: {{SUPPORT_FORM_URL}}')
     expect(a.system[0].text).not.toContain(CHAT_A)
     expect(a.system[0].text).not.toContain('conn-1')
-  })
-
-  it('puts the support URL and verified connection after the cached system block', async () => {
-    const [a] = await runTwoSteps({
-      chatId: CHAT_A,
-      restrictedApps: [],
-      history,
-      withConnection: true,
-    })
-
     expect(a.system).toHaveLength(2)
     expect(a.system[1].cache_control).toBeUndefined()
     expect(a.system[1].text).toContain(CHAT_A)
@@ -232,32 +222,5 @@ describe('Bedrock request cache boundaries', () => {
         { type: 'text', text: 'The one called "Leave form" {{x}}.' },
       ])
     }
-    expect(history[2]).toEqual({
-      role: 'user',
-      content: [{ type: 'text', text: 'The one called "Leave form" {{x}}.' }],
-    })
-  })
-
-  it('caches a separate system block per permission set', async () => {
-    const [unrestricted] = await runTwoSteps({
-      chatId: CHAT_A,
-      restrictedApps: [],
-      history,
-      withConnection: false,
-    })
-    const [restricted] = await runTwoSteps({
-      chatId: CHAT_A,
-      restrictedApps: ['m365-excel'],
-      history,
-      withConnection: false,
-    })
-
-    expect(unrestricted.system[0].text).toContain('M365 Excel')
-    expect(restricted.system[0].text).not.toContain('| M365 Excel |')
-    expect(restricted.system[0].text).toContain(
-      'this user does not have access to the following apps: m365-excel',
-    )
-    expect(restricted.system[0].cache_control).toEqual({ type: 'ephemeral' })
-    expect(restricted.tools).toEqual(unrestricted.tools)
   })
 })

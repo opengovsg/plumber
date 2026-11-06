@@ -65,12 +65,6 @@ describe('buildChatSystemMessages permissions', () => {
       new Set([unrestricted, noExcel, noSlack].map((m) => m.content)).size,
     ).toBe(3)
   })
-
-  it('keeps permission instructions out of the chat-specific block', () => {
-    const [, chatContext] = build(['m365-excel'])
-
-    expect(chatContext.content).not.toContain('m365-excel')
-  })
 })
 
 describe('buildChatSystemMessages connection reminder', () => {

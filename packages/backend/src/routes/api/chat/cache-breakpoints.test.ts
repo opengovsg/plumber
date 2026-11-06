@@ -35,14 +35,6 @@ const tool: ModelMessage = {
 }
 
 describe('createCacheBreakpointPreparer', () => {
-  it('marks only the last message on the first step of a new chat', () => {
-    const prepare = createCacheBreakpointPreparer()
-
-    const { messages } = prepare({ messages: [system, user] })
-
-    expect(cachedIndexes(messages)).toEqual([1])
-  })
-
   it("marks the previous turn's user message on a turn's first step", () => {
     const prepare = createCacheBreakpointPreparer()
     const nextUser: ModelMessage = { role: 'user', content: 'thanks' }
@@ -54,31 +46,24 @@ describe('createCacheBreakpointPreparer', () => {
     expect(cachedIndexes(messages)).toEqual([1, 6])
   })
 
-  it("keeps the previous step's breakpoint and adds one at the new last message", () => {
-    const prepare = createCacheBreakpointPreparer()
-    prepare({ messages: [system, user] })
-
-    const { messages } = prepare({
-      messages: [system, user, assistant, tool],
-    })
-
-    expect(cachedIndexes(messages)).toEqual([1, 3])
-  })
-
-  it('never exceeds three breakpoints including the system prompt', () => {
+  it('moves the conversation breakpoint each step and keeps only the previous one', () => {
     const prepare = createCacheBreakpointPreparer()
     const history: ModelMessage[] = [
       { ...system, providerOptions: { anthropic: CACHE_CONTROL } },
       user,
     ]
-    prepare({ messages: history })
-    history.push(assistant, tool)
-    prepare({ messages: history })
-    history.push(assistant, tool)
 
-    const { messages } = prepare({ messages: history })
-
-    expect(cachedIndexes(messages)).toEqual([0, 3, 5])
+    expect(cachedIndexes(prepare({ messages: history }).messages)).toEqual([
+      0, 1,
+    ])
+    history.push(assistant, tool)
+    expect(cachedIndexes(prepare({ messages: history }).messages)).toEqual([
+      0, 1, 3,
+    ])
+    history.push(assistant, tool)
+    expect(cachedIndexes(prepare({ messages: history }).messages)).toEqual([
+      0, 3, 5,
+    ])
   })
 
   it('does not mutate the input messages', () => {
