@@ -54,17 +54,19 @@ const action = {
   async run($) {
     const parsedParams = fieldSchema.safeParse($.step.parameters)
     if (parsedParams.success === false) {
-      throw new StepError(
-        `Configuration problem: ${firstZodParseError(parsedParams.error)}`,
-        GenericSolution.ReconfigureInvalidField,
-      )
+      throw new StepError({
+        name: `Configuration problem: ${firstZodParseError(parsedParams.error)}`,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
     const authData = authDataSchema.safeParse($.auth.data)
     if (authData.success === false) {
-      throw new StepError(
-        `Invalid connection data: ${firstZodParseError(authData.error)}`,
-        GenericSolution.MalformedConnectionData,
-      )
+      throw new StepError({
+        name: `Invalid connection data: ${firstZodParseError(authData.error)}`,
+        solution: GenericSolution.MalformedConnectionData,
+        kind: 'internal',
+      })
     }
 
     const response = await $.http.post(

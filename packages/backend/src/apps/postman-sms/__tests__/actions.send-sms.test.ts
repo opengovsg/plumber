@@ -10,6 +10,7 @@ import {
   it,
   vi,
 } from 'vitest'
+import z from 'zod'
 
 import createHttpClient from '@/helpers/http-client'
 
@@ -166,6 +167,42 @@ describe('Send SMS Action', () => {
     $.step.parameters.recipient = '  '
     $.step.parameters.message = '12345'
     await expect(sendSmsAction.run($)).rejects.toThrow(/Enter a phone number/)
+  })
+
+  it.each([
+    { recipient: '', message: '12345' },
+    { recipient: 'not a phone number', message: '12345' },
+    { recipient: '+6512345678', message: '   ' },
+    { recipient: '+6512345678', message: '12345'.repeat(201) },
+  ])(
+    'throws a config StepError for invalid fields - $recipient',
+    async ({ recipient, message }) => {
+      $.step.parameters.recipient = recipient
+      $.step.parameters.message = message
+      await expect(sendSmsAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    },
+  )
+
+  it('throws an internal StepError for malformed connection data', async () => {
+    $.step.parameters.recipient = '+6512345678'
+    $.step.parameters.message = '12345'
+    mocks.authDataParseResult.mockReturnValueOnce({
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          path: ['campaignId'],
+          message: 'Required',
+          input: undefined,
+        },
+      ]),
+    } as unknown as ReturnType<typeof mocks.authDataParseResult>)
+    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+      name: 'StepError',
+      kind: 'internal',
+    })
   })
 
   it('errors out if recipient phone number is invalid', async () => {
