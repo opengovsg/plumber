@@ -1,5 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { throwSlackApiError } from '../../common/throw-slack-api-error'
+
 type FindMessageOptions = {
   query: string
   sortBy: string
@@ -22,7 +24,7 @@ const findMessage = async ($: IGlobalVariable, options: FindMessageOptions) => {
   const data = response.data
 
   if (!data.ok && data) {
-    throw new Error(JSON.stringify(response.data))
+    throwSlackApiError(data)
   }
 
   $.setActionItem({ raw: data?.messages.matches[0] })
