@@ -141,6 +141,22 @@ describe('create letter from template', () => {
     await expect(createLetterAction.run($)).rejects.toThrow()
   })
 
+  it('classifies an empty letter param value as config', async () => {
+    $.step.parameters.letterParams = [{ field: 'name', value: '' }]
+    await expect(createLetterAction.run($)).rejects.toMatchObject({
+      kind: 'config',
+      message: expect.stringContaining('Value empty'),
+    })
+    expect(mockAdapter.history.post).toHaveLength(0)
+  })
+
+  it('classifies an unexpected LetterSG response as third-party', async () => {
+    mockAdapter.onPost('/v1/letters').reply(200, { publicId: '123' })
+    await expect(createLetterAction.run($)).rejects.toMatchObject({
+      kind: 'third-party',
+    })
+  })
+
   it('should throw step error for insufficient fields used', async () => {
     $.step.parameters.letterParams = [{ field: 'field 1', value: 'test' }]
     mockAdapter.onPost('/v1/letters').reply(400, {

@@ -1,5 +1,6 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, StepErrorKind } from '@plumber/types'
 
+import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
@@ -12,6 +13,23 @@ type LettersApiFieldErrorData = {
   errors?: Record<string, string>[]
 }
 
+// A 404 here means the user's chosen template no longer exists.
+function isTemplateEndpoint(error: HttpError): boolean {
+  const url = error.response.config?.url ?? ''
+  return url === '/v1/letters' || url.startsWith('/v1/templates/')
+}
+
+function getCatchAllKind(error: HttpError): StepErrorKind {
+  const status = error.response.status
+  if (status === undefined) {
+    return error.code ? 'third-party' : 'internal'
+  }
+  if (status === 404 && isTemplateEndpoint(error)) {
+    return 'config'
+  }
+  return status >= 500 ? 'third-party' : 'internal'
+}
+
 const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   $,
   error,
@@ -20,12 +38,14 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
     const missingFields = await processMissingFields($)
     const lettersErrorData: LettersApiFieldErrorData = error.response.data
     if (lettersErrorData?.message === 'Invalid letter params.') {
-      throw new StepError(
-        `Personalised field(s) not specified${
+      throw new StepError({
+        name: `Personalised field(s) not specified${
           missingFields.length === 0 ? '' : `: ${missingFields.join(', ')}`
         }`,
-        'Check that you have entered all the fields and values in the letter parameters.',
-      )
+        solution:
+          'Check that you have entered all the fields and values in the letter parameters.',
+        kind: 'config',
+      })
     }
   }
 
@@ -39,10 +59,13 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   }
 
   // catch-all
-  throw new StepError(
-    `An error occurred: '${error.message}'`,
-    'Please check that you have configured your step correctly',
-  )
+  const kind = getCatchAllKind(error)
+  throw new StepError({
+    name: `An error occurred: '${error.message}'`,
+    solution: 'Please check that you have configured your step correctly',
+    kind,
+    cause: kind === 'config' ? undefined : error,
+  })
 }
 
 export default requestErrorHandler
