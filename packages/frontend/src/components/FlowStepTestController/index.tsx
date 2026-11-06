@@ -30,6 +30,7 @@ import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
 import { TOP_NAV_HEIGHT_NUM } from '@/config/layout'
 import { EditorContext } from '@/contexts/Editor'
+import { PAIR_APP_KEY } from '@/helpers/pair'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
@@ -130,6 +131,8 @@ export default function FlowStepTestController(
     substeps,
     isAiStep,
   } = useStepMetadata(step)
+  const isAssistantStep =
+    step.appKey === PAIR_APP_KEY && step.key === 'assistant'
 
   const {
     isTestSuccessful,
@@ -166,12 +169,13 @@ export default function FlowStepTestController(
     stepId: step.id,
     testVariables,
     isAiStep,
+    isAssistantStep,
   })
 
   const infoBoxIcon = useMemo(() => {
     const props = {
       fontSize: '2xl',
-      marginRight: 1,
+      marginRight: isAssistantStep ? 0 : 1,
       display: 'flex',
     }
     if (infoBoxVariant === 'unstyled') {
@@ -180,7 +184,7 @@ export default function FlowStepTestController(
 
     // NOTE: for any AI step, always show the warning info circle
     // put this after 'unstyled' so that the loading state does not show the warning icon
-    if (isAiStep) {
+    if (isAiStep && !isAssistantStep) {
       return <Icon as={BxsInfoCircle} color="yellow.100" {...props} />
     }
 
@@ -191,7 +195,7 @@ export default function FlowStepTestController(
       return <Icon as={BxsCheckCircle} color="green.500" {...props} />
     }
     return <Icon as={BxsInfoCircle} color="blue.500" {...props} />
-  }, [infoBoxVariant, isAiStep])
+  }, [infoBoxVariant, isAiStep, isAssistantStep])
 
   const isStepUnchecked = infoBoxVariant === 'unstyled'
 
