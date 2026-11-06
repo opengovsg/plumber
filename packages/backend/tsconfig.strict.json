@@ -434,6 +434,26 @@
     "src/services/mcp/verify-connection-registration.ts",
     "src/services/sub-trigger.ts",
     "src/services/test-step.ts",
-    "src/services/trigger.ts"
+    "src/services/trigger.ts",
+    "src/helpers/add-flow-connection.ts",
+    "src/helpers/auth.ts",
+    "src/helpers/flow-templates.ts",
+    "src/helpers/graphql-instance.ts",
+    "src/helpers/update-duplicated-steps.ts",
+    "src/helpers/__tests__/backoff.test.ts",
+    "src/helpers/__tests__/mcp-bridge-tools.test.ts",
+    "src/helpers/__tests__/process-ses-event.itest.ts",
+    "src/helpers/__tests__/get-shared-connection-details.test.ts",
+    "src/helpers/__tests__/compute-for-each-parameters.test.ts",
+    "src/helpers/__tests__/compute-parameters.test.ts",
+    "src/helpers/__tests__/actions.test.ts",
+    "src/helpers/__tests__/http-client.test.ts",
+    "src/helpers/__tests__/auth.test.ts",
+    "src/helpers/__tests__/validate-approval-config.test.ts",
+    "src/helpers/__tests__/s3.test.ts",
+    "src/helpers/__tests__/html-utils.test.ts",
+    "src/helpers/__tests__/graphql-instance.test.ts",
+    "src/helpers/__tests__/get-test-execution-steps.itest.ts",
+    "src/helpers/__tests__/authentication.test.ts"
   ]
 }

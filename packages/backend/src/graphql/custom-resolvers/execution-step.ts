@@ -2,7 +2,7 @@ import App from '@/models/app'
 
 import type { Resolvers } from '../__generated__/types.generated'
 
-type ExecutionStepResolver = Resolvers['ExecutionStep']
+type ExecutionStepResolver = NonNullable<Resolvers['ExecutionStep']>
 
 const dataOutMetadata: ExecutionStepResolver['dataOutMetadata'] = async (
   parent,

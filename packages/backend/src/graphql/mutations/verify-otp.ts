@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 
 import BaseError from '@/errors/base'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { sendOnboardingEmail, setAuthCookie } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import User from '@/models/user'
@@ -16,7 +17,12 @@ const verifyOtp: MutationResolvers['verifyOtp'] = async (
   params,
   context,
 ) => {
-  const { otp, email: emailRaw } = params.input
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  const { otp, email: emailRaw } = input
   // validate email
   const email = await validateAndParseEmail(emailRaw)
   if (!email) {

@@ -64,7 +64,8 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
         const flow = await Flow.query(trx)
           .withGraphFetched('steps')
           .findById(flowId)
-        const connectionDetails = await getConnectionDetails(flow?.steps)
+          .throwIfNotFound()
+        const connectionDetails = await getConnectionDetails(flow.steps)
 
         if (!hasCollaborators) {
           // add all connections to the flow_connections table
@@ -149,7 +150,11 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
         userId: context.currentUser.id,
         error,
       })
-      throw new Error(error.message ?? 'Error upserting flow collaborator')
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : 'Error upserting flow collaborator',
+      )
     }
 
     return true

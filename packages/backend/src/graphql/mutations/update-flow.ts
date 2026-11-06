@@ -1,3 +1,5 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
+
 import type { MutationResolvers } from '../__generated__/types.generated'
 
 const updateFlow: MutationResolvers['updateFlow'] = async (
@@ -5,17 +7,22 @@ const updateFlow: MutationResolvers['updateFlow'] = async (
   params,
   context,
 ) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
-      id: params.input.id,
+      id: input.id,
     })
     .throwIfNotFound()
 
-  flow.assertNotUpdatedSince(params.input.updatedAt, context.currentUser.id)
+  flow.assertNotUpdatedSince(input.updatedAt, context.currentUser.id)
 
   return await flow.$query().patchAndFetch({
-    name: params.input.name,
+    name: input.name,
     updatedAt: new Date().toISOString(),
     updatedBy: context.currentUser.id,
   })

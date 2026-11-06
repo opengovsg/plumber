@@ -2,7 +2,7 @@ import sortBy from 'lodash/sortBy'
 
 import type { Resolvers } from '../__generated__/types.generated'
 
-type TableMetadataResolver = Resolvers['TableMetadata']
+type TableMetadataResolver = NonNullable<Resolvers['TableMetadata']>
 
 const databaseType: TableMetadataResolver['databaseType'] = async (parent) => {
   return parent.db
@@ -27,7 +27,7 @@ const collaborators: TableMetadataResolver['collaborators'] = async (
     collaborators,
     [
       (collab) => {
-        return ['owner', 'editor', 'viewer'].indexOf(collab.role)
+        return ['owner', 'editor', 'viewer'].indexOf(collab.role ?? '')
       },
     ],
     (collab) => collab.email,

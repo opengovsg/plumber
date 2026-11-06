@@ -39,15 +39,15 @@ const getConnectedApps: QueryResolvers['getConnectedApps'] = async (
       )
 
       app.connectionCount = connection?.count || 0
-      app.flowCount = 0
-
+      let flowCount = 0
       flows.forEach((flow) => {
         const usedFlow = flow.steps.find((step) => step.appKey === app.key)
 
         if (usedFlow) {
-          app.flowCount += 1
+          flowCount += 1
         }
       })
+      app.flowCount = flowCount
 
       return app
     })

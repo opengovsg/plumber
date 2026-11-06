@@ -137,7 +137,10 @@ describe('createMcpBridgeTools', () => {
 
   it('list_apps calls listAppsService', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.list_apps.execute({}, { toolCallId: 'list_apps', messages: [] })
+    await tools.list_apps.execute!(
+      {},
+      { toolCallId: 'list_apps', messages: [] },
+    )
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
   })
 
@@ -145,7 +148,7 @@ describe('createMcpBridgeTools', () => {
     const onPipeChange = vi.fn()
     const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
 
-    const result = await tools.unpublish_pipe.execute(
+    const result = await tools.unpublish_pipe.execute!(
       { pipe_id: '123e4567-e89b-12d3-a456-426614174000' },
       { toolCallId: 'unpublish_pipe', messages: [] },
     )
@@ -176,7 +179,7 @@ describe('createMcpBridgeTools', () => {
       onStepUpdate,
     )
 
-    const result = await tools.update_step_parameters.execute(
+    const result = await tools.update_step_parameters.execute!(
       { pipe_id: 'flow-1', step_id: 'step-1', parameters: {} },
       { toolCallId: 'update_step_parameters', messages: [] },
     )
@@ -196,7 +199,7 @@ describe('createMcpBridgeTools', () => {
     )
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
 
-    const result = await tools.execute_step.execute(
+    const result = await tools.execute_step.execute!(
       { step_id: 'step-1' },
       { toolCallId: 'execute_step', messages: [] },
     )
@@ -213,7 +216,7 @@ describe('createMcpBridgeTools', () => {
     const onPipeChange = vi.fn()
     const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
 
-    const result = await tools.create_step.execute(
+    const result = await tools.create_step.execute!(
       {
         pipe_id: 'flow-1',
         app_key: 'slack',
@@ -236,7 +239,7 @@ describe('createMcpBridgeTools', () => {
     const onPipeChange = vi.fn()
     const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
 
-    const result = await tools.delete_step.execute(
+    const result = await tools.delete_step.execute!(
       { pipe_id: 'flow-1', step_id: 'step-1' },
       { toolCallId: 'delete_step', messages: [] },
     )
@@ -256,7 +259,7 @@ describe('createMcpBridgeTools', () => {
     const onPipeChange = vi.fn()
     const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
 
-    const result = await tools.register_connection.execute(
+    const result = await tools.register_connection.execute!(
       {
         pipe_id: 'flow-1',
         step_id: 'step-1',
@@ -280,7 +283,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
 
     await expect(
-      tools.create_step.execute(
+      tools.create_step.execute!(
         {
           pipe_id: 'flow-1',
           app_key: 'slack',
@@ -299,7 +302,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
 
     await expect(
-      tools.update_step_parameters.execute(
+      tools.update_step_parameters.execute!(
         { pipe_id: 'flow-1', step_id: 'step-1', parameters: {} },
         { toolCallId: 'update_step_parameters', messages: [] },
       ),
@@ -313,7 +316,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
 
     await expect(
-      tools.delete_step.execute(
+      tools.delete_step.execute!(
         { pipe_id: 'flow-1', step_id: 'step-1' },
         { toolCallId: 'delete_step', messages: [] },
       ),
@@ -327,7 +330,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
 
     await expect(
-      tools.execute_step.execute(
+      tools.execute_step.execute!(
         { step_id: 'step-1' },
         { toolCallId: 'execute_step', messages: [] },
       ),
@@ -341,7 +344,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
 
     await expect(
-      tools.register_connection.execute(
+      tools.register_connection.execute!(
         {
           pipe_id: 'flow-1',
           step_id: 'step-1',
@@ -354,7 +357,7 @@ describe('createMcpBridgeTools', () => {
 
   it('list_columns calls listColumnsService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.list_columns.execute(
+    await tools.list_columns.execute!(
       { step_id: '123e4567-e89b-12d3-a456-426614174000' },
       { toolCallId: 'list_columns', messages: [] },
     )
@@ -366,7 +369,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_tile calls createTileService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_tile.execute(
+    await tools.create_tile.execute!(
       {
         name: 'Leave applications',
         columns: ['Name'],
@@ -389,7 +392,7 @@ describe('createMcpBridgeTools', () => {
     )
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await expect(
-      tools.create_tile.execute(
+      tools.create_tile.execute!(
         {
           name: 'Leave applications',
           columns: ['Name'],
@@ -402,7 +405,7 @@ describe('createMcpBridgeTools', () => {
 
   it('add_tile_columns calls addTileColumnsService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.add_tile_columns.execute(
+    await tools.add_tile_columns.execute!(
       {
         table_id: '123e4567-e89b-12d3-a456-426614174111',
         columns: ['Notes'],
@@ -419,7 +422,7 @@ describe('createMcpBridgeTools', () => {
 
   it('add_tile_columns accepts a ULID table_id', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.add_tile_columns.execute(
+    await tools.add_tile_columns.execute!(
       {
         table_id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
         columns: ['Notes'],
@@ -440,7 +443,7 @@ describe('createMcpBridgeTools', () => {
     )
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await expect(
-      tools.add_tile_columns.execute(
+      tools.add_tile_columns.execute!(
         {
           table_id: '123e4567-e89b-12d3-a456-426614174111',
           columns: ['Notes'],
@@ -452,7 +455,7 @@ describe('createMcpBridgeTools', () => {
 
   it('update_step_parameters calls updateStepParametersService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.update_step_parameters.execute(
+    await tools.update_step_parameters.execute!(
       {
         pipe_id: 'flow-1',
         step_id: 'step-1',
@@ -471,7 +474,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_step calls createStepService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_step.execute(
+    await tools.create_step.execute!(
       {
         pipe_id: 'flow-1',
         app_key: 'slack',
@@ -492,7 +495,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_step passes approval_branch through to createStepService as approvalBranch', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_step.execute(
+    await tools.create_step.execute!(
       {
         pipe_id: 'flow-1',
         app_key: 'postman',
@@ -515,7 +518,7 @@ describe('createMcpBridgeTools', () => {
 
   it('get_flow calls getFlowService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.get_flow.execute(
+    await tools.get_flow.execute!(
       { pipe_id: 'flow-1' },
       { toolCallId: 'get_flow', messages: [] },
     )
@@ -527,7 +530,7 @@ describe('createMcpBridgeTools', () => {
 
   it('delete_step calls deleteStepService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.delete_step.execute(
+    await tools.delete_step.execute!(
       { pipe_id: 'flow-1', step_id: 'step-1' },
       { toolCallId: 'delete_step', messages: [] },
     )
@@ -541,7 +544,7 @@ describe('createMcpBridgeTools', () => {
 
   it('get_form_schema calls getFormSchemaService with the form url', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    const result = await tools.get_form_schema.execute(
+    const result = await tools.get_form_schema.execute!(
       { form_url: 'https://form.gov.sg/' + 'a'.repeat(24) },
       { toolCallId: 'get_form_schema', messages: [] },
     )
@@ -553,7 +556,7 @@ describe('createMcpBridgeTools', () => {
 
   it('register_connection calls registerConnectionService with correct args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.register_connection.execute(
+    await tools.register_connection.execute!(
       {
         pipe_id: 'flow-1',
         step_id: 'step-1',
@@ -570,7 +573,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_pipe maps snake_case input to IStep-shaped steps', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_pipe.execute(
+    await tools.create_pipe.execute!(
       {
         name: 'My Pipe',
         steps: [
@@ -603,7 +606,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_pipe passes form_url through as formUrl', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_pipe.execute(
+    await tools.create_pipe.execute!(
       {
         name: 'MRF Pipe',
         steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
@@ -620,7 +623,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_pipe passes mrf_stage and mrf_branch through as mrfStage and mrfBranch', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_pipe.execute(
+    await tools.create_pipe.execute!(
       {
         name: 'MRF Pipe',
         steps: [
@@ -658,7 +661,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
 
     await expect(
-      tools.create_pipe.execute(
+      tools.create_pipe.execute!(
         {
           name: 'MRF Pipe',
           steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
@@ -671,7 +674,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_pipe forwards parameters when present on a step', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_pipe.execute(
+    await tools.create_pipe.execute!(
       {
         name: 'If-Then Pipe',
         steps: [
@@ -709,7 +712,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_pipe flattens the steps nested inside an ifThen into an explicit If block', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_pipe.execute(
+    await tools.create_pipe.execute!(
       {
         name: 'Block Pipe',
         steps: [
@@ -765,7 +768,7 @@ describe('createMcpBridgeTools', () => {
 
   it('create_step forwards after_if_then_block', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
-    await tools.create_step.execute(
+    await tools.create_step.execute!(
       {
         pipe_id: 'flow-1',
         app_key: 'slack',
@@ -790,7 +793,7 @@ describe('createMcpBridgeTools', () => {
     it('is called with pipeId after create_pipe succeeds', async () => {
       const onPipeChange = vi.fn()
       const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
-      await tools.create_pipe.execute(
+      await tools.create_pipe.execute!(
         {
           name: 'My Pipe',
           steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
@@ -803,7 +806,7 @@ describe('createMcpBridgeTools', () => {
     it('is called with pipe_id after update_step_parameters succeeds', async () => {
       const onPipeChange = vi.fn()
       const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
-      await tools.update_step_parameters.execute(
+      await tools.update_step_parameters.execute!(
         { pipe_id: 'flow-1', step_id: 's1', parameters: {} },
         { toolCallId: 'update_step_parameters', messages: [] },
       )
@@ -813,7 +816,7 @@ describe('createMcpBridgeTools', () => {
     it('is called with pipe_id after create_step succeeds', async () => {
       const onPipeChange = vi.fn()
       const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
-      await tools.create_step.execute(
+      await tools.create_step.execute!(
         {
           pipe_id: 'flow-1',
           app_key: 'slack',
@@ -828,7 +831,7 @@ describe('createMcpBridgeTools', () => {
     it('is called with pipe_id after delete_step succeeds', async () => {
       const onPipeChange = vi.fn()
       const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
-      await tools.delete_step.execute(
+      await tools.delete_step.execute!(
         { pipe_id: 'flow-1', step_id: 's1' },
         { toolCallId: 'delete_step', messages: [] },
       )
@@ -838,7 +841,7 @@ describe('createMcpBridgeTools', () => {
     it('is called with pipe_id after register_connection succeeds', async () => {
       const onPipeChange = vi.fn()
       const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
-      await tools.register_connection.execute(
+      await tools.register_connection.execute!(
         { pipe_id: 'flow-1', step_id: 'step-1', connection_id: 'conn-1' },
         { toolCallId: 'register_connection', messages: [] },
       )
@@ -848,7 +851,7 @@ describe('createMcpBridgeTools', () => {
     it('does not throw when onPipeChange is not provided', async () => {
       const tools = createMcpBridgeTools(mockUser, mockTraceId)
       await expect(
-        tools.create_pipe.execute(
+        tools.create_pipe.execute!(
           {
             name: 'My Pipe',
             steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
@@ -872,7 +875,7 @@ describe('createMcpBridgeTools', () => {
         undefined,
         onStepUpdate,
       )
-      await tools.update_step_parameters.execute(
+      await tools.update_step_parameters.execute!(
         {
           pipe_id: 'flow-1',
           step_id: 'step-1',
@@ -890,7 +893,7 @@ describe('createMcpBridgeTools', () => {
     it('does not throw when onStepUpdate is not provided', async () => {
       const tools = createMcpBridgeTools(mockUser, mockTraceId)
       await expect(
-        tools.update_step_parameters.execute(
+        tools.update_step_parameters.execute!(
           { pipe_id: 'flow-1', step_id: 's1', parameters: {} },
           { toolCallId: 'update_step_parameters', messages: [] },
         ),

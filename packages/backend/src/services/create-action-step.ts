@@ -10,8 +10,9 @@ export interface CreateActionStepCoreInput {
   trx: Transaction
   flow: Flow
   previousStep: Step
-  appKey: string
-  key: string
+  // The GraphQL createStep path inserts empty placeholder steps without these.
+  appKey?: string
+  key?: string
   parameters?: IJSONObject
   config?: IStepConfig
   connectionId?: string
