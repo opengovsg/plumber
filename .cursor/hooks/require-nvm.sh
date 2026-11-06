@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Cursor cannot rewrite a command, so this hook denies it.
 # npm, npx, pnpm, and node must use the .nvmrc of the directory they run in.
+# A cd target that does not exist yet keeps the starting pin. mkdir has not run.
 input=$(cat)
 command=$(printf '%s' "$input" | jq -r '.command // empty')
 repo=$(CDPATH= cd "$(dirname "$0")/../.." && pwd)
@@ -36,11 +37,14 @@ dir=$start
 dest=$(printf '%s' "$shown" | grep -oE '(^|[[:space:];|&])cd[[:space:]]+[^[:space:];|&$]+' | tail -n 1 | sed -E 's/.*cd[[:space:]]+//')
 if [ -n "$dest" ]; then
   case $dest in
-    /*) dir=$dest ;;
-    *) dir=${start%/}/$dest ;;
+    /*) candidate=$dest ;;
+    *) candidate=${start%/}/$dest ;;
   esac
-  [ -d "$dir" ] || deny
-else
+  if [ -d "$candidate" ]; then
+    dir=$candidate
+  fi
+fi
+if [ "$dir" = "$start" ]; then
   case $dir in
     "$repo"|"$repo"/*) ;;
     *) dir=$repo ;;

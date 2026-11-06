@@ -42,9 +42,11 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 
 **Node version:** `pnpm`, `npm`, `npx`, and `node` must run on the nearest `.nvmrc`
 version. The Cursor hook allows the command when `node -v` already matches that
-file, including after a leading `cd`. Otherwise run `nvm use &&` before the tool.
-Claude Code prepends `nvm use`. `packages/e2e` has a separate `.nvmrc`. Run
-`nvm use &&` after `cd packages/e2e`.
+file, including after a leading `cd`. A `cd` into a directory that does not exist
+yet uses the starting pin. Otherwise run `nvm use &&` before the tool.
+Claude Code prepends `nvm use` for the starting directory. A later `cd` into a
+different pin aborts unless `nvm use &&` follows that `cd`. `packages/e2e` has a
+separate `.nvmrc`.
 
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
@@ -61,6 +63,34 @@ biometric prompt that an agent cannot answer.
 - **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
   Those calls fail with third-party authentication errors. That is expected, not a bug to
   fix.
+- Sample env sets `LAUNCH_DARKLY_SDK_KEY` to `...`. OTP for a new email calls LaunchDarkly and fails with "Double check your SDK key".
+- `admin@example.gov.sg` already exists. OTP for that email does not call LaunchDarkly.
+- In a cloud environment, stub the SDK before `pnpm run dev:sample-env` when you need a new email. Point `NODE_OPTIONS=--require` at a scratchpad file. Do not commit it. `init` must return a client whose `waitForInitialization` resolves and whose `variation` returns the fallback argument.
+
+```js
+const Module = require('module')
+const original = Module.prototype.require
+Module.prototype.require = function (id) {
+  if (id === '@launchdarkly/node-server-sdk') {
+    return {
+      init() {
+        return {
+          waitForInitialization() {
+            return Promise.resolve()
+          },
+          variation(_flag, _context, fallback) {
+            return Promise.resolve(fallback)
+          },
+          allFlagsState() {
+            return Promise.resolve({ allValues() { return {} } })
+          },
+        }
+      },
+    }
+  }
+  return original.apply(this, arguments)
+}
+```
 - `lint`, `typecheck` and `migrate` need nothing. They already read `.env-example`.
 - **`test:unit` needs Docker running** (`pnpm run setup`), even though it reads
   `.env-example` and touches no schema. Backend unit tests create real Redis clients at
