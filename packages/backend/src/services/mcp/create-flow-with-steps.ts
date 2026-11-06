@@ -1,7 +1,6 @@
 import type { IJSONObject } from '@plumber/types'
 import z from 'zod'
 
-import apps from '@/apps'
 import { createMrfSteps } from '@/apps/formsg/triggers/new-submission/create-mrf-steps'
 import { parseMrfWorkflow } from '@/apps/formsg/triggers/new-submission/get-workflow-data'
 import {
@@ -27,6 +26,7 @@ import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
+import { lookupStepDefinition } from '@/services/step-definition'
 
 import { addMrfActions, MrfStageStepsError } from './add-mrf-actions'
 import { fetchPublicForm } from './fetch-public-form'
@@ -215,14 +215,10 @@ export async function createFlowWithStepsService({
 
   // Keyless placeholders skip schema validation, so hidden actions need a separate guard.
   for (const step of requestedSteps) {
-    if (!step.key) {
-      continue
-    }
-    const app = apps[step.appKey]
-    const triggerOrAction =
-      app?.triggers?.find((trigger) => trigger.key === step.key) ??
-      app?.actions?.find((action) => action.key === step.key)
-    if (triggerOrAction?.hiddenFromUser) {
+    if (
+      step.key &&
+      lookupStepDefinition(step.appKey, step.key).kind === 'hidden'
+    ) {
       throw new Error('Action can only be created by system')
     }
   }
