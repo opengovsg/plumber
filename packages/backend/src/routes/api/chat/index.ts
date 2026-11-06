@@ -58,6 +58,11 @@ import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
 import {
+  CACHE_CONTROL_PROVIDER_OPTIONS,
+  createCacheBreakpointPreparer,
+  sumCacheWriteInputTokens,
+} from './cache-breakpoints'
+import {
   buildEstablishedConnectionReminder,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
@@ -189,18 +194,23 @@ const handleChatStream = observe(
 
       const systemMessage = {
         role: 'system' as const,
-        content:
-          buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
-            SUPPORT_FORM_URL_PLACEHOLDER,
-            buildSupportFormUrl(chatId),
-          ) + buildEstablishedConnectionReminder(establishedFormConnection),
-        // The system prompt is large and stable across turns; Bedrock's native
-        // cache breakpoint replaces PAIR Foundry's OpenAI-body-rewrite workaround.
-        providerOptions: {
-          anthropic: { cacheControl: { type: 'ephemeral' as const } },
-        },
+        content: buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
+          SUPPORT_FORM_URL_PLACEHOLDER,
+          buildSupportFormUrl(chatId),
+        ),
+        providerOptions: CACHE_CONTROL_PROVIDER_OPTIONS,
       }
-      const allMessages = [systemMessage, ...messages]
+      // IMPORTANT: keep this after the cached system message. It changes mid-chat and would invalidate the system prompt cache.
+      const connectionReminder = buildEstablishedConnectionReminder(
+        establishedFormConnection,
+      ).trim()
+      const allMessages = [
+        systemMessage,
+        ...(connectionReminder
+          ? [{ role: 'system' as const, content: connectionReminder }]
+          : []),
+        ...messages,
+      ]
 
       let mcpClient: GitbookMcpClient | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
@@ -263,6 +273,7 @@ const handleChatStream = observe(
                 messages: allMessages,
                 tools: { ...gitbookTools, ...mcpTools },
                 stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
+                prepareStep: createCacheBreakpointPreparer(),
                 experimental_repairToolCall: repairMalformedToolName,
                 experimental_transform: [
                   repairMalformedStreamedToolNames,
@@ -300,6 +311,11 @@ const handleChatStream = observe(
                     logger.info('Stream finished', {
                       traceId,
                       textLength: event.text.length,
+                      steps: event.steps.length,
+                      // IMPORTANT: key names avoid "token". Log redaction masks any key containing it.
+                      inputUsage: event.totalUsage.inputTokens,
+                      cacheReadUsage: event.totalUsage.cachedInputTokens,
+                      cacheWriteUsage: sumCacheWriteInputTokens(event.steps),
                     })
 
                     updateActiveObservation({ output: event })

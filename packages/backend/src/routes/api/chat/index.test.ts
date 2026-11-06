@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
   // so it stashes the promise here for tests to await before asserting on
   // anything onFinish does asynchronously (Flow/Connection lookups, writes).
   onFinishPromise: Promise.resolve() as Promise<unknown>,
+  finishUsage: {
+    steps: [] as unknown[],
+    totalUsage: { inputTokens: 0, cachedInputTokens: 0 },
+  },
 }))
 
 vi.mock('@ai-sdk/mcp', () => ({
@@ -27,7 +31,7 @@ vi.mock('ai', async (importOriginal) => {
           onFinish?: (event: { text: string }) => Promise<void>
         }) => {
           if (onFinish) {
-            mocks.onFinishPromise = onFinish({ text: '' })
+            mocks.onFinishPromise = onFinish({ text: '', ...mocks.finishUsage })
           }
           return { toUIMessageStream: vi.fn().mockReturnValue({}) }
         },
@@ -256,6 +260,23 @@ describe('chat handler — GitBook MCP integration', () => {
       'Support: https://form.gov.sg/64929532701266001209ac32',
     )
     expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
+  })
+
+  it('caches the system prompt and moves conversation cache breakpoints each step', async () => {
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ messages, prepareStep }]] = vi.mocked(streamText).mock.calls
+    expect(messages[0]).toEqual(
+      expect.objectContaining({
+        role: 'system',
+        providerOptions: {
+          anthropic: { cacheControl: { type: 'ephemeral' } },
+        },
+      }),
+    )
+    expect(prepareStep).toEqual(expect.any(Function))
   })
 })
 
@@ -540,7 +561,10 @@ FIELD: columns
       onFinish?: (event: { text: string }) => Promise<void>
     }) => {
       if (onFinish) {
-        mocks.onFinishPromise = onFinish({ text: columnTableText })
+        mocks.onFinishPromise = onFinish({
+          text: columnTableText,
+          ...mocks.finishUsage,
+        })
       }
       return { toUIMessageStream: vi.fn().mockReturnValue({}) }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
