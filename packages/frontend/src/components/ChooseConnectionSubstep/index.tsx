@@ -157,7 +157,8 @@ function ChooseConnectionSubstep(
       return {
         text: 'Connection not verified',
         color: 'yellow.200',
-        connectionError: testConnectionData?.testConnection?.message,
+        connectionError:
+          testConnectionData?.testConnection?.message ?? undefined,
       }
     } else {
       const connectionOption = optionGenerator(connection, application.key)
