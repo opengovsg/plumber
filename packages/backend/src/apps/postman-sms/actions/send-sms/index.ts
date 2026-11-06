@@ -33,6 +33,7 @@ const action = {
   arguments: [
     {
       label: 'Recipient phone number',
+      placeholder: '+6581237123',
       description: 'Include country code prefix, e.g. +6581237123',
       key: ensureZodObjectKey(fieldSchema, 'recipient'),
       type: 'string' as const,
@@ -41,6 +42,7 @@ const action = {
     },
     {
       label: 'Message Body',
+      placeholder: 'Type the text for your SMS',
       description: `This corresponds to {{body}} in your campaign template. Max ${MAX_SMS_CHARS.toLocaleString()} characters`,
       key: ensureZodObjectKey(fieldSchema, 'message'),
       type: 'string' as const,

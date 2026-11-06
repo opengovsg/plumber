@@ -18,10 +18,11 @@ const action: IRawAction = {
       key: 'formId',
       type: 'string' as const,
       required: true,
-      placeholder: 'e.g. https://pay.gov.sg/forms/aBC123Def456HijK789LMn',
+      placeholder: 'https://pay.gov.sg/forms/aBC123Def456HijK789LMn',
     },
     {
       label: 'FormSG Form ID',
+      placeholder: 'Pick the form ID from an earlier step',
       description: 'Input the variable corresponding to form ID here',
       key: 'formsg_form_id',
       type: 'string' as const,
@@ -30,6 +31,7 @@ const action: IRawAction = {
     },
     {
       label: 'FormSG Submission ID',
+      placeholder: 'Pick the submission ID from an earlier step',
       key: 'formsg_submission_id',
       type: 'string' as const,
       required: true,
@@ -37,6 +39,7 @@ const action: IRawAction = {
     },
     {
       label: 'FormSG Reference Field Answer',
+      placeholder: 'Pick the reference answer from your form',
       key: 'nonce',
       type: 'string' as const,
       required: true,
@@ -44,6 +47,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Name',
+      placeholder: 'Tan Wei Ming',
       key: 'payer_name',
       type: 'string' as const,
       required: true,
@@ -51,6 +55,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Email',
+      placeholder: 'name@example.com',
       key: 'payer_email',
       type: 'string' as const,
       required: true,
@@ -58,6 +63,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Address',
+      placeholder: '1 Example Street, Singapore 123456',
       key: 'payer_address',
       type: 'string' as const,
       required: false,
@@ -65,6 +71,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Identifier',
+      placeholder: 'Type the payer ID, max 20 characters',
       key: 'payer_identifier',
       type: 'string' as const,
       required: false,
@@ -72,6 +79,7 @@ const action: IRawAction = {
     },
     {
       label: 'Amount (in cents)',
+      placeholder: '5000 (for $50.00)',
       key: 'amount_in_cents',
       type: 'string' as const,
       required: true,
@@ -93,6 +101,7 @@ const action: IRawAction = {
     },
     {
       label: 'Description',
+      placeholder: 'Course fee for May',
       key: 'description',
       type: 'string' as const,
       required: true,

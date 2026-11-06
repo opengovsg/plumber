@@ -8,6 +8,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'From Number',
+      placeholder: '+6581237123',
       key: 'fromNumber',
       type: 'string' as const,
       required: true,
@@ -17,6 +18,7 @@ const action: IRawAction = {
     },
     {
       label: 'To Number',
+      placeholder: '+6581237123',
       key: 'toNumber',
       type: 'string' as const,
       required: true,
@@ -26,6 +28,7 @@ const action: IRawAction = {
     },
     {
       label: 'Message',
+      placeholder: 'Type your message',
       key: 'message',
       type: 'string' as const,
       required: true,

@@ -20,6 +20,7 @@ const trigger: IRawTrigger = {
   arguments: [
     {
       label: 'Encryption key',
+      placeholder: 'Paste your encryption key here',
       key: 'encryptionKey',
       type: 'string' as const,
       description:

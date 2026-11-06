@@ -17,6 +17,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Case UUID or case ref',
+      placeholder: 'Pick the case ID from an earlier step',
       key: 'caseUuid',
       type: 'string' as const,
       description: 'Select a variable with a case UUID or case ref.',
@@ -38,6 +39,7 @@ const action: IRawAction = {
     },
     {
       label: 'Tag value',
+      placeholder: 'urgent',
       description: 'Key in a single tag value to be applied to the case',
       key: 'tagValue',
       type: 'string' as const,

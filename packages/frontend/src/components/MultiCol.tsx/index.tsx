@@ -92,7 +92,12 @@ export default function MultiCol(props: MultiColProps) {
   }
 
   return (
-    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="flex-end">
+    <Flex
+      data-popover-anchor
+      flexDir={isMobile ? 'column' : 'row'}
+      gap={2}
+      alignItems="flex-end"
+    >
       {subFields.map((subF, subFIndex) => {
         // Skip the flex wrapper entirely when this row hides the sub-field.
         // Otherwise an empty flex slot (e.g. Text value while type is List)

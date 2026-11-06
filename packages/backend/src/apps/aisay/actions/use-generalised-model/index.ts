@@ -41,7 +41,7 @@ const action: IRawAction = {
       addRowButtonText: 'Add prompt',
       subFields: [
         {
-          placeholder: 'E.g. Return the price of individual line items',
+          placeholder: 'Return the price of individual line items',
           key: 'prompt',
           type: 'string' as const,
           required: true,

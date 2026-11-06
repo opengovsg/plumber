@@ -42,7 +42,7 @@ const action: IRawAction = {
           key: 'description',
           label: 'What to look for',
           placeholder:
-            'e.g. Whether the image contains a handwritten signature',
+            'Whether the image contains a handwritten signature',
           type: 'string',
           required: true,
           customStyle: { flex: 3, minWidth: 0, maxWidth: '75%' },
@@ -50,7 +50,7 @@ const action: IRawAction = {
         {
           key: 'fieldName',
           label: 'Output name',
-          placeholder: 'e.g. Signature present',
+          placeholder: 'Signature present',
           type: 'string',
           required: true,
           customStyle: { flex: 1 },

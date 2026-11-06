@@ -10,6 +10,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'accountSid',
       label: 'Account SID',
+      placeholder: 'Paste your Account SID here',
       type: 'string' as const,
       required: true,
       readOnly: false,
@@ -22,6 +23,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'apiKeySid',
       label: 'API Key SID (Optional)',
+      placeholder: 'Paste your API Key SID here (optional)',
       type: 'string' as const,
       required: false,
       readOnly: false,
@@ -34,6 +36,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'authToken',
       label: 'Auth Token / API Key Secret',
+      placeholder: 'Paste your Auth Token or API Key Secret here',
       type: 'string' as const,
       required: true,
       readOnly: false,

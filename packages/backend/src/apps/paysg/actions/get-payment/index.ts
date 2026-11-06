@@ -13,6 +13,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Payment ID',
+      placeholder: 'Pick the payment ID from an earlier step',
       key: 'paymentId',
       type: 'string' as const,
       required: true,

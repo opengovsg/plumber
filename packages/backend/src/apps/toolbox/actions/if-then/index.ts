@@ -19,6 +19,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Branch Name',
+      placeholder: 'Approved applicants',
       key: 'branchName',
       type: 'string' as const,
       required: false,

@@ -43,6 +43,7 @@ const action: IRawAction = {
     },
     {
       label: 'Row ID',
+      placeholder: 'Pick the row ID from an earlier step',
       key: 'rowId',
       type: 'string' as const,
       required: true,

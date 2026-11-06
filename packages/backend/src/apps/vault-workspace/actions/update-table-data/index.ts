@@ -19,6 +19,7 @@ const action: IRawAction = {
     },
     {
       label: 'Lookup Value',
+      placeholder: 'Pick or type the value to look for',
       key: 'lookupValue',
       type: 'string' as const,
       required: true,
@@ -35,6 +36,7 @@ const action: IRawAction = {
     },
     {
       label: 'Update Value',
+      placeholder: 'Pick or type the new value',
       key: 'updateValue',
       type: 'string' as const,
       required: true,

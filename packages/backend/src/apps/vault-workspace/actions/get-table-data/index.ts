@@ -20,6 +20,7 @@ const action: IRawAction = {
 
     {
       label: 'Lookup Value',
+      placeholder: 'Pick or type the value to look for',
       key: 'lookupValue',
       type: 'string' as const,
       required: true,

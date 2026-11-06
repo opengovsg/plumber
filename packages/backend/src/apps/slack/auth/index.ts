@@ -23,6 +23,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'consumerKey',
       label: 'Client ID',
+      placeholder: 'Paste your Client ID here',
       type: 'string' as const,
       required: true,
       readOnly: false,
@@ -34,6 +35,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'consumerSecret',
       label: 'Client Secret',
+      placeholder: 'Paste your Client Secret here',
       type: 'string' as const,
       required: true,
       readOnly: false,

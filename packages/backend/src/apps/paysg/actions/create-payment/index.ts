@@ -13,6 +13,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Reference ID',
+      placeholder: 'INV-2026-001',
       key: 'referenceId',
       type: 'string' as const,
       required: true,
@@ -20,6 +21,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Name',
+      placeholder: 'Tan Wei Ming',
       key: 'payerName',
       type: 'string' as const,
       required: true,
@@ -27,6 +29,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Address',
+      placeholder: '1 Example Street, Singapore 123456',
       key: 'payerAddress',
       type: 'string' as const,
       required: false,
@@ -34,6 +37,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Identifier',
+      placeholder: 'Type the payer ID, max 20 characters',
       description: 'Max 20 characters. e.g. NRIC',
       key: 'payerIdentifier',
       type: 'string' as const,
@@ -42,6 +46,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payer Email',
+      placeholder: 'name@example.com',
       key: 'payerEmail',
       type: 'string' as const,
       required: false,
@@ -49,6 +54,7 @@ const action: IRawAction = {
     },
     {
       label: 'Description',
+      placeholder: 'Course fee for May',
       key: 'description',
       type: 'string' as const,
       required: true,
@@ -56,6 +62,7 @@ const action: IRawAction = {
     },
     {
       label: 'Payment amount (in cents)',
+      placeholder: '5000 (for $50.00)',
       key: 'paymentAmountCents',
       type: 'string' as const,
       required: true,
@@ -63,6 +70,7 @@ const action: IRawAction = {
     },
     {
       label: 'Due Date',
+      placeholder: '02 Nov 2026',
       description:
         'Must be formatted in "2-digit-day month 4-digit-year" format (e.g. 02 Nov 2023)',
       key: 'dueDate',
@@ -72,6 +80,7 @@ const action: IRawAction = {
     },
     {
       label: 'Return URL',
+      placeholder: 'https://example.gov.sg/thank-you',
       key: 'returnUrl',
       type: 'string' as const,
       required: false,

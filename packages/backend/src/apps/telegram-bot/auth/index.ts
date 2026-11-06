@@ -11,6 +11,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'token',
       label: 'Bot token',
+      placeholder: 'Paste your bot token here',
       type: 'string' as const,
       required: true,
       readOnly: false,

@@ -10,6 +10,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'label',
       label: 'Label',
+      placeholder: 'My API connection',
       type: 'string' as const,
       required: true,
       readOnly: false,
@@ -19,6 +20,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'headers',
       label: 'Headers',
+      placeholder: 'Content-Type=application/json',
       type: 'multiline' as const,
       required: false,
       readOnly: false,

@@ -165,6 +165,7 @@ export const fields: IField[] = [
   },
   {
     label: 'First date',
+    placeholder: 'Pick or type the first date',
     key: key('firstDateValue'),
     type: 'string',
     required: true,
@@ -188,6 +189,7 @@ export const fields: IField[] = [
   },
   {
     label: 'Second date',
+    placeholder: 'Pick or type the second date',
     key: key('secondDateValue'),
     type: 'string',
     required: true,
@@ -235,7 +237,7 @@ export const fields: IField[] = [
     required: true,
     subFields: [
       {
-        placeholder: 'e.g. 2',
+        placeholder: '2',
         key: ensureZodObjectKey(gapPeriodSchema, 'gapAmount'),
         type: 'string',
         required: true,

@@ -38,6 +38,7 @@ const action: IRawAction = {
     },
     {
       label: 'Delay for value',
+      placeholder: '5',
       key: 'delayForValue',
       type: 'string' as const,
       required: true,

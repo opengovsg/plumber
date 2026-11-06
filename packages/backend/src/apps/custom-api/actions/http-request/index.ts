@@ -209,6 +209,7 @@ const action: IRawAction = {
     },
     {
       label: 'URL',
+      placeholder: 'https://example.com/api',
       key: 'url',
       type: 'string' as const,
       required: true,
@@ -245,6 +246,7 @@ const action: IRawAction = {
     },
     {
       label: 'Data',
+      placeholder: 'Type the JSON data to send',
       key: 'data',
       type: 'string' as const,
       required: false,

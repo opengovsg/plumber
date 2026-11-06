@@ -12,6 +12,8 @@ export const boxStyles = {
   },
   '&:focus-within': {
     borderColor: 'primary.500',
+    // Matches the 2px focus ring of the other input fields.
+    boxShadow: '0 0 0 1px var(--chakra-colors-primary-500)',
   },
   minHeight: '46px',
 }

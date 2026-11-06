@@ -23,7 +23,7 @@ import VariableItemWithModal from './VariableItemWithModal'
 
 const VARIABLES_WITH_MODALS = ['table', 'html', 'email']
 const VARIABLE_ITEM_HEIGHT = 77
-const SUGGESTION_VARIABLE_ITEM_HEIGHT = 61
+export const SUGGESTION_VARIABLE_ITEM_HEIGHT = 56
 
 function VariableTag({
   type,
@@ -132,20 +132,20 @@ export function VariableItem({
       data-test="variable-suggestion-item"
       h={
         isSuggestionVariable
-          ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          ? `${SUGGESTION_VARIABLE_ITEM_HEIGHT}px`
           : shouldShowToggle
             ? 'auto'
             : VARIABLE_ITEM_HEIGHT
       }
       maxH={
         isSuggestionVariable
-          ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          ? `${SUGGESTION_VARIABLE_ITEM_HEIGHT}px`
           : shouldShowToggle
             ? undefined
             : VARIABLE_ITEM_HEIGHT
       }
       overflowY={shouldShowToggle && isExpanded ? 'visible' : 'hidden'}
-      padding={isSuggestionVariable ? '0.5rem 1rem' : '1rem'}
+      padding={isSuggestionVariable ? '0.625rem 1.25rem' : '1rem'}
       borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
         isSuggestionVariable
@@ -176,7 +176,7 @@ export function VariableItem({
         <Flex flexDir="column" minW={0}>
           <Flex alignItems="center" gap={2}>
             <Text
-              textStyle="body-1"
+              textStyle={isSuggestionVariable ? 'body-2' : 'body-1'}
               color="base.content.strong"
               display="flex"
               alignItems="center"
@@ -191,7 +191,8 @@ export function VariableItem({
             <Flex alignItems="center" gap={2}>
               <Text
                 ref={textRef}
-                textStyle="body-2"
+                textStyle={isSuggestionVariable ? 'caption-1' : 'body-2'}
+                fontWeight={isSuggestionVariable ? 400 : undefined}
                 color="base.content.medium"
                 whiteSpace={isExpanded ? 'pre-wrap' : 'nowrap'}
                 overflow={isExpanded ? 'visible' : 'hidden'}

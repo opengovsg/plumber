@@ -68,6 +68,7 @@ const action: IRawAction = {
       subFields: [
         {
           label: 'Cell Address (e.g. A1)',
+          placeholder: 'B2',
           key: 'address',
           type: 'string' as const,
           required: true,
@@ -76,6 +77,7 @@ const action: IRawAction = {
         },
         {
           label: 'Value',
+          placeholder: 'Type the value to write',
           key: 'value',
           type: 'string' as const,
           required: false,

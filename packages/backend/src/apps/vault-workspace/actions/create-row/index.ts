@@ -9,6 +9,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Columns',
+      placeholder: 'Name,Email,Phone',
       key: 'columns',
       type: 'string' as const,
       required: true,
@@ -18,6 +19,7 @@ const action: IRawAction = {
     },
     {
       label: 'Values',
+      placeholder: 'Alex,alex@example.com',
       key: 'values',
       type: 'string' as const,
       required: true,

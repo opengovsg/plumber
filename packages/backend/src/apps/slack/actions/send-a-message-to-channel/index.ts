@@ -28,6 +28,7 @@ const action: IRawAction = {
     },
     {
       label: 'Message text',
+      placeholder: 'Type your message',
       key: 'message',
       type: 'string' as const,
       required: true,
@@ -45,6 +46,7 @@ const action: IRawAction = {
     },
     {
       label: 'Bot name',
+      placeholder: 'Plumber',
       key: 'botName',
       type: 'string' as const,
       required: false,
@@ -60,6 +62,7 @@ const action: IRawAction = {
     },
     {
       label: 'Bot icon',
+      placeholder: ':tada: or https://example.com/icon.png',
       key: 'botIcon',
       type: 'string' as const,
       required: false,

@@ -69,6 +69,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Case UUID or case ref',
+      placeholder: 'Pick the case ID from an earlier step',
       key: 'caseUuid',
       type: 'string' as const,
       description: 'Select a variable with a case UUID or case ref.',

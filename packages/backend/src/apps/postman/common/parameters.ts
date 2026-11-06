@@ -47,6 +47,7 @@ function validateEmails(value: string, ctx: z.RefinementCtx, msg: string) {
 export const transactionalEmailFields: IField[] = [
   {
     label: 'Email subject',
+    placeholder: 'Your application has been received',
     key: 'subject',
     type: 'string' as const,
     required: true,
@@ -71,6 +72,7 @@ export const transactionalEmailFields: IField[] = [
   },
   {
     label: 'Recipient email(s)',
+    placeholder: 'name@example.com, other@example.com',
     key: 'destinationEmail',
     type: 'string' as const,
     required: true,
@@ -80,6 +82,7 @@ export const transactionalEmailFields: IField[] = [
   },
   {
     label: 'CC recipient email(s)',
+    placeholder: 'manager@example.com',
     key: 'destinationEmailCc',
     type: 'string' as const,
     required: false,
@@ -91,6 +94,7 @@ export const transactionalEmailFields: IField[] = [
   },
   {
     label: 'Sender name',
+    placeholder: 'HR team',
     key: 'senderName',
     type: 'string' as const,
     required: true,
@@ -99,6 +103,7 @@ export const transactionalEmailFields: IField[] = [
   },
   {
     label: 'Reply-To email',
+    placeholder: 'hr@example.gov.sg',
     key: 'replyTo',
     type: 'string' as const,
     required: false,
