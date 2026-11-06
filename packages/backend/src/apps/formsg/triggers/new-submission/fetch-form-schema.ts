@@ -22,11 +22,14 @@ export async function fetchFormSchema(
       $.auth.data?.formId,
       e,
     )
-    if (e.response?.status === 404) {
-      if (e.response.data?.isPageFound) {
-        // form is valid but not public
-        throw new Error('Ensure form is public')
-      }
+    // Not narrowed to HttpError: some tests reject with a plain
+    // axios-response-shaped object rather than a real HttpError instance.
+    const response = (
+      e as { response?: { status?: number; data?: { isPageFound?: boolean } } }
+    )?.response
+    if (response?.status === 404 && response.data?.isPageFound) {
+      // form is valid but not public
+      throw new Error('Ensure form is public')
     }
     throw new Error('Unable to fetch form. Form might not exist.')
   }
