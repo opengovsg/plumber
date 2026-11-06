@@ -53,7 +53,9 @@ export async function archiveExecution(
       new HeadObjectCommand({ Bucket: bucket, Key: key }),
     )
   } catch (err) {
-    logger.error('archival: S3 verify threw, skipping', {
+    logger.error({
+      event: 'archival.execution.verify_failed',
+      reason: 'head_object_threw',
       executionId: execution.id,
       key,
       err,
@@ -62,7 +64,9 @@ export async function archiveExecution(
   }
 
   if (!head.ContentLength) {
-    logger.error('archival: S3 verify failed (zero ContentLength), skipping', {
+    logger.error({
+      event: 'archival.execution.verify_failed',
+      reason: 'zero_content_length',
       executionId: execution.id,
       key,
     })
