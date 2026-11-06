@@ -3,11 +3,13 @@ import { ModalCloseButton } from '@opengovsg/design-system-react'
 import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
 import { ConnectionDropdownOption } from '.'
 import BackButton from '../BackButton'
 import { DEFAULT_CHOOSE_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { getSelectableActions } from '../helpers/selectable-actions'
 import InvalidModalScreen from '../InvalidModalScreen'
 import ChooseConnectionDropdown from './ChooseConnectionDropdown'
 import ConnectionHeader from './ConnectionHeader'
@@ -33,6 +35,7 @@ export default function ChooseConnection(
     onCreateOrUpdateStep,
   } = props
   const { readOnly } = useContext(EditorContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   const { modalState, patchModalState, step } = useContext(
     FlowStepConfigurationContext,
@@ -47,7 +50,9 @@ export default function ChooseConnection(
       return
     }
 
-    const triggersOrActions = selectedApp.triggers || selectedApp.actions || []
+    const triggersOrActions = selectedApp.triggers
+      ? selectedApp.triggers
+      : getSelectableActions(selectedApp, getFlagValue)
     if (triggersOrActions.length === 1) {
       patchModalState({
         currentScreen: 'choose-app',
