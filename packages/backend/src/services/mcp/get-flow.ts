@@ -41,7 +41,7 @@ function isKeyValueRow(
  *
  * Existing steps may still hold static secrets in Custom Headers, which are plain text.
  */
-function redactCredentials(value: IJSONValue): IJSONValue {
+export function redactCredentials(value: IJSONValue): IJSONValue {
   if (Array.isArray(value)) {
     return value.map(redactCredentials)
   }
