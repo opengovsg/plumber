@@ -4,7 +4,21 @@ FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc6
 
 ARG APP_ENV=prod
 ARG RELEASE_VERSION
-ENV VITE_MODE=$APP_ENV
+ARG POSTHOG_PROJECT_ID
+ARG POSTHOG_HOST
+ARG GITHUB_ACTIONS
+ARG GITHUB_SHA
+ARG GITHUB_REF_NAME
+ARG GITHUB_REPOSITORY
+ARG GITHUB_SERVER_URL
+ENV VITE_MODE=$APP_ENV \
+  POSTHOG_PROJECT_ID=$POSTHOG_PROJECT_ID \
+  POSTHOG_HOST=$POSTHOG_HOST \
+  GITHUB_ACTIONS=$GITHUB_ACTIONS \
+  GITHUB_SHA=$GITHUB_SHA \
+  GITHUB_REF_NAME=$GITHUB_REF_NAME \
+  GITHUB_REPOSITORY=$GITHUB_REPOSITORY \
+  GITHUB_SERVER_URL=$GITHUB_SERVER_URL
 
 WORKDIR /opt/plumber
 COPY . ./
@@ -13,17 +27,11 @@ RUN npm install -g pnpm@12.11.2
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm_config__auth="{\"https://npm.taskforce.sh\":{\"@taskforcesh\":{\"authToken\":\"$(cat /run/secrets/NPM_TASKFORCESH_TOKEN)\"}}}" \
   pnpm install --frozen-lockfile
-RUN pnpm run build
-# Builds without the PostHog key (local, PR) skip the upload. Maps are always
-# deleted because the backend serves frontend/dist publicly.
-RUN --mount=type=secret,id=POSTHOG_CLI_API_KEY \
-  if [ -s /run/secrets/POSTHOG_CLI_API_KEY ]; then \
-    POSTHOG_CLI_API_KEY="$(cat /run/secrets/POSTHOG_CLI_API_KEY)" \
-    POSTHOG_CLI_PROJECT_ID=604173 \
-    pnpm --filter frontend exec posthog-cli --host https://us.posthog.com \
-      sourcemap process --directory dist --release-name plumber-frontend \
-      ${RELEASE_VERSION:+--release-version "$RELEASE_VERSION"}; \
-  fi && \
+# The PostHog API key is mounted only for the build that uploads source maps.
+# Builds without a key skip the upload; maps are always removed before the
+# frontend artifact is copied into the runtime image.
+RUN --mount=type=secret,id=POSTHOG_API_KEY,env=POSTHOG_API_KEY \
+  pnpm run build && \
   find packages/frontend/dist -name '*.map' -delete
 # `pnpm deploy` materializes a self-contained node_modules for one workspace
 # package (resolving symlinks and workspace:* deps into real files), unlike
