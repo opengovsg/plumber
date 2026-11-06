@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { MockedProvider, type MockedResponse } from '@apollo/client/testing'
-import { parsePipeId } from '@plumber/shared'
+import { type PipeId, parsePipeId } from '@plumber/shared'
 import { createRoot } from 'react-dom/client'
 import { act } from 'react-dom/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -12,11 +12,16 @@ import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import type { PipeChoice } from '../pipe-chip'
 import SelectPipePopover from './SelectPipePopover'
 
-const DRAFT_ID = parsePipeId('123e4567-e89b-12d3-a456-426614174000')
-const LIVE_ID = parsePipeId('223e4567-e89b-12d3-a456-426614174001')
-if (!DRAFT_ID || !LIVE_ID) {
-  throw new Error('fixture is not a pipe id')
+function mustPipeId(value: string): PipeId {
+  const pipeId = parsePipeId(value)
+  if (!pipeId) {
+    throw new Error('fixture is not a pipe id')
+  }
+  return pipeId
 }
+
+const DRAFT_ID = mustPipeId('123e4567-e89b-12d3-a456-426614174000')
+const LIVE_ID = mustPipeId('223e4567-e89b-12d3-a456-426614174001')
 const UPDATED_AT = '1700000000000'
 
 function flowNode(id: string, name: string, active: boolean) {
