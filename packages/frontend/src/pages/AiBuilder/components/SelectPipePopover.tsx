@@ -281,15 +281,15 @@ export default function SelectPipePopover({
           </Flex>
         </PopoverBody>
       </PopoverContent>
+      <UnpublishConfirmationDialog
+        cancelRef={unpublishCancelRef}
+        flowName={pendingUnpublish?.name ?? ''}
+        isOpen={pendingUnpublish !== null}
+        isLoading={isUnpublishing}
+        onClose={() => setPendingUnpublish(null)}
+        onUnpublish={confirmUnpublish}
+        steps={[]}
+      />
     </Popover>
-    <UnpublishConfirmationDialog
-      cancelRef={unpublishCancelRef}
-      flowName={pendingUnpublish?.name ?? ''}
-      isOpen={pendingUnpublish !== null}
-      isLoading={isUnpublishing}
-      onClose={() => setPendingUnpublish(null)}
-      onUnpublish={confirmUnpublish}
-      steps={[]}
-    />
   )
 }
