@@ -73,6 +73,17 @@ export function registerWorkerEventHandlers(
   })
 
   worker.on('failed', async (job, err) => {
+    // BullMQ omits the job when it could not be fetched from Redis. None of
+    // the bookkeeping below is possible without the job data.
+    if (!job) {
+      logger.error(`[${queueName}] Worker failed a job it could not fetch`, {
+        err,
+        queueName,
+        workerVersion: appConfig.version,
+      })
+      return
+    }
+
     // BullMQ Pro batches surface a synthetic container job whose `data` is empty
     // (its real jobs - each with its own execution - live in getBatch()). Fan
     // out over the batch so every execution is resolved; single jobs have no

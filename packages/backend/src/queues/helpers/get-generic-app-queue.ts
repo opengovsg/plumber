@@ -8,12 +8,12 @@ import { QUEUE_CONCURRENCY } from '@/config/queues'
  * It adds a generic group id to the jobs to ensure that the
  * concurrency limit is applied.
  */
-export function getGenericAppQueue(
-  app: keyof typeof QUEUE_CONCURRENCY,
-): IAppQueue {
+export function getGenericAppQueue(app: keyof typeof QUEUE_CONCURRENCY) {
   const concurrency = QUEUE_CONCURRENCY[app] || 2
 
-  const getGroupConfigForJob = async () => {
+  const getGroupConfigForJob: NonNullable<
+    IAppQueue['getGroupConfigForJob']
+  > = async () => {
     return { id: app }
   }
 
