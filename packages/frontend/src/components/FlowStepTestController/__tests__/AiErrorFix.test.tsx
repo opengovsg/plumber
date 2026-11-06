@@ -34,13 +34,13 @@ function stubMatchMedia(): void {
   })) as unknown as typeof window.matchMedia
 }
 
-async function renderFix(): Promise<void> {
+async function renderFix({ isDisabled = false } = {}): Promise<void> {
   await act(async () => {
     root.render(
       <ThemeProvider>
         <ApolloProvider client={client}>
           <AiErrorFix.Provider {...helpProps}>
-            <AiErrorFix.Action />
+            <AiErrorFix.Action isDisabled={isDisabled} />
             <AiErrorFix.Status />
           </AiErrorFix.Provider>
         </ApolloProvider>
@@ -78,8 +78,6 @@ describe('AiErrorFix', () => {
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending))
 
     await renderFix()
-    expect(helpButton()?.textContent).toContain('Fix with AI')
-    expect(helpButton()?.querySelector('svg')).not.toBeNull()
 
     await act(async () => {
       helpButton()?.click()
@@ -87,25 +85,13 @@ describe('AiErrorFix', () => {
     expect(document.body.textContent).toContain('Working')
 
     const request = vi.mocked(fetch).mock.calls[0]
-    const body = JSON.parse(String(request?.[1]?.body))
-    expect(body.errorName).toBe('Column not found')
-    expect(body.stepId).toBe(helpProps.stepId)
-    expect(body).not.toHaveProperty('details')
+    expect(JSON.parse(String(request?.[1]?.body))).toEqual(helpProps)
 
     await act(async () => {
       finish({
         ok: true,
         json: async () => ({
-          data: {
-            fixed: true,
-            summary: 'Updated the Name column mapping',
-            sources: [
-              {
-                title: 'M365 excel',
-                url: 'https://guide.plumber.gov.sg/user-guides/actions/m365-excel',
-              },
-            ],
-          },
+          data: { fixed: true, summary: 'Updated the Name column mapping' },
         }),
       })
       await pending
@@ -114,7 +100,6 @@ describe('AiErrorFix', () => {
     expect(document.body.textContent).toContain(
       'Updated the Name column mapping. Check step again.',
     )
-    expect(document.body.textContent).not.toContain('Guide')
     expect(client.refetchQueries).toHaveBeenCalled()
 
     await act(async () => {
@@ -154,5 +139,11 @@ describe('AiErrorFix', () => {
       'The Plumber guide is unavailable. Please try again.',
     )
     expect(helpButton()?.textContent).toContain('Fix with AI')
+  })
+
+  it('disables Fix with AI while the form has unsaved changes', async () => {
+    await renderFix({ isDisabled: true })
+
+    expect(helpButton()?.disabled).toBe(true)
   })
 })

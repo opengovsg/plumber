@@ -1,39 +1,15 @@
 import { z } from 'zod'
 
-const guideUrlSchema = z
-  .string()
-  .url()
-  .refine((url) => {
-    const parsed = new URL(url)
-    return (
-      parsed.protocol === 'https:' && parsed.hostname === 'guide.plumber.gov.sg'
-    )
-  })
-
 const stepErrorFixResponseSchema = z.object({
   data: z.object({
     fixed: z.boolean(),
     summary: z.string().trim().min(1),
-    sources: z
-      .array(
-        z.object({
-          title: z.string().trim().min(1),
-          url: guideUrlSchema,
-        }),
-      )
-      .max(3),
   }),
 })
-
-export type StepErrorFixSource = {
-  title: string
-  url: string
-}
 
 export type StepErrorFixResult = {
   fixed: boolean
   summary: string
-  sources: StepErrorFixSource[]
 }
 
 export type CheckStepErrorSummary = {
@@ -60,24 +36,20 @@ export function readCheckStepError(
   return { errorName: 'We could not test this step' }
 }
 
-export async function requestStepErrorFix(
-  input: {
-    stepId: string
-    appName: string
-    appKey: string
-    stepKey: string
-    stepName: string
-    errorName: string
-    errorSolution?: string
-  },
-  signal: AbortSignal,
-): Promise<StepErrorFixResult> {
+export async function requestStepErrorFix(input: {
+  stepId: string
+  appName: string
+  appKey: string
+  stepKey: string
+  stepName: string
+  errorName: string
+  errorSolution?: string
+}): Promise<StepErrorFixResult> {
   const response = await fetch('/api/step-error-fix', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(input),
-    signal,
   })
   const body: unknown = await response.json().catch(() => null)
   if (!response.ok) {

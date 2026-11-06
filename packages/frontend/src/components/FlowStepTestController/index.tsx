@@ -455,7 +455,7 @@ export default function FlowStepTestController(
                     <ErrorResult
                       errorDetails={lastErrorDetails}
                       isTestRun={true}
-                      titleAction={<AiErrorFix.Action />}
+                      titleAction={<AiErrorFix.Action isDisabled={isDirty} />}
                     >
                       <AiErrorFix.Status />
                     </ErrorResult>

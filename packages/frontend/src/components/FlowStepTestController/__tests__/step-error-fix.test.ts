@@ -24,33 +24,25 @@ describe('readCheckStepError', () => {
 })
 
 describe('requestStepErrorFix', () => {
-  it('rejects a response that links outside the Plumber guide', async () => {
+  it('rejects a response without a summary', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
-          data: {
-            fixed: true,
-            summary: 'Updated the mapping.',
-            sources: [{ title: 'Other', url: 'https://example.com/phish' }],
-          },
-        }),
+        json: async () => ({ data: { fixed: true, summary: ' ' } }),
       }),
     )
 
     await expect(
-      requestStepErrorFix(
-        {
-          stepId: '11111111-1111-4111-8111-111111111111',
-          appName: 'Excel',
-          appKey: 'm365-excel',
-          stepKey: 'createTableRow',
-          stepName: 'Create table row',
-          errorName: 'Column not found',
-        },
-        new AbortController().signal,
-      ),
+      requestStepErrorFix({
+        stepId: '11111111-1111-4111-8111-111111111111',
+        appName: 'Excel',
+        appKey: 'm365-excel',
+        stepKey: 'createTableRow',
+        stepName: 'Create table row',
+        errorName: 'Column not found',
+      }),
     ).rejects.toThrow('AI could not fix this step')
+    vi.unstubAllGlobals()
   })
 })

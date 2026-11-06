@@ -2,8 +2,6 @@ import {
   createContext,
   type ReactNode,
   useContext,
-  useEffect,
-  useRef,
   useState,
   useSyncExternalStore,
 } from 'react'
@@ -92,16 +90,8 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
     'AI could not fix this step. Your settings were not changed.',
   )
 
-  const abortRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    return () => abortRef.current?.abort()
-  }, [])
-
+  // IMPORTANT: do not abort on unmount. The server can still update the step.
   const requestFix = async () => {
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
     setPhase('loading')
     clearStepFixNotice(request.stepId)
     if (isPostHogConfigured) {
@@ -111,10 +101,7 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
       })
     }
     try {
-      const fixResult = await requestStepErrorFix(request, controller.signal)
-      if (controller.signal.aborted) {
-        return
-      }
+      const fixResult = await requestStepErrorFix(request)
       if (fixResult.fixed) {
         setStepFixNotice(request.stepId, fixResult)
         await client.refetchQueries({ include: [GET_FLOW] })
@@ -130,9 +117,6 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
         })
       }
     } catch (error) {
-      if (controller.signal.aborted) {
-        return
-      }
       setFailureMessage(
         error instanceof Error && error.message
           ? error.message
@@ -162,7 +146,7 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
   )
 }
 
-function AiErrorFixAction() {
+function AiErrorFixAction({ isDisabled }: { isDisabled: boolean }) {
   const { phase, requestFix, result } = useAiErrorFix()
 
   if (result?.fixed && phase !== 'loading') {
@@ -194,6 +178,7 @@ function AiErrorFixAction() {
           variant="link"
           leftIcon={<BiSolidMagicWand />}
           onClick={requestFix}
+          isDisabled={isDisabled}
           data-test="fix-with-ai"
         >
           Fix with AI
