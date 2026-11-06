@@ -17,6 +17,17 @@ function withCacheBreakpoint<T extends ModelMessage>(message: T): T {
   }
 }
 
+/**
+ * Orders tools by name.
+ *
+ * Tools sit at the start of the cached prefix, so a reordered GitBook tool list would miss the cache.
+ */
+export function sortToolsByName<T extends Record<string, unknown>>(tools: T): T {
+  return Object.fromEntries(
+    Object.entries(tools).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+  ) as T
+}
+
 // The SDK's usage totals omit cache writes. Only provider metadata reports them.
 export function sumCacheWriteInputTokens(
   steps: { providerMetadata?: { anthropic?: Record<string, unknown> } }[],
