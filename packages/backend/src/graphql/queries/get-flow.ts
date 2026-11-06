@@ -1,4 +1,8 @@
+import { NotFoundError } from 'objection'
 import { z } from 'zod'
+
+import Flow from '@/models/flow'
+import { loadAccessibleFlow } from '@/services/access'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -8,22 +12,22 @@ const getFlow: QueryResolvers['getFlow'] = async (_parent, params, context) => {
     throw new Error('Please provide a valid pipe ID in your URL.')
   }
 
-  const flow = await context.currentUser
-    .withAccessibleFlows({ requiredRole: 'viewer' })
-    .withGraphFetched({
+  const flow = await loadAccessibleFlow({
+    user: context.currentUser,
+    flowId: params.id,
+    role: 'viewer',
+    graph: {
       steps: {
         connection: true,
       },
       pendingTransfer: {
         newOwner: true,
       },
-    })
-    .findOne({ 'flows.id': params.id })
-    .throwIfNotFound()
+    },
+  })
 
-  // Order steps by position (since withGraphJoined doesn't work with our helper)
-  if (flow.steps) {
-    flow.steps.sort((a, b) => a.position - b.position)
+  if (!flow) {
+    throw new NotFoundError({ modelClass: Flow })
   }
 
   return flow
