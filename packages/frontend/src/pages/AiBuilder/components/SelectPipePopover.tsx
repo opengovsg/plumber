@@ -114,7 +114,7 @@ export default function SelectPipePopover({
   return (
     <Popover isOpen={isOpen} onClose={handleClose} placement="top-start" isLazy>
       <Tooltip
-        label="Pick one of your pipes and I'll read it with you."
+        label="Some workflows start from a pipe you already have. Select yours and I'll guide you based on its actual steps."
         hasArrow
         placement="top-start"
         isDisabled={isOpen}
