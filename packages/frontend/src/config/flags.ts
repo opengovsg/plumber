@@ -22,14 +22,6 @@ export const IF_THEN_THEN_FEATURE_FLAG = 'feature_if_then_then'
 export const PLUMPRO_FEATURE_FLAG = 'plumpro'
 
 /**
- * String flag for the Check step "Fix with AI" A/B test. 'treatment' shows the
- * button. Any other value, or a missing flag, hides it.
- */
-export const CHECK_STEP_AI_FIX_FLAG = 'check-step-ai-fix'
-export const CHECK_STEP_AI_FIX_CONTROL = 'control'
-export const CHECK_STEP_AI_FIX_TREATMENT = 'treatment'
-
-/**
  * App/events flags
  */
 export const getAppFlag = (appKey: string) => `app_${appKey}`
