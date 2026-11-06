@@ -25,7 +25,7 @@ describe('get tables query', () => {
       })
     }
     const { edges, pageInfo } = await getTables(
-      null,
+      {},
       { limit: 10, offset: 0 },
       context,
     )
@@ -37,7 +37,7 @@ describe('get tables query', () => {
 
   it('should return empty array if no tables found', async () => {
     const { edges, pageInfo } = await getTables(
-      null,
+      {},
       { limit: 10, offset: 0 },
       context,
     )
@@ -56,7 +56,7 @@ describe('get tables query', () => {
       })
     }
     const { edges, pageInfo } = await getTables(
-      null,
+      {},
       { limit: 10, offset: 0 },
       context,
     )
@@ -69,7 +69,7 @@ describe('get tables query', () => {
       .where('table_id', tables[0].id)
       .andWhere('user_id', context.currentUser.id)
     const { edges: newEdges } = await getTables(
-      null,
+      {},
       { limit: 10, offset: 0 },
       context,
     )
@@ -87,7 +87,7 @@ describe('get tables query', () => {
       })
     }
     const { edges } = await getTables(
-      null,
+      {},
       { limit: 10, offset: 0, name: 'Test Table' },
       context,
     )
@@ -95,7 +95,7 @@ describe('get tables query', () => {
     expect(tables).toHaveLength(numTables)
 
     const { edges: newEdges } = await getTables(
-      null,
+      {},
       { limit: 10, offset: 0, name: 'Invalid name' },
       context,
     )
@@ -112,7 +112,7 @@ describe('get tables query', () => {
       })
     }
     const { edges: firstPage, pageInfo: firstPageInfo } = await getTables(
-      null,
+      {},
       { limit: 2, offset: 0 },
       context,
     )
@@ -122,7 +122,7 @@ describe('get tables query', () => {
     expect(firstPageInfo.totalCount).toBe(numTables)
 
     const { edges: secondPage, pageInfo: secondPageInfo } = await getTables(
-      null,
+      {},
       { limit: 2, offset: 2 },
       context,
     )
@@ -140,7 +140,7 @@ describe('get tables query', () => {
         databaseType: i % 2 ? 'ddb' : 'pg',
       })
     }
-    const { edges } = await getTables(null, { limit: 10, offset: 0 }, context)
+    const { edges } = await getTables({}, { limit: 10, offset: 0 }, context)
     const tables = edges.map((edge) => edge.node)
     for (const table of tables) {
       expect(table.role).toBe('owner')

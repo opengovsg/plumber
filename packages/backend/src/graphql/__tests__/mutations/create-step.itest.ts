@@ -157,7 +157,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     // Ensure the new step is returned as expected.
     expect(newStep).toBeDefined()
@@ -193,7 +193,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
     expect(newStep.position).toBe(existingSteps[2].position + 1)
@@ -223,7 +223,7 @@ describe('createStep mutation integration tests', async () => {
         previousStep: { id: existingSteps[2].id },
       },
     }
-    await createStep(null, params, context)
+    await createStep({}, params, context)
     expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -248,7 +248,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow()
+    await expect(createStep({}, params, context)).rejects.toThrow()
   })
 
   it('throws an error if the previous step is not found', async () => {
@@ -265,11 +265,11 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow()
+    await expect(createStep({}, params, context)).rejects.toThrow()
   })
 
   it('owner can create a new step', async () => {
-    const newStep = await createStep(null, genericNewStepParams, context)
+    const newStep = await createStep({}, genericNewStepParams, context)
 
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
@@ -281,7 +281,7 @@ describe('createStep mutation integration tests', async () => {
 
   it('editor can create a new step', async () => {
     context.currentUser = editor
-    const newStep = await createStep(null, genericNewStepParams, context)
+    const newStep = await createStep({}, genericNewStepParams, context)
 
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
@@ -306,7 +306,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
     expect(newStep.key).toBe('sendTransactionalEmail')
@@ -316,16 +316,16 @@ describe('createStep mutation integration tests', async () => {
 
   it('viewer should not be able to create a new step', async () => {
     context.currentUser = viewer
-    await expect(
-      createStep(null, genericNewStepParams, context),
-    ).rejects.toThrow(NotFoundError)
+    await expect(createStep({}, genericNewStepParams, context)).rejects.toThrow(
+      NotFoundError,
+    )
   })
 
   it('non-collaborator should not be able to create a new step', async () => {
     context.currentUser = nonCollaborator
-    await expect(
-      createStep(null, genericNewStepParams, context),
-    ).rejects.toThrow(NotFoundError)
+    await expect(createStep({}, genericNewStepParams, context)).rejects.toThrow(
+      NotFoundError,
+    )
   })
 
   it('creates a step with connection and adds flow connection for owner', async () => {
@@ -344,7 +344,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
     expect((newStep as any).connectionId).toBe(testConnection.id)
@@ -373,9 +373,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow(
-      NotFoundError,
-    )
+    await expect(createStep({}, params, context)).rejects.toThrow(NotFoundError)
   })
 
   // TODO (kevinkim-ogp): update this test when we allow editors to add their own connections to the Pipe
@@ -405,9 +403,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow(
-      NotFoundError,
-    )
+    await expect(createStep({}, params, context)).rejects.toThrow(NotFoundError)
   })
 
   it('throws error when user does not have access to connection', async () => {
@@ -437,9 +433,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow(
-      NotFoundError,
-    )
+    await expect(createStep({}, params, context)).rejects.toThrow(NotFoundError)
   })
 
   it('creates a step without connection when connection is not provided', async () => {
@@ -456,7 +450,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
     expect((newStep as any).connectionId).toBeNull()
@@ -466,7 +460,7 @@ describe('createStep mutation integration tests', async () => {
     it('defaults to version 1 when app has no stepTransformer', async () => {
       // postman has no stepTransformer - version should default to 1
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
@@ -484,7 +478,7 @@ describe('createStep mutation integration tests', async () => {
 
     it('defaults to version 1 when no appKey is provided', async () => {
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
@@ -510,7 +504,7 @@ describe('createStep mutation integration tests', async () => {
 
       try {
         const newStep = await createStep(
-          null,
+          {},
           {
             input: {
               flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
@@ -548,7 +542,7 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      const newStep = await createStep(null, params, context)
+      const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
       expect(newStep.key).toBe('sendTransactionalEmail')
@@ -571,7 +565,7 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      const newStep = await createStep(null, params, context)
+      const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
       expect(newStep.key).toBe('sendTransactionalEmail')
@@ -595,10 +589,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         BadUserInputError,
       )
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         REFRESH_PIPE_MESSAGE,
       )
     })
@@ -621,10 +615,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         BadUserInputError,
       )
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         REFRESH_PIPE_MESSAGE,
       )
     })
@@ -643,7 +637,7 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      const newStep = await createStep(null, params, context)
+      const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
       expect(newStep.key).toBe('sendTransactionalEmail')
@@ -720,7 +714,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -747,7 +741,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -793,7 +787,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -824,7 +818,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -860,7 +854,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -899,7 +893,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -930,7 +924,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -956,7 +950,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: ifThenA.id } })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -994,7 +988,7 @@ describe('createStep endStepId write rules', () => {
     })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1026,7 +1020,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newIfThen = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1055,7 +1049,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepB.id } })
 
     await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1082,7 +1076,7 @@ describe('createStep endStepId write rules', () => {
     const [, , stepA] = seeded
 
     await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1110,7 +1104,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1136,7 +1130,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1161,7 +1155,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1196,7 +1190,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1224,7 +1218,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newIfThen = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1258,7 +1252,7 @@ describe('createStep endStepId write rules', () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
 
       await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1290,7 +1284,7 @@ describe('createStep endStepId write rules', () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
 
       await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1327,7 +1321,7 @@ describe('createStep endStepId write rules', () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
 
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1361,7 +1355,7 @@ describe('createStep endStepId write rules', () => {
       mocks.getLdFlagValue.mockResolvedValue(false)
 
       await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1390,7 +1384,7 @@ describe('createStep endStepId write rules', () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
 
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1427,7 +1421,7 @@ describe('createStep endStepId write rules', () => {
       mocks.getLdFlagValue.mockResolvedValue(false)
 
       await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
