@@ -21,10 +21,7 @@ import type { z } from 'zod'
 import appConfig from '@/config/app'
 import { GITBOOK_MCP_SERVER } from '@/config/flags'
 import { BadUserInputError } from '@/errors/graphql-errors'
-import {
-  buildSupportFormUrl,
-  SUPPORT_FORM_URL_PLACEHOLDER,
-} from '@/helpers/ai/build-support-form-url'
+import { buildSupportFormUrl } from '@/helpers/ai/build-support-form-url'
 import {
   closeQuietly,
   connectGitbookMcp,
@@ -45,7 +42,6 @@ import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
 } from '@/helpers/ai/repair-tool-call'
-import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
@@ -57,13 +53,13 @@ import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
+import { buildChatSystemMessages } from './build-chat-system-messages'
 import {
-  CACHE_CONTROL_PROVIDER_OPTIONS,
   createCacheBreakpointPreparer,
+  sortToolsByName,
   sumCacheWriteInputTokens,
 } from './cache-breakpoints'
 import {
-  buildEstablishedConnectionReminder,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
   stripReasoningParts,
@@ -73,6 +69,7 @@ import { parseColumnTableBlock } from './parse-column-table-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { parseTileSetupBlock } from './parse-tile-setup-block'
 import { chatRequestSchema } from './schema'
+import { replaceSupportFormUrlPlaceholder } from './support-form-url-transform'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
 const MAX_MESSAGES = 150
@@ -192,23 +189,13 @@ const handleChatStream = observe(
         rawMessages,
       )
 
-      const systemMessage = {
-        role: 'system' as const,
-        content: buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
-          SUPPORT_FORM_URL_PLACEHOLDER,
-          buildSupportFormUrl(chatId),
-        ),
-        providerOptions: CACHE_CONTROL_PROVIDER_OPTIONS,
-      }
-      // IMPORTANT: keep this after the cached system message. It changes mid-chat and would invalidate the system prompt cache.
-      const connectionReminder = buildEstablishedConnectionReminder(
-        establishedFormConnection,
-      ).trim()
       const allMessages = [
-        systemMessage,
-        ...(connectionReminder
-          ? [{ role: 'system' as const, content: connectionReminder }]
-          : []),
+        ...buildChatSystemMessages({
+          basePrompt: prompt.prompt,
+          restrictedApps,
+          chatId,
+          establishedFormConnection,
+        }),
         ...messages,
       ]
 
@@ -271,12 +258,13 @@ const handleChatStream = observe(
               streamText({
                 model,
                 messages: allMessages,
-                tools: { ...gitbookTools, ...mcpTools },
+                tools: sortToolsByName({ ...gitbookTools, ...mcpTools }),
                 stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
                 prepareStep: createCacheBreakpointPreparer(),
                 experimental_repairToolCall: repairMalformedToolName,
                 experimental_transform: [
                   repairMalformedStreamedToolNames,
+                  replaceSupportFormUrlPlaceholder(buildSupportFormUrl(chatId)),
                   smoothStream({
                     chunking: 'word', // Stream word-by-word for typing effect
                   }),
