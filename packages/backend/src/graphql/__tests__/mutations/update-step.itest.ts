@@ -204,6 +204,22 @@ describe('updateStep mutation', () => {
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
   })
 
+  it.each([null, undefined, ''])(
+    'should throw step not found when flow id is %j',
+    async (flowId) => {
+      const input = {
+        ...genericInputParams,
+        flow: { id: flowId, updatedAt: testInputTimestampString },
+      }
+
+      await expect(updateStep(null, { input }, context)).rejects.toThrow(
+        new BadUserInputError('Step not found'),
+      )
+      expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
+      expect(patchLastUpdatedSpy).not.toHaveBeenCalled()
+    },
+  )
+
   it('should set status to incomplete when key or appKey changes', async () => {
     const input = {
       ...genericInputParams,

@@ -7,6 +7,7 @@ import flowResolvers from '@/graphql/custom-resolvers/flow'
 import getFlow from '@/graphql/queries/get-flow'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
+import FlowTransfer from '@/models/flow-transfers'
 import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -243,13 +244,18 @@ describe('getFlow', () => {
 
   describe('flow with pending transfer', () => {
     it('should include pending transfer data', async () => {
-      // Create a pending transfer
-      const _newOwner = await User.query().insert({
+      const newOwner = await User.query().insert({
+        id: randomUUID(),
         email: 'new-owner@plumber.gov.sg',
       })
+      const transfer = await FlowTransfer.query().insert({
+        id: randomUUID(),
+        flowId: mockFlow.id,
+        oldOwnerId: owner.id,
+        newOwnerId: newOwner.id,
+        status: 'pending',
+      })
 
-      // Note: This would require the FlowTransfer model to be imported
-      // For now, we'll test that the query structure supports it
       const result = await getFlow(null, { id: mockFlow.id }, context)
 
       expect(result).toMatchObject({
@@ -257,6 +263,39 @@ describe('getFlow', () => {
         name: mockFlow.name,
         role: 'owner',
       })
+      expect(result.pendingTransfer).toMatchObject({
+        id: transfer.id,
+        newOwner: { id: newOwner.id, email: newOwner.email },
+      })
+    })
+  })
+
+  describe('step ordering', () => {
+    it('should return steps in position order when inserted out of order', async () => {
+      const lastStep = await Step.query().insert({
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
+        type: 'action',
+        flowId: mockFlow.id,
+        position: 4,
+        parameters: {},
+        status: 'completed',
+      })
+      const middleStep = await Step.query().insert({
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
+        type: 'action',
+        flowId: mockFlow.id,
+        position: 3,
+        parameters: {},
+        status: 'completed',
+      })
+
+      const result = await getFlow(null, { id: mockFlow.id }, context)
+
+      expect(result.steps.map((s) => s.position)).toEqual([1, 2, 3, 4])
+      expect(result.steps[2].id).toBe(middleStep.id)
+      expect(result.steps[3].id).toBe(lastStep.id)
     })
   })
 
