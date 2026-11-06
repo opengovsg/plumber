@@ -1,0 +1,52 @@
+import type { ModelMessage } from 'ai'
+
+export const CACHE_CONTROL_PROVIDER_OPTIONS = {
+  anthropic: { cacheControl: { type: 'ephemeral' as const } },
+}
+
+function withCacheBreakpoint<T extends ModelMessage>(message: T): T {
+  return {
+    ...message,
+    providerOptions: {
+      ...message.providerOptions,
+      anthropic: {
+        ...message.providerOptions?.anthropic,
+        ...CACHE_CONTROL_PROVIDER_OPTIONS.anthropic,
+      },
+    },
+  }
+}
+
+// The SDK's usage totals omit cache writes. Only provider metadata reports them.
+export function sumCacheWriteInputTokens(
+  steps: { providerMetadata?: { anthropic?: Record<string, unknown> } }[],
+): number {
+  return steps.reduce((total, step) => {
+    const tokens = step.providerMetadata?.anthropic?.cacheCreationInputTokens
+    return total + (typeof tokens === 'number' ? tokens : 0)
+  }, 0)
+}
+
+/**
+ * Creates a `prepareStep` callback that caches the conversation, not just the system prompt.
+ *
+ * Each step writes a breakpoint at its last message and keeps the previous step's breakpoint.
+ * The next step then reads the whole earlier prefix from cache, however many tool results it added.
+ */
+export function createCacheBreakpointPreparer() {
+  let previousStepLength = 0
+
+  return ({ messages }: { messages: ModelMessage[] }) => {
+    const breakpointIndexes = new Set([messages.length - 1])
+    if (previousStepLength > 0) {
+      breakpointIndexes.add(previousStepLength - 1)
+    }
+    previousStepLength = messages.length
+
+    return {
+      messages: messages.map((message, index) =>
+        breakpointIndexes.has(index) ? withCacheBreakpoint(message) : message,
+      ),
+    }
+  }
+}
