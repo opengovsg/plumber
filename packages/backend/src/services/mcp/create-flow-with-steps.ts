@@ -217,7 +217,7 @@ export async function createFlowWithStepsService({
   for (const step of requestedSteps) {
     if (
       step.key &&
-      lookupStepDefinition(step.appKey, step.key).kind === 'hidden'
+      lookupStepDefinition(step.appKey, step.key, step.type).kind === 'hidden'
     ) {
       throw new Error('Action can only be created by system')
     }

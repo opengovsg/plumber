@@ -48,9 +48,9 @@ function isInsertInsideIfThenBlock(
   )
 }
 
-/** Throws unless the app key and action key name a step the AI Builder may create. */
+/** Throws unless the app key and action key name an action the AI Builder may create. */
 export function assertStepCreatable(appKey: string, key: string): void {
-  const lookup = lookupStepDefinition(appKey, key)
+  const lookup = lookupStepDefinition(appKey, key, 'action')
 
   if (lookup.kind === 'unknown') {
     throw new Error('No such trigger or action')
