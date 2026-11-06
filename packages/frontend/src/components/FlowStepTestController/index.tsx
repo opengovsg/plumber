@@ -28,10 +28,17 @@ import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 
 import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
+import {
+  CHECK_STEP_AI_FIX_CONTROL,
+  CHECK_STEP_AI_FIX_FLAG,
+  CHECK_STEP_AI_FIX_TREATMENT,
+} from '@/config/flags'
 import { TOP_NAV_HEIGHT_NUM } from '@/config/layout'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
@@ -123,6 +130,7 @@ export default function FlowStepTestController(
     varInfoMap,
   } = useContext(EditorContext)
   const formContext = useFormContext()
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   const {
     isIfThenStep,
@@ -240,6 +248,28 @@ export default function FlowStepTestController(
   const checkStepError = lastErrorDetails
     ? readCheckStepError(lastErrorDetails)
     : null
+  const aiFixVariant = getFlagValue(
+    CHECK_STEP_AI_FIX_FLAG,
+    CHECK_STEP_AI_FIX_CONTROL,
+  )
+  const isAiFixTreatment = aiFixVariant === CHECK_STEP_AI_FIX_TREATMENT
+  const aiFixTarget =
+    checkStepError && step.appKey && step.key && !readOnly
+      ? { ...checkStepError, appKey: step.appKey, stepKey: step.key }
+      : null
+  const isAiFixEligible = aiFixTarget !== null
+
+  // Logged in both arms so the A/B test shares one denominator.
+  useEffect(() => {
+    if (!isAiFixEligible || !lastErrorDetails || !isPostHogConfigured) {
+      return
+    }
+    posthog.capture('check_step:error_shown', {
+      appKey: step.appKey,
+      stepKey: step.key,
+      variant: aiFixVariant,
+    })
+  }, [aiFixVariant, isAiFixEligible, lastErrorDetails, step.appKey, step.key])
 
   useEffect(() => {
     if (isTestExecuting) {
@@ -438,19 +468,19 @@ export default function FlowStepTestController(
           <VStack w="100%" gap={2}>
             {lastErrorDetails && (
               <Box w="100%">
-                {checkStepError && step.appKey && step.key && !readOnly ? (
+                {isAiFixTreatment && aiFixTarget ? (
                   <AiErrorFix.Provider
-                    key={`${step.id}:${checkStepError.errorName}`}
+                    key={`${step.id}:${aiFixTarget.errorName}`}
                     stepId={step.id}
-                    appKey={step.appKey}
+                    appKey={aiFixTarget.appKey}
                     appName={
                       allApps.find((app) => app.key === step.appKey)?.name ??
-                      step.appKey
+                      aiFixTarget.appKey
                     }
-                    stepKey={step.key}
-                    stepName={stepName || step.key}
-                    errorName={checkStepError.errorName}
-                    errorSolution={checkStepError.errorSolution}
+                    stepKey={aiFixTarget.stepKey}
+                    stepName={stepName || aiFixTarget.stepKey}
+                    errorName={aiFixTarget.errorName}
+                    errorSolution={aiFixTarget.errorSolution}
                   >
                     <ErrorResult
                       errorDetails={lastErrorDetails}
