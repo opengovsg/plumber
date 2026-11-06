@@ -225,7 +225,7 @@ describe('chat handler — GitBook MCP integration', () => {
     )
   })
 
-  it('substitutes the support form URL placeholder with the chat ID pre-filled', async () => {
+  it('puts the support form URL with the chat ID pre-filled in the system messages', async () => {
     const handler = router.stack[0].route.stack[0].handle
     await handler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -262,7 +262,7 @@ describe('chat handler — GitBook MCP integration', () => {
     expect(chatContext.content).not.toContain('6a979221b8ae314641032f5c=')
   })
 
-  it('caches the system prompt and moves conversation cache breakpoints each step', async () => {
+  it('wires the cache checkpoints and support URL transform into streamText', async () => {
     const handler = router.stack[0].route.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
@@ -278,10 +278,6 @@ describe('chat handler — GitBook MCP integration', () => {
         },
       }),
     )
-    expect(messages[1]).toEqual({
-      role: 'system',
-      content: expect.stringContaining('Support form URL for this chat:'),
-    })
     expect(prepareStep).toEqual(expect.any(Function))
     expect(experimental_transform).toHaveLength(3)
   })
