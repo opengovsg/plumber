@@ -19,7 +19,7 @@ const PLACEHOLDER_COLUMNS = [
 ]
 const PLACEHOLDER_ROWS = new Array(5).fill({})
 
-const createTable: MutationResolvers['createTable'] = async (
+const createTable: NonNullable<MutationResolvers['createTable']> = async (
   _parent,
   params,
   context,
