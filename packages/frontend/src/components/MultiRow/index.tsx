@@ -1,4 +1,4 @@
-import { Flex } from '@chakra-ui/react'
+import { Box, Flex } from '@chakra-ui/react'
 import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 import type { IField, IJSONValue } from '@plumber/types'
 import { ReactNode, useCallback, useContext, useEffect, useMemo } from 'react'
@@ -17,6 +17,7 @@ import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 import MultiCol from '../MultiCol.tsx'
 import AutofillConfirmDialog from './AutofillConfirmDialog'
+import ColumnsTable from './ColumnsTable'
 import RowDivider from './RowDivider'
 import useAutofill from './useAutofill'
 
@@ -31,6 +32,8 @@ export type MultiRowProps = {
   addRowButtonText?: string
   type?: string
   maxRows?: number
+  // See IFieldMultiRowMultiCol.layout.
+  layout?: 'columns'
   defaultValue?: string | IJSONValue
   // See IFieldMultiRowMultiCol.autofillable.
   autofillable?: boolean
@@ -47,6 +50,12 @@ export type MultiRowProps = {
   onRequestRemoveLastRow?: () => void
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
+// One option is not "all" of anything, so it reads as a single add.
+function autofillLabel(count: number, layout: MultiRowProps['layout']): string {
+  const noun = layout === 'columns' ? 'column' : 'field'
+  return count === 1 ? `Add 1 ${noun}` : `Add all ${count} ${noun}s`
+}
+
 function MultiRow(props: MultiRowProps): JSX.Element {
   const {
     name,
@@ -58,6 +67,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     showDivider,
     type,
     maxRows,
+    layout,
     defaultValue,
     autofillable,
     maxAutofillOptions,
@@ -79,6 +89,18 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     }
     return result
   }, [subFields])
+
+  // Table columns need empty strings, not undefined: react-hook-form otherwise
+  // refills a new or cleared row with the data of a column that was deleted.
+  const columnsRowDefaults = useMemo(
+    () =>
+      layout === 'columns'
+        ? Object.fromEntries(
+            subFields.map((subField) => [subField.key, subField.value ?? '']),
+          )
+        : newRowDefaultValue,
+    [layout, subFields, newRowDefaultValue],
+  )
 
   const {
     fields: rows,
@@ -113,30 +135,48 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     )
   }, [rowValues, subFields])
 
-  const handleAddRow = useCallback(() => {
-    // NOTE: only need to use this flag to focus on the rte
-    // if the first column is a variable-enabled string field
-    const firstColIsRte =
-      subFields?.[0]?.type === 'string' && subFields?.[0]?.variables
-    if (firstColIsRte) {
-      append({ ...newRowDefaultValue, isNew: true })
-    } else {
-      append(newRowDefaultValue)
-    }
-    // A nested useFieldArray's `append` (like `remove`) updates the form value
-    // but does not fire the form's `watch` subject, so subscribers such as the
-    // step validator gating "Check step" never recompute. Re-assert the
-    // already-updated value through `setValue`, which does notify.
-    setValue(name, getValues(name), {
-      shouldDirty: true,
-      shouldValidate: true,
-    })
-  }, [append, newRowDefaultValue, subFields, setValue, getValues, name])
+  const handleAddRow = useCallback(
+    (initial?: Record<string, unknown>) => {
+      // NOTE: only need to use this flag to focus on the rte
+      // if the first column is a variable-enabled string field
+      const firstColIsRte =
+        subFields?.[0]?.type === 'string' && subFields?.[0]?.variables
+      const newRow = { ...columnsRowDefaults, ...initial }
+      if (firstColIsRte) {
+        append({ ...newRow, isNew: true })
+      } else {
+        append(newRow)
+      }
+      // A nested useFieldArray's `append` (like `remove`) updates the form value
+      // but does not fire the form's `watch` subject, so subscribers such as the
+      // step validator gating "Check step" never recompute. Re-assert the
+      // already-updated value through `setValue`, which does notify.
+      setValue(name, getValues(name), {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    },
+    [append, columnsRowDefaults, subFields, setValue, getValues, name],
+  )
+
+  // Replaces every row in one go, e.g. to start a new step with all tile columns.
+  const handleReplaceRows = useCallback(
+    (newRows: Record<string, unknown>[]) => {
+      replace(newRows.map((row) => ({ ...columnsRowDefaults, ...row })))
+      // See the note in handleAddRow on why `setValue` re-asserts the value.
+      setValue(name, getValues(name), {
+        shouldDirty: false,
+        shouldValidate: true,
+      })
+    },
+    [replace, columnsRowDefaults, setValue, getValues, name],
+  )
 
   const {
     canAutofill,
     isLoading: isDynamicDataLoading,
     optionCount,
+    optionValues,
     onAutofillClick,
     confirm,
   } = useAutofill({
@@ -151,6 +191,16 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     getValues,
     setValue,
   })
+
+  // "Add all" only makes sense while some tile columns are not in the table yet.
+  const hasUnusedOptions = useMemo(() => {
+    const usedValues = new Set(
+      (Array.isArray(rowValues) ? rowValues : []).map(
+        (row: Record<string, unknown> | undefined) => row?.[subFields[0]?.key],
+      ),
+    )
+    return optionValues.some((value) => !usedValues.has(value))
+  }, [rowValues, optionValues, subFields])
 
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
@@ -175,6 +225,11 @@ function MultiRow(props: MultiRowProps): JSX.Element {
             onRequestRemoveLastRow()
             return
           }
+          // The last column can't be removed, so deleting it clears its inputs.
+          if (rowsToRender.length === 1 && layout === 'columns') {
+            handleReplaceRows([{}])
+            return
+          }
           remove(index)
           // A nested useFieldArray's `remove` updates the form value but does not
           // fire the form's `watch` subject, so subscribers (e.g. the step
@@ -186,119 +241,158 @@ function MultiRow(props: MultiRowProps): JSX.Element {
           })
         }
 
+        const autofillButton = (
+          <Button
+            variant="clear"
+            // The glyph has padding inside its box, so at the text size it looks too small.
+            leftIcon={<BiListPlus size="1.4em" />}
+            maxW="fit-content"
+            flexShrink={0}
+            h="auto"
+            minH={0}
+            px={0}
+            py={0}
+            isDisabled={
+              isEditorReadOnly || optionCount == null || optionCount === 0
+            }
+            isLoading={isDynamicDataLoading}
+            onClick={onAutofillClick}
+          >
+            {optionCount != null
+              ? autofillLabel(optionCount, layout)
+              : 'Add all'}
+          </Button>
+        )
+
         return (
           <Flex flexDir="column">
-            <FormLabel
-              isRequired={required}
-              description={
-                description && (
-                  <Markdown linkTarget="_blank">{description}</Markdown>
-                )
-              }
+            <Flex
+              alignItems="flex-start"
+              justifyContent="space-between"
+              gap={2}
+              mb={layout === 'columns' ? 2 : undefined}
             >
-              {label}
-            </FormLabel>
+              <FormLabel
+                mb={layout === 'columns' ? 0 : undefined}
+                isRequired={required}
+                description={
+                  description && (
+                    <Markdown linkTarget="_blank">{description}</Markdown>
+                  )
+                }
+              >
+                {label}
+              </FormLabel>
+              {layout === 'columns' &&
+                canAutofill &&
+                optionCount !== 0 &&
+                hasUnusedOptions &&
+                autofillButton}
+            </Flex>
 
-            {rowsToRender.map((row, index) => {
-              const namePrefix = `${name}.${index}`
-              return (
-                <Flex
-                  key={`${row.id}-${index}`}
-                  flexDir="column"
-                  gap={4}
-                  mb={3}
-                >
-                  {type === 'multirow-multicol' ? (
-                    <>
-                      <MultiCol
-                        name={namePrefix}
-                        subFields={subFields}
-                        visibleColumnKeys={visibleColumnKeys}
-                        canRemoveRow={canRemoveRow}
-                        isEditorReadOnly={isEditorReadOnly}
-                        remove={() => removeRow(index)}
-                        index={index}
-                        {...forwardedInputCreatorProps}
-                      />
-                      {/*
-                       * "And" divider
-                       */}
-                      {showDivider && index !== rowsToRender.length - 1 && (
-                        <RowDivider />
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {/*
-                       * Sub-Fields
-                       *
-                       * Note: we edge case the 1st sub-field to show our "remove
-                       * row" icon
-                       */}
-                      <Flex alignItems="center" gap={2}>
-                        <InputCreator
-                          schema={subFields[0]}
-                          namePrefix={namePrefix}
+            {layout === 'columns' && (
+              <Box>
+                <ColumnsTable
+                  name={name}
+                  rowIds={rowsToRender.map((row) => String(row.id))}
+                  subFields={subFields}
+                  canAddColumn={canAddRow}
+                  canRemoveColumn
+                  isEditorReadOnly={isEditorReadOnly}
+                  onAddColumn={handleAddRow}
+                  onReplaceColumns={handleReplaceRows}
+                  onRemoveColumn={removeRow}
+                  {...forwardedInputCreatorProps}
+                />
+              </Box>
+            )}
+
+            {layout !== 'columns' &&
+              rowsToRender.map((row, index) => {
+                const namePrefix = `${name}.${index}`
+                return (
+                  <Flex
+                    key={`${row.id}-${index}`}
+                    flexDir="column"
+                    gap={4}
+                    mb={3}
+                  >
+                    {type === 'multirow-multicol' ? (
+                      <>
+                        <MultiCol
+                          name={namePrefix}
+                          subFields={subFields}
+                          visibleColumnKeys={visibleColumnKeys}
+                          canRemoveRow={canRemoveRow}
+                          isEditorReadOnly={isEditorReadOnly}
+                          remove={() => removeRow(index)}
+                          index={index}
                           {...forwardedInputCreatorProps}
                         />
-                        {canRemoveRow && (
-                          <IconButton
-                            variant="clear"
-                            aria-label="Remove"
-                            icon={<BiTrash />}
-                            isDisabled={isEditorReadOnly}
-                            onClick={() => removeRow(index)}
-                            colorScheme="secondary"
-                          />
+                        {/*
+                         * "And" divider
+                         */}
+                        {showDivider && index !== rowsToRender.length - 1 && (
+                          <RowDivider />
                         )}
-                      </Flex>
-                      {subFields.slice(1).map((subField) => (
-                        <InputCreator
-                          key={`${row.id}.${subField.key}`}
-                          schema={subField}
-                          namePrefix={namePrefix}
-                          {...forwardedInputCreatorProps}
-                        />
-                      ))}
+                      </>
+                    ) : (
+                      <>
+                        {/*
+                         * Sub-Fields
+                         *
+                         * Note: we edge case the 1st sub-field to show our "remove
+                         * row" icon
+                         */}
+                        <Flex alignItems="center" gap={2}>
+                          <InputCreator
+                            schema={subFields[0]}
+                            namePrefix={namePrefix}
+                            {...forwardedInputCreatorProps}
+                          />
+                          {canRemoveRow && (
+                            <IconButton
+                              variant="clear"
+                              aria-label="Remove"
+                              icon={<BiTrash />}
+                              isDisabled={isEditorReadOnly}
+                              onClick={() => removeRow(index)}
+                              colorScheme="secondary"
+                            />
+                          )}
+                        </Flex>
+                        {subFields.slice(1).map((subField) => (
+                          <InputCreator
+                            key={`${row.id}.${subField.key}`}
+                            schema={subField}
+                            namePrefix={namePrefix}
+                            {...forwardedInputCreatorProps}
+                          />
+                        ))}
 
-                      {/*
-                       * "And" divider
-                       */}
-                      {index !== rowsToRender.length - 1 && <RowDivider />}
-                    </>
-                  )}
-                </Flex>
-              )
-            })}
+                        {/*
+                         * "And" divider
+                         */}
+                        {index !== rowsToRender.length - 1 && <RowDivider />}
+                      </>
+                    )}
+                  </Flex>
+                )
+              })}
 
             <Flex gap={2} alignItems="center">
-              {canAddRow && (
+              {canAddRow && layout !== 'columns' && (
                 <Button
                   variant="outline"
                   leftIcon={<BiPlus />}
-                  onClick={handleAddRow}
+                  onClick={() => handleAddRow()}
                   isDisabled={isEditorReadOnly}
                   maxW="fit-content"
                 >
                   {addRowButtonText ?? 'And'}
                 </Button>
               )}
-              {canAutofill && (
-                <Button
-                  variant="clear"
-                  leftIcon={<BiListPlus />}
-                  maxW="fit-content"
-                  isDisabled={
-                    isEditorReadOnly || optionCount == null || optionCount === 0
-                  }
-                  isLoading={isDynamicDataLoading}
-                  onClick={onAutofillClick}
-                >
-                  {optionCount != null
-                    ? `Add all ${optionCount} fields`
-                    : 'Add all'}
-                </Button>
-              )}
+              {canAutofill && layout !== 'columns' && autofillButton}
               {addButtonSuffix}
             </Flex>
 

@@ -41,9 +41,11 @@ const action: IRawAction = {
       },
     },
     {
-      label: 'New row data',
+      label: 'Choose what goes in each column',
+      description: 'Each time this pipe runs, a new row is added to your tile.',
       key: 'rowData',
       type: 'multirow-multicol' as const,
+      layout: 'columns' as const,
       autofillable: true,
       required: true,
       hiddenIf: {
@@ -52,7 +54,7 @@ const action: IRawAction = {
       },
       subFields: [
         {
-          placeholder: 'Select or type',
+          placeholder: 'Name column',
           key: 'columnId',
           type: 'dropdown' as const,
           required: true,
@@ -80,7 +82,7 @@ const action: IRawAction = {
           customStyle: { flex: 3 },
         },
         {
-          placeholder: 'Value',
+          placeholder: 'Type or add a variable',
           key: 'cellValue',
           type: 'string' as const,
           required: false,

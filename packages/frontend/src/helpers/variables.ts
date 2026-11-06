@@ -24,6 +24,8 @@ export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
 export interface StepWithVariables {
   id: string
   name: string
+  // Logo of the step's app, shown beside the step name in the data panel.
+  iconUrl?: string | null
   output: Variable[]
   addNew?: boolean
 }
@@ -255,11 +257,15 @@ export function extractVariables(
         // sort variable by order key in-place
         sortVariables(variables)
         const stepOrder = stepIdToOrder[executionStep.stepId] ?? index + 1
+        const iconUrl = allApps?.find(
+          (app) => app.key === executionStep.step?.appKey,
+        )?.iconUrl
 
         return {
           id: executionStep.stepId,
 
           name: `${stepOrder}. ${stepName}`,
+          iconUrl,
           output: variables,
         }
       })

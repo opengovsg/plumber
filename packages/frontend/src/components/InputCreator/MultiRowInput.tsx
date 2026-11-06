@@ -20,7 +20,11 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
   options?.map(({ name, value }) => ({ label: name as string, value: value }))
 
 type MultiRowInputProps = {
-  schema: IField & { subFields: IField[]; addRowButtonText?: string }
+  schema: IField & {
+    subFields: IField[]
+    addRowButtonText?: string
+    layout?: 'columns'
+  }
   computedName: string
   stepId?: string
   maxRows?: number
@@ -98,6 +102,7 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
       addRowButtonText={addRowButtonText}
       showDivider={type !== 'multirow-multicol'}
       type={type}
+      layout={schema.layout}
       stepId={stepId}
       maxRows={maxRows}
       defaultValue={defaultValue}

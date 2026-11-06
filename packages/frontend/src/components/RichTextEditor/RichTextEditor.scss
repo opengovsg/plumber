@@ -221,14 +221,14 @@
   }
 
   .node-variable.ProseMirror-selectednode .chakra-badge[data-content='filled'] {
-    box-shadow: 0 0 0 1px var(--chakra-colors-primary-600);
+    box-shadow: 0 0 0 1px var(--chakra-colors-secondary-500);
   }
 
   .node-variable.ProseMirror-selectednode .chakra-badge[data-content='empty'],
   .node-tableVariable.ProseMirror-selectednode
     .chakra-badge[data-content='empty'] {
     box-shadow: none;
-    background-color: var(--chakra-colors-primary-100);
+    background-color: var(--chakra-colors-secondary-100);
   }
 }
 

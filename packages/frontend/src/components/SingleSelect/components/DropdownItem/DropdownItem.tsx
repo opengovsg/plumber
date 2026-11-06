@@ -1,7 +1,8 @@
 import { Flex, Icon, ListItem, Text } from '@chakra-ui/react'
 import { dataAttr } from '@chakra-ui/utils'
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 
+import { SelectMenuOverrideContext } from '../../MenuOverrideContext'
 import { useSelectContext } from '../../SelectContext'
 import { ComboboxItem } from '../../types'
 import {
@@ -25,6 +26,7 @@ export const DropdownItem = ({
 }: DropdownItemProps): JSX.Element => {
   const { getItemProps, isItemSelected, inputValue, styles } =
     useSelectContext()
+  const compactHint = useContext(SelectMenuOverrideContext)?.compactHint
 
   const { icon, label, description, isDisabled, isActive, badge, isHint } =
     useMemo(
@@ -50,7 +52,18 @@ export const DropdownItem = ({
         })}
         role="presentation"
         pointerEvents="none"
-        sx={styles.emptyItem}
+        sx={
+          compactHint
+            ? {
+                ...styles.emptyItem,
+                bg: 'transparent',
+                fontStyle: 'normal',
+                fontSize: '14px',
+                lineHeight: '20px',
+                color: 'base.content.medium',
+              }
+            : styles.emptyItem
+        }
       >
         {label}
       </ListItem>

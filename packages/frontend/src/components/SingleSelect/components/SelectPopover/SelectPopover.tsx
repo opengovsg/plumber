@@ -7,8 +7,16 @@ import {
   size,
   useFloating,
 } from '@floating-ui/react'
-import { PropsWithChildren, useLayoutEffect, useMemo, useRef } from 'react'
+import {
+  PropsWithChildren,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
+import { SelectMenuOverrideContext } from '../../MenuOverrideContext'
 import { useSelectContext } from '../../SelectContext'
 import { SelectPopoverContext } from './SelectPopoverContext'
 
@@ -22,11 +30,19 @@ export const SelectPopoverProvider = ({
   const { setIsFocused, isOpen } = useSelectContext()
 
   const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const anchorSelector = useContext(SelectMenuOverrideContext)?.anchorSelector
+  const [anchorEl, setAnchorEl] = useState<Element | null>(null)
 
   const {
     x,
     y,
-    refs: { reference, floating, setFloating, setReference },
+    refs: {
+      reference,
+      floating,
+      setFloating,
+      setReference,
+      setPositionReference,
+    },
     strategy,
     update,
   } = useFloating({
@@ -42,12 +58,28 @@ export const SelectPopoverProvider = ({
       size({
         apply({ rects, elements }) {
           Object.assign(elements.floating.style, {
-            width: `${rects.reference.width}px`,
+            width: `${anchorEl ? anchorEl.getBoundingClientRect().width : rects.reference.width}px`,
           })
         },
       }),
     ],
   })
+
+  useLayoutEffect(() => {
+    setAnchorEl(
+      anchorSelector
+        ? (wrapperRef.current?.closest(anchorSelector) ?? null)
+        : null,
+    )
+  }, [anchorSelector])
+
+  useLayoutEffect(() => {
+    if (!anchorEl) {
+      return
+    }
+    setPositionReference(anchorEl)
+    return () => setPositionReference(null)
+  }, [anchorEl, setPositionReference])
 
   const mergedReferenceRefs = useMergeRefs(wrapperRef, setReference)
 

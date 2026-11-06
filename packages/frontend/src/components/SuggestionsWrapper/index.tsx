@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Image, Text } from '@chakra-ui/react'
 
 import { SUGGESTION_VARIABLE_ITEM_HEIGHT } from '@/components/VariablesList'
 import { StepWithVariables } from '@/helpers/variables'
@@ -22,6 +22,51 @@ export const PANEL_BODY_HEIGHT = '232px'
 // IMPORTANT: The virtualized list must scroll itself, so it needs a definite
 // height. This is the panel body less the 37px column header and its border.
 export const PANEL_LIST_MAX_HEIGHT = '195px'
+
+// Every row keeps the same 20px logo slot, so names line up whether or not the
+// step's app has a logo.
+function StepLogo({
+  iconUrl,
+  name,
+}: {
+  iconUrl?: string | null
+  name: string
+}) {
+  const placeholder = (
+    <Flex
+      boxSize="20px"
+      flexShrink={0}
+      mr={2}
+      alignItems="center"
+      justifyContent="center"
+      borderRadius="4px"
+      bg="base.divider.medium"
+      color="base.content.medium"
+      fontSize="11px"
+      fontWeight={600}
+      aria-hidden
+    >
+      {name.charAt(0).toUpperCase()}
+    </Flex>
+  )
+
+  if (!iconUrl) {
+    return placeholder
+  }
+
+  return (
+    <Image
+      src={iconUrl}
+      alt=""
+      boxSize="20px"
+      flexShrink={0}
+      mr={2}
+      borderRadius="4px"
+      fallbackStrategy="onError"
+      fallback={placeholder}
+    />
+  )
+}
 
 const PanelTitle = ({ children }: { children: string }) => {
   return (
@@ -55,7 +100,6 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
       direction="column"
       w="100%"
       h={PANEL_BODY_HEIGHT}
-      boxShadow="sm"
       borderRadius="lg"
       overflow="hidden"
     >
@@ -63,21 +107,23 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
       <Flex flex={1} minH={0}>
         {/* Left Panel --> Step Selector */}
         <Box
-          w="34%"
-          minW="144px"
+          w="38%"
+          minW="200px"
           overflowY="auto"
           borderRightWidth="1px"
           borderRightColor="base.divider.medium"
         >
           {leftPanelData.map((option, index) => {
             const isSelected = !!option.output?.length && currentTab === index
+            // The step number is implied by the list order, so it is not repeated.
+            const displayName = option.name.replace(/^\d+\.\s*/, '')
             return (
               <Flex
                 key={`primary-suggestion-${option.name}`}
                 h={`${SUGGESTION_VARIABLE_ITEM_HEIGHT}px`}
                 flexShrink={0}
                 alignItems="center"
-                px={5}
+                px={4}
                 // Same greys as the dropdown lists: 50 selected and hovered,
                 // 100 while pressed.
                 bg={isSelected ? 'secondary.50' : undefined}
@@ -89,15 +135,15 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
                 }}
                 _active={{ backgroundColor: 'secondary.100' }}
               >
+                <StepLogo iconUrl={option.iconUrl} name={displayName} />
                 <Text
                   title={option.name}
                   textStyle="body-2"
                   fontWeight={isSelected ? 500 : undefined}
                   color="base.content.strong"
-                  noOfLines={2}
-                  wordBreak="break-word"
+                  noOfLines={1}
                 >
-                  {option.name}
+                  {displayName}
                 </Text>
               </Flex>
             )
@@ -107,7 +153,7 @@ export default function SuggestionsWrapper(props: SuggestionsWrapperProps) {
         {/* Right Panel --> Data Selector */}
         <Flex
           direction="column"
-          w="66%"
+          w="62%"
           minW={0}
           position="relative"
           // Hints that the list scrolls.

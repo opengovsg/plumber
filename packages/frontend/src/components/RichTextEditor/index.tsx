@@ -54,6 +54,12 @@ import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
+import {
+  animateScrollTo,
+  getRevealScrollDelta,
+  getScrollParent,
+  reserveBottomSpace,
+} from './reveal-panel'
 import { RichTextEditorContext } from './RichTextEditorContext'
 import { StepVariable } from './StepVariablePlugin'
 import Suggestions from './Suggestions'
@@ -66,12 +72,6 @@ import {
   singleLineEditorScroll,
   substituteOldTemplates,
 } from './utils'
-import {
-  animateScrollTo,
-  getRevealScrollDelta,
-  getScrollParent,
-  reserveBottomSpace,
-} from './reveal-panel'
 
 // 4px of space plus the 1px input border that sits below the popper's anchor.
 const PANEL_GAP_FROM_INPUT = 5
@@ -359,12 +359,50 @@ const Editor = ({
     }
     const triggerRect = trigger.getBoundingClientRect()
     const anchorRect = anchor.getBoundingClientRect()
-    setAnchorMetrics({
-      offsetX: anchorRect.left - triggerRect.left,
-      width: anchorRect.width,
-    })
+    // An anchor can cap the panel width, e.g. a wide table of narrow cells.
+    const maxWidth = Number(anchor.getAttribute('data-popover-max-width'))
+    const width =
+      maxWidth > 0 ? Math.min(anchorRect.width, maxWidth) : anchorRect.width
+    // A column inside the anchor moves the panel to that column, kept within
+    // the anchor so it never runs past its right edge.
+    const columnLeft = trigger
+      .closest('[data-popover-column]')
+      ?.getBoundingClientRect().left
+    const left =
+      columnLeft == null
+        ? anchorRect.left
+        : Math.min(
+            Math.max(columnLeft, anchorRect.left),
+            anchorRect.right - width,
+          )
+    setAnchorMetrics({ offsetX: left - triggerRect.left, width })
   }, [isSuggestionsOpen, isMulticol, editor])
   const alignedMetrics = isMulticol ? anchorMetrics : null
+
+  // Any tap or click outside the editor and its panel closes the panel. Typing
+  // is not a pointer event, so it never counts as an outside action.
+  useEffect(() => {
+    if (!isSuggestionsOpen || !editor) {
+      return
+    }
+    const editorContainer = (editor.view.dom as HTMLElement).closest('.editor')
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) {
+        return
+      }
+      if (
+        editorContainer?.contains(target) ||
+        target.closest('.chakra-popover__content')
+      ) {
+        return
+      }
+      closeSuggestions()
+    }
+    document.addEventListener('pointerdown', handlePointerDown, true)
+    return () =>
+      document.removeEventListener('pointerdown', handlePointerDown, true)
+  }, [isSuggestionsOpen, editor, closeSuggestions])
 
   // Slides the page up so the whole panel is in view when it opens.
   const panelRef = useRef<HTMLElement>(null)
@@ -518,6 +556,7 @@ const Editor = ({
                 <PopoverContent
                   ref={panelRef}
                   borderRadius="lg"
+                  boxShadow="0 4px 16px rgba(0, 0, 0, 0.08)"
                   w={
                     isMulticol
                       ? alignedMetrics
@@ -535,7 +574,7 @@ const Editor = ({
                     }
                   }}
                   _focus={{
-                    boxShadow: 'none',
+                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
                     borderColor: 'inherit',
                   }}
                 >

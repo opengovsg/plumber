@@ -13,12 +13,20 @@ import {
   type UseComboboxState,
   type UseComboboxStateChangeOptions,
 } from 'downshift'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { VirtuosoHandle } from 'react-virtuoso'
 
 import { removeProblematicWhitespace } from '../RichTextEditor/utils'
 import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
 import { useLookupItems } from './hooks/useLookupItems'
+import { SelectMenuOverrideContext } from './MenuOverrideContext'
 import {
   SelectContext,
   type SharedSelectContextReturnProps,
@@ -115,6 +123,7 @@ export const SingleSelectProvider = ({
     [_size, theme?.components?.SingleSelect?.defaultProps?.size],
   )
 
+  const menuOverride = useContext(SelectMenuOverrideContext)
   const { getItemByValue } = useLookupItems({ rawItems: allItems })
 
   /**
@@ -132,7 +141,8 @@ export const SingleSelectProvider = ({
     }
     // Inline add-new: show a read-only hint at the bottom while the input is empty
     if (addNew?.type === 'inline') {
-      const hintLabel = `Type to ${addNew.label.toLowerCase()}`
+      const hintLabel =
+        menuOverride?.hintLabel ?? `Type to ${addNew.label.toLowerCase()}`
       return [
         ...allItems,
         {
@@ -144,7 +154,7 @@ export const SingleSelectProvider = ({
       ]
     }
     return allItems
-  }, [addNew, allItems])
+  }, [addNew, allItems, menuOverride?.hintLabel])
 
   const [isFocused, setIsFocused] = useState(false)
 

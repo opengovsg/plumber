@@ -565,6 +565,12 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
   subFields: IFieldMultiRowMultiColSubField[]
   maxRows?: number
   /**
+   * `columns` renders each row as a table column: subFields[0] is the column
+   * header and the remaining sub-fields stack beneath it. Defaults to one row
+   * per line.
+   */
+  layout?: 'columns'
+  /**
    * Opt-in for the "Autofill" button, which bulk-replaces rows with one row
    * per option from subFields[0]'s dynamic-data source. Only sensible when
    * every option from that source should get its own row (e.g. "set a value

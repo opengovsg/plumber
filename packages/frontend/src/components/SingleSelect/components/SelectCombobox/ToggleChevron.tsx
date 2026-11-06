@@ -1,8 +1,10 @@
 import { Icon, InputRightElement } from '@chakra-ui/react'
 import { BxsChevronDown, BxsChevronUp } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 
+import { SelectMenuOverrideContext } from '../../MenuOverrideContext'
 import { useSelectContext } from '../../SelectContext'
 
 export const ToggleChevron = (): JSX.Element => {
@@ -15,6 +17,7 @@ export const ToggleChevron = (): JSX.Element => {
     isRefreshLoading,
     isCreatingNewOption,
   } = useSelectContext()
+  const chevronIcons = useContext(SelectMenuOverrideContext)?.chevronIcons
 
   return (
     <InputRightElement
@@ -36,7 +39,15 @@ export const ToggleChevron = (): JSX.Element => {
       ) : (
         <Icon
           sx={styles.icon}
-          as={isOpen ? BxsChevronUp : BxsChevronDown}
+          as={
+            chevronIcons
+              ? isOpen
+                ? chevronIcons.open
+                : chevronIcons.closed
+              : isOpen
+                ? BxsChevronUp
+                : BxsChevronDown
+          }
           aria-disabled={isDisabled || isReadOnly}
         />
       )}

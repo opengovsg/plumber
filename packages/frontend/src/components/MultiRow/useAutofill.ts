@@ -18,6 +18,8 @@ export type UseAutofillResult = {
   // Count of options currently available from subFields[0]'s dynamic-data
   // source
   optionCount: number | undefined
+  // Values of the options from subFields[0]'s source, to tell which are in use.
+  optionValues: string[]
   // Click handler for the "Autofill" button itself: applies immediately if
   // every row is still empty, otherwise opens the confirm dialog.
   onAutofillClick: () => void
@@ -80,6 +82,9 @@ export default function useAutofill({
   } = useDynamicData(stepId, subFields?.[0], name)
 
   const optionCount = dynamicDataOptions?.length
+  const optionValues: string[] = (
+    (dynamicDataOptions as { value: string }[] | undefined) ?? []
+  ).map((option) => option.value)
 
   // Wait for the option count to resolve before rendering the button at all,
   // instead of showing it mid-load (with a spinner) only to potentially hide
@@ -140,6 +145,7 @@ export default function useAutofill({
     canAutofill,
     isLoading,
     optionCount,
+    optionValues,
     onAutofillClick,
     confirm: {
       isOpen: isConfirmOpen,
