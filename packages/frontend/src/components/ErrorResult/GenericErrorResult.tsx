@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 import { IJSONObject } from '@plumber/types'
+import type { ReactNode } from 'react'
 
 import ErrorDetailsCollapse from './ErrorDetailsCollapse'
 import SupportContactMessage from './SupportContactMessage'

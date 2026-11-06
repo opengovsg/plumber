@@ -1,5 +1,4 @@
 import { IJSONObject, IStepError } from '@plumber/types'
-
 import type { ReactNode } from 'react'
 
 import GenericErrorResult from './GenericErrorResult'
