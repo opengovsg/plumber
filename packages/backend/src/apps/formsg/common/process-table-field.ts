@@ -21,14 +21,21 @@ const createColumn = (label: string, index: number): TableColumn => {
   }
 }
 
+function parseColumnNames(question: string): string[] {
+  const { content: columnNames } = extractLastTopLevelBracketContent(question)
+  return columnNames ? columnNames.split(',').map((name) => name.trim()) : []
+}
+
+/**
+ * @param columnTitles Schema column titles. The question suffix cannot be
+ * parsed when a title has an unmatched bracket.
+ */
 export default function convertTableAnswerArrayToTableObject(
   question: string,
   answerArray: string[][],
+  columnTitles?: string[],
 ) {
-  const { content: columnNames } = extractLastTopLevelBracketContent(question)
-  const columnNamesArray = columnNames
-    ? columnNames.split(',').map((name) => name.trim())
-    : []
+  const columnNamesArray = columnTitles ?? parseColumnNames(question)
   const firstRow = answerArray[0]
 
   const columns =

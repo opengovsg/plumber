@@ -26,6 +26,9 @@ import {
 import { type FormSchemaField, mrfWorkflowDataSchema } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
 
+// decryptFormResponse removes tableColumnTitles before storing the field.
+export type MappedFormField = FormField & { tableColumnTitles?: string[] }
+
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
 
 // Mirrors ChildrenAnswerV4 in @opengovsg/formsg-sdk.
@@ -264,7 +267,7 @@ export async function processResponsesV4(
   $: IGlobalVariable,
   formId: string,
   responses: FieldResponsesV4,
-): Promise<FormField[]> {
+): Promise<MappedFormField[]> {
   const formSchemaFields: Record<string, FormSchemaField> = {}
   let schemaFieldList: FormSchemaField[] = []
   let restorableIds: Set<string> | null = null
@@ -297,7 +300,7 @@ export async function processResponsesV4(
       error: e,
     })
   }
-  const mappedResponses: FormField[] = []
+  const mappedResponses: MappedFormField[] = []
   let questionNumber = 0
   // FormSG numbers children across the submission, not per children field.
   let childNumber = 0
@@ -317,17 +320,21 @@ export async function processResponsesV4(
       const answerArray = Object.values(tableAnswer)
         .sort((a, b) => a.rowNum - b.rowNum)
         .map((row) => Object.values(row.value).map(String))
+      const suffixTitles = formSchemaFields[key]?.columns?.map((column) =>
+        column.title.replaceAll(',', ' '),
+      )
       // we follow the same format as the old table field title schema
-      if (formSchemaFields[key]?.columns) {
-        question += ` (${formSchemaFields[key]?.columns
-          ?.map((column) => column.title.replaceAll(',', ' '))
-          .join(', ')})`
+      if (suffixTitles) {
+        question += ` (${suffixTitles.join(', ')})`
       }
+      // Matches what the question parser yields, so existing labels stay the same.
+      const tableColumnTitles = suffixTitles?.map((title) => title.trim())
       mappedResponses.push({
         _id: key,
         fieldType: value.fieldType,
         question,
         answerArray,
+        ...(tableColumnTitles && { tableColumnTitles }),
       })
       continue
     }
