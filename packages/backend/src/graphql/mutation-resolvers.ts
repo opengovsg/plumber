@@ -10,6 +10,7 @@ import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
 import createFlowTransfer from './mutations/create-flow-transfer'
 import createStep from './mutations/create-step'
+import createTemplateFromFlow from './mutations/create-template-from-flow'
 import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
@@ -75,6 +76,7 @@ export default {
   registerConnection,
   createFlow,
   createTemplatedFlow,
+  createTemplateFromFlow,
   updateFlow,
   createFlowWithSteps,
   updateFlowStatus,
