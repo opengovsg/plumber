@@ -65,13 +65,15 @@ S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
 
 The script logs structured JSON to stdout. Key events to look for:
 
-| Event                            | Meaning                                                                                                                                          |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `archival.run.start`             | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                                  |
-| `archival.batch.complete`        | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.                                                                           |
-| `archival.flow.archived`         | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.               |
-| `archival.run.complete`          | Final summary — `executions_archived` (real + test), `real_executions_archived`, `test_executions_archived`, `executions_skipped`, `durationMs`. |
-| `archival.run.meta_write_failed` | The `_meta/runs` write failed after archiving. Carries the same counts as `run.complete`.                                                        |
+| Event                              | Meaning                                                                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `archival.run.start`               | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                                  |
+| `archival.batch.complete`          | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.                                                                           |
+| `archival.flow.archived`           | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.               |
+| `archival.run.complete`            | Final summary — `executions_archived` (real + test), `real_executions_archived`, `test_executions_archived`, `executions_skipped`, `durationMs`. |
+| `archival.run.meta_write_failed`   | The `_meta/runs` write failed after archiving. Carries the same counts as `run.complete`.                                                        |
+| `archival.execution.error`         | One execution failed to archive. Carries `executionId`. The row stays in Postgres and the next run retries it.                                   |
+| `archival.execution.verify_failed` | The S3 check after upload failed. Carries `executionId`, `key` and `reason`. The row stays in Postgres and the next run retries it.              |
 
 ### 4. Verify S3 contents
 

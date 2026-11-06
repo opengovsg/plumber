@@ -174,36 +174,36 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
             }
           }
 
-          // LEFT JOIN steps to fill in app_key/key for old rows that predate
-          // the denormalised columns being added to execution_steps.
-          // TODO: once all pre-denormalisation rows have been archived, drop the
-          // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
-          const steps = (await archivalDbReader('execution_steps')
-            .select(
-              'execution_steps.id',
-              'execution_steps.execution_id as executionId',
-              'execution_steps.step_id as stepId',
-              archivalDbReader.raw(
-                'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
-              ),
-              archivalDbReader.raw(
-                'COALESCE(execution_steps.key, steps.key) as "key"',
-              ),
-              'execution_steps.job_id as jobId',
-              'execution_steps.status',
-              'execution_steps.data_in as dataIn',
-              'execution_steps.data_out as dataOut',
-              'execution_steps.error_details as errorDetails',
-              'execution_steps.metadata',
-              'execution_steps.created_at as createdAt',
-              'execution_steps.updated_at as updatedAt',
-              'execution_steps.deleted_at as deletedAt',
-            )
-            .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
-            .where('execution_steps.execution_id', execution.id)
-            .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
-
           try {
+            // LEFT JOIN steps to fill in app_key/key for old rows that predate
+            // the denormalised columns being added to execution_steps.
+            // TODO: once all pre-denormalisation rows have been archived, drop the
+            // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
+            const steps = (await archivalDbReader('execution_steps')
+              .select(
+                'execution_steps.id',
+                'execution_steps.execution_id as executionId',
+                'execution_steps.step_id as stepId',
+                archivalDbReader.raw(
+                  'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
+                ),
+                archivalDbReader.raw(
+                  'COALESCE(execution_steps.key, steps.key) as "key"',
+                ),
+                'execution_steps.job_id as jobId',
+                'execution_steps.status',
+                'execution_steps.data_in as dataIn',
+                'execution_steps.data_out as dataOut',
+                'execution_steps.error_details as errorDetails',
+                'execution_steps.metadata',
+                'execution_steps.created_at as createdAt',
+                'execution_steps.updated_at as updatedAt',
+                'execution_steps.deleted_at as deletedAt',
+              )
+              .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
+              .where('execution_steps.execution_id', execution.id)
+              .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
+
             const outcome = await archiveExecution(execution, steps, {
               dryRun,
               bucket: archiveBucket,

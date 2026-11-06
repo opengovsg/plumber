@@ -89,7 +89,7 @@ let capturedModifyCbs: Array<(qb: any) => void> = []
 
 function setupDb(
   batches: ExecutionRow[][],
-  stepsByExecutionId: Record<string, ExecutionStepRow[]> = {},
+  stepsByExecutionId: Record<string, ExecutionStepRow[] | Error> = {},
 ) {
   let batchIdx = 0
   let currentStepsExecutionId: string | null = null
@@ -116,7 +116,9 @@ function setupDb(
     }),
     orderBy: vi.fn().mockImplementation(() => {
       const steps = stepsByExecutionId[currentStepsExecutionId ?? ''] ?? []
-      return Promise.resolve(steps)
+      return steps instanceof Error
+        ? Promise.reject(steps)
+        : Promise.resolve(steps)
     }),
   }
 
@@ -240,6 +242,24 @@ describe('runArchivalLoop', () => {
     await runArchivalLoop(new AbortController().signal)
 
     expect(archiveExecution).toHaveBeenCalledTimes(3)
+  })
+
+  it('logs the execution ID when the step query fails', async () => {
+    vi.mocked(archiveExecution).mockResolvedValue('archived')
+    const dbError = new Error('connection reset')
+    setupDb([[makeExecution('e1'), makeExecution('e2')], []], {
+      e1: dbError,
+      e2: [],
+    })
+
+    await runArchivalLoop(new AbortController().signal)
+
+    expect(logger.error).toHaveBeenCalledWith({
+      event: 'archival.execution.error',
+      executionId: 'e1',
+      err: dbError,
+    })
+    expect(archiveExecution).toHaveBeenCalledTimes(1)
   })
 
   it('advances cursor to the last batch item even when some executions fail', async () => {
