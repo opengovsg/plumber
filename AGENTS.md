@@ -41,12 +41,10 @@ messages. Follow them to maintain maximum clarity and eliminate filler:
 Do **not** run these yourself unless the user asks — the human runs the dev server in their own terminal.
 
 **Node version:** `pnpm`, `npm`, `npx`, and `node` must run on the nearest `.nvmrc`
-version. The Cursor hook allows the command when `node -v` already matches that
-file, including after a leading `cd`. A `cd` into a directory that does not exist
-yet uses the starting pin. Otherwise run `nvm use &&` before the tool.
-Claude Code prepends `nvm use` for the starting directory. A later `cd` into a
-different pin aborts unless `nvm use &&` follows that `cd`. `packages/e2e` has a
-separate `.nvmrc`.
+version. The Cursor hook allows the command when `node -v` already matches.
+A leading `cd` is fine. Otherwise start with `nvm use &&`.
+Claude Code runs `nvm use`. `packages/e2e` has a separate `.nvmrc`.
+Run `nvm use` after `cd packages/e2e`.
 
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
