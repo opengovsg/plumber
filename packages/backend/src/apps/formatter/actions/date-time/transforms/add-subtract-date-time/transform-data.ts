@@ -54,10 +54,29 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
       throw error
     }
 
-    throw new StepError(
-      `Configuration problem: '${firstZodParseError(error)}'`,
-      GenericSolution.ReconfigureInvalidField,
-    )
+    throw new StepError({
+      name: `Configuration problem: '${firstZodParseError(error)}'`,
+      solution: GenericSolution.ReconfigureInvalidField,
+      kind: 'config',
+    })
+  }
+}
+
+const PROCESSING_SOLUTION =
+  'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.'
+
+function parseValue(
+  dateTimeFormat: z.infer<typeof dateTimeFormatSchema>['dateTimeFormat'],
+  valueToTransform: string,
+): DateTime {
+  try {
+    return parseDateTime(dateTimeFormat, valueToTransform)
+  } catch (error) {
+    throw new StepError({
+      name: `Error processing dates: '${error.message}'`,
+      solution: PROCESSING_SOLUTION,
+      kind: 'config',
+    })
   }
 }
 
@@ -67,7 +86,7 @@ export const transformData: TransformSpec['transformData'] = async (
 ) => {
   try {
     const { dateTimeFormat, ops } = getParams($)
-    const valueAsDateTime = parseDateTime(dateTimeFormat, valueToTransform)
+    const valueAsDateTime = parseValue(dateTimeFormat, valueToTransform)
     const result = performDateMath(valueAsDateTime, ops)
 
     $.setActionItem({
@@ -80,9 +99,10 @@ export const transformData: TransformSpec['transformData'] = async (
       throw error
     }
 
-    throw new StepError(
-      `Error processing dates: '${error.message}'`,
-      'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
-    )
+    throw new StepError({
+      name: `Error processing dates: '${error.message}'`,
+      solution: PROCESSING_SOLUTION,
+      kind: 'internal',
+    })
   }
 }
