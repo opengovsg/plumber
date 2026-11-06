@@ -8,13 +8,15 @@ export const editorRightDrawerStyles = {
     w: 'full',
     px: '6',
     height: '2rem',
+    // Lines the title up with the first step card in the pipe panel.
+    mt: '5',
   },
   stepContentsWrapper: {
-    height: 'calc(100% - 1.5rem)',
+    height: 'calc(100% - 2.75rem)',
     overflowY: 'auto' as FlexProps['overflowY'],
     overflowX: 'hidden' as FlexProps['overflowX'],
     position: 'relative' as FlexProps['position'],
     px: '6',
-    top: '2.5rem',
+    top: '3.75rem',
   },
 }
