@@ -5,6 +5,7 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
+import { isUserVisible } from '@/services/step-definition'
 
 import { ifThenChildCountSchema, ifThenParametersSchema } from './actions.zod'
 
@@ -29,12 +30,7 @@ export function generateSchema(
 
   const schemas = Object.entries(activeApps)
     .flatMap(([appKey, app]) => {
-      // Hidden triggers/actions (e.g. FormSG's mrfSubmission) are
-      // system-managed. Never let the AI Builder fabricate one directly via
-      // create_pipe, same guard as create_step's hiddenFromUser check. Only a
-      // proposal preview opts in, since it never creates a step.
-      const isVisible = (item: { hiddenFromUser?: boolean }) =>
-        includeHidden || !item.hiddenFromUser
+      const isVisible = includeHidden ? () => true : isUserVisible
       const keys =
         schemaType === 'action'
           ? app?.actions?.filter(isVisible).map((action) => action.key) || []
