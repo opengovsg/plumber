@@ -4,8 +4,8 @@ import { createRoutesFromElements, Route } from 'react-router-dom'
 import ErrorPage, {
   Error403PageContent,
   Error404PageContent,
-  ErrorUnexpectedPageContent,
 } from '@/components/ErrorPage'
+import RouteErrorPage from '@/components/ErrorPage/RouteErrorPage'
 import Layout from '@/components/Layout'
 import PublicLayout from '@/components/PublicLayout'
 import * as URLS from '@/config/urls'
@@ -33,14 +33,7 @@ const Landing = lazy(() => import('@/pages/Landing'))
 const Tile = lazy(() => import('@/pages/Tile'))
 
 export default createRoutesFromElements(
-  <Route
-    path="/"
-    errorElement={
-      <ErrorPage>
-        <ErrorUnexpectedPageContent />
-      </ErrorPage>
-    }
-  >
+  <Route path="/" errorElement={<RouteErrorPage />}>
     <Route
       path={URLS.LOGIN_SGID_REDIRECT}
       element={

@@ -1,9 +1,9 @@
 import '@fontsource/space-grotesk'
 import '@opengovsg/confetti/confetti.css'
-import './posthog'
 import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
 import { createRoot } from 'react-dom/client'
+import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
 
 import ApolloProvider from '@/components/ApolloProvider'
@@ -14,6 +14,7 @@ import TimezoneProvider from '@/components/TimezoneProvider'
 import appConfig from '@/config/app'
 import { AuthenticationProvider } from '@/contexts/Authentication'
 import { LaunchDarklyProvider } from '@/contexts/LaunchDarkly'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 const container = document.getElementById('root')
 
@@ -46,19 +47,30 @@ if (['prod', 'staging'].includes(appConfig.env)) {
   })
 }
 root.render(
-  <ThemeProvider>
-    <MotionConfig reducedMotion="always">
-      <ApolloProvider>
-        <AuthenticationProvider>
-          <TimezoneProvider>
-            <LaunchDarklyProvider>
-              <SurveyProvider>
-                <RouterProvider router={router} />
-              </SurveyProvider>
-            </LaunchDarklyProvider>
-          </TimezoneProvider>
-        </AuthenticationProvider>
-      </ApolloProvider>
-    </MotionConfig>
-  </ThemeProvider>,
+  <ErrorBoundary
+    fallback={
+      <div role="alert">Something went wrong. Please refresh the page.</div>
+    }
+    onError={(error) => {
+      if (isPostHogConfigured) {
+        posthog.captureException(error)
+      }
+    }}
+  >
+    <ThemeProvider>
+      <MotionConfig reducedMotion="always">
+        <ApolloProvider>
+          <AuthenticationProvider>
+            <TimezoneProvider>
+              <LaunchDarklyProvider>
+                <SurveyProvider>
+                  <RouterProvider router={router} />
+                </SurveyProvider>
+              </LaunchDarklyProvider>
+            </TimezoneProvider>
+          </AuthenticationProvider>
+        </ApolloProvider>
+      </MotionConfig>
+    </ThemeProvider>
+  </ErrorBoundary>,
 )

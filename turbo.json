@@ -29,6 +29,19 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "POSTHOG_API_KEY",
+        "POSTHOG_PROJECT_ID",
+        "POSTHOG_HOST",
+        "RELEASE_VERSION"
+      ],
+      "passThroughEnv": [
+        "GITHUB_ACTIONS",
+        "GITHUB_SHA",
+        "GITHUB_REF_NAME",
+        "GITHUB_REPOSITORY",
+        "GITHUB_SERVER_URL"
+      ],
       "outputs": ["dist/**"]
     },
     "test:unit": {

@@ -1,61 +1,84 @@
+import posthog from '@posthog/rollup-plugin'
 import react from '@vitejs/plugin-react-swc'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import loadVersion from 'vite-plugin-package-version'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
 import { failOnLeakedNodeBuiltins } from './vite-config-utils.ts'
 
-// Ports are assigned per Superset worktree by .superset/base_port.sh and exported as
-// DEV_BACKEND_PORT / DEV_FRONTEND_PORT. Fall back to the classic 3000/3001 for a
-// plain, non-Superset `pnpm run dev`.
-const backendPort = process.env.DEV_BACKEND_PORT || '3000'
-const frontendPort = Number(process.env.DEV_FRONTEND_PORT) || 3001
-const backendTarget = `http://localhost:${backendPort}`
-
 // https://vitejs.dev/config/
-export default defineConfig({
-  // loadVersion injects package.json version into import.meta.env.PACKAGE_VERSION
-  plugins: [
-    react(),
-    viteTsconfigPaths(),
-    loadVersion(),
-    failOnLeakedNodeBuiltins(),
-  ],
-  build: {
-    // disable inline images since we don't allow them in csp
-    assetsInlineLimit: 0,
-  },
-  // Vite serves linked workspace packages as-is in dev, and the browser cannot run CommonJS.
-  optimizeDeps: {
-    include: ['@plumber/shared'],
-  },
-  server: {
-    open: `http://localhost:${frontendPort}`,
-    port: frontendPort,
-    // Fail loudly if the assigned port is taken (Superset worktrees). Stay
-    // lenient for plain dev so vite can auto-pick a free port as before.
-    strictPort: Boolean(process.env.DEV_FRONTEND_PORT),
-    proxy: {
-      '/graphql': {
-        target: backendTarget,
-        changeOrigin: true,
-        secure: false,
-      },
-      '/api': {
-        target: backendTarget,
-        changeOrigin: true,
-        secure: false,
-      },
-      '/apps': {
-        target: backendTarget,
-        changeOrigin: true,
-        secure: false,
-      },
-      '/admin/queues': {
-        target: backendTarget,
-        changeOrigin: true,
-        secure: false,
+export default ({ mode }: { mode: string }) => {
+  process.env = { ...process.env, ...loadEnv(mode, process.cwd(), '') }
+
+  // Ports are assigned per Superset worktree by .superset/base_port.sh and exported as
+  // DEV_BACKEND_PORT / DEV_FRONTEND_PORT. Fall back to the classic 3000/3001 for a
+  // plain, non-Superset `pnpm run dev`.
+  const backendPort = process.env.DEV_BACKEND_PORT || '3000'
+  const frontendPort = Number(process.env.DEV_FRONTEND_PORT) || 3001
+  const backendTarget = `http://localhost:${backendPort}`
+  const uploadSourceMaps = Boolean(
+    process.env.POSTHOG_API_KEY && process.env.POSTHOG_PROJECT_ID,
+  )
+
+  return defineConfig({
+    // loadVersion injects package.json version into import.meta.env.PACKAGE_VERSION
+    plugins: [
+      react(),
+      viteTsconfigPaths(),
+      loadVersion(),
+      failOnLeakedNodeBuiltins(),
+      posthog({
+        personalApiKey: process.env.POSTHOG_API_KEY ?? '',
+        projectId: process.env.POSTHOG_PROJECT_ID ?? '',
+        host: process.env.POSTHOG_HOST,
+        sourcemaps: {
+          enabled: uploadSourceMaps,
+          deleteAfterUpload: true,
+          releaseName: 'plumber-frontend',
+          // Docker turns an unset RELEASE_VERSION build arg into an empty string.
+          releaseVersion: process.env.RELEASE_VERSION || undefined,
+        },
+      }),
+    ],
+    build: {
+      // disable inline images since we don't allow them in csp
+      assetsInlineLimit: 0,
+      // PostHog uploads and deletes maps when credentials are available. 'hidden'
+      // omits sourceMappingURL comments while retaining maps for credential-less builds.
+      sourcemap: 'hidden',
+    },
+    // Vite serves linked workspace packages as-is in dev, and the browser cannot run CommonJS.
+    optimizeDeps: {
+      include: ['@plumber/shared'],
+    },
+    server: {
+      open: `http://localhost:${frontendPort}`,
+      port: frontendPort,
+      // Fail loudly if the assigned port is taken (Superset worktrees). Stay
+      // lenient for plain dev so vite can auto-pick a free port as before.
+      strictPort: Boolean(process.env.DEV_FRONTEND_PORT),
+      proxy: {
+        '/graphql': {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/api': {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/apps': {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/admin/queues': {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
-  },
-})
+  })
+}
