@@ -3,16 +3,12 @@ import { useCallback, useSyncExternalStore } from 'react'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
 export const CHECK_STEP_AI_FIX_FLAG = 'fix-with-ai-check-step-error'
-const CHECK_STEP_AI_FIX_CONTROL = 'control'
+const CHECK_STEP_AI_FIX_TEST = 'test'
 
 export function isCheckStepAiFixVariantEnabled(
   variant: string | boolean | undefined,
 ): boolean {
-  return (
-    variant !== undefined &&
-    variant !== false &&
-    variant !== CHECK_STEP_AI_FIX_CONTROL
-  )
+  return variant === CHECK_STEP_AI_FIX_TEST
 }
 
 /**

@@ -8,7 +8,7 @@ vi.mock('@/posthog', () => ({
 import { isCheckStepAiFixVariantEnabled } from '../useCheckStepAiFixEnabled'
 
 describe('isCheckStepAiFixVariantEnabled', () => {
-  it('is true for a non-control variant', () => {
+  it('is true for the test variant', () => {
     expect(isCheckStepAiFixVariantEnabled('test')).toBe(true)
   })
 
