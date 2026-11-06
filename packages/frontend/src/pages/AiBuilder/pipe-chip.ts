@@ -4,6 +4,8 @@ export interface PipeChoice {
   pipeId: PipeId
   name: string
   published: boolean
+  // The status mutation rejects a stale unpublish from another editor.
+  updatedAt: string
 }
 
 export type PipeChip =
