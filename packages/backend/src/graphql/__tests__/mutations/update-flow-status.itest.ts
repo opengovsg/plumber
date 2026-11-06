@@ -19,6 +19,7 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import flowQueue from '@/queues/flow'
+import { FIRST_PUBLISH_TRACKED_FROM } from '@/services/flow/update-flow-status'
 
 import { generateMockCollaborator, generateMockUser } from './flow.mock'
 import { generateMockContext } from './tiles/table.mock'
@@ -34,6 +35,13 @@ const realFlowQueue = {
 
 // In these tests we simulate the chaining of queries on currentUser.$relatedQuery('flows')
 // and the additional methods on the flow: $query, getTriggerStep etc.
+const AFTER_TRACKING_START = new Date(
+  FIRST_PUBLISH_TRACKED_FROM.getTime() + 24 * 60 * 60 * 1000,
+).toISOString()
+const BEFORE_TRACKING_START = new Date(
+  FIRST_PUBLISH_TRACKED_FROM.getTime() - 24 * 60 * 60 * 1000,
+).toISOString()
+
 describe('updateFlowStatus', () => {
   let fakeFlow: any
   let fakeQuery: any
@@ -90,6 +98,7 @@ describe('updateFlowStatus', () => {
       active: false,
       steps: [{ position: 1 }, { position: 2 }], // contiguous by default
       updatedAt: new Date().toISOString(),
+      createdAt: AFTER_TRACKING_START,
       // we will override $query to simulate patch operations
       $query: vi.fn(),
       getTriggerStep: vi.fn(),
@@ -297,7 +306,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
-      config: {},
+      config: { firstPublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -337,8 +346,7 @@ describe('updateFlowStatus', () => {
 
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
-      publishedAt: null,
-      config: {},
+      config: { lastUnpublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -361,7 +369,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
-      config: {},
+      config: { firstPublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -386,8 +394,7 @@ describe('updateFlowStatus', () => {
 
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
-      publishedAt: null,
-      config: {},
+      config: { lastUnpublishedAt: expect.any(String) },
       updatedBy: owner.id,
     })
 
@@ -408,7 +415,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {},
+        config: { firstPublishedAt: expect.any(String) },
         updatedBy: owner.id,
       })
     })
@@ -427,7 +434,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {},
+        config: { firstPublishedAt: expect.any(String) },
         updatedBy: editor.id,
       })
     })
@@ -473,7 +480,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {},
+        config: { firstPublishedAt: expect.any(String) },
         updatedBy: editor.id,
       })
     })
@@ -673,6 +680,82 @@ describe('updateFlowStatus', () => {
       expect(
         jobs.find((j) => j.key.startsWith(`flow-${fakeFlow.id}`)),
       ).toBeUndefined()
+    })
+
+    const setCreatedAt = (createdAt: string) =>
+      Flow.knex()('flows')
+        .where('id', fakeFlow.id)
+        .update({ created_at: createdAt })
+
+    const setStatus = async (active: boolean) => {
+      const realFlow: any = await Flow.query().findById(fakeFlow.id)
+      realFlow.steps = [{ position: 1 }, { position: 2 }]
+      realFlow.getTriggerStep = fakeFlow.getTriggerStep
+      realFlow.assertNotUpdatedSince = vi.fn()
+      fakeQuery.throwIfNotFound.mockResolvedValue(realFlow)
+      await updateFlowStatus(
+        {},
+        {
+          input: { ...defaultInput, active, updatedAt: realFlow.updatedAt },
+        },
+        context,
+      )
+      return Flow.query().findById(fakeFlow.id)
+    }
+
+    it('records no first publish for a pipe created before tracking started', async () => {
+      await setCreatedAt(BEFORE_TRACKING_START)
+      const published = await setStatus(true)
+      expect(published.config?.firstPublishedAt).toBeUndefined()
+      expect(published.publishedAt).not.toBeNull()
+
+      const unpublished = await setStatus(false)
+      expect(unpublished.config?.firstPublishedAt).toBeUndefined()
+      expect(unpublished.config?.lastUnpublishedAt).toBeDefined()
+    })
+
+    it('records no first publish for a pipe already published before this code ran', async () => {
+      await setCreatedAt(AFTER_TRACKING_START)
+      // Simulates the old code: it published the pipe but wrote no first publish.
+      const oldPublishedAt = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      await Flow.knex()('flows')
+        .where('id', fakeFlow.id)
+        .update({ active: true, published_at: oldPublishedAt })
+
+      const unpublished = await setStatus(false)
+      expect(unpublished.config?.lastUnpublishedAt).toBeDefined()
+
+      const republished = await setStatus(true)
+      expect(republished.config?.firstPublishedAt).toBeUndefined()
+      expect(new Date(republished.publishedAt).getTime()).toBeGreaterThan(
+        new Date(oldPublishedAt).getTime(),
+      )
+    })
+
+    it('keeps the first publish time across an unpublish and a republish', async () => {
+      await setCreatedAt(AFTER_TRACKING_START)
+      const published = await setStatus(true)
+      expect(published.config?.firstPublishedAt).toBeDefined()
+      expect(published.config?.lastUnpublishedAt).toBeUndefined()
+
+      const unpublished = await setStatus(false)
+      expect(unpublished.active).toBe(false)
+      expect(unpublished.publishedAt).toEqual(published.publishedAt)
+      expect(unpublished.config?.firstPublishedAt).toEqual(
+        published.config?.firstPublishedAt,
+      )
+      expect(unpublished.config?.lastUnpublishedAt).toBeDefined()
+
+      const republished = await setStatus(true)
+      expect(republished.config?.firstPublishedAt).toEqual(
+        published.config?.firstPublishedAt,
+      )
+      expect(
+        new Date(republished.publishedAt).getTime(),
+      ).toBeGreaterThanOrEqual(new Date(published.publishedAt).getTime())
+      expect(republished.config?.lastUnpublishedAt).toEqual(
+        unpublished.config?.lastUnpublishedAt,
+      )
     })
   })
 })

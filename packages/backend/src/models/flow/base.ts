@@ -8,6 +8,7 @@ class BaseFlow extends Base {
   name!: string
   userId!: string
   active!: boolean
+  // The latest publish. It stays set after an unpublish.
   publishedAt?: string | null
   remoteWebhookId?: string | null
   testExecutionId?: string | null

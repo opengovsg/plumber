@@ -35,6 +35,9 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['attachments']
     delete prevConfig['errorConfig']
     delete prevConfig['aiBuilderConfig']
+    // A copy has never been published.
+    delete prevConfig['firstPublishedAt']
+    delete prevConfig['lastUnpublishedAt']
     // Admins set these per Pipe, so a copy must not inherit them.
     delete prevConfig['maxQps']
     delete prevConfig['rejectIfOverMaxQps']

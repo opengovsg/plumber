@@ -257,6 +257,9 @@ export interface IFlowConfig {
     }>
   }
   isForceClogged?: boolean
+  // Analytics needs the first publish, which a later publish would overwrite.
+  firstPublishedAt?: string
+  lastUnpublishedAt?: string
   // Set to true to prevent the archival job from archiving executions for this
   // flow. Absence (undefined) means archiving is enabled. Used by the
   // rehydration CLI to protect restored executions from same-night re-archival;
