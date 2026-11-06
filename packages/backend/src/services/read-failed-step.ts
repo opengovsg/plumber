@@ -1,6 +1,7 @@
 import type {
   IField,
   IJSONObject,
+  IJSONValue,
   IRawAction,
   IRawTrigger,
 } from '@plumber/types'
@@ -8,12 +9,13 @@ import type {
 import { isEqual } from 'lodash'
 
 import apps from '@/apps'
+import { SECRET_KEY_REGEXP } from '@/helpers/redaction/sensitive-keys'
 import type User from '@/models/user'
+import { redactCredentials, REDACTED_VALUE } from '@/services/mcp/get-flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
-const SECRET_KEY =
-  /(secret|password|token|credential|authorization|private|api[-_]?key)/i
+export const TRUNCATED_VALUE = '[TRUNCATED]'
 const MAX_STRING_LENGTH = 500
 const MAX_ARRAY_LENGTH = 40
 const MAX_DEPTH = 6
@@ -49,64 +51,47 @@ type ReadableStep = {
   } | null
 }
 
-function isSecretKey(key: string): boolean {
-  return SECRET_KEY.test(key)
+function holdsCredentials(value: IJSONValue | undefined): boolean {
+  return value !== undefined && !isEqual(redactCredentials(value), value)
 }
 
-function containsSecretKey(value: unknown): boolean {
-  if (!value || typeof value !== 'object') {
-    return false
+function containsPlaceholder(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return value.includes(REDACTED_VALUE) || value.includes(TRUNCATED_VALUE)
   }
-  if (Array.isArray(value)) {
-    return value.some(containsSecretKey)
+  if (value && typeof value === 'object') {
+    return Object.values(value).some(containsPlaceholder)
   }
-  return Object.entries(value).some(
-    ([key, nested]) => isSecretKey(key) || containsSecretKey(nested),
-  )
+  return false
 }
 
-/**
- * Saved values name the broken field. Secret-like keys stay out of the prompt.
- */
-function presentStepValue(value: unknown, depth = 0): unknown {
+function truncateStepValue(value: unknown, depth = 0): unknown {
   if (depth > MAX_DEPTH) {
-    return '[truncated]'
+    return TRUNCATED_VALUE
   }
   if (typeof value === 'string') {
-    const withoutIds = value.replace(
-      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
-      '[id]',
-    )
-    return withoutIds.length > MAX_STRING_LENGTH
-      ? `${withoutIds.slice(0, MAX_STRING_LENGTH)}...`
-      : withoutIds
-  }
-  if (
-    typeof value === 'number' ||
-    typeof value === 'boolean' ||
-    value == null
-  ) {
-    return value
+    return value.length > MAX_STRING_LENGTH
+      ? `${value.slice(0, MAX_STRING_LENGTH)}${TRUNCATED_VALUE}`
+      : value
   }
   if (Array.isArray(value)) {
     const visible = value
       .slice(0, MAX_ARRAY_LENGTH)
-      .map((item) => presentStepValue(item, depth + 1))
+      .map((item) => truncateStepValue(item, depth + 1))
     if (value.length > MAX_ARRAY_LENGTH) {
-      visible.push(`[${value.length - MAX_ARRAY_LENGTH} more items]`)
+      visible.push(TRUNCATED_VALUE)
     }
     return visible
   }
-  if (typeof value === 'object') {
-    const presented: Record<string, unknown> = {}
-    for (const [key, nested] of Object.entries(value)) {
-      presented[key] = isSecretKey(key)
-        ? '[redacted]'
-        : presentStepValue(nested, depth + 1)
-    }
-    return presented
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [
+        key,
+        truncateStepValue(nested, depth + 1),
+      ]),
+    )
   }
-  return null
+  return value
 }
 
 function fieldDefinitions(
@@ -163,7 +148,9 @@ export function presentFailedStep(step: ReadableStep): FailedStepView {
     status: step.status,
     connectionLabel: step.connection ? connectionLabel(step.connection) : null,
     fields,
-    parameters: presentStepValue(step.parameters ?? {}) as IJSONObject,
+    parameters: truncateStepValue(
+      redactCredentials(step.parameters ?? {}),
+    ) as IJSONObject,
   }
 }
 
@@ -208,10 +195,15 @@ export async function updateFailedStepParameters(
   }
   if (
     Object.keys(parameters).some(
-      (key) => isSecretKey(key) || containsSecretKey(step.parameters?.[key]),
+      (key) =>
+        SECRET_KEY_REGEXP.test(key) || holdsCredentials(step.parameters?.[key]),
     )
   ) {
     return { error: 'AI cannot safely update a field with protected values.' }
+  }
+  // IMPORTANT: get_step shows a lossy copy, so writing a marker back would overwrite the real value.
+  if (containsPlaceholder(parameters)) {
+    return { error: 'AI cannot update a field it could not fully read.' }
   }
 
   const before = step.parameters ?? {}

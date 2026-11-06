@@ -39,6 +39,7 @@ const savedStep = {
   parameters: {
     columnValues: { Name: '{{trigger.name}}' },
     secretKey: 'do-not-leak',
+    headers: [{ key: 'Authorization', value: 'Bearer do-not-leak' }],
   },
   connection: {
     key: 'excel',
@@ -59,7 +60,7 @@ describe('replaceParameterKeysWithLabels', () => {
 })
 
 describe('readFailedStep', () => {
-  it('returns the saved fields and redacts secret-like keys', async () => {
+  it('returns the saved fields and redacts credentials', async () => {
     await expect(
       readFailedStep(userWithStep(savedStep), stepId, {
         appKey: 'm365-excel',
@@ -69,7 +70,8 @@ describe('readFailedStep', () => {
       connectionLabel: 'Budget workbook',
       parameters: {
         columnValues: { Name: '{{trigger.name}}' },
-        secretKey: '[redacted]',
+        secretKey: '[REDACTED]',
+        headers: [{ key: 'Authorization', value: '[REDACTED]' }],
       },
       fields: expect.arrayContaining([
         expect.objectContaining({ key: 'columnValues' }),
@@ -133,18 +135,26 @@ describe('updateFailedStepParameters', () => {
     })
   })
 
-  it('does not update protected values', async () => {
+  it.each([
+    [
+      { secretKey: 'replacement' },
+      'AI cannot safely update a field with protected values.',
+    ],
+    [{ headers: [] }, 'AI cannot safely update a field with protected values.'],
+    [
+      { columnValues: { Name: '{{trigger.name}}[TRUNCATED]' } },
+      'AI cannot update a field it could not fully read.',
+    ],
+  ])('refuses to write %j', async (parameters, error) => {
     await expect(
       updateFailedStepParameters(
         userWithStep(savedStep),
         stepId,
         { appKey: 'm365-excel', stepKey: 'createTableRow' },
-        { secretKey: 'replacement' },
+        parameters,
         'trace-1',
       ),
-    ).resolves.toEqual({
-      error: 'AI cannot safely update a field with protected values.',
-    })
+    ).resolves.toEqual({ error })
 
     expect(mocks.updateStepParametersService).not.toHaveBeenCalled()
   })
