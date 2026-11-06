@@ -5,14 +5,19 @@ export type SilverColumnType = 'STRING' | 'TIMESTAMP' | 'INT64' | 'BOOLEAN'
 
 export type SilverRow = Record<string, string | Date | number | boolean | null>
 
+// Explicit types keep the schema stable when a column is all null.
+export type ParquetColumns<Row extends SilverRow> = {
+  [K in keyof Row & string]: SilverColumnType
+}
+
 export interface SilverTable<Row extends SilverRow> {
   name: string
-  // Explicit types keep the schema stable when a column is all null.
-  columns: { [K in keyof Row & string]: SilverColumnType }
+  columns: ParquetColumns<Row>
   fetchRows: (db: Knex) => Promise<Row[]>
 }
 
 export const SILVER_PREFIX = 'silver/'
+export const BRONZE_PREFIX = 'bronze/'
 
 const COLUMN_SCHEMA: Record<SilverColumnType, Omit<SchemaElement, 'name'>> = {
   STRING: { type: 'BYTE_ARRAY', converted_type: 'UTF8' },
@@ -30,6 +35,11 @@ export function buildSilverKey(tableName: string): string {
   return `${SILVER_PREFIX}${tableName}/current.parquet`
 }
 
+// One file per Singapore day. A rerun of a day overwrites its file.
+export function buildBronzeDayKey(tableName: string, day: string): string {
+  return `${BRONZE_PREFIX}${tableName}/day=${day}/current.parquet`
+}
+
 function toParquetValue(
   type: SilverColumnType,
   value: SilverRow[string],
@@ -44,7 +54,14 @@ export function encodeSilverTable<Row extends SilverRow>(
   table: SilverTable<Row>,
   rows: Row[],
 ): Buffer {
-  const columns = Object.entries(table.columns) as [string, SilverColumnType][]
+  return encodeParquet(table.columns, rows)
+}
+
+export function encodeParquet<Row extends SilverRow>(
+  parquetColumns: ParquetColumns<Row>,
+  rows: Row[],
+): Buffer {
+  const columns = Object.entries(parquetColumns) as [string, SilverColumnType][]
   const schema: SchemaElement[] = [
     { name: 'root', num_children: columns.length },
     ...columns.map(([name, type]) => ({
