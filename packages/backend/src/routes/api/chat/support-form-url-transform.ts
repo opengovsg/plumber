@@ -38,32 +38,33 @@ export function replaceSupportFormUrlPlaceholder(
       }
     }
 
-    return new TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>>(
-      {
-        transform(chunk, controller) {
-          if (chunk.type === 'text-delta') {
-            const text = (
-              (pendingById.get(chunk.id) ?? '') + chunk.text
-            ).replaceAll(SUPPORT_FORM_URL_PLACEHOLDER, supportFormUrl)
-            const heldLength = placeholderPrefixLength(text)
-            pendingById.set(chunk.id, text.slice(text.length - heldLength))
-            const ready = text.slice(0, text.length - heldLength)
-            if (ready) {
-              controller.enqueue({ ...chunk, text: ready })
-            }
-            return
+    return new TransformStream<
+      TextStreamPart<ToolSet>,
+      TextStreamPart<ToolSet>
+    >({
+      transform(chunk, controller) {
+        if (chunk.type === 'text-delta') {
+          const text = (
+            (pendingById.get(chunk.id) ?? '') + chunk.text
+          ).replaceAll(SUPPORT_FORM_URL_PLACEHOLDER, supportFormUrl)
+          const heldLength = placeholderPrefixLength(text)
+          pendingById.set(chunk.id, text.slice(text.length - heldLength))
+          const ready = text.slice(0, text.length - heldLength)
+          if (ready) {
+            controller.enqueue({ ...chunk, text: ready })
           }
-          if (chunk.type === 'text-end') {
-            flush(chunk.id, controller)
-          }
-          controller.enqueue(chunk)
-        },
-        flush(controller) {
-          for (const id of [...pendingById.keys()]) {
-            flush(id, controller)
-          }
-        },
+          return
+        }
+        if (chunk.type === 'text-end') {
+          flush(chunk.id, controller)
+        }
+        controller.enqueue(chunk)
       },
-    )
+      flush(controller) {
+        for (const id of [...pendingById.keys()]) {
+          flush(id, controller)
+        }
+      },
+    })
   }
 }

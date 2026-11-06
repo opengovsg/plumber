@@ -292,7 +292,9 @@ describe('chat handler — GitBook MCP integration', () => {
       create_pipe: vi.fn(),
     } as unknown as ReturnType<typeof createMcpBridgeTools>)
     vi.mocked(experimental_createMCPClient).mockResolvedValueOnce({
-      tools: vi.fn().mockResolvedValue({ search_docs: vi.fn(), get_page: vi.fn() }),
+      tools: vi
+        .fn()
+        .mockResolvedValue({ search_docs: vi.fn(), get_page: vi.fn() }),
       close: vi.fn().mockResolvedValue(undefined),
     } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
     const handler = router.stack[0].route.stack[0].handle
