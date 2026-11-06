@@ -923,9 +923,6 @@ importers:
       '@plumber/types':
         specifier: workspace:*
         version: link:../types
-      '@posthog/cli':
-        specifier: 0.19.0
-        version: 0.19.0
       '@posthog/rollup-plugin':
         specifier: ^1.6.2
         version: 1.6.2(rollup@4.59.0)
@@ -3798,11 +3795,6 @@ packages:
 
   '@posthog/cli@0.18.12':
     resolution: {integrity: sha512-/eT9riWOkBb9uwsdOxQgW3fan/T3hwT8rvwZCzPl3DAgSBEhzpP59usD0fyFS++X2967E5AQe74nrBw1rywf6A==}
-    engines: {node: '>=14.14', npm: '>=6'}
-    hasBin: true
-
-  '@posthog/cli@0.19.0':
-    resolution: {integrity: sha512-2fh0UepeCIjyW9MJR0lpMfxaGIgQMj30nI8Nn+wR78Rghk9kJMolxwmh2XaQkOKws4IpuV3y3G2dF2BW8D22iQ==}
     engines: {node: '>=14.14', npm: '>=6'}
     hasBin: true
 
@@ -14325,10 +14317,6 @@ snapshots:
       '@posthog/types': 1.412.1
 
   '@posthog/cli@0.18.12':
-    dependencies:
-      detect-libc: 2.1.2
-
-  '@posthog/cli@0.19.0':
     dependencies:
       detect-libc: 2.1.2
 
