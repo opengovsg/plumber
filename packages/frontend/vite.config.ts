@@ -34,6 +34,9 @@ export default ({ mode }: { mode: string }) => {
         sourcemaps: {
           enabled: uploadSourceMaps,
           deleteAfterUpload: true,
+          releaseName: 'plumber-frontend',
+          // Docker turns an unset RELEASE_VERSION build arg into an empty string.
+          releaseVersion: process.env.RELEASE_VERSION || undefined,
         },
       }),
     ],

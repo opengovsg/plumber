@@ -29,7 +29,12 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "env": ["POSTHOG_API_KEY", "POSTHOG_PROJECT_ID", "POSTHOG_HOST"],
+      "env": [
+        "POSTHOG_API_KEY",
+        "POSTHOG_PROJECT_ID",
+        "POSTHOG_HOST",
+        "RELEASE_VERSION"
+      ],
       "passThroughEnv": [
         "GITHUB_ACTIONS",
         "GITHUB_SHA",
