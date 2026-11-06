@@ -51,7 +51,7 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
          * (TODO: phase 2) Editor will be able to add their own connections
          */
         const verifiedConnection = await getConnection({
-          context,
+          user: context.currentUser,
           connectionId: connection?.id,
           flowId: flow.id,
           includeOwnConnections: flow.role === 'owner',
