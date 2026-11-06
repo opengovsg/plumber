@@ -403,7 +403,7 @@ async function getDataOutMetadata(
     if (orderA === null) {
       return 1
     }
-    return orderA - orderB
+    return orderA - (orderB ?? 0)
   })
 
   /**
