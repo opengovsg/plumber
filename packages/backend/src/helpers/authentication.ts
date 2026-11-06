@@ -11,6 +11,7 @@ import {
   parseAdminToken,
 } from '@/helpers/auth'
 import { getClientIp } from '@/helpers/get-client-ip'
+import { setRequestLogUserId } from '@/helpers/morgan'
 import { UnauthenticatedContext } from '@/types/express/context'
 
 export const setCurrentUserContext = async ({
@@ -45,6 +46,10 @@ export const setCurrentUserContext = async ({
     context.isAdminOperation = true
   } else {
     context.currentUser = await getLoggedInUser(req)
+  }
+
+  if (context.currentUser && res) {
+    setRequestLogUserId(res, context.currentUser.id)
   }
 
   return context
