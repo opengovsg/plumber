@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import {
   Box,
   Button,
@@ -13,12 +13,15 @@ import {
   Tooltip,
   useDisclosure,
 } from '@chakra-ui/react'
+import { useToast } from '@opengovsg/design-system-react'
 import { parsePipeId } from '@plumber/shared'
 import debounce from 'lodash/debounce'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
+import UnpublishConfirmationDialog from '@/components/EditorLayout/UnpublishConfirmationDialog'
 import { PipeIcon } from '@/components/Icons'
+import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
 
 import type { PipeChoice } from '../pipe-chip'
@@ -33,7 +36,30 @@ const flowListNodeSchema = z.object({
   name: z.string(),
   active: z.boolean(),
   role: z.enum(['owner', 'editor', 'viewer']),
+  updatedAt: z.union([z.string().min(1), z.number()]).transform(String),
 })
+
+function readUnpublishError(error: unknown): string {
+  const fallback = "Couldn't unpublish this pipe."
+  if (typeof error !== 'object' || error === null) {
+    return fallback
+  }
+  if (!('graphQLErrors' in error)) {
+    return fallback
+  }
+  const { graphQLErrors } = error
+  if (!Array.isArray(graphQLErrors) || graphQLErrors.length === 0) {
+    return fallback
+  }
+  const first = graphQLErrors[0]
+  if (typeof first !== 'object' || first === null) {
+    return fallback
+  }
+  if (!('message' in first) || typeof first.message !== 'string') {
+    return fallback
+  }
+  return first.message.length > 0 ? first.message : fallback
+}
 
 function readEditablePipe(node: unknown): PipeChoice | null {
   const parsed = flowListNodeSchema.safeParse(node)
@@ -48,7 +74,12 @@ function readEditablePipe(node: unknown): PipeChoice | null {
   if (!pipeId) {
     return null
   }
-  return { pipeId, name, published: parsed.data.active }
+  return {
+    pipeId,
+    name,
+    published: parsed.data.active,
+    updatedAt: parsed.data.updatedAt,
+  }
 }
 
 export default function SelectPipePopover({
@@ -60,6 +91,13 @@ export default function SelectPipePopover({
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const didFocusRef = useRef(false)
+  const unpublishCancelRef = useRef(null)
+  const toast = useToast()
+  const [pendingUnpublish, setPendingUnpublish] = useState<PipeChoice | null>(
+    null,
+  )
+  const [updateFlowStatus, { loading: isUnpublishing }] =
+    useMutation(UPDATE_FLOW_STATUS)
 
   const debounceSearch = useMemo(
     () => debounce((value: string) => setDebouncedSearch(value), 500),
@@ -110,6 +148,35 @@ export default function SelectPipePopover({
   }, [isOpen, data])
 
   const searchActive = searchQuery.trim().length > 0
+
+  const confirmUnpublish = async () => {
+    if (!pendingUnpublish) {
+      return
+    }
+    try {
+      await updateFlowStatus({
+        variables: {
+          input: {
+            id: pendingUnpublish.pipeId,
+            active: false,
+            updatedAt: pendingUnpublish.updatedAt,
+          },
+        },
+      })
+    } catch (error) {
+      toast({
+        title: readUnpublishError(error),
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top',
+      })
+      return
+    }
+    const choice = pendingUnpublish
+    setPendingUnpublish(null)
+    onSelect(choice)
+  }
 
   return (
     <Popover isOpen={isOpen} onClose={handleClose} placement="top-start" isLazy>
@@ -184,28 +251,27 @@ export default function SelectPipePopover({
                     py={2}
                     borderRadius="md"
                     bg={idx % 2 === 0 ? 'gray.50' : 'white'}
-                    aria-disabled={choice.published}
-                    cursor={choice.published ? 'not-allowed' : 'pointer'}
-                    _hover={choice.published ? {} : { bg: 'primary.50' }}
-                    _active={choice.published ? {} : { bg: 'primary.100' }}
+                    _hover={{ bg: 'primary.50' }}
+                    _active={{ bg: 'primary.100' }}
                     onClick={() => {
+                      handleClose()
                       if (choice.published) {
+                        setPendingUnpublish(choice)
                         return
                       }
-                      handleClose()
                       onSelect(choice)
                     }}
                   >
                     <Text
                       textStyle="body-2"
                       whiteSpace="normal"
-                      color={choice.published ? 'gray.400' : 'gray.800'}
+                      color="gray.800"
                     >
                       {choice.name}
                     </Text>
                     {choice.published ? (
                       <Text textStyle="caption-1" color="gray.500">
-                        Published. Unpublish it in the editor to edit it here.
+                        Published
                       </Text>
                     ) : null}
                   </Box>
@@ -216,5 +282,14 @@ export default function SelectPipePopover({
         </PopoverBody>
       </PopoverContent>
     </Popover>
+    <UnpublishConfirmationDialog
+      cancelRef={unpublishCancelRef}
+      flowName={pendingUnpublish?.name ?? ''}
+      isOpen={pendingUnpublish !== null}
+      isLoading={isUnpublishing}
+      onClose={() => setPendingUnpublish(null)}
+      onUnpublish={confirmUnpublish}
+      steps={[]}
+    />
   )
 }
