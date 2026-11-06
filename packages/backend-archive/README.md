@@ -200,6 +200,30 @@ pnpm --filter backend-archive run analytics:export-local --tables flow_transfer,
 duckdb -c "DESCRIBE SELECT * FROM read_parquet('analytics-out/silver/dim_user/current.parquet')"
 ```
 
+## Extracting the mutation log
+
+The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It runs a CloudWatch Logs Insights query on `ANALYTICS_REQUEST_LOG_GROUP` and writes one Parquet file per Singapore day to `bronze/mutation_log/day=YYYY-MM-DD/current.parquet`. A rerun of a day overwrites that day's file. It writes only when `APP_ENV` is `prod` or `staging`.
+
+Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `connection_id` and `http_status`. `operation` is the mutation's root field, such as `updateFlow`. No other variable is kept. Lines logged before the request log carried a user id have no `user_id`.
+
+`analytics:mutation-log` runs the same code for a range of days, for example to extract history:
+
+| Flag                 | Meaning                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `--from YYYY-MM-DD`  | First Singapore day.                                                                                           |
+| `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                              |
+| `--log-group <name>` | Server log group. Default: `ANALYTICS_REQUEST_LOG_GROUP`.                                                      |
+| `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                           |
+| `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. |
+
+The query reads AWS credentials from the default chain. To try one day against production from your own machine:
+
+```bash
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out ./mutation-log-out
+```
+
+Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.
+
 ---
 
 ## Agency mapping
@@ -322,6 +346,8 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 | `ARCHIVE_MAX_RUNTIME_MS`           | **yes**        | —                        | Wall-clock limit for a single run (ms). Set to `0` to disable.                                                                               |
 | `ARCHIVE_DELETED_FLOWS_ONLY`       | no             | `false`                  | Restrict archival to executions belonging to soft-deleted flows.                                                                             |
 | `ARCHIVE_TEST_RUNS`                | no             | `false`                  | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
+| `ANALYTICS_BUCKET`                 | yes (prod)     | —                        | S3 bucket for the analytics `bronze/` and `silver/` files.                                                                                   |
+| `ANALYTICS_REQUEST_LOG_GROUP`      | yes (prod)     | —                        | Server log group the mutation log is extracted from.                                                                                         |
 
 ---
 

@@ -22,7 +22,11 @@
       "environment": [
         { "name": "APP_ENV", "value": "<ENVIRONMENT>" },
         { "name": "POSTGRES_PORT", "value": "5432" },
-        { "name": "POSTGRES_ENABLE_SSL", "value": "true" }
+        { "name": "POSTGRES_ENABLE_SSL", "value": "true" },
+        {
+          "name": "ANALYTICS_REQUEST_LOG_GROUP",
+          "value": "plumber-<ENVIRONMENT>/ecs/application-server"
+        }
       ],
       "secrets": [
         {
