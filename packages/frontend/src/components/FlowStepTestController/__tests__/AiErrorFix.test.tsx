@@ -1,7 +1,7 @@
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
 // @vitest-environment jsdom
 import { createRoot } from 'react-dom/client'
 import { act } from 'react-dom/test-utils'
-import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ThemeProvider from '@/components/ThemeProvider'

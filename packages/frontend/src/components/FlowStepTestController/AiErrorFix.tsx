@@ -1,3 +1,6 @@
+import { useApolloClient } from '@apollo/client'
+import { Box, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import {
   createContext,
   type ReactNode,
@@ -6,9 +9,6 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { BiSolidMagicWand } from 'react-icons/bi'
-import { useApolloClient } from '@apollo/client'
-import { Box, Text } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { GET_FLOW } from '@/graphql/queries/get-flow'

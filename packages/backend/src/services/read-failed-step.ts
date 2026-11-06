@@ -5,7 +5,6 @@ import type {
   IRawAction,
   IRawTrigger,
 } from '@plumber/types'
-
 import { isEqual } from 'lodash'
 
 import apps from '@/apps'

@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import type { Response } from 'express'
 import { Router } from 'express'
 import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
@@ -61,7 +62,7 @@ export async function postStepErrorFix(
   }
 }
 
-const router = Router()
+const router: Router = Router()
 
 router.post(
   '/',
