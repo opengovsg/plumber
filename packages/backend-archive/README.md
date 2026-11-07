@@ -174,6 +174,34 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ---
 
+## Exporting analytics tables
+
+The archival task writes the silver analytics tables to S3 each night, before it archives. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`.
+
+`analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
+
+| Flag           | Meaning                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`.                                      |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                           |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. |
+
+Pass exactly one of `--out` and `--s3`.
+
+To export production data to your own machine, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine). Then:
+
+```bash
+pnpm --filter backend-archive run analytics:export-local --tables flow_transfer,dim_user --out ./analytics-out
+```
+
+`dim_user` holds email addresses. Keep the folder on your machine and delete it after the upload. Check a file with DuckDB:
+
+```bash
+duckdb -c "DESCRIBE SELECT * FROM read_parquet('analytics-out/silver/dim_user/current.parquet')"
+```
+
+---
+
 ## Agency mapping
 
 Two files in `data/` map email domains to agencies. The export reads them at runtime.
@@ -183,7 +211,12 @@ Two files in `data/` map email domains to agencies. The export reads them at run
 | `agencies.csv`       | `canonical`, `agency_name`, `category` | One row per agency. `canonical` is its main email domain.                  |
 | `agency-domains.csv` | `domain`, `canonical`                  | One row per email domain, including subdomains, renamed domains and typos. |
 
-A domain with no row falls back to its parent domain. `gt.tech.gov.sg` tries `tech.gov.sg`. The lookup never falls back to `gov.sg`, `edu.sg`, `com.sg` or `sg`. A domain that still has no match is `unclassified`.
+A domain with no row falls back to its parent domain. `gt.tech.gov.sg` tries `tech.gov.sg`. The lookup never falls back to `gov.sg`, `edu.sg`, `com.sg` or `sg`. A domain that still has no match is `unclassified`. `dim_user` takes `agency`, `agency_name` and `agency_category` from this lookup. Its `is_internal` is true for every domain that maps to OGP.
+
+Each `dim_user` export logs two lists with verified-user counts:
+
+- `analytics.agency.unclassified`: domains with no match. Add a row for any you can identify.
+- `analytics.agency.fallback`: domains that matched only through a parent domain.
 
 IMPORTANT: the files are public. Add only government domains and public bodies. Never add user counts.
 
