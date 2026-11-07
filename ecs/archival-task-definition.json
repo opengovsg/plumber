@@ -66,6 +66,10 @@
           "valueFrom": "plumber-<ENVIRONMENT>-archive-bucket"
         },
         {
+          "name": "ANALYTICS_BUCKET",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-analytics-bucket"
+        },
+        {
           "name": "ARCHIVE_DELETED_FLOWS_ONLY",
           "valueFrom": "plumber-<ENVIRONMENT>-archive-deleted-flows-only"
         },
