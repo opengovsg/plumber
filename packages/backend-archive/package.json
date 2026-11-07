@@ -15,7 +15,9 @@
     "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
     "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
     "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
-    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts",
+    "analytics:export": "ts-node --swc src/scripts/export-analytics.ts",
+    "analytics:export-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/export-analytics.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
