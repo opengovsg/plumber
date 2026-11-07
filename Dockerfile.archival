@@ -29,6 +29,8 @@ FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc6
 WORKDIR /opt/plumber
 
 COPY --from=build /opt/plumber/packages/backend-archive/dist ./packages/backend-archive/dist
+# The agency mapping CSVs are read at runtime from the package root.
+COPY --from=build /opt/plumber/packages/backend-archive/data ./packages/backend-archive/data
 COPY --from=build /opt/plumber/deploy/backend-archive/package.json ./packages/backend-archive/package.json
 COPY --from=build /opt/plumber/deploy/backend-archive/node_modules ./packages/backend-archive/node_modules
 
