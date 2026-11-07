@@ -28,7 +28,7 @@ afterEach(() => {
 })
 
 describe('exportSilverTables', () => {
-  it.each(['development', 'staging', 'uat'])(
+  it.each(['development', 'uat'])(
     'writes nothing when APP_ENV is %s',
     async (appEnv) => {
       const s3 = makeS3()
@@ -46,26 +46,29 @@ describe('exportSilverTables', () => {
     },
   )
 
-  it('writes one Parquet file per table in prod', async () => {
-    const s3 = makeS3()
+  it.each(['prod', 'staging'])(
+    'writes one Parquet file per table in %s',
+    async (appEnv) => {
+      const s3 = makeS3()
 
-    await exportSilverTables({
-      db,
-      s3Client: s3 as unknown as S3Client,
-      appEnv: 'prod',
-      bucket: 'analytics-bucket',
-      tables: [testTable],
-    })
+      await exportSilverTables({
+        db,
+        s3Client: s3 as unknown as S3Client,
+        appEnv,
+        bucket: 'analytics-bucket',
+        tables: [testTable],
+      })
 
-    expect(s3.send).toHaveBeenCalledTimes(1)
-    const command = s3.send.mock.calls[0][0]
-    expect(command).toBeInstanceOf(PutObjectCommand)
-    expect(command.input).toMatchObject({
-      Bucket: 'analytics-bucket',
-      Key: 'silver/test_table/current.parquet',
-      ContentType: 'application/vnd.apache.parquet',
-    })
-  })
+      expect(s3.send).toHaveBeenCalledTimes(1)
+      const command = s3.send.mock.calls[0][0]
+      expect(command).toBeInstanceOf(PutObjectCommand)
+      expect(command.input).toMatchObject({
+        Bucket: 'analytics-bucket',
+        Key: 'silver/test_table/current.parquet',
+        ContentType: 'application/vnd.apache.parquet',
+      })
+    },
+  )
 
   it('fails in prod when the bucket is not configured', async () => {
     const s3 = makeS3()

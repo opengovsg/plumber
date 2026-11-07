@@ -14,9 +14,9 @@ import { flowTransferTable } from './tables/flow-transfer'
 
 export const SILVER_TABLES: SilverTable<SilverRow>[] = [flowTransferTable]
 
-// IMPORTANT: Local, staging and UAT share one PostHog project with prod.
-// Only prod may write files that PostHog reads.
-const EXPORT_APP_ENV = 'prod'
+// IMPORTANT: every environment shares one PostHog project, but each has its own
+// bucket. PostHog reads a bucket only if someone attaches it. UAT and local stay off.
+export const EXPORT_APP_ENVS: ReadonlySet<string> = new Set(['prod', 'staging'])
 
 interface ExportSilverTablesParams {
   db: Knex
@@ -33,12 +33,12 @@ export async function exportSilverTables({
   bucket,
   tables = SILVER_TABLES,
 }: ExportSilverTablesParams): Promise<void> {
-  if (appEnv !== EXPORT_APP_ENV) {
+  if (!EXPORT_APP_ENVS.has(appEnv)) {
     logger.info({ event: 'analytics.export.skipped', appEnv })
     return
   }
   if (!bucket) {
-    throw new Error('ANALYTICS_BUCKET must be set in prod')
+    throw new Error(`ANALYTICS_BUCKET must be set in ${appEnv}`)
   }
 
   for (const table of tables) {
