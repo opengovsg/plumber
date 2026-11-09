@@ -12,6 +12,13 @@ LuxonSettings.defaultLocale = 'en-SG'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('convert date time', () => {
@@ -317,7 +324,7 @@ describe('convert date time', () => {
       },
     )
 
-    it('marks a formatting failure after parsing as internal', async () => {
+    it('marks a formatting failure after parsing as internal and logs it', async () => {
       vi.spyOn(DateTime.prototype, 'toPlumberFormat').mockImplementation(() => {
         throw new Error('boom')
       })
@@ -325,9 +332,19 @@ describe('convert date time', () => {
         dateTimeFormat: 'formsgDateField',
         formatDateTimeToFormat: 'dd LLL yyyy',
       }
-      await expect(spec.transformData($, '01 Apr 2024')).rejects.toMatchObject({
-        kind: 'internal',
-      })
+      const result = spec.transformData($, '01 Apr 2024')
+      await expect(result).rejects.toMatchObject({ kind: 'internal' })
+      await expect(result).rejects.toThrow(
+        'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
+      )
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          event: 'formatter-convert-date-time-failed',
+          errorName: 'Error',
+          errorMessage: 'boom',
+        }),
+      )
     })
   })
 })

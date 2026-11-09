@@ -12,6 +12,13 @@ LuxonSettings.defaultLocale = 'en-SG'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('add / subtract date time', () => {
@@ -366,7 +373,7 @@ describe('add / subtract date time', () => {
       },
     )
 
-    it('marks an Excel formatted date output as internal', async () => {
+    it('marks an Excel formatted date output as internal and logs it', async () => {
       $.step.parameters = {
         dateTimeFormat: 'excelFormattedDate',
         addSubtractDateTimeOps: addOneDay,
@@ -375,6 +382,19 @@ describe('add / subtract date time', () => {
       await expect(result).rejects.toMatchObject({ kind: 'internal' })
       await expect(result).rejects.toThrow(
         'Excel formatted date is an input-only format',
+      )
+      await expect(result).rejects.toThrow(
+        'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
+      )
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          event: 'formatter-add-subtract-date-time-failed',
+          errorName: 'Error',
+          errorMessage: expect.stringContaining(
+            'Excel formatted date is an input-only format',
+          ),
+        }),
       )
     })
   })

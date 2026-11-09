@@ -11,6 +11,16 @@ import {
   parseOperand,
 } from '../actions/compare-calculate/logic'
 
+const mocks = vi.hoisted(() => ({
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
+}))
+
 vi.mock('../actions/compare-calculate/logic', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../actions/compare-calculate/logic')>()
@@ -209,19 +219,29 @@ describe('compare-calculate prototype', () => {
       })
     })
 
-    it('marks a failure after parsing the dates as internal', async () => {
+    it('marks a failure after parsing the dates as internal and logs it', async () => {
       vi.mocked(computeDifference).mockImplementationOnce(() => {
         throw new Error('boom')
       })
-      await expect(
-        action.run(
-          makeGlobal({
-            ...validDates,
-            operation: 'calculate',
-            diffUnit: 'days',
-          }),
-        ),
-      ).rejects.toMatchObject({ kind: 'internal' })
+      const result = action.run(
+        makeGlobal({
+          ...validDates,
+          operation: 'calculate',
+          diffUnit: 'days',
+        }),
+      )
+      await expect(result).rejects.toMatchObject({ kind: 'internal' })
+      await expect(result).rejects.toThrow(
+        'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
+      )
+      expect(mocks.logError).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          event: 'formatter-compare-calculate-failed',
+          errorName: 'Error',
+          errorMessage: 'boom',
+        }),
+      )
     })
   })
 })

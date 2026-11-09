@@ -2,6 +2,7 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
+import logger from '@/helpers/logger'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
 import { fields, paramsSchema } from './fields'
@@ -135,10 +136,21 @@ const action: IRawAction = {
       if (error instanceof StepError) {
         throw error
       }
+      logger.error(
+        'Compare or calculate dates failed after parsing the dates',
+        {
+          event: 'formatter-compare-calculate-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          flowId: $.flow?.id,
+          stepId: $.step?.id,
+          executionId: $.execution?.id,
+        },
+      )
       throw new StepError({
         name: `Error processing dates: '${error.message}'`,
         solution:
-          'Ensure that you have selected the correct format for each date.',
+          'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
         kind: 'internal',
       })
     }

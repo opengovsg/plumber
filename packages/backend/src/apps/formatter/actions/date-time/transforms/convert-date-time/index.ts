@@ -3,6 +3,7 @@ import type { DateTime } from 'luxon'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
+import logger from '@/helpers/logger'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
 import type { TransformSpec } from '../../../../common/transform-spec'
@@ -74,10 +75,18 @@ export const spec = {
         throw error
       }
 
+      logger.error('Convert date time failed after parsing the value', {
+        event: 'formatter-convert-date-time-failed',
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+        executionId: $.execution?.id,
+      })
       throw new StepError({
         name: `Error with the original value: '${error.message}'`,
         solution:
-          'Ensure that you have selected the correct date format for your original value.',
+          'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
         kind: 'internal',
       })
     }
