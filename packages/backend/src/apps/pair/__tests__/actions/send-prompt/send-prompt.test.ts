@@ -59,6 +59,7 @@ describe('Send prompt action', () => {
   })
 
   it.each([
+    [400, 'internal'],
     [429, 'internal'],
     [503, 'third-party'],
   ])(

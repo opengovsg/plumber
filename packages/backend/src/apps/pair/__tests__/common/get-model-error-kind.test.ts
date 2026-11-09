@@ -21,14 +21,14 @@ function makeRetryError(lastError: unknown): RetryError {
 }
 
 describe('getModelErrorKind', () => {
-  it.each([429, 401, 403])(
+  it.each([400, 401, 403, 404, 429])(
     'returns internal for an API call error with status %i',
     (statusCode) => {
       expect(getModelErrorKind(makeApiCallError(statusCode))).toBe('internal')
     },
   )
 
-  it.each([400, 404, 500, 503])(
+  it.each([500, 503, 529])(
     'returns third-party for an API call error with status %i',
     (statusCode) => {
       expect(getModelErrorKind(makeApiCallError(statusCode))).toBe(
