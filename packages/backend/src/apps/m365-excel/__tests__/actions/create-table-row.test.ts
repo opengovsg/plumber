@@ -427,7 +427,7 @@ describe('createTableRow runBatch', () => {
     expect(mocks.acquire).not.toHaveBeenCalled()
   })
 
-  it('fails the whole batch with a third-party StepError when the header row is empty', async () => {
+  it('fails the whole batch with a config StepError when the header row is empty', async () => {
     mocks.request.mockImplementation(async () => ({
       data: { rowIndex: HEADER_ROW_INDEX, values: [[]] },
     }))
@@ -438,7 +438,7 @@ describe('createTableRow runBatch', () => {
       .runBatch(jobs)
       .catch((err: unknown) => err)
     expect(error).toBeInstanceOf(StepError)
-    expect(error).toMatchObject({ kind: 'third-party' })
+    expect(error).toMatchObject({ kind: 'config' })
     expect(postCalls()).toHaveLength(0)
   })
 

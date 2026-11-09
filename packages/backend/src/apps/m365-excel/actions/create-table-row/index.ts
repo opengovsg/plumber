@@ -191,7 +191,7 @@ async function runBatch(
       name: 'Could not read table headers.',
       solution:
         'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
-      kind: 'third-party',
+      kind: 'config',
     })
   }
 

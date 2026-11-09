@@ -26,13 +26,13 @@ describe('getTopNTableRows', () => {
     )
   })
 
-  it('throws a third-party StepError when the range response is malformed', async () => {
+  it('throws a config StepError when the range response is malformed', async () => {
     const session = makeSession({ rowCount: 1, rowIndex: 0 })
     const error = await getTopNTableRows($, session, 'table-id', 10).catch(
       (err: unknown) => err,
     )
     expect(error).toBeInstanceOf(StepError)
-    expect(error).toMatchObject({ kind: 'third-party' })
+    expect(error).toMatchObject({ kind: 'config' })
   })
 
   it('throws a config StepError when the table has more than n rows', async () => {
