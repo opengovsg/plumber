@@ -61,7 +61,7 @@ const UNKNOWN_ERROR_GROUP: SlackErrorGroup = {
   codes: [],
   kind: 'internal',
   name: (code) => `Slack request failed (${code})`,
-  solution: 'Try again later. If this keeps happening, contact support.',
+  solution: 'Please contact plumber@open.gov.sg for assistance.',
 }
 
 const slackErrorResponseSchema = z.object({ error: z.string() })

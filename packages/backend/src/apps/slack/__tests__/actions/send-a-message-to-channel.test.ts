@@ -105,5 +105,8 @@ describe('send a message to channel', () => {
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({ kind: 'internal' })
+    expect(error.message).toContain(
+      '"solution":"Please contact plumber@open.gov.sg for assistance."',
+    )
   })
 })
