@@ -21,6 +21,7 @@ describe('toStepError', () => {
     [413, 'requestTooLarge'],
     [501, 'FileCorruptTryRepair'],
     [400, 'RangeExceedsLimit'],
+    [403, 'AccessDenied'],
   ])('maps %i %s to config', (status, code) => {
     const httpError = graphError(status, code)
     const stepError = toStepError(httpError)
@@ -34,6 +35,15 @@ describe('toStepError', () => {
     expect(JSON.parse(stepError.message)).toMatchObject({
       name: 'Your Excel table is too large',
       solution: 'Reduce the number of rows or columns and try again.',
+    })
+  })
+
+  it('tells the user to unprotect a worksheet that Excel denies changes to', () => {
+    const stepError = toStepError(graphError(403, 'AccessDenied'))
+    expect(JSON.parse(stepError.message)).toMatchObject({
+      name: 'Excel blocked changes to your table',
+      solution:
+        'Check that the worksheet and table are not protected and the file is not checked out, then try again.',
     })
   })
 
@@ -54,7 +64,7 @@ describe('toStepError', () => {
   })
 
   it.each([
-    [403, 'AccessDenied'],
+    [403, 'accessDenied'],
     [409, 'InsertDeleteConflict'],
     [505, 'HttpVersionNotSupported'],
     [507, 'InsufficientStorage'],
@@ -63,6 +73,11 @@ describe('toStepError', () => {
     const stepError = toStepError(httpError)
     expect(stepError.kind).toBe('third-party')
     expect(stepError.cause).toBe(httpError)
+  })
+
+  it('maps a 403 without a Graph error body to third-party', () => {
+    const stepError = toStepError(makeHttpError({ status: 403 }))
+    expect(stepError.kind).toBe('third-party')
   })
 
   it('maps a network error to third-party', () => {

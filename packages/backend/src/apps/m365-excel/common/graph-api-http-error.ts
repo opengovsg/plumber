@@ -37,6 +37,13 @@ const UNSUPPORTED_FILE: GraphStepErrorInfo = {
   kind: 'config',
 }
 
+const TABLE_PROTECTED: GraphStepErrorInfo = {
+  name: 'Excel blocked changes to your table',
+  solution:
+    'Check that the worksheet and table are not protected and the file is not checked out, then try again.',
+  kind: 'config',
+}
+
 const ACCESS_DENIED: GraphStepErrorInfo = {
   name: 'Microsoft denied access to your Excel file',
   solution: 'Try again later.',
@@ -67,6 +74,11 @@ const CONFIG_400_CODES: ReadonlyMap<string, GraphStepErrorInfo> = new Map([
   ['RangeExceedsLimit', TABLE_TOO_LARGE],
 ])
 
+// Excel's `AccessDenied` means a protected sheet. SharePoint's `accessDenied` can mean Plumber lost site access.
+const CONFIG_403_CODES: ReadonlyMap<string, GraphStepErrorInfo> = new Map([
+  ['AccessDenied', TABLE_PROTECTED],
+])
+
 function getGraphStepErrorInfo(error: HttpError): GraphStepErrorInfo {
   const status = error.response.status
 
@@ -75,13 +87,12 @@ function getGraphStepErrorInfo(error: HttpError): GraphStepErrorInfo {
     return error.code ? UNAVAILABLE : UNEXPECTED
   }
 
+  const code = tryParseGraphApiError(error)?.code ?? ''
   switch (status) {
-    case 400: {
-      const code = tryParseGraphApiError(error)?.code ?? ''
+    case 400:
       return CONFIG_400_CODES.get(code) ?? UNEXPECTED
-    }
     case 403:
-      return ACCESS_DENIED
+      return CONFIG_403_CODES.get(code) ?? ACCESS_DENIED
     case 404:
       return NOT_FOUND
     case 409:
