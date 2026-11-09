@@ -184,6 +184,21 @@ describe.each([['ddb'], ['pg']])(
       })
     })
 
+    it.runIf(databaseType === 'ddb')(
+      'should skip a filter with no operator if another filter uses its column',
+      async () => {
+        const filters = $.step.parameters.filters as TableRowFilter[]
+        $.step.parameters.filters = [
+          filters[0],
+          { columnId: dummyColumnIds[0], value: 'abc' },
+        ]
+        await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+        expect($.setActionItem).toHaveBeenCalledWith({
+          raw: expect.objectContaining({ rowsFound: 1 }),
+        })
+      },
+    )
+
     it('should call getTableRows with scan limit if exists in step config', async () => {
       const getTableRowsSpy = vi
         .spyOn(

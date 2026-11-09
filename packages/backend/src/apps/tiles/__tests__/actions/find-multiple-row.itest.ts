@@ -172,6 +172,22 @@ describe.each([['ddb'], ['pg']])(
       })
     })
 
+    it.runIf(databaseType === 'ddb')(
+      'should skip a filter with no operator if another filter uses its column',
+      async () => {
+        const filters = $.step.parameters.filters as TableRowFilter[]
+        await findMultipleRowsAction.run($)
+        const [withoutSkippedFilter] = vi.mocked($.setActionItem).mock.calls[0]
+
+        $.step.parameters.filters = [
+          filters[0],
+          { columnId: dummyColumnIds[0], value: 'abc' },
+        ]
+        await expect(findMultipleRowsAction.run($)).resolves.toBeUndefined()
+        expect($.setActionItem).toHaveBeenLastCalledWith(withoutSkippedFilter)
+      },
+    )
+
     it('should call getTableRows with scan limit if exists in step config', async () => {
       const getTableRowsSpy = vi
         .spyOn(

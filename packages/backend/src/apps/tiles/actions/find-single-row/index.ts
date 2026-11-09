@@ -9,7 +9,11 @@ import { getTableOperations } from '@/models/tiles/factory'
 import { TableRowFilter } from '@/models/tiles/types'
 
 import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
-import { validateFilters } from '../../common/validate-filters'
+import {
+  validateDynamoDbFilterOperators,
+  validateFilterOperators,
+  validateFilters,
+} from '../../common/validate-filters'
 import { FindSingleRowOutput } from '../../types'
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -103,6 +107,11 @@ const action: IRawAction = {
     // Check that filters are valid
     try {
       validateFilters(filters, table.columns)
+      if (table.db === 'pg') {
+        validateFilterOperators(filters)
+      } else {
+        validateDynamoDbFilterOperators(filters)
+      }
     } catch (e) {
       logger.error({
         message: 'Invalid filters',
