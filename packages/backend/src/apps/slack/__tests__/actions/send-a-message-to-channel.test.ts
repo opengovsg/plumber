@@ -50,7 +50,6 @@ describe('send a message to channel', () => {
     'invalid_auth',
     'token_revoked',
     'token_expired',
-    'not_authed',
     'team_access_not_granted',
     'channel_not_found',
     'not_in_channel',
@@ -83,6 +82,7 @@ describe('send a message to channel', () => {
   })
 
   it.each([
+    'not_authed',
     'ratelimited',
     'missing_scope',
     'invalid_arguments',

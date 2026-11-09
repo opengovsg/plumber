@@ -10,14 +10,25 @@ interface SlackErrorGroup {
   solution: string
 }
 
+const UNKNOWN_ERROR_GROUP: SlackErrorGroup = {
+  codes: [],
+  kind: 'internal',
+  name: (code) => `Slack request failed (${code})`,
+  solution: 'Please contact plumber@open.gov.sg for assistance.',
+}
+
 const SLACK_ERROR_GROUPS: SlackErrorGroup[] = [
+  {
+    // Slack sends this when no token was sent, which means Plumber saved incomplete auth data.
+    ...UNKNOWN_ERROR_GROUP,
+    codes: ['not_authed'],
+  },
   {
     codes: [
       'account_inactive',
       'invalid_auth',
       'token_revoked',
       'token_expired',
-      'not_authed',
       'team_access_not_granted',
     ],
     kind: 'config',
@@ -56,13 +67,6 @@ const SLACK_ERROR_GROUPS: SlackErrorGroup[] = [
     solution: 'Try again later.',
   },
 ]
-
-const UNKNOWN_ERROR_GROUP: SlackErrorGroup = {
-  codes: [],
-  kind: 'internal',
-  name: (code) => `Slack request failed (${code})`,
-  solution: 'Please contact plumber@open.gov.sg for assistance.',
-}
 
 const slackErrorResponseSchema = z.object({ error: z.string() })
 
