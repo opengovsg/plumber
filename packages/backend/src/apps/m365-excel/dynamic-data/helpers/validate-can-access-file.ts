@@ -3,7 +3,7 @@ import type { IStepError } from '@plumber/types'
 import StepError from '@/errors/step'
 import { UserFacingError } from '@/errors/user-facing-error'
 
-import { validateCanAccessFile } from '../common/file-privacy'
+import { validateCanAccessFile } from '../../common/file-privacy'
 
 /**
  * Dynamic data runs outside a step, so GraphQL shows the error message as-is.

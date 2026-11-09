@@ -4,7 +4,7 @@ import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 import StepError from '@/errors/step'
 
 import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
-import { validateCanAccessFileForDynamicData } from '../validate-can-access-file'
+import { validateCanAccessFileForDynamicData } from '../helpers/validate-can-access-file'
 import { parametersSchema } from './schema'
 
 const dynamicData: IDynamicData = {
