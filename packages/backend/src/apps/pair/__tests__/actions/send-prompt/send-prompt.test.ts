@@ -7,6 +7,11 @@ import StepError from '@/errors/step'
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
   generateObject: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.logError },
 }))
 
 vi.mock('@/helpers/pair', () => ({
@@ -82,4 +87,27 @@ describe('Send prompt action', () => {
       )
     },
   )
+
+  it('logs the model error without its request body', async () => {
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: 'Output blocked by content filtering policy',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
+        requestBodyValues: { messages: [{ role: 'user', content: 'secret' }] },
+        statusCode: 400,
+      }),
+    )
+
+    await expect(sendPromptAction.run($)).rejects.toBeInstanceOf(StepError)
+    expect(mocks.logError).toHaveBeenCalledWith('Failed to generate object', {
+      errorName: 'AI_APICallError',
+      errorMessage: 'Output blocked by content filtering policy',
+      statusCode: 400,
+      userId: 'user@open.gov.sg',
+      flowId: 'flow-id',
+      stepId: 'step-id',
+      executionId: 'execution-id',
+      tags: ['pair', 'action', 'generate-text'],
+    })
+  })
 })

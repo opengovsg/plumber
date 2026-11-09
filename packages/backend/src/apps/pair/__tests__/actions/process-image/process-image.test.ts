@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
   generateObject: vi.fn(),
   getImageContent: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.logError },
 }))
 
 vi.mock('@/helpers/pair', () => ({
@@ -226,6 +231,35 @@ describe('Process image action', () => {
         /Failed to process image/.test(error.message) &&
         error.kind === 'third-party',
     )
+  })
+
+  it('logs the model error without its request body', async () => {
+    mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: 'Output blocked by content filtering policy',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
+        requestBodyValues: { messages: [{ role: 'user', content: 'secret' }] },
+        statusCode: 400,
+      }),
+    )
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toBeInstanceOf(StepError)
+    expect(mocks.logError).toHaveBeenCalledWith('Failed to process image', {
+      errorName: 'AI_APICallError',
+      errorMessage: 'Output blocked by content filtering policy',
+      statusCode: 400,
+      flowId: 'flow-id',
+      executionId: 'execution-id',
+      stepId: 'step-id',
+      userId: 'user@open.gov.sg',
+      s3Id: 's3-id-123',
+    })
   })
 
   it('throws an internal StepError for an unknown error', async () => {

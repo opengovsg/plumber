@@ -7,6 +7,7 @@ import logger from '@/helpers/logger'
 import { model, structuredOutputProviderOptions } from '@/helpers/pair'
 
 import { getModelErrorKind } from './get-model-error-kind'
+import { getModelErrorLogFields } from './get-model-error-log-fields'
 
 async function generateObject(
   prompt: string,
@@ -31,7 +32,7 @@ async function generateObject(
     return object
   } catch (error) {
     logger.error('Failed to generate object', {
-      error,
+      ...getModelErrorLogFields(error),
       ...metadata,
     })
     throw new StepError({

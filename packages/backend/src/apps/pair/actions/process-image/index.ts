@@ -12,6 +12,7 @@ import Step from '@/models/step'
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 import { getModelErrorKind } from '../../common/get-model-error-kind'
+import { getModelErrorLogFields } from '../../common/get-model-error-log-fields'
 import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { hasProvidedImage, schema } from './schema'
 
@@ -153,7 +154,7 @@ const action: IRawAction = {
       })
     } catch (error) {
       logger.error('Failed to process image', {
-        error,
+        ...getModelErrorLogFields(error),
         flowId: $.flow.id,
         executionId: $.execution.id,
         stepId: $.step.id,
