@@ -134,7 +134,7 @@ const action: IRawAction = {
       throw new StepError({
         name: 'Tile is required',
         solution: 'Please select a tile to update a row in.',
-        kind: 'internal',
+        kind: 'config',
       })
     }
 

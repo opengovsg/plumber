@@ -112,7 +112,7 @@ describe.each([['ddb'], ['pg']])(
       $.step.parameters.tableId = ''
       await expect(updateRowAction.run($)).rejects.toMatchObject({
         message: expect.stringContaining('"name":"Tile is required"'),
-        kind: 'internal',
+        kind: 'config',
       })
     })
 
