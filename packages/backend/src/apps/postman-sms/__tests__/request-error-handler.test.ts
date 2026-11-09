@@ -62,6 +62,38 @@ describe('Postman SMS request error handler', () => {
     })
   })
 
+  describe('HTTP 401 with invalid_api_key_provided', () => {
+    it('throws a config StepError asking the user to reconnect', async () => {
+      const error = makeHttpError({
+        message: 'Request failed with status code 401',
+        status: 401,
+        data: { error: { code: 'invalid_api_key_provided' } },
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid Postman API key"'),
+        kind: 'config',
+      })
+    })
+  })
+
+  describe('HTTP 400 with invalid_ip_address_used', () => {
+    it('throws a config StepError about the IP whitelist', async () => {
+      const error = makeHttpError({
+        message: 'Request failed with status code 400',
+        status: 400,
+        data: { error: { code: 'invalid_ip_address_used' } },
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          `"name":"Plumber's IPs are not whitelisted in your campaign"`,
+        ),
+        kind: 'config',
+      })
+    })
+  })
+
   describe('Other errors', () => {
     it.each([500, 502, 503, 520, 524])('should retry on %s', async (status) => {
       const error = makeHttpError({
@@ -127,14 +159,21 @@ describe('Postman SMS request error handler', () => {
       })
     })
 
-    it('treats invalid_ip_address_used as internal', async () => {
+    it.each([
+      [400, 'multiple_auth_provided'],
+      [401, 'authentication_required'],
+      [403, 'forbidden_action'],
+      [404, 'invalid_path'],
+      [409, 'duplicate_request'],
+    ])('treats %s with code %s as internal', async (status, code) => {
       const error = makeHttpError({
-        message: 'Request failed with status code 400',
-        status: 400,
-        data: { error: { code: 'invalid_ip_address_used' } },
+        message: `Request failed with status code ${status}`,
+        status,
+        data: { error: { code } },
       })
 
       await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Error sending SMS"'),
         kind: 'internal',
         cause: error,
       })

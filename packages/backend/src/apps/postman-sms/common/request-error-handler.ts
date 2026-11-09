@@ -2,7 +2,7 @@ import type { IApp, StepErrorKind } from '@plumber/types'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
 
 type ThrowingHandler = (
@@ -31,7 +31,7 @@ const handle5xxErrors: ThrowingHandler = (_, error): never => {
   })
 }
 
-// No Postman SMS 4xx is proven user-fixable yet, so none maps to config.
+// Other 4xx codes are Plumber bugs or ambiguous, e.g. 403 covers archived campaigns and Postman role failures.
 function getCatchAllKind(error: HttpError): StepErrorKind {
   const status = error.response.status
   if (status === undefined) {
@@ -69,6 +69,23 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
           name: 'Campaign template was not set up correctly',
           solution:
             'Ensure that you have followed the instructions in our guide to set up your campaign template.',
+          kind: 'config',
+        })
+      }
+
+      if (error.response.data?.error?.code === 'invalid_api_key_provided') {
+        throw new StepError({
+          name: 'Invalid Postman API key',
+          solution: GenericSolution.MalformedConnectionData,
+          kind: 'config',
+        })
+      }
+
+      if (error.response.data?.error?.code === 'invalid_ip_address_used') {
+        throw new StepError({
+          name: "Plumber's IPs are not whitelisted in your campaign",
+          solution:
+            "Add Plumber's IP addresses to your API key's IP whitelist in Postman, then try again.",
           kind: 'config',
         })
       }
