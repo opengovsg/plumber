@@ -4,9 +4,9 @@ import { makeHttpError } from '@/../test/utils/make-http-error'
 import StepError from '@/errors/step'
 
 import {
-  rethrowAsGraphStepError,
-  toGraphStepError,
-} from '../../common/graph-http-error'
+  rethrowHttpErrorAsStepError,
+  toStepError,
+} from '../../common/graph-api-http-error'
 
 function graphError(status: number, code: string) {
   return makeHttpError({
@@ -15,7 +15,7 @@ function graphError(status: number, code: string) {
   })
 }
 
-describe('toGraphStepError', () => {
+describe('toStepError', () => {
   it.each([
     [404, 'itemNotFound'],
     [413, 'requestTooLarge'],
@@ -23,14 +23,14 @@ describe('toGraphStepError', () => {
     [400, 'RangeExceedsLimit'],
   ])('maps %i %s to config', (status, code) => {
     const httpError = graphError(status, code)
-    const stepError = toGraphStepError(httpError)
+    const stepError = toStepError(httpError)
     expect(stepError).toBeInstanceOf(StepError)
     expect(stepError.kind).toBe('config')
     expect(stepError.cause).toBe(httpError)
   })
 
   it('keeps the existing name for a table that exceeds the range limit', () => {
-    const stepError = toGraphStepError(graphError(400, 'RangeExceedsLimit'))
+    const stepError = toStepError(graphError(400, 'RangeExceedsLimit'))
     expect(JSON.parse(stepError.message)).toMatchObject({
       name: 'Your Excel table is too large',
       solution: 'Reduce the number of rows or columns and try again.',
@@ -43,13 +43,13 @@ describe('toGraphStepError', () => {
     [405, 'MethodNotAllowed'],
   ])('maps %i %s to internal', (status, code) => {
     const httpError = graphError(status, code)
-    const stepError = toGraphStepError(httpError)
+    const stepError = toStepError(httpError)
     expect(stepError.kind).toBe('internal')
     expect(stepError.cause).toBe(httpError)
   })
 
   it('maps a 400 without a Graph error body to internal', () => {
-    const stepError = toGraphStepError(makeHttpError({ status: 400 }))
+    const stepError = toStepError(makeHttpError({ status: 400 }))
     expect(stepError.kind).toBe('internal')
   })
 
@@ -60,7 +60,7 @@ describe('toGraphStepError', () => {
     [507, 'InsufficientStorage'],
   ])('maps %i %s to third-party', (status, code) => {
     const httpError = graphError(status, code)
-    const stepError = toGraphStepError(httpError)
+    const stepError = toStepError(httpError)
     expect(stepError.kind).toBe('third-party')
     expect(stepError.cause).toBe(httpError)
   })
@@ -70,7 +70,7 @@ describe('toGraphStepError', () => {
       code: 'ECONNABORTED',
       message: 'timeout of 180000ms exceeded',
     })
-    const stepError = toGraphStepError(httpError)
+    const stepError = toStepError(httpError)
     expect(stepError.kind).toBe('third-party')
     expect(stepError.cause).toBe(httpError)
   })
@@ -78,20 +78,20 @@ describe('toGraphStepError', () => {
   it('maps a no-response error without a code to internal', () => {
     // e.g. a token fetch failure thrown from beforeRequest.
     const httpError = makeHttpError({ message: 'Invalid tenant key' })
-    const stepError = toGraphStepError(httpError)
+    const stepError = toStepError(httpError)
     expect(stepError.kind).toBe('internal')
     expect(stepError.cause).toBe(httpError)
   })
 })
 
-describe('rethrowAsGraphStepError', () => {
+describe('rethrowHttpErrorAsStepError', () => {
   it('converts an HttpError', () => {
     const httpError = graphError(404, 'itemNotFound')
-    expect(() => rethrowAsGraphStepError(httpError)).toThrow(StepError)
+    expect(() => rethrowHttpErrorAsStepError(httpError)).toThrow(StepError)
   })
 
   it('rethrows any other error unchanged', () => {
     const error = new Error('boom')
-    expect(() => rethrowAsGraphStepError(error)).toThrow(error)
+    expect(() => rethrowHttpErrorAsStepError(error)).toThrow(error)
   })
 })

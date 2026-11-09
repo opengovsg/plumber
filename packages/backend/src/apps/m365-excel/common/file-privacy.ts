@@ -9,7 +9,7 @@ import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
 import { AuthData } from './auth-data'
-import { rethrowAsGraphStepError } from './graph-http-error'
+import { rethrowHttpErrorAsStepError } from './graph-api-http-error'
 
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0#roles-property-values
 const sharePointRolesSchema = z.array(z.enum(['read', 'write', 'owner']))
@@ -118,7 +118,7 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
         },
       },
     )
-    .catch(rethrowAsGraphStepError)
+    .catch(rethrowHttpErrorAsStepError)
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
   )
@@ -243,7 +243,7 @@ async function queryFilePrivacyInfo(
         },
       },
     )
-    .catch(rethrowAsGraphStepError)
+    .catch(rethrowHttpErrorAsStepError)
   return fileInfoResponseSchema.parse(response.data)
 }
 

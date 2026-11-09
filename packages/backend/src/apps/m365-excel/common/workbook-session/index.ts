@@ -11,7 +11,10 @@ import logger from '@/helpers/logger'
 
 import { extractAuthDataWithPlumberFolder } from '../auth-data'
 import { validateCanAccessFile } from '../file-privacy'
-import { rethrowAsGraphStepError, toGraphStepError } from '../graph-http-error'
+import {
+  rethrowHttpErrorAsStepError,
+  toStepError,
+} from '../graph-api-http-error'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 import {
   clearSessionIdFromRedis,
@@ -37,7 +40,7 @@ async function refreshSessionId(
         },
       },
     )
-    .catch(rethrowAsGraphStepError)
+    .catch(rethrowHttpErrorAsStepError)
   const sessionId = createSessionResponse.data.id
 
   await setSessionIdInRedis(tenant, fileId, sessionId)
@@ -143,7 +146,7 @@ export default class WorkbookSession {
         !graphApiInnerError ||
         !graphApiInnerError.startsWith('invalidSession')
       ) {
-        throw toGraphStepError(err)
+        throw toStepError(err)
       }
 
       logger.warn('M365 Excel session was invalidated.', {

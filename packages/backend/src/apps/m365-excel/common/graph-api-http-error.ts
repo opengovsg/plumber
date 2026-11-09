@@ -101,13 +101,14 @@ function getGraphStepErrorInfo(error: HttpError): GraphStepErrorInfo {
  * IMPORTANT: call it after any catch that reads the raw `HttpError` (e.g. the
  * `invalidSession` retry), never inside the request error handler.
  */
-export function toGraphStepError(error: HttpError): StepError {
+export function toStepError(error: HttpError): StepError {
   return new StepError({ ...getGraphStepErrorInfo(error), cause: error })
 }
 
-export function rethrowAsGraphStepError(error: unknown): never {
+// Other errors pass through, so the error handler's `RetriableError`s keep retrying.
+export function rethrowHttpErrorAsStepError(error: unknown): never {
   if (error instanceof HttpError) {
-    throw toGraphStepError(error)
+    throw toStepError(error)
   }
   throw error
 }
