@@ -2,7 +2,7 @@ import type { IApp, StepErrorKind } from '@plumber/types'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 
 import { processMissingFields } from '../helpers/process-missing-fields'
 
@@ -13,19 +13,10 @@ type LettersApiFieldErrorData = {
   errors?: Record<string, string>[]
 }
 
-// A 404 here means the user's chosen template no longer exists.
-function isTemplateEndpoint(error: HttpError): boolean {
-  const url = error.response.config?.url ?? ''
-  return url === '/v1/letters' || url.startsWith('/v1/templates/')
-}
-
 function getCatchAllKind(error: HttpError): StepErrorKind {
   const status = error.response.status
   if (status === undefined) {
     return error.code ? 'third-party' : 'internal'
-  }
-  if (status === 404 && isTemplateEndpoint(error)) {
-    return 'config'
   }
   return status >= 500 ? 'third-party' : 'internal'
 }
@@ -34,9 +25,37 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   $,
   error,
 ) {
+  const lettersErrorData: LettersApiFieldErrorData | undefined =
+    error.response.data
+  // Cloudflare in front of LetterSG also returns 403s, with an HTML body.
+  const isLetterSgForbidden =
+    error.response.status === 403 &&
+    lettersErrorData?.message === 'Forbidden resource'
+
+  // IMPORTANT: LetterSG also returns this 401 when its own API key lookup fails.
+  if (error.response.status === 401 || isLetterSgForbidden) {
+    throw new StepError({
+      name: 'Invalid LetterSG API key',
+      solution: GenericSolution.MalformedConnectionData,
+      kind: 'config',
+    })
+  }
+
+  // Matching the body keeps a missing route or gateway 404 out of config.
+  if (
+    error.response.status === 404 &&
+    lettersErrorData?.message === 'Template not found'
+  ) {
+    throw new StepError({
+      name: 'Template not found',
+      solution:
+        'Choose another template. It may have been deleted, archived, or no longer shared with you.',
+      kind: 'config',
+    })
+  }
+
   if (error.response.status === 400) {
     const missingFields = await processMissingFields($)
-    const lettersErrorData: LettersApiFieldErrorData = error.response.data
     if (lettersErrorData?.message === 'Invalid letter params.') {
       throw new StepError({
         name: `Personalised field(s) not specified${
@@ -59,12 +78,11 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   }
 
   // catch-all
-  const kind = getCatchAllKind(error)
   throw new StepError({
     name: `An error occurred: '${error.message}'`,
     solution: 'Please check that you have configured your step correctly',
-    kind,
-    cause: kind === 'config' ? undefined : error,
+    kind: getCatchAllKind(error),
+    cause: error,
   })
 }
 

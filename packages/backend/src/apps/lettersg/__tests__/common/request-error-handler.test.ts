@@ -65,43 +65,74 @@ describe('lettersg requestErrorHandler', () => {
     expect(error.message).toContain('Personalised field(s) not specified')
   })
 
-  it('classifies a 404 from creating a letter as config', async () => {
-    mockAdapter.onPost('/v1/letters').reply(404, { message: 'Not found' })
+  it.each([
+    ['creating a letter', createLetter],
+    ['fetching the template', () => getTemplateData($)],
+    ['fetching the letter PDF', getPdf],
+  ])('classifies a missing template when %s as config', async (_, request) => {
+    mockAdapter.onAny().reply(404, {
+      message: 'Template not found',
+      error: 'Not Found',
+      statusCode: 404,
+    })
 
-    const error = await catchStepError(createLetter())
+    const error = await catchStepError(request())
 
     expect(error.kind).toBe('config')
+    expect(error.message).toContain('"name":"Template not found"')
     expect(error.cause).toBeUndefined()
   })
 
-  it('classifies a 404 from fetching the template as config', async () => {
-    mockAdapter.onGet('/v1/templates/123').reply(404, { message: 'Not found' })
+  it.each([
+    ['a missing letter', getPdf, 'Letter not found'],
+    ['an unknown route', createLetter, 'Cannot POST /api/v1/letters'],
+  ])('classifies a 404 for %s as internal', async (_, request, message) => {
+    mockAdapter.onAny().reply(404, { message })
 
-    const error = await catchStepError(getTemplateData($))
-
-    expect(error.kind).toBe('config')
-  })
-
-  it('classifies a 404 from fetching the letter PDF as internal', async () => {
-    mockAdapter.onGet('/v1/letters/abc/pdfs').reply(404, { message: 'x' })
-
-    const error = await catchStepError(getPdf())
+    const error = await catchStepError(request())
 
     expect(error.kind).toBe('internal')
     expect(error.cause).toBeInstanceOf(HttpError)
   })
 
-  it.each([400, 401, 403])(
-    'classifies an unlisted %i as internal',
-    async (status) => {
-      mockAdapter.onPost('/v1/letters').reply(status, { message: 'Unknown' })
+  it('classifies a rejected API key as config', async () => {
+    mockAdapter.onPost('/v1/letters').reply(401, {
+      statusCode: 401,
+      message: 'Unauthorized access. API key not found.',
+    })
 
-      const error = await catchStepError(createLetter())
+    const error = await catchStepError(createLetter())
 
-      expect(error.kind).toBe('internal')
-      expect(error.cause).toBeInstanceOf(HttpError)
-    },
-  )
+    expect(error.kind).toBe('config')
+    expect(error.message).toContain('"name":"Invalid LetterSG API key"')
+    expect(error.cause).toBeUndefined()
+  })
+
+  it('classifies a deleted LetterSG user as config', async () => {
+    mockAdapter.onPost('/v1/letters').reply(403, {
+      message: 'Forbidden resource',
+      error: 'Forbidden',
+      statusCode: 403,
+    })
+
+    const error = await catchStepError(createLetter())
+
+    expect(error.kind).toBe('config')
+    expect(error.message).toContain('"name":"Invalid LetterSG API key"')
+    expect(error.cause).toBeUndefined()
+  })
+
+  it.each([
+    ['an unlisted 400', 400, { message: 'Unknown' }],
+    ['a firewall 403', 403, '<html>Attention Required! | Cloudflare</html>'],
+  ])('classifies %s as internal', async (_, status, body) => {
+    mockAdapter.onPost('/v1/letters').reply(status, body)
+
+    const error = await catchStepError(createLetter())
+
+    expect(error.kind).toBe('internal')
+    expect(error.cause).toBeInstanceOf(HttpError)
+  })
 
   it('classifies 429 as internal and keeps its HttpError cause', async () => {
     mockAdapter
