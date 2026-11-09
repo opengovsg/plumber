@@ -159,7 +159,7 @@ describe('Process image action', () => {
     mocks.generateObject.mockRejectedValue(
       new APICallError({
         message: 'image exceeds 5 MB maximum: 5899164 bytes > 5242880 bytes',
-        url: 'https://litellm.example.com/v1/chat/completions',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
         requestBodyValues: {},
         statusCode: 400,
       }),
@@ -178,16 +178,12 @@ describe('Process image action', () => {
     )
   })
 
-  it('hides the noisy litellm message for other API call errors', async () => {
+  it('hides the raw model message for other API call errors', async () => {
     mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
     mocks.generateObject.mockRejectedValue(
       new APICallError({
-        message: [
-          'litellm.RateLimitError: rate limited',
-          'Received Model Group=bedrock-nova',
-          'Available Model Group Fallbacks=[bedrock-claude]',
-        ].join('\n'),
-        url: 'https://litellm.example.com/v1/chat/completions',
+        message: 'Too many requests, please wait before trying again.',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
         requestBodyValues: {},
         statusCode: 429,
       }),
@@ -201,7 +197,7 @@ describe('Process image action', () => {
     await expect(processImageAction.run($)).rejects.toSatisfy(
       (error: StepError) => {
         expect(error).toBeInstanceOf(StepError)
-        expect(error.message).not.toMatch(/RateLimitError|Model Group/)
+        expect(error.message).not.toMatch(/Too many requests/)
         expect(error.message).toMatch(/Failed to process image/)
         expect(error.kind).toBe('internal')
         return true
@@ -209,12 +205,12 @@ describe('Process image action', () => {
     )
   })
 
-  it('throws a third-party StepError when the model gateway fails', async () => {
+  it('throws a third-party StepError when Bedrock fails', async () => {
     mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
     mocks.generateObject.mockRejectedValue(
       new APICallError({
         message: 'Internal server error',
-        url: 'https://litellm.example.com/v1/chat/completions',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
         requestBodyValues: {},
         statusCode: 500,
       }),

@@ -72,8 +72,8 @@ describe('Send prompt action', () => {
     async (statusCode, kind) => {
       mocks.generateObject.mockRejectedValue(
         new APICallError({
-          message: 'litellm error',
-          url: 'https://litellm.example.com/v1/chat/completions',
+          message: 'Model error',
+          url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
           requestBodyValues: {},
           statusCode,
         }),

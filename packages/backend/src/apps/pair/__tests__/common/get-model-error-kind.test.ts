@@ -5,8 +5,8 @@ import { getModelErrorKind } from '@/apps/pair/common/get-model-error-kind'
 
 function makeApiCallError(statusCode?: number): APICallError {
   return new APICallError({
-    message: 'litellm error',
-    url: 'https://litellm.example.com/v1/chat/completions',
+    message: 'Model error',
+    url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
     requestBodyValues: {},
     statusCode,
   })
