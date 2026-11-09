@@ -40,9 +40,6 @@ function parseAmount(raw: string | undefined): number {
   return amount
 }
 
-const PROCESSING_SOLUTION =
-  'Ensure that you have selected the correct format for each date.'
-
 function parseDate(
   ...args: Parameters<typeof parseOperand>
 ): ReturnType<typeof parseOperand> {
@@ -51,7 +48,8 @@ function parseDate(
   } catch (error) {
     throw new StepError({
       name: `Error processing dates: '${error.message}'`,
-      solution: PROCESSING_SOLUTION,
+      solution:
+        'Ensure that you have selected the correct format for each date.',
       kind: 'config',
     })
   }
@@ -139,7 +137,8 @@ const action: IRawAction = {
       }
       throw new StepError({
         name: `Error processing dates: '${error.message}'`,
-        solution: PROCESSING_SOLUTION,
+        solution:
+          'Ensure that you have selected the correct format for each date.',
         kind: 'internal',
       })
     }

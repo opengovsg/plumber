@@ -62,9 +62,6 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
   }
 }
 
-const PROCESSING_SOLUTION =
-  'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.'
-
 function parseValue(
   dateTimeFormat: z.infer<typeof dateTimeFormatSchema>['dateTimeFormat'],
   valueToTransform: string,
@@ -74,7 +71,8 @@ function parseValue(
   } catch (error) {
     throw new StepError({
       name: `Error processing dates: '${error.message}'`,
-      solution: PROCESSING_SOLUTION,
+      solution:
+        'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
       kind: 'config',
     })
   }
@@ -101,7 +99,8 @@ export const transformData: TransformSpec['transformData'] = async (
 
     throw new StepError({
       name: `Error processing dates: '${error.message}'`,
-      solution: PROCESSING_SOLUTION,
+      solution:
+        'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
       kind: 'internal',
     })
   }

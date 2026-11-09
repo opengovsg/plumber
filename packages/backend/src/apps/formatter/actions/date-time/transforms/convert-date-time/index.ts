@@ -33,9 +33,6 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
   }
 }
 
-const PROCESSING_SOLUTION =
-  'Ensure that you have selected the correct date format for your original value.'
-
 function parseValue(
   dateTimeFormat: Parameters<typeof parseDateTime>[0],
   valueToTransform: string,
@@ -45,7 +42,8 @@ function parseValue(
   } catch (error) {
     throw new StepError({
       name: `Error with the original value: '${error.message}'`,
-      solution: PROCESSING_SOLUTION,
+      solution:
+        'Ensure that you have selected the correct date format for your original value.',
       kind: 'config',
     })
   }
@@ -78,7 +76,8 @@ export const spec = {
 
       throw new StepError({
         name: `Error with the original value: '${error.message}'`,
-        solution: PROCESSING_SOLUTION,
+        solution:
+          'Ensure that you have selected the correct date format for your original value.',
         kind: 'internal',
       })
     }
