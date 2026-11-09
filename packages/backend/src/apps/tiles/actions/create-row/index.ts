@@ -127,7 +127,7 @@ const action: IRawAction = {
         name: 'Invalid column ID(s)',
         solution:
           'Column(s) may have been deleted or modified. Please check your tile and pipe setup.',
-        kind: 'internal',
+        kind: 'config',
       })
     }
 
