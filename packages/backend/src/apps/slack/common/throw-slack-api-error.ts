@@ -17,6 +17,9 @@ const UNKNOWN_ERROR_GROUP: SlackErrorGroup = {
   solution: 'Please contact plumber@open.gov.sg for assistance.',
 }
 
+const invalidConnectionName = (code: string) =>
+  `Slack connection is no longer valid (${code})`
+
 const SLACK_ERROR_GROUPS: SlackErrorGroup[] = [
   {
     // Slack sends this when no token was sent, which means Plumber saved incomplete auth data.
@@ -24,15 +27,21 @@ const SLACK_ERROR_GROUPS: SlackErrorGroup[] = [
     codes: ['not_authed'],
   },
   {
+    codes: ['account_inactive'],
+    kind: 'config',
+    name: invalidConnectionName,
+    solution:
+      'Your Slack account or workspace may be deactivated. Connect an active Slack account, then select it in this step.',
+  },
+  {
     codes: [
-      'account_inactive',
       'invalid_auth',
       'token_revoked',
       'token_expired',
       'team_access_not_granted',
     ],
     kind: 'config',
-    name: (code) => `Slack connection is no longer valid (${code})`,
+    name: invalidConnectionName,
     solution: 'Reconnect your Slack account, then try again.',
   },
   {

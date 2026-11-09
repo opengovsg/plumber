@@ -68,6 +68,22 @@ describe('send a message to channel', () => {
     expect(error.message).toContain(code)
   })
 
+  it('tells the user to connect an active account for account_inactive', async () => {
+    mocks.httpPost.mockResolvedValueOnce({
+      data: { ok: false, error: 'account_inactive' },
+    })
+
+    const error = await sendMessageToChannelAction.run($).catch((e) => e)
+
+    expect(error).toMatchObject({ kind: 'config' })
+    expect(error.message).toContain(
+      '"name":"Slack connection is no longer valid (account_inactive)"',
+    )
+    expect(error.message).toContain(
+      '"solution":"Your Slack account or workspace may be deactivated. Connect an active Slack account, then select it in this step."',
+    )
+  })
+
   it.each([
     'fatal_error',
     'internal_error',
