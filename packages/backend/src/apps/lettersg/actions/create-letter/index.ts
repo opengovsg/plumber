@@ -121,7 +121,8 @@ const action: IRawAction = {
     if (responseResult.success === false) {
       throw new StepError({
         name: getFirstZodErrorMessage(responseResult.error),
-        solution: GenericSolution.ReconfigureInvalidField,
+        solution:
+          'LetterSG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
         kind: 'third-party',
       })
     }

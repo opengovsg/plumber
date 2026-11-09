@@ -154,6 +154,9 @@ describe('create letter from template', () => {
     mockAdapter.onPost('/v1/letters').reply(200, { publicId: '123' })
     await expect(createLetterAction.run($)).rejects.toMatchObject({
       kind: 'third-party',
+      message: expect.stringContaining(
+        'LetterSG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
+      ),
     })
   })
 
