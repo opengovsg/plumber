@@ -167,7 +167,7 @@ const handle504: ThrowingHandler = function ($, error) {
     throw new StepError({
       name: EXCEL_504_ERROR_MESSAGE.name,
       solution: EXCEL_504_ERROR_MESSAGE.solution,
-      kind: 'third-party',
+      kind: 'config',
     })
   }
 

@@ -129,7 +129,7 @@ describe('WorkbookSession', () => {
       const stepError = new StepError({
         name: 'Excel request timed out',
         solution: 'solution',
-        kind: 'third-party',
+        kind: 'config',
       })
       vi.mocked($.http.request).mockRejectedValue(stepError)
       const session = await WorkbookSession.acquire($, 'file-id')

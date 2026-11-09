@@ -325,7 +325,7 @@ describe('M365 request error handlers', () => {
       })
       .catch((error): void => {
         expect(error).toBeInstanceOf(StepError)
-        expect(error.kind).toBe('third-party')
+        expect(error.kind).toBe('config')
         expect(error.message).toContain('Excel request timed out')
       })
     expect(mocks.logWarning).toHaveBeenCalledWith(
