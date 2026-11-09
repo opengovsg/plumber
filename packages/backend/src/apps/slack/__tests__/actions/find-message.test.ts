@@ -70,14 +70,34 @@ describe('find message', () => {
     })
   })
 
-  it.each(['missing_scope', 'some_new_code'])(
-    'throws an internal StepError for %s',
-    async (code) => {
-      mocks.httpGet.mockResolvedValueOnce({ data: { ok: false, error: code } })
+  it('throws a config StepError when the connection lacks search:read', async () => {
+    mocks.httpGet.mockResolvedValueOnce({
+      data: {
+        ok: false,
+        error: 'missing_scope',
+        needed: 'search:read',
+        provided: 'channels:read,chat:write,users:read',
+      },
+    })
 
-      await expect(findMessageAction.run($)).rejects.toMatchObject({
-        kind: 'internal',
-      })
-    },
-  )
+    const error = await findMessageAction.run($).catch((e) => e)
+
+    expect(error).toBeInstanceOf(StepError)
+    expect(error).toMatchObject({ kind: 'config' })
+    expect(error.message).toContain(
+      '"name":"Slack connection cannot search messages"',
+    )
+  })
+
+  it.each([
+    { error: 'missing_scope' },
+    { error: 'missing_scope', needed: 'channels:read' },
+    { error: 'some_new_code' },
+  ])('throws an internal StepError for %o', async (data) => {
+    mocks.httpGet.mockResolvedValueOnce({ data: { ok: false, ...data } })
+
+    await expect(findMessageAction.run($)).rejects.toMatchObject({
+      kind: 'internal',
+    })
+  })
 })
