@@ -98,6 +98,9 @@ overrides:
   'picomatch': '4.0.4'
   'shell-quote': '1.9.0'
   'form-data': '4.0.6'
+  # Express 4 and 5 need different majors, so pin each line separately.
+  'body-parser@1': '1.20.9'
+  'body-parser@2': '2.4.0'
   # Keep the tested versions. Parents resolved newer than develop-v2 declare ranges that exclude them.
   'es-module-lexer': '1.7.0'
   '@smithy/core': '3.24.1'
