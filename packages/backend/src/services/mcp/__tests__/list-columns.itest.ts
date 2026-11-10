@@ -54,7 +54,7 @@ vi.mock('@/apps', async (importOriginal) => {
 // second — matching packages/backend/src/apps/tiles/actions/create-row/index.ts.
 async function createTileWithColumns(userId: string, columnNames: string[]) {
   const user = await User.query().findById(userId)
-  const table = await user.$relatedQuery('tables').insert({
+  const table = await user!.$relatedQuery('tables').insert({
     name: 'Test Tile',
     role: 'owner',
     db: 'pg',
@@ -94,8 +94,8 @@ async function setupFlowAndStep(
   await Step.query().insertAndFetch({
     id: randomUUID(),
     flowId: flow.id,
-    appKey: null,
-    key: null,
+    appKey: undefined,
+    key: undefined,
     type: 'trigger',
     position: 1,
     parameters: {},

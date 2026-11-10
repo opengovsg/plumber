@@ -85,12 +85,12 @@ export async function deleteStepsInTransaction({
 
     await step.$query(trx).delete()
     await flow.$relatedQuery('steps', trx).insert({
-      key: null,
-      appKey: null,
+      key: undefined,
+      appKey: undefined,
       type: 'trigger',
       position: 1,
       parameters: {},
-      connectionId: null,
+      connectionId: undefined,
     })
   } else {
     if (

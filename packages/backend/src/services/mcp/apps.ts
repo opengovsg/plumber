@@ -38,7 +38,7 @@ function serializeField(
 ): IMcpAppField {
   const base: IMcpAppField = {
     key: field.key,
-    label: field.label ?? field.placeholder,
+    label: field.label ?? field.placeholder ?? field.key,
     type: field.type,
     description: field.description,
     required: field.required ?? false,

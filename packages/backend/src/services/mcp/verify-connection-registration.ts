@@ -61,7 +61,7 @@ export async function verifyConnectionRegistrationService(
     await app.auth.verifyConnectionRegistration($)
 
   if (output.registrationVerified) {
-    return { status: 'VERIFIED', message: output.message }
+    return { status: 'VERIFIED', message: output.message ?? undefined }
   }
 
   if (!output.message) {

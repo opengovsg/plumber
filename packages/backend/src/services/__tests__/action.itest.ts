@@ -46,7 +46,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
     const user = await User.query().findOne({ email: 'tester@open.gov.sg' })
 
     flow = await Flow.query().insertGraphAndFetch({
-      userId: user.id,
+      userId: user!.id,
       name: 'test-for-each-flow',
       steps: [
         {
@@ -105,7 +105,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       preprocessVariable: undefined,
     } as any)
 
-    vi.spyOn(Step.prototype, 'getNextStep').mockResolvedValue(null)
+    vi.spyOn(Step.prototype, 'getNextStep').mockResolvedValue(undefined)
     vi.spyOn(Step.prototype, 'getTriggerCommand').mockResolvedValue({
       type: 'polling',
     } as any)
