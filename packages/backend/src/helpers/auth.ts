@@ -93,7 +93,7 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
     if (await isAuthCookieRevoked(token)) {
       return null
     }
-    return User.query().findById(userId)
+    return (await User.query().findById(userId)) ?? null
   } catch {
     return null
   }
@@ -112,7 +112,7 @@ async function isAuthCookieRevoked(token: string): Promise<boolean> {
     // prioritises not locking every user out over closing that window.
     logger.error('Failed to check auth token denylist', {
       event: 'auth-token-denylist-check-error',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     })
     return false
   }
@@ -173,7 +173,7 @@ export async function invalidateAuthCookie(req: Request): Promise<void> {
   } catch (error) {
     logger.error('Failed to revoke auth token on logout', {
       event: 'auth-token-revoke-error',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     })
     throw error
   }
@@ -230,7 +230,7 @@ export async function sendOnboardingEmail(user: User) {
   } catch (error) {
     logger.error({
       event: 'onboarding-email-error',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     })
   }
 }

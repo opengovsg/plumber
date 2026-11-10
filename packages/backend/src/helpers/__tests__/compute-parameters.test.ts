@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 
+import type { IJSONObject } from '@plumber/types'
 import { describe, expect, it } from 'vitest'
 
 import ExecutionStep from '@/models/execution-step'
@@ -31,7 +32,11 @@ const executionSteps = [
 ]
 
 describe('compute parameters', () => {
-  it.each([
+  it.each<{
+    testDescription: string
+    params: IJSONObject
+    expected: IJSONObject
+  }>([
     {
       testDescription: 'strings',
       params: {
@@ -175,7 +180,7 @@ describe('compute parameters', () => {
         param1: `{{step.${randomStepID}.tableProp}}`,
       },
       expected: {
-        param1: executionSteps[0].dataOut.tableProp,
+        param1: executionSteps[0].dataOut!.tableProp,
       },
     },
     {
@@ -184,7 +189,7 @@ describe('compute parameters', () => {
         param2: `{{step.${randomStepID}.arrayProp}}`,
       },
       expected: {
-        param2: executionSteps[0].dataOut.arrayProp,
+        param2: executionSteps[0].dataOut!.arrayProp,
       },
     },
     {
@@ -193,7 +198,7 @@ describe('compute parameters', () => {
         param3: `{{step.${randomStepID}.arrayPropWithCommas}}`,
       },
       expected: {
-        param3: executionSteps[0].dataOut.arrayPropWithCommas,
+        param3: executionSteps[0].dataOut!.arrayPropWithCommas,
       },
     },
   ])(
@@ -215,7 +220,7 @@ describe('compute parameters', () => {
     },
   )
 
-  it.each([
+  it.each<{ testDescription: string; params: IJSONObject }>([
     {
       testDescription: 'strings',
       params: {

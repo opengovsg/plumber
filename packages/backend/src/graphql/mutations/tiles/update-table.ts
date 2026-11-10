@@ -52,7 +52,7 @@ const updateTable: MutationResolvers['updateTable'] = async (
 
   await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
-  const table = await TableMetadata.query().findById(tableId)
+  const table = await TableMetadata.query().findById(tableId).throwIfNotFound()
 
   const tableOperations = getTableOperations(table.db)
 

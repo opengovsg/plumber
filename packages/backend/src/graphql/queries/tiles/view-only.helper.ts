@@ -19,9 +19,15 @@ export async function fetchTableWithViewOnlyCheck({
   context,
   withColumns,
 }: ViewOnlyCheckOptions): Promise<ViewOnlyCheckResult> {
+  const viewOnlyKey = context.tilesViewKey
+  // Callers only reach this helper after checking for a view key.
+  if (!viewOnlyKey) {
+    throw new Error('Missing tiles view key')
+  }
+
   let query = TableMetadata.query().findOne({
     id: tableId,
-    view_only_key: context.tilesViewKey,
+    view_only_key: viewOnlyKey,
   })
 
   if (withColumns) {
@@ -31,7 +37,7 @@ export async function fetchTableWithViewOnlyCheck({
   const table = await query
 
   if (!table) {
-    throw new InvalidTileViewKeyError(tableId, context.tilesViewKey)
+    throw new InvalidTileViewKeyError(tableId, viewOnlyKey)
   }
 
   const isPasswordBlocked =
@@ -40,7 +46,7 @@ export async function fetchTableWithViewOnlyCheck({
       !verifyViewToken(
         context.tilesViewToken,
         table.id,
-        context.tilesViewKey,
+        viewOnlyKey,
         table.viewOnlyPassword.tokenNonce,
       ))
 
