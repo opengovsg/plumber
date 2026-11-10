@@ -20,6 +20,11 @@ const INVALID_DATE = '2025-12-32'
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
   getLastExecutionStep: vi.fn(),
+  getPastTimestampKind: vi.fn(),
+}))
+
+vi.mock('../helpers/get-past-timestamp-kind', () => ({
+  default: mocks.getPastTimestampKind,
 }))
 
 describe('Delay until action', () => {
@@ -221,54 +226,28 @@ describe('Delay until action', () => {
       })
     })
 
-    it('is config when the target was already past when the execution started', async () => {
-      $.execution.createdAt = DateTime.now().minus({ hours: 1 }).toISO()
-      $.step.parameters = {
-        delayUntil: PAST_DATE,
-        delayUntilTime: DEFAULT_TIME,
-      }
-      mocks.getLastExecutionStep.mockResolvedValue(null)
+    it.each(['config', 'third-party'] as const)(
+      'is %s for a past target when the run history says so',
+      async (kind) => {
+        $.step.parameters = {
+          delayUntil: PAST_DATE,
+          delayUntilTime: DEFAULT_TIME,
+        }
+        mocks.getLastExecutionStep.mockResolvedValue(null)
+        mocks.getPastTimestampKind.mockResolvedValue(kind)
 
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
-        message: expect.stringContaining(
-          'Delay until timestamp entered is in the past',
-        ),
-        kind: 'config',
-      })
-    })
-
-    it('is internal when the target passed after the execution started', async () => {
-      const executionStart = DateTime.now().minus({ hours: 1 })
-      $.execution.createdAt = executionStart.toISO()
-      const target = executionStart.plus({ minutes: 30 })
-      $.step.parameters = {
-        delayUntil: target.toPlumberFormat('dd MMM yyyy'),
-        delayUntilTime: target.toPlumberFormat('HH:mm'),
-      }
-      mocks.getLastExecutionStep.mockResolvedValue(null)
-
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
-        message: expect.stringContaining(
-          'Delay until timestamp entered is in the past',
-        ),
-        kind: 'internal',
-      })
-    })
-
-    it('is internal for a past target when the execution start time is unknown', async () => {
-      $.step.parameters = {
-        delayUntil: PAST_DATE,
-        delayUntilTime: DEFAULT_TIME,
-      }
-      mocks.getLastExecutionStep.mockResolvedValue(null)
-
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
-        message: expect.stringContaining(
-          'Delay until timestamp entered is in the past',
-        ),
-        kind: 'internal',
-      })
-    })
+        await expect(delayUntilAction.run($)).rejects.toMatchObject({
+          message: expect.stringContaining(
+            'Delay until timestamp entered is in the past',
+          ),
+          kind,
+        })
+        expect(mocks.getPastTimestampKind).toHaveBeenCalledWith(
+          $,
+          DateTime.fromISO(`${PAST_DATE}T${DEFAULT_TIME}`).toMillis(),
+        )
+      },
+    )
   })
 
   describe('retry logic', () => {

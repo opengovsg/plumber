@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import globalVariable from '@/helpers/global-variable'
 import Connection from '@/models/connection'
-import type Execution from '@/models/execution'
 
 describe('globalVariable auth persistence', () => {
   const app = {
@@ -66,29 +65,5 @@ describe('globalVariable auth persistence', () => {
       token: 'stored-token',
       screenName: 'Stored bot',
     })
-  })
-})
-
-describe('globalVariable execution', () => {
-  const app = {
-    apiBaseUrl: '',
-    beforeRequest: [],
-  } as unknown as IApp
-
-  it('exposes the execution start time as an ISO string', async () => {
-    const execution = {
-      id: 'execution-id',
-      createdAt: new Date('2026-01-02T03:04:05.000Z'),
-    } as unknown as Execution
-
-    const $ = await globalVariable({ app, execution })
-
-    expect($.execution.createdAt).toBe('2026-01-02T03:04:05.000Z')
-  })
-
-  it('leaves the execution start time undefined without an execution', async () => {
-    const $ = await globalVariable({ app })
-
-    expect($.execution.createdAt).toBeUndefined()
   })
 })

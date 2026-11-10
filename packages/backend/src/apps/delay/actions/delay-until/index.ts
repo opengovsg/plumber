@@ -4,6 +4,7 @@ import { DateTime } from 'luxon'
 import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
+import getPastTimestampKind from '../../helpers/get-past-timestamp-kind'
 
 async function isValidRetry($: IGlobalVariable): Promise<boolean> {
   // do not allow retries in test runs
@@ -132,16 +133,12 @@ const action: IRawAction = {
           delayUntilTime: dateTimeNow.toPlumberFormat('HH:mm'),
         }
       } else {
-        // A target that passed mid-execution means Plumber reached this step late.
-        const wasPastAtExecutionStart =
-          $.execution.createdAt !== undefined &&
-          delayTimestamp < new Date($.execution.createdAt).getTime()
         // Update in `useExecutionStepStatus.ts` if the error name changes
         throw new StepError({
           name: 'Delay until timestamp entered is in the past',
           solution:
             'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
-          kind: wasPastAtExecutionStart ? 'config' : 'internal',
+          kind: await getPastTimestampKind($, delayTimestamp),
         })
       }
     }

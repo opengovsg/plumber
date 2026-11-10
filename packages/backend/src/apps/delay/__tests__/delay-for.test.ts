@@ -14,6 +14,11 @@ const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
 }))
 
+// Its model import cycles back into the app registry before the delay app loads.
+vi.mock('../helpers/get-past-timestamp-kind', () => ({
+  default: vi.fn(),
+}))
+
 describe('Delay for action', () => {
   let $: IGlobalVariable
 
