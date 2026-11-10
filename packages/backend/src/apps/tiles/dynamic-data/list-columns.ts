@@ -21,7 +21,9 @@ const dynamicData: IDynamicData = {
     }
 
     try {
-      const currentUser = await User.query().findById($.user.id)
+      const currentUser = await User.query()
+        .findById($.user.id)
+        .throwIfNotFound()
       const tile = await currentUser
         .$relatedQuery('tables')
         .findById($.step.parameters.tableId as string)
@@ -41,16 +43,14 @@ const dynamicData: IDynamicData = {
         })),
       }
     } catch (err) {
-      logger.error(
-        err.data.message ?? 'Tiles dynamic data: list columns error',
-        {
-          userId: $.user?.id,
-          tableId: $.step.parameters.tableId,
-          flowId: $.flow?.id,
-          stepId: $.step?.id,
-        },
-      )
-      throw new Error(err.data.message ?? 'Unable to fetch columns')
+      const errorMessage = err instanceof Error ? err.message : undefined
+      logger.error(errorMessage ?? 'Tiles dynamic data: list columns error', {
+        userId: $.user?.id,
+        tableId: $.step.parameters.tableId,
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+      })
+      throw new Error(errorMessage ?? 'Unable to fetch columns')
     }
   },
 }

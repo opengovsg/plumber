@@ -16,7 +16,9 @@ const dynamicData: IDynamicData = {
       throw new Error('No user found')
     }
     try {
-      const currentUser = await User.query().findById($.user.id)
+      const currentUser = await User.query()
+        .findById($.user.id)
+        .throwIfNotFound()
       const tiles = await currentUser
         .$relatedQuery('tables')
         .whereIn('role', ['owner', 'editor'])
