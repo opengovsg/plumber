@@ -37,7 +37,9 @@ const dynamicData: IDynamicData = {
     } catch (error) {
       return {
         data: [],
-        error: error.message,
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+        },
       }
     }
   },
