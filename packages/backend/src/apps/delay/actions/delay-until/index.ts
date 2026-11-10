@@ -138,7 +138,8 @@ const action: IRawAction = {
           solution:
             'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
           // Kind depends on why delayTimestamp has passed:
-          // - Before the run started: config (Delay until's own parameter).
+          // - Execution (i.e. trigger) started after configured time: config
+          //   (Delay until's own parameter).
           // - A retry: third-party (another step failed).
           // - An earlier delay: third-party (another step).
           // - Slow steps or a queue backlog: third-party (outside delay).
