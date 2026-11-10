@@ -320,6 +320,11 @@
     "src/apps/databricks/auth/is-still-verified.ts",
     "src/apps/databricks/auth/create-client.ts",
     "src/apps/databricks/actions/create-row.ts",
-    "src/apps/formsg/auth/decrypt-form-response.ts"
+    "src/apps/formsg/auth/decrypt-form-response.ts",
+    "src/apps/aisay/actions/use-specific-model/index.ts",
+    "src/apps/toolbox/actions/if-then/infra/handle-create-step.ts",
+    "src/apps/toolbox/common/validate-end-step.ts",
+    "src/helpers/global-variable.ts",
+    "src/models/app.ts"
   ]
 }
