@@ -56,9 +56,14 @@ const dynamicData: IDynamicData = {
         }
       }
 
+      const message = error instanceof Error ? error.message : undefined
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? String(error.code)
+          : undefined
       return {
         data: [],
-        error: error?.message || error?.code || 'Unknown error',
+        error: { message: message || code || 'Unknown error' },
       }
     }
   },
