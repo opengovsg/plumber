@@ -20,11 +20,6 @@ const INVALID_DATE = '2025-12-32'
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
   getLastExecutionStep: vi.fn(),
-  getPastTimestampKind: vi.fn(),
-}))
-
-vi.mock('../helpers/get-past-timestamp-kind', () => ({
-  default: mocks.getPastTimestampKind,
 }))
 
 describe('Delay until action', () => {
@@ -226,28 +221,54 @@ describe('Delay until action', () => {
       })
     })
 
-    it.each(['config', 'third-party'] as const)(
-      'is %s for a past target when the run history says so',
-      async (kind) => {
-        $.step.parameters = {
-          delayUntil: PAST_DATE,
-          delayUntilTime: DEFAULT_TIME,
-        }
-        mocks.getLastExecutionStep.mockResolvedValue(null)
-        mocks.getPastTimestampKind.mockResolvedValue(kind)
+    it('is config when the target was already past when the run started', async () => {
+      $.execution.createdAt = DateTime.now().minus({ hours: 1 }).toISO()
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
 
-        await expect(delayUntilAction.run($)).rejects.toMatchObject({
-          message: expect.stringContaining(
-            'Delay until timestamp entered is in the past',
-          ),
-          kind,
-        })
-        expect(mocks.getPastTimestampKind).toHaveBeenCalledWith(
-          $,
-          DateTime.fromISO(`${PAST_DATE}T${DEFAULT_TIME}`).toMillis(),
-        )
-      },
-    )
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'config',
+      })
+    })
+
+    it('is third-party when the target passed after the run started', async () => {
+      const runStart = DateTime.now().minus({ hours: 1 })
+      $.execution.createdAt = runStart.toISO()
+      const target = runStart.plus({ minutes: 30 })
+      $.step.parameters = {
+        delayUntil: target.toPlumberFormat('dd MMM yyyy'),
+        delayUntilTime: target.toPlumberFormat('HH:mm'),
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'third-party',
+      })
+    })
+
+    it('is third-party for a past target when the run start time is unknown', async () => {
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'third-party',
+      })
+    })
   })
 
   describe('retry logic', () => {

@@ -4,7 +4,6 @@ import { DateTime } from 'luxon'
 import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
-import getPastTimestampKind from '../../helpers/get-past-timestamp-kind'
 
 async function isValidRetry($: IGlobalVariable): Promise<boolean> {
   // do not allow retries in test runs
@@ -138,7 +137,22 @@ const action: IRawAction = {
           name: 'Delay until timestamp entered is in the past',
           solution:
             'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
-          kind: await getPastTimestampKind($, delayTimestamp),
+          // ┌─────────────────────────────────────────────────┬─────────────────────────────┬─────────────┐
+          // │                      Case                       │            Cause            │    Kind     │
+          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
+          // │ Target before the run started                   │ Delay until's own parameter │ config      │
+          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
+          // │ A retry pushed the run past the target          │ Another step failed         │ third-party │
+          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
+          // │ An earlier delay pushed the run past the target │ Another step                │ third-party │
+          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
+          // │ Slow steps or a queue backlog                   │ Outside delay               │ third-party │
+          // └─────────────────────────────────────────────────┴─────────────────────────────┴─────────────┘
+          kind:
+            $.execution.createdAt !== undefined &&
+            delayTimestamp < new Date($.execution.createdAt).getTime()
+              ? 'config'
+              : 'third-party',
         })
       }
     }
