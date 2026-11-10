@@ -13,6 +13,9 @@ import { ADDRESS_LABELS } from '../../common/constants'
 import { FormSchema, ParsedMrfWorkflowStep } from '../../common/types'
 import trigger from '../../triggers/new-submission'
 
+const PLUMBER_SUPPORT_SOLUTION =
+  'This should not happen. Please contact plumber@open.gov.sg for assistance.'
+
 const pushTriggerItemMock = vi.fn()
 const getLastExecutionStepMock = vi.fn()
 
@@ -389,24 +392,30 @@ describe('new submission trigger', () => {
         mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
         mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        await expect(
-          trigger.testRun($, { preferMock: true }),
-        ).rejects.toMatchObject({
+        const error = await trigger
+          .testRun($, { preferMock: true })
+          .catch((e) => e)
+
+        expect(error).toMatchObject({
           message: expect.stringContaining('"name":"Error syncing MRF steps"'),
           kind: 'internal',
         })
+        expect(error.message).toContain(PLUMBER_SUPPORT_SOLUTION)
       })
 
       it('should throw StepError when removeMrfSteps fails', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
         mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        await expect(
-          trigger.testRun($, { preferMock: true }),
-        ).rejects.toMatchObject({
+        const error = await trigger
+          .testRun($, { preferMock: true })
+          .catch((e) => e)
+
+        expect(error).toMatchObject({
           message: expect.stringContaining('"name":"Error removing MRF steps"'),
           kind: 'internal',
         })
+        expect(error.message).toContain(PLUMBER_SUPPORT_SOLUTION)
       })
 
       it('should call removeMrfSteps for multirespondent forms with empty workflow', async () => {
