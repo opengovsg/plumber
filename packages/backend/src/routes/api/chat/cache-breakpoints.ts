@@ -27,11 +27,23 @@ export function sumCacheWriteInputTokens(
   }, 0)
 }
 
+function findPreviousUserMessageIndex(messages: ModelMessage[]): number {
+  for (let index = messages.length - 2; index >= 0; index--) {
+    if (messages[index].role === 'user') {
+      return index
+    }
+  }
+  return -1
+}
+
 /**
  * Creates a `prepareStep` callback that caches the conversation, not just the system prompt.
  *
  * Each step writes a breakpoint at its last message and keeps the previous step's breakpoint.
  * The next step then reads the whole earlier prefix from cache, however many tool results it added.
+ *
+ * IMPORTANT: a turn's first step also marks the previous user message. Reasoning parts are stripped between turns,
+ * so that message is the last point matching what the previous turn cached.
  */
 export function createCacheBreakpointPreparer() {
   let previousStepLength = 0
@@ -40,6 +52,11 @@ export function createCacheBreakpointPreparer() {
     const breakpointIndexes = new Set([messages.length - 1])
     if (previousStepLength > 0) {
       breakpointIndexes.add(previousStepLength - 1)
+    } else {
+      const previousUserIndex = findPreviousUserMessageIndex(messages)
+      if (previousUserIndex >= 0) {
+        breakpointIndexes.add(previousUserIndex)
+      }
     }
     previousStepLength = messages.length
 

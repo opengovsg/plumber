@@ -35,12 +35,23 @@ const tool: ModelMessage = {
 }
 
 describe('createCacheBreakpointPreparer', () => {
-  it('marks only the last message on the first step', () => {
+  it('marks only the last message on the first step of a new chat', () => {
     const prepare = createCacheBreakpointPreparer()
 
     const { messages } = prepare({ messages: [system, user] })
 
     expect(cachedIndexes(messages)).toEqual([1])
+  })
+
+  it("marks the previous turn's user message on a turn's first step", () => {
+    const prepare = createCacheBreakpointPreparer()
+    const nextUser: ModelMessage = { role: 'user', content: 'thanks' }
+
+    const { messages } = prepare({
+      messages: [system, user, assistant, tool, assistant, tool, nextUser],
+    })
+
+    expect(cachedIndexes(messages)).toEqual([1, 6])
   })
 
   it("keeps the previous step's breakpoint and adds one at the new last message", () => {
