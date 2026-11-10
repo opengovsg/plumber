@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@plumber/types'
+import { IGlobalVariable, IJSONObject } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Execution from '@/models/execution'
@@ -46,7 +46,7 @@ describe('mrf-submission action gating rules (integration)', () => {
   beforeEach(async () => {
     context = await generateMockContext()
     await generateMockFlow(context, FLOW_ID)
-    flow = await Flow.query().findById(FLOW_ID)
+    flow = (await Flow.query().findById(FLOW_ID))!
     triggerStep = await generateMockStep(
       context,
       'newSubmission',
@@ -121,12 +121,12 @@ describe('mrf-submission action gating rules (integration)', () => {
         executionId: execution.id,
         stepId: triggerStep.id,
         status: 'failure',
-        dataOut: null,
+        dataOut: null as unknown as IJSONObject,
         appKey: 'formsg',
       })
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -183,7 +183,7 @@ describe('mrf-submission action gating rules (integration)', () => {
         executionId: execution.id,
         stepId: failedStep.id,
         status: 'failure',
-        dataOut: null,
+        dataOut: null as unknown as IJSONObject,
         appKey: 'postman',
       })
       await ExecutionStep.query().insert({
@@ -201,7 +201,7 @@ describe('mrf-submission action gating rules (integration)', () => {
       })
 
       const $ = createGlobalVariable(mrfStepB, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -219,7 +219,7 @@ describe('mrf-submission action gating rules (integration)', () => {
       // No execution step for the trigger at all
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -321,7 +321,7 @@ describe('mrf-submission action gating rules (integration)', () => {
 
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toBeUndefined()
+      expect(await action.run!($)).toBeUndefined()
     })
 
     it('should continue when the block ran to its end', async () => {
@@ -330,7 +330,7 @@ describe('mrf-submission action gating rules (integration)', () => {
 
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toBeUndefined()
+      expect(await action.run!($)).toBeUndefined()
     })
 
     it('should pause execution while a TRUE block is still running', async () => {
@@ -338,7 +338,7 @@ describe('mrf-submission action gating rules (integration)', () => {
 
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toEqual({
+      expect(await action.run!($)).toEqual({
         nextStep: { command: 'pause-execution' },
       })
     })
@@ -346,7 +346,7 @@ describe('mrf-submission action gating rules (integration)', () => {
     it('should pause execution before the if-then itself has run', async () => {
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toEqual({
+      expect(await action.run!($)).toEqual({
         nextStep: { command: 'pause-execution' },
       })
     })
@@ -362,7 +362,7 @@ describe('mrf-submission action gating rules (integration)', () => {
 
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toEqual({
+      expect(await action.run!($)).toEqual({
         nextStep: { command: 'pause-execution' },
       })
     })
@@ -390,11 +390,11 @@ describe('mrf-submission action gating rules (integration)', () => {
       })
 
       const $ = createGlobalVariable(
-        await Step.query().findById(mrfStep3.id),
+        (await Step.query().findById(mrfStep3.id))!,
         execution,
       )
 
-      expect(await action.run($)).toBeUndefined()
+      expect(await action.run!($)).toBeUndefined()
     })
   })
 
@@ -467,7 +467,7 @@ describe('mrf-submission action gating rules (integration)', () => {
 
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toEqual({
+      expect(await action.run!($)).toEqual({
         nextStep: { command: 'pause-execution' },
       })
     })
@@ -483,7 +483,7 @@ describe('mrf-submission action gating rules (integration)', () => {
 
       const $ = createGlobalVariable(mrfStep3, execution)
 
-      expect(await action.run($)).toBeUndefined()
+      expect(await action.run!($)).toBeUndefined()
     })
   })
 })
