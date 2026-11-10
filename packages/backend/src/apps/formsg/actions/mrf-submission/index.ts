@@ -258,7 +258,7 @@ const action: IRawAction = {
     )
     // Ensure workflowContent exists and workflowStep index is a valid number.
     if (submittedStepsResult.success === false) {
-      // If these are missing, something has gone wrong in the form submission or wiring.
+      // third-party: FormSG sends this payload, so a bad shape likely means a FormSG API change.
       throw new StepError({
         name: 'Invalid MRF data: submitted steps are not valid',
         solution: 'Click check step to sync your MRF form and try again.',
@@ -270,7 +270,7 @@ const action: IRawAction = {
     const submittedStep =
       submittedStepsResult.data[submittedStepsResult.data.length - 1]
     if (!submittedStep) {
-      // Should never happen unless the workflow schema did not sync or was changed.
+      // third-party: FormSG sends this payload, so a bad shape likely means a FormSG API change.
       throw new StepError({
         name: 'Invalid MRF data: unable to find submitted step',
         solution: 'Click check step to sync your MRF form and try again.',
