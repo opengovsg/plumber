@@ -65,7 +65,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrowError(StepError)
+    await expect(processImageAction.run!($)).rejects.toThrowError(StepError)
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.getImageContent).not.toHaveBeenCalled()
   })
@@ -77,7 +77,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrowError(StepError)
+    await expect(processImageAction.run!($)).rejects.toThrowError(StepError)
     expect(mocks.generateObject).not.toHaveBeenCalled()
   })
 
@@ -88,7 +88,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await processImageAction.run($)
+    await processImageAction.run!($)
 
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.getImageContent).not.toHaveBeenCalled()
@@ -107,7 +107,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await processImageAction.run($)
+    await processImageAction.run!($)
 
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -133,7 +133,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await processImageAction.run($)
+    await processImageAction.run!($)
 
     expect(mocks.getImageContent).toHaveBeenCalledWith('s3-id-123', 'flow-id')
     expect(mocks.generateObject).toHaveBeenCalled()
@@ -161,7 +161,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrow(
+    await expect(processImageAction.run!($)).rejects.toThrow(
       /Image is too large/,
     )
   })
@@ -186,7 +186,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error: StepError) => {
         expect(error).toBeInstanceOf(StepError)
         expect(error.message).not.toMatch(/RateLimitError|Model Group/)

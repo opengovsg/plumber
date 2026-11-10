@@ -82,7 +82,7 @@ describe('Send SMS Action', () => {
       $,
       baseURL: '',
       beforeRequest: [],
-      requestErrorHandler: null,
+      requestErrorHandler: undefined,
     })
 
     $ = {
@@ -152,7 +152,7 @@ describe('Send SMS Action', () => {
       await sendSmsAction.run($)
 
       const requestToPostman = JSON.parse(
-        mocks.axiosRequestAdapter.mock.lastCall[0].data,
+        mocks.axiosRequestAdapter.mock.lastCall![0].data,
       )
       expect(requestToPostman).toEqual(
         expect.objectContaining({

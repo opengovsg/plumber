@@ -4,7 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import apps from '@/apps'
 
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
-import type { FormsgPayloadWorkflowContent } from '../../common/types'
+import type {
+  FormSchemaField,
+  FormsgPayloadWorkflowContent,
+} from '../../common/types'
 import {
   exampleV4Submission,
   makeExampleV4FormSchema,
@@ -31,7 +34,11 @@ const mocks = vi.hoisted(() => {
     getSdk: vi.fn(() => mockSdk),
     parseFormEnv: vi.fn(() => 'prod'),
     storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
-    fetchFormSchema: vi.fn(() => null),
+    // Only form_fields is read downstream, so fixtures supply just that.
+    fetchFormSchema: vi.fn(
+      async (): Promise<{ form: { form_fields: FormSchemaField[] } } | null> =>
+        null,
+    ),
     decryptFormAttachmentsV3OrV4: vi.fn(() => ({})),
   }
 })
@@ -96,7 +103,11 @@ function makeWorkflowContent(
   }
 }
 
-function makeGlobalVariable(): IGlobalVariable {
+// IGlobalVariable.request is optional, but every test here goes through the
+// webhook path where it is always present.
+type GlobalVariableWithRequest = IGlobalVariable & { request: IRequest }
+
+function makeGlobalVariable(): GlobalVariableWithRequest {
   return {
     request: {
       query: {
@@ -145,11 +156,11 @@ function makeGlobalVariable(): IGlobalVariable {
       updatedAt: `${new Date().getTime()}`,
     },
     app: apps.formsg,
-  } as unknown as IGlobalVariable
+  } as unknown as GlobalVariableWithRequest
 }
 
 describe('decrypt form response - MRF specific', () => {
-  let $: IGlobalVariable
+  let $: GlobalVariableWithRequest
 
   beforeEach(() => {
     $ = makeGlobalVariable()
