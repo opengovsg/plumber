@@ -191,7 +191,11 @@ describe('Bedrock request cache boundaries', () => {
       withConnection: false,
     })
 
-    expect(cachedBlockPaths(step1)).toEqual(['system.0', 'messages.2.0'])
+    expect(cachedBlockPaths(step1)).toEqual([
+      'system.0',
+      'messages.0.0',
+      'messages.2.0',
+    ])
     expect(step2.messages.map((m) => m.role)).toEqual([
       'user',
       'assistant',
@@ -203,6 +207,52 @@ describe('Bedrock request cache boundaries', () => {
       'system.0',
       'messages.2.0',
       'messages.4.0',
+    ])
+  })
+
+  it("anchors a turn's first request on the previous user message after a long turn", async () => {
+    const longTurn: ModelMessage[] = Array.from({ length: 12 }, (_, i) => [
+      {
+        role: 'assistant' as const,
+        content: [
+          {
+            type: 'tool-call' as const,
+            toolCallId: `old-${i}`,
+            toolName: 'update_step',
+            input: { step_id: `step-${i}` },
+          },
+        ],
+      },
+      {
+        role: 'tool' as const,
+        content: [
+          {
+            type: 'tool-result' as const,
+            toolCallId: `old-${i}`,
+            toolName: 'update_step',
+            output: { type: 'json' as const, value: { ok: true } },
+          },
+        ],
+      },
+    ]).flat()
+    const [step1] = await runTwoSteps({
+      chatId: CHAT_A,
+      restrictedApps: [],
+      history: [
+        { role: 'user', content: 'Build the pipe.' },
+        ...longTurn,
+        { role: 'assistant', content: 'Done.' },
+        { role: 'user', content: 'Now rename it.' },
+      ],
+      withConnection: false,
+    })
+
+    const lastIndex = step1.messages.length - 1
+    expect(lastIndex).toBeGreaterThan(20)
+    expect(cachedBlockPaths(step1)).toEqual([
+      'system.0',
+      'messages.0.0',
+      `messages.${lastIndex}.0`,
     ])
   })
 
