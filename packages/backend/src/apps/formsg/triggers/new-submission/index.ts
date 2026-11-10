@@ -123,7 +123,13 @@ const trigger: IRawTrigger = {
       try {
         await createMrfSteps($, mrfWorkflowData)
       } catch (error) {
-        logger.error('Error syncing MRF steps', error)
+        logger.error('Error syncing MRF steps', {
+          event: 'formsg-sync-mrf-steps-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          flowId: $.flow.id,
+          stepId: $.step.id,
+        })
         throw new StepError({
           name: 'Error syncing MRF steps',
           solution:

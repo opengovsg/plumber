@@ -42,6 +42,15 @@ const mocks = vi.hoisted(() => ({
   removeMrfSteps: vi.fn(),
   createMrfSteps: vi.fn(),
   parseWorkflowData: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+    warn: vi.fn(),
+    info: vi.fn(),
+  },
 }))
 
 vi.mock('../../triggers/new-submission/get-mock-data', () => ({
@@ -401,6 +410,13 @@ describe('new submission trigger', () => {
           kind: 'internal',
         })
         expect(error.message).toContain(PLUMBER_SUPPORT_SOLUTION)
+        expect(mocks.logError).toHaveBeenCalledWith('Error syncing MRF steps', {
+          event: 'formsg-sync-mrf-steps-failed',
+          errorName: 'Error',
+          errorMessage: 'db error',
+          flowId: $.flow.id,
+          stepId: $.step.id,
+        })
       })
 
       it('should throw StepError when removeMrfSteps fails', async () => {
