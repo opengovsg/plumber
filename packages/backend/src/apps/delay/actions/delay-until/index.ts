@@ -137,17 +137,11 @@ const action: IRawAction = {
           name: 'Delay until timestamp entered is in the past',
           solution:
             'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
-          // ┌─────────────────────────────────────────────────┬─────────────────────────────┬─────────────┐
-          // │                      Case                       │            Cause            │    Kind     │
-          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
-          // │ Target before the run started                   │ Delay until's own parameter │ config      │
-          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
-          // │ A retry pushed the run past the target          │ Another step failed         │ third-party │
-          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
-          // │ An earlier delay pushed the run past the target │ Another step                │ third-party │
-          // ├─────────────────────────────────────────────────┼─────────────────────────────┼─────────────┤
-          // │ Slow steps or a queue backlog                   │ Outside delay               │ third-party │
-          // └─────────────────────────────────────────────────┴─────────────────────────────┴─────────────┘
+          // Kind depends on why delayTimestamp has passed:
+          // - Before the run started: config (Delay until's own parameter).
+          // - A retry: third-party (another step failed).
+          // - An earlier delay: third-party (another step).
+          // - Slow steps or a queue backlog: third-party (outside delay).
           kind:
             $.execution.createdAt !== undefined &&
             delayTimestamp < new Date($.execution.createdAt).getTime()

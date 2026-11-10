@@ -221,7 +221,7 @@ describe('Delay until action', () => {
       })
     })
 
-    it('is config when the target was already past when the run started', async () => {
+    it('is config when delayTimestamp was already past when the run started', async () => {
       $.execution.createdAt = DateTime.now().minus({ hours: 1 }).toISO()
       $.step.parameters = {
         delayUntil: PAST_DATE,
@@ -237,13 +237,13 @@ describe('Delay until action', () => {
       })
     })
 
-    it('is third-party when the target passed after the run started', async () => {
+    it('is third-party when delayTimestamp passed after the run started', async () => {
       const runStart = DateTime.now().minus({ hours: 1 })
       $.execution.createdAt = runStart.toISO()
-      const target = runStart.plus({ minutes: 30 })
+      const delayTimestamp = runStart.plus({ minutes: 30 })
       $.step.parameters = {
-        delayUntil: target.toPlumberFormat('dd MMM yyyy'),
-        delayUntilTime: target.toPlumberFormat('HH:mm'),
+        delayUntil: delayTimestamp.toPlumberFormat('dd MMM yyyy'),
+        delayUntilTime: delayTimestamp.toPlumberFormat('HH:mm'),
       }
       mocks.getLastExecutionStep.mockResolvedValue(null)
 
@@ -255,7 +255,7 @@ describe('Delay until action', () => {
       })
     })
 
-    it('is third-party for a past target when the run start time is unknown', async () => {
+    it('is third-party for a past delayTimestamp when the run start time is unknown', async () => {
       $.step.parameters = {
         delayUntil: PAST_DATE,
         delayUntilTime: DEFAULT_TIME,
