@@ -56,6 +56,9 @@ import {
 } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
+export const OVERRIDE_BEFORE_USER_REPLY_MESSAGE =
+  'The user has not answered the override question yet. Relay the conflict message, ask whether to override, and wait for their reply. Nothing was changed.'
+
 type McpToolError = { error: string } | PublishedPipeErrorResult
 
 function mcpToolError(
@@ -92,6 +95,10 @@ export function createMcpBridgeTools(
     parameterLabels?: Record<string, string>,
   ) => void,
 ) {
+  // One instance serves one user message. A conflict recorded here has not
+  // been shown to the user yet, so no answer to the override question exists.
+  const stepsWithConflictThisTurn = new Set<string>()
+
   const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
       description:
@@ -309,6 +316,9 @@ export function createMcpBridgeTools(
             connectionId: connection_id,
             traceId,
           })
+          if (result.connectionConflict) {
+            stepsWithConflictThisTurn.add(step_id)
+          }
           onPipeChange?.(pipe_id)
           onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
           return result
@@ -442,6 +452,9 @@ export function createMcpBridgeTools(
         step_id,
         connection_id,
       }): Promise<RegisterConnectionResult | McpToolError> => {
+        if (stepsWithConflictThisTurn.has(step_id)) {
+          return { error: OVERRIDE_BEFORE_USER_REPLY_MESSAGE }
+        }
         try {
           const result = await overrideConnectionService(
             user,
