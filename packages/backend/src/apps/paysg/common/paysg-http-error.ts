@@ -10,21 +10,16 @@ interface PaySgStepErrorInfo {
   kind: StepErrorKind
 }
 
-const TRY_AGAIN_LATER = 'Try again later.'
-
 // https://guide.pay.gov.sg/start-an-api-integration/errors
 const paySgErrorBodySchema = z.object({
   error: z.object({ message: z.string() }),
 })
 
-function getPaySgErrorMessage(error: HttpError): string | undefined {
-  const result = paySgErrorBodySchema.safeParse(error.response.data)
-  return result.success ? result.data.error.message : undefined
-}
-
 function withPaySgMessage(prefix: string, error: HttpError): string {
-  const message = getPaySgErrorMessage(error)
-  return message ? `${prefix}: ${message}` : prefix
+  const body = paySgErrorBodySchema.safeParse(error.response.data)
+  return body.success && body.data.error.message
+    ? `${prefix}: ${body.data.error.message}`
+    : prefix
 }
 
 // PaySG documents each listed 4xx as caused by the request's own values or the user's PaySG account.
@@ -35,12 +30,12 @@ function getPaySgStepErrorInfo(error: HttpError): PaySgStepErrorInfo {
     return isNetworkError(error)
       ? {
           name: 'Could not connect to PaySG',
-          solution: TRY_AGAIN_LATER,
+          solution: 'Try again later.',
           kind: 'third-party',
         }
       : {
           name: 'Could not send the request to PaySG',
-          solution: TRY_AGAIN_LATER,
+          solution: 'Try again later.',
           kind: 'internal',
         }
   }
@@ -83,7 +78,7 @@ function getPaySgStepErrorInfo(error: HttpError): PaySgStepErrorInfo {
     case 429:
       return {
         name: 'Too many requests sent to PaySG',
-        solution: TRY_AGAIN_LATER,
+        solution: 'Try again later.',
         kind: 'internal',
       }
   }
@@ -91,7 +86,7 @@ function getPaySgStepErrorInfo(error: HttpError): PaySgStepErrorInfo {
   if (status >= 500) {
     return {
       name: 'PaySG is unavailable',
-      solution: TRY_AGAIN_LATER,
+      solution: 'Try again later.',
       kind: 'third-party',
     }
   }
@@ -101,7 +96,7 @@ function getPaySgStepErrorInfo(error: HttpError): PaySgStepErrorInfo {
       `PaySG rejected the request (HTTP ${status})`,
       error,
     ),
-    solution: TRY_AGAIN_LATER,
+    solution: 'Try again later.',
     kind: 'internal',
   }
 }
