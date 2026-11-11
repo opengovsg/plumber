@@ -154,6 +154,19 @@ describe('send sms', () => {
     })
   })
 
+  it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+    'throws an internal StepError for a %s request error with no response',
+    async (code) => {
+      const httpError = makeHttpError({ code })
+      mocks.httpPost.mockRejectedValueOnce(httpError)
+
+      await expect(sendSmsAction.run($)).rejects.toMatchObject({
+        kind: 'internal',
+        cause: httpError,
+      })
+    },
+  )
+
   it('throws an internal StepError when the request was never sent', async () => {
     const httpError = makeHttpError()
     mocks.httpPost.mockRejectedValueOnce(httpError)
