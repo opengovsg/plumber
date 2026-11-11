@@ -23,10 +23,11 @@ export function parseWorkflowData(
 export function parseMrfWorkflow(workflow: unknown): ParsedMrfWorkflow {
   const result = mrfWorkflowDataSchema.safeParse(workflow)
   if (!result.success) {
+    // internal: only a FormSG API change breaks this, and Plumber owns keeping up with it.
     throw new StepError({
       name: 'Invalid MRF data',
       solution: 'Reconnect your MRF form and try again.',
-      kind: 'third-party',
+      kind: 'internal',
     })
   }
 

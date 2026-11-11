@@ -124,7 +124,7 @@ describe('parseWorkflowData', () => {
       expect(() => parseWorkflowData($, formSchema)).toThrow(
         expect.objectContaining({
           message: expect.stringContaining('"name":"Invalid MRF data"'),
-          kind: 'third-party',
+          kind: 'internal',
         }),
       )
     })
