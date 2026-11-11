@@ -13,6 +13,7 @@ const flowAiSuggestionRowSchema = z.object({
 export type FlowAiSuggestionRow = z.infer<typeof flowAiSuggestionRowSchema>
 
 // Diffing these against flow_step shows how much users change what the AI Builder proposed.
+// IMPORTANT: the browser builder saves suggestions only from #2576. An AI pipe with no rows here is unknown, not zero.
 // The CASE guards jsonb_array_elements, which fails on a non-array value.
 const FLOW_AI_SUGGESTION_SQL = `
   SELECT
