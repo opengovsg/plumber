@@ -1,6 +1,6 @@
 import type { IApp, StepErrorKind } from '@plumber/types'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError, { GenericSolution } from '@/errors/step'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
@@ -31,28 +31,11 @@ const handle5xxErrors: ThrowingHandler = (_, error): never => {
   })
 }
 
-// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
-const NETWORK_ERROR_CODES = new Set([
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'ECONNABORTED',
-  'ETIMEDOUT',
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'EPIPE',
-  'EHOSTUNREACH',
-  'ENETUNREACH',
-  'EPROTO',
-  'CERT_HAS_EXPIRED',
-])
-
 // Other 4xx codes are Plumber bugs or ambiguous, e.g. 403 covers archived campaigns and Postman role failures.
 function getCatchAllKind(error: HttpError): StepErrorKind {
   const status = error.response.status
   if (status === undefined) {
-    return NETWORK_ERROR_CODES.has(error.code ?? '')
-      ? 'third-party'
-      : 'internal'
+    return isNetworkError(error) ? 'third-party' : 'internal'
   }
   return status >= 500 ? 'third-party' : 'internal'
 }
