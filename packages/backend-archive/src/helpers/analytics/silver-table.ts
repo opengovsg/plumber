@@ -31,20 +31,20 @@ export function buildSilverKey(tableName: string): string {
 }
 
 // Flat under the table folder, because the PostHog source pattern silver/*/*.parquet matches one level.
-// A day too large for one file continues in part-2, part-3 and so on.
+// A day too large for one file spreads over part files. The file without a part number comes last and marks the day done.
 export function buildSilverDayKey(
   tableName: string,
   day: string,
-  part = 1,
+  part?: number,
 ): string {
-  const suffix = part > 1 ? `.part-${part}` : ''
+  const suffix = part === undefined ? '' : `.part-${part}`
   return `${SILVER_PREFIX}${tableName}/day=${day}${suffix}.parquet`
 }
 
-const DAY_KEY = /\/day=(\d{4}-\d{2}-\d{2})(?:\.part-\d+)?\.parquet$/
+const DAY_DONE_KEY = /\/day=(\d{4}-\d{2}-\d{2})\.parquet$/
 
 export function parseSilverDayKey(key: string): string | null {
-  return DAY_KEY.exec(key)?.[1] ?? null
+  return DAY_DONE_KEY.exec(key)?.[1] ?? null
 }
 
 function toParquetValue(

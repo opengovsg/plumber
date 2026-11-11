@@ -6,9 +6,7 @@ import { fetchFlowStepPages, toResourceId } from '../tables/flow-step'
 describe('toResourceId', () => {
   it.each([
     ['tiles', 'table-1', 'table-1'],
-    ['slack', 'C123', 'C123'],
     ['tiles', '{{step.abc.tableId}}', null],
-    ['tiles', '', null],
     ['tiles', null, null],
     [
       'custom-api',

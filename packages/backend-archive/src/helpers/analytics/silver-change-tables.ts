@@ -109,7 +109,7 @@ async function writeChangeFile({
   sink: SilverSink
   table: SilverChangeTable<SilverRow>
   day: string
-  part: number
+  part?: number
   rows: SilverRow[]
   full: boolean
 }): Promise<void> {
@@ -147,10 +147,8 @@ export async function writeSilverChangeTables({
     const existingKeys = await listKeys(`${SILVER_PREFIX}${table.name}/`)
     for (const file of planChangeFiles(existingKeys, yesterday, full)) {
       const window = file.full ? null : sgtDayWindow(file.day)
-      let part = 0
-      for await (const rows of table.fetchPages(db, window)) {
-        part++
-        await writeChangeFile({
+      const write = (rows: SilverRow[], part?: number) =>
+        writeChangeFile({
           sink,
           table,
           day: file.day,
@@ -158,18 +156,18 @@ export async function writeSilverChangeTables({
           rows,
           full: file.full,
         })
+      // IMPORTANT: the last page goes to the unnumbered key, written last. A run that fails
+      // part-way leaves the day unmarked, so the next run writes it again instead of skipping it.
+      let held: SilverRow[] = []
+      let part = 0
+      for await (const rows of table.fetchPages(db, window)) {
+        if (part > 0) {
+          await write(held, part)
+        }
+        held = rows
+        part++
       }
-      // An empty file still marks the day as done.
-      if (part === 0) {
-        await writeChangeFile({
-          sink,
-          table,
-          day: file.day,
-          part: 1,
-          rows: [],
-          full: file.full,
-        })
-      }
+      await write(held)
     }
   }
 }
