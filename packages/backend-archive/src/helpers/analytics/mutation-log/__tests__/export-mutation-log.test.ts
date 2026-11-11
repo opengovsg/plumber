@@ -3,17 +3,20 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import type { S3Client } from '@aws-sdk/client-s3'
-import { parquetReadObjects } from 'hyparquet'
+import { parquetMetadata, parquetReadObjects } from 'hyparquet'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { localDirSink } from '../../export-silver-tables'
 import {
   exportMutationLog,
+  MUTATION_LOG_ROW_GROUP_SIZE,
   previousSgtDay,
   sgtDaysBetween,
   sgtDayWindow,
+  sortForFlowSearch,
   writeMutationLogDays,
 } from '../export-mutation-log'
+import type { MutationLogRow } from '../parse-mutation-line'
 
 vi.mock('@/helpers/archival/logger')
 
@@ -107,6 +110,85 @@ describe('writeMutationLogDays', () => {
         http_status: 200n,
       },
     ])
+  })
+})
+
+function toArrayBuffer(file: Buffer): ArrayBuffer {
+  return file.buffer.slice(
+    file.byteOffset,
+    file.byteOffset + file.byteLength,
+  ) as ArrayBuffer
+}
+
+function row(flowId: string | null, ms: number): MutationLogRow {
+  return {
+    ts: new Date(ms),
+    user_id: null,
+    operation: 'updateFlow',
+    flow_id: flowId,
+    step_id: null,
+    table_id: null,
+    connection_id: null,
+    http_status: 200,
+  }
+}
+
+describe('sortForFlowSearch', () => {
+  it('orders by flow_id, then time, with rows without a pipe last', () => {
+    const rows = [row(null, 1), row('b', 2), row('a', 3), row('a', 1)]
+
+    expect(
+      sortForFlowSearch(rows).map((r) => [r.flow_id, r.ts.getTime()]),
+    ).toEqual([
+      ['a', 1],
+      ['a', 3],
+      ['b', 2],
+      [null, 1],
+    ])
+  })
+})
+
+describe('the mutation log file layout', () => {
+  it('writes sorted row groups with flow_id statistics and a bloom filter', async () => {
+    dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
+    const lineCount = MUTATION_LOG_ROW_GROUP_SIZE * 2 + 500
+    const lines = Array.from({ length: lineCount }, (_, i) => ({
+      timestamp: '2026-11-04 16:00:01.000',
+      query: 'mutation U($input: X!) { updateFlow(input: $input) { id } }',
+      // Unsorted on purpose: the writer must sort.
+      variables: `{'input':{'id':'flow-${String((i * 7919) % lineCount).padStart(5, '0')}'}}`,
+      userId: 'user-1',
+      status: '200',
+    }))
+
+    await writeMutationLogDays({
+      fetchDayLines: async () => lines,
+      sink: localDirSink(dir),
+      days: ['2026-11-05'],
+    })
+
+    const file = await readFile(
+      path.join(dir, 'bronze/mutation_log/day=2026-11-05/current.parquet'),
+    )
+    const metadata = parquetMetadata(toArrayBuffer(file))
+    const flowColumn = metadata.schema
+      .slice(1)
+      .findIndex((element) => element.name === 'flow_id')
+    const groups = metadata.row_groups.map(
+      (group) => group.columns[flowColumn].meta_data,
+    )
+
+    expect(metadata.row_groups).toHaveLength(3)
+    expect(
+      groups.every((meta) => meta?.bloom_filter_offset !== undefined),
+    ).toBe(true)
+    const ranges = groups.map((meta) => [
+      String(meta?.statistics?.min_value),
+      String(meta?.statistics?.max_value),
+    ])
+    for (let i = 1; i < ranges.length; i++) {
+      expect(ranges[i - 1][1] < ranges[i][0]).toBe(true)
+    }
   })
 })
 

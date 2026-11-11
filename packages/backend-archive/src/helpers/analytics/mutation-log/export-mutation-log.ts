@@ -34,6 +34,25 @@ export const MUTATION_LOG_COLUMNS: ParquetColumns<MutationLogRow> = {
   http_status: 'INT64',
 }
 
+// About 7 groups on a busy day, so a search by flow_id reads one or two of them.
+export const MUTATION_LOG_ROW_GROUP_SIZE = 2_000
+
+// Rows of one pipe sit together, so each row group covers a narrow flow_id range.
+export function sortForFlowSearch(rows: MutationLogRow[]): MutationLogRow[] {
+  return [...rows].sort((a, b) => {
+    if (a.flow_id !== b.flow_id) {
+      if (a.flow_id === null) {
+        return 1
+      }
+      if (b.flow_id === null) {
+        return -1
+      }
+      return a.flow_id < b.flow_id ? -1 : 1
+    }
+    return a.ts.getTime() - b.ts.getTime()
+  })
+}
+
 const ZONE = 'Asia/Singapore'
 const DAY_FORMAT = 'yyyy-MM-dd'
 
@@ -92,11 +111,19 @@ export async function writeMutationLogDays({
 }: WriteMutationLogDaysParams): Promise<void> {
   for (const day of days) {
     const lines = await fetchDayLines(sgtDayWindow(day))
-    const rows = lines
-      .map(toMutationLogRow)
-      .filter((row): row is MutationLogRow => row !== null)
+    const rows = sortForFlowSearch(
+      lines
+        .map(toMutationLogRow)
+        .filter((row): row is MutationLogRow => row !== null),
+    )
     const key = buildBronzeDayKey(MUTATION_LOG_TABLE, day)
-    await sink(key, encodeParquet(MUTATION_LOG_COLUMNS, rows))
+    await sink(
+      key,
+      encodeParquet(MUTATION_LOG_COLUMNS, rows, {
+        rowGroupSize: MUTATION_LOG_ROW_GROUP_SIZE,
+        bloomFilterColumns: ['flow_id'],
+      }),
+    )
     logger.info({
       event: 'analytics.mutation_log.day.written',
       day,

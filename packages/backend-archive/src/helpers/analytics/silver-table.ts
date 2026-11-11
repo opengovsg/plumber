@@ -57,9 +57,17 @@ export function encodeSilverTable<Row extends SilverRow>(
   return encodeParquet(table.columns, rows)
 }
 
+export interface EncodeParquetOptions<Row extends SilverRow> {
+  // Smaller groups let a reader skip more rows on a filter, using each group's min and max.
+  rowGroupSize?: number
+  // A bloom filter lets a reader skip a group that cannot hold an exact value.
+  bloomFilterColumns?: (keyof Row & string)[]
+}
+
 export function encodeParquet<Row extends SilverRow>(
   parquetColumns: ParquetColumns<Row>,
   rows: Row[],
+  { rowGroupSize, bloomFilterColumns = [] }: EncodeParquetOptions<Row> = {},
 ): Buffer {
   const columns = Object.entries(parquetColumns) as [string, SilverColumnType][]
   const schema: SchemaElement[] = [
@@ -70,9 +78,17 @@ export function encodeParquet<Row extends SilverRow>(
       ...COLUMN_SCHEMA[type],
     })),
   ]
+  const bloomColumns = new Set<string>(bloomFilterColumns)
   const columnData = columns.map(([name, type]) => ({
     name,
     data: rows.map((row) => toParquetValue(type, row[name])),
+    ...(bloomColumns.has(name) && { bloomFilter: true }),
   }))
-  return Buffer.from(parquetWriteBuffer({ columnData, schema }))
+  return Buffer.from(
+    parquetWriteBuffer({
+      columnData,
+      schema,
+      ...(rowGroupSize && { rowGroupSize }),
+    }),
+  )
 }
