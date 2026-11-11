@@ -107,7 +107,7 @@ Rules for choosing:
 
 - Choose `config` only with high confidence. When unsure, choose `internal` or `third-party`. A later PR can tighten it with prod evidence.
 - The thrower may branch on input values it holds (e.g. whether a date is ISO 8601).
-- In a catch-all, only listed user-fixable 4xx statuses or error codes become `config`. Each listed code has a test. Unlisted 4xx → `internal`. 5xx and network errors → `third-party`.
+- In a catch-all, only listed user-fixable 4xx statuses or error codes become `config`. Each listed code has a test. Unlisted 4xx → `internal`. 5xx and network errors (`isNetworkError` in `errors/http.ts`) → `third-party`.
 
 Special cases:
 
