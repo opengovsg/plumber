@@ -103,7 +103,7 @@ describe('resolveCaseIdentifier', () => {
     await expect(
       resolveCaseIdentifier(makeGlobal(post), MOCK_CASE_REF),
     ).rejects.toMatchObject({
-      kind: 'third-party',
+      kind: 'internal',
       message: expect.stringContaining('Unable to read the case search result'),
     })
   })

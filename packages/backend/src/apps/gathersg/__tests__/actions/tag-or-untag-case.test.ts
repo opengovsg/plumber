@@ -278,11 +278,11 @@ describe('tag or untag case', () => {
       expect(mocks.httpPost).not.toHaveBeenCalled()
     })
 
-    it('tags a response without traceId as third-party', async () => {
+    it('tags a response without traceId as internal', async () => {
       mocks.httpPost.mockResolvedValueOnce({ data: {} })
 
       await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
-        kind: 'third-party',
+        kind: 'internal',
       })
     })
 

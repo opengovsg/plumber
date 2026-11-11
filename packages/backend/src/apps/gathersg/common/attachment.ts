@@ -139,11 +139,12 @@ export async function processAttachments(
   const parsedAttachments = attachmentsSchema.safeParse(attachments)
 
   if (!parsedAttachments.success) {
+    // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
     throw new StepError({
       name: `Invalid attachments: ${parsedAttachments.error.message}`,
       solution:
         'Please check that your case attachments are accessible and try again.',
-      kind: 'third-party',
+      kind: 'internal',
     })
   }
 
@@ -186,11 +187,12 @@ export async function generateUploadToken(
 
   const token = data?.data?.token
   if (!token) {
+    // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
     throw new StepError({
       name: 'Ownself Gather did not return an upload token',
       solution:
         'Please try again. If this persists, check that your Ownself Gather API key is valid.',
-      kind: 'third-party',
+      kind: 'internal',
     })
   }
   return token

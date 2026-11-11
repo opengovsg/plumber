@@ -429,11 +429,11 @@ describe('get case details', () => {
       })
     })
 
-    it('tags a case without fields as third-party', async () => {
+    it('tags a case without fields as internal', async () => {
       httpGet.mockResolvedValueOnce({ data: { data: {} } })
 
       await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
-        kind: 'third-party',
+        kind: 'internal',
         message: expect.stringContaining('No data found for case'),
       })
     })

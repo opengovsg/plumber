@@ -201,10 +201,11 @@ const action: IRawAction = {
       const response = responseSchema.safeParse(rawResponse.data)
       if (!response.success) {
         const firstError = fromZodError(response.error).details[0]
+        // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
         throw new StepError({
           name: `${String(firstError.path[0])}: ${firstError.message}`,
           solution: UNEXPECTED_RESPONSE_SOLUTION,
-          kind: 'third-party',
+          kind: 'internal',
         })
       }
       const { data } = response.data
