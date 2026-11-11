@@ -10,8 +10,6 @@ interface TwilioStepErrorInfo {
   kind: StepErrorKind
 }
 
-const TRY_AGAIN_LATER = 'Try again later.'
-
 // Each code's Twilio docs page names only the step's own values or the user's Twilio account as causes.
 // https://www.twilio.com/docs/api/errors/<code>
 const USER_FIXABLE_TWILIO_ERROR_CODES = new Set([
@@ -49,12 +47,12 @@ function getTwilioStepErrorInfo(error: HttpError): TwilioStepErrorInfo {
     return isNetworkError(error)
       ? {
           name: 'Could not connect to Twilio',
-          solution: TRY_AGAIN_LATER,
+          solution: 'Try again later.',
           kind: 'third-party',
         }
       : {
           name: 'Could not send the request to Twilio',
-          solution: TRY_AGAIN_LATER,
+          solution: 'Try again later.',
           kind: 'internal',
         }
   }
@@ -98,7 +96,7 @@ function getTwilioStepErrorInfo(error: HttpError): TwilioStepErrorInfo {
     case 429:
       return {
         name: 'Too many requests sent to Twilio',
-        solution: TRY_AGAIN_LATER,
+        solution: 'Try again later.',
         kind: 'internal',
       }
   }
@@ -106,7 +104,7 @@ function getTwilioStepErrorInfo(error: HttpError): TwilioStepErrorInfo {
   if (status >= 500) {
     return {
       name: 'Twilio is unavailable',
-      solution: TRY_AGAIN_LATER,
+      solution: 'Try again later.',
       kind: 'third-party',
     }
   }
@@ -114,7 +112,7 @@ function getTwilioStepErrorInfo(error: HttpError): TwilioStepErrorInfo {
   const prefix = `Twilio rejected the request (HTTP ${status})`
   return {
     name: body ? `${prefix}: ${body.message}` : prefix,
-    solution: TRY_AGAIN_LATER,
+    solution: 'Try again later.',
     kind: 'internal',
   }
 }
