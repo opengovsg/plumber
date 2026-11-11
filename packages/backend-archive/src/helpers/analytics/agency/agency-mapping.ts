@@ -106,6 +106,9 @@ export function buildAgencyMapping(
 ): AgencyMapping {
   const agencies = new Map<string, Agency>()
   for (const agency of parseTable(agenciesCsv, agencySchema)) {
+    if (agency.canonical !== agency.canonical.toLowerCase()) {
+      throw new Error(`Agency ${agency.canonical} must be lowercase`)
+    }
     if (agencies.has(agency.canonical)) {
       throw new Error(`Duplicate agency ${agency.canonical}`)
     }

@@ -54,6 +54,15 @@ describe('buildAgencyMapping', () => {
     expect(() => buildAgencyMapping(AGENCIES_CSV, domainsCsv)).toThrow(message)
   })
 
+  it('rejects an agency key that is not lowercase', () => {
+    expect(() =>
+      buildAgencyMapping(
+        'canonical,agency_name,category\nTech.gov.sg,GovTech,statutory_board',
+        'domain,canonical\ntech.gov.sg,Tech.gov.sg',
+      ),
+    ).toThrow('Agency Tech.gov.sg must be lowercase')
+  })
+
   it('rejects an unknown category', () => {
     expect(() =>
       buildAgencyMapping(
