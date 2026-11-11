@@ -90,12 +90,14 @@ describe('get payment', () => {
     expect(mocks.httpGet).not.toHaveBeenCalled()
   })
 
-  it('throws a third-party StepError when PaySG returns an unexpected response', async () => {
+  it('throws an internal StepError when PaySG returns an unexpected response', async () => {
     mocks.httpGet.mockResolvedValueOnce({ data: { id: 123 } } as never)
 
     await expect(getPaymentAction.run($)).rejects.toMatchObject({
-      kind: 'third-party',
-      message: expect.stringContaining('PaySG returned an unexpected response'),
+      kind: 'internal',
+      message: expect.stringContaining(
+        'PaySG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
+      ),
     })
   })
 

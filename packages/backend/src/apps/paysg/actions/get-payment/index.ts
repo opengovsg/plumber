@@ -3,10 +3,7 @@ import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 
-import {
-  rethrowAsPaySgStepError,
-  UNEXPECTED_RESPONSE_SOLUTION,
-} from '../../common/paysg-http-error'
+import { rethrowAsPaySgStepError } from '../../common/paysg-http-error'
 import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
@@ -50,8 +47,9 @@ const action: IRawAction = {
       const firstError = fromZodError(response.error).details[0]
       throw new StepError({
         name: `${firstError.message} at "${firstError.path}"`,
-        solution: UNEXPECTED_RESPONSE_SOLUTION,
-        kind: 'third-party',
+        solution:
+          'PaySG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
+        kind: 'internal',
       })
     }
 

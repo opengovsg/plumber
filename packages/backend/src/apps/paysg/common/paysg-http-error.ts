@@ -12,9 +12,6 @@ interface PaySgStepErrorInfo {
 
 const TRY_AGAIN_LATER = 'Try again later.'
 
-export const UNEXPECTED_RESPONSE_SOLUTION =
-  'PaySG returned an unexpected response. Try again later.'
-
 // https://guide.pay.gov.sg/start-an-api-integration/errors
 const paySgErrorBodySchema = z.object({
   error: z.object({ message: z.string() }),
