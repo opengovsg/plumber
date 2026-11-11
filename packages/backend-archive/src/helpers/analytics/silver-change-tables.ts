@@ -105,7 +105,6 @@ async function writeChangeFile({
   part,
   rows,
   full,
-  exportedAt,
 }: {
   sink: SilverSink
   table: SilverChangeTable<SilverRow>
@@ -113,15 +112,11 @@ async function writeChangeFile({
   part?: number
   rows: SilverRow[]
   full: boolean
-  exportedAt: Date
 }): Promise<void> {
-  // IMPORTANT: --full rewrites a day PostHog may have imported, and a direct write keeps updated_at.
-  // Both copies then share day and updated_at, so exported_at decides which is newer.
+  // A full copy after a direct write repeats older rows' updated_at, so a view picks each row's latest by day first.
   const body = encodeSilverTable(
-    {
-      columns: { day: 'STRING', exported_at: 'TIMESTAMP', ...table.columns },
-    },
-    rows.map((row) => ({ day, exported_at: exportedAt, ...row })),
+    { columns: { day: 'STRING', ...table.columns } },
+    rows.map((row) => ({ day, ...row })),
   )
   const key = buildSilverDayKey(table.name, day, part)
   await sink(key, body)
@@ -142,7 +137,6 @@ interface WriteSilverChangeTablesParams {
   tables: SilverChangeTable<SilverRow>[]
   yesterday: string
   full?: boolean
-  exportedAt: Date
 }
 
 export async function writeSilverChangeTables({
@@ -152,7 +146,6 @@ export async function writeSilverChangeTables({
   tables,
   yesterday,
   full = false,
-  exportedAt,
 }: WriteSilverChangeTablesParams): Promise<void> {
   for (const table of tables) {
     const existingKeys = await listKeys(`${SILVER_PREFIX}${table.name}/`)
@@ -166,7 +159,6 @@ export async function writeSilverChangeTables({
           part,
           rows,
           full: file.full,
-          exportedAt,
         })
       // IMPORTANT: the last page goes to the unnumbered key, written last. A run that fails
       // part-way leaves the day unmarked, so the next run writes it again instead of skipping it.

@@ -139,9 +139,10 @@ export async function* fetchFlowStepPages(
 }
 
 /**
- * Steps whose updated_at falls on the day, soft deletes included. A step's current state is its row with the latest day, then exported_at, then updated_at.
+ * Steps whose updated_at falls on the day, soft deletes included. A step's current state is its row with the latest day, then updated_at.
  *
  * IMPORTANT: a migration or script that writes steps directly skips updated_at. Re-baseline with --full after one.
+ * Known gap: the rewritten day can then tie with the copy PostHog already imported. Direct writes are rare, so this is accepted.
  */
 export const flowStepTable: SilverChangeTable<FlowStepRow> = {
   name: 'flow_step',

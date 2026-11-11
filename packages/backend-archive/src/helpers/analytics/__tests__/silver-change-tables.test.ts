@@ -19,8 +19,6 @@ vi.mock('@/helpers/archival/logger')
 
 let dir: string | undefined
 
-const EXPORTED_AT = new Date('2026-11-10T19:00:00.000Z')
-
 afterEach(async () => {
   if (dir) {
     await rm(dir, { recursive: true, force: true })
@@ -79,7 +77,6 @@ describe('writeSilverChangeTables', () => {
         listKeys: localDirKeyLister(dir!),
         tables: [table],
         yesterday,
-        exportedAt: EXPORTED_AT,
       })
 
     await write('2026-11-08')
@@ -107,6 +104,6 @@ describe('writeSilverChangeTables', () => {
           file.byteOffset + file.byteLength,
         ) as ArrayBuffer,
       }),
-    ).toEqual([{ day: '2026-11-08', exported_at: EXPORTED_AT, id: 'step-2' }])
+    ).toEqual([{ day: '2026-11-08', id: 'step-2' }])
   })
 })

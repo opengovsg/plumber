@@ -136,7 +136,6 @@ export async function writeAllSilverTables({
     tables: changeTables,
     yesterday: previousSgtDay(now),
     full,
-    exportedAt: now,
   })
 }
 
