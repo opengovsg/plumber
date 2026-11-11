@@ -52,7 +52,13 @@ const action: IRawAction = {
         })
         rawData = data
       } catch (error) {
-        logger.error(`Failed to get case details for case ${caseUuid}:`, error)
+        logger.error(`Failed to get case details for case ${caseUuid}`, {
+          event: 'gathersg-get-case-request-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          caseUuid,
+          stepId: $.step.id,
+        })
         if (
           error instanceof HttpError &&
           error.response?.status === 404 &&
@@ -119,8 +125,14 @@ const action: IRawAction = {
       }
 
       logger.error(
-        `Failed to get case details for case ${$.step.parameters.caseUuid}:`,
-        error,
+        `Failed to get case details for case ${$.step.parameters.caseUuid}`,
+        {
+          event: 'gathersg-get-case-details-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          caseUuid: $.step.parameters.caseUuid,
+          stepId: $.step.id,
+        },
       )
       throw new StepError({
         name: `An error occurred: '${error.message}'`,
