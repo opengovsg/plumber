@@ -1,12 +1,11 @@
 import { UserFacingError } from '@/errors/user-facing-error'
-import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { clearMatchingConnectionConflict } from './connection-conflict'
 import {
   type RegisterConnectionResult,
   registerConnectionService,
 } from './register-connection'
-import { clearConnectionConflict } from './step-ai-builder-config'
 
 export const NO_CONNECTION_CONFLICT_MESSAGE =
   'No webhook conflict is on record for this step and connection, so there is nothing to override. Ask which pipe or form the user means. Nothing was changed.'
@@ -43,9 +42,7 @@ export async function overrideConnectionService(
 
   const result = await registerConnectionService(user, stepId, connectionId)
 
-  await Step.query().patchAndFetchById(stepId, {
-    config: clearConnectionConflict(step.config),
-  })
+  await clearMatchingConnectionConflict(stepId, connectionId)
 
   return result
 }
