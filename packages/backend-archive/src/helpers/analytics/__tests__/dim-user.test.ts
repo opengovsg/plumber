@@ -44,7 +44,6 @@ function sqlRow(email: string, isVerified = true): SqlRow {
     signup_at: signupAt,
     first_created_at: signupAt,
     first_tested_at: null,
-    first_published_at: null,
     first_flowed_at: null,
     last_flowed_at: null,
     owned_flowed_pipe_count: null,
@@ -121,14 +120,13 @@ describe('dimUserTable.fetchRows', () => {
     })
   })
 
-  it('estimates first publish from published_at and verification from logins or pipes', async () => {
+  it('reads verification from logins or pipes, and no publish time', async () => {
     const { db, raw } = makeDb([sqlRow('officer@tech.gov.sg')])
 
     await table.fetchRows(db)
 
     const sql = raw.mock.calls[0][0] as string
-    expect(sql).toContain('min(published_at) AS first_published_at')
-    expect(sql).not.toContain('firstPublishedAt')
+    expect(sql).not.toContain('published_at')
     expect(sql).toContain(
       '(u.last_login_at IS NOT NULL OR f.user_id IS NOT NULL) AS is_verified',
     )
