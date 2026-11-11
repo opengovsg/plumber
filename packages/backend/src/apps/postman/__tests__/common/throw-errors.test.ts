@@ -166,6 +166,10 @@ describe('throwPostmanStepError', () => {
         'a reset connection with no status',
         makeHttpError({ code: 'ECONNRESET', message: 'read ECONNRESET' }),
       ],
+      [
+        'a DNS failure with no status',
+        makeHttpError({ code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND' }),
+      ],
     ])('tags %s as third-party and keeps the cause', (_label, error) => {
       const thrown = catchThrown({ status: 'ERROR', error })
 
@@ -193,6 +197,17 @@ describe('throwPostmanStepError', () => {
       [
         'an HttpError with no status and no code',
         makeHttpError({ message: 'thrown in beforeRequest' }),
+      ],
+      [
+        'an axios request error with no status',
+        makeHttpError({
+          code: 'ERR_BAD_REQUEST',
+          message: 'Unsupported protocol',
+        }),
+      ],
+      [
+        'a cancelled request',
+        makeHttpError({ code: 'ERR_CANCELED', message: 'canceled' }),
       ],
       [
         'SES MessageRejected',
