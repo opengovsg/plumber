@@ -106,8 +106,14 @@ async function downloadAndStoreAttachmentInS3(
     return s3Id
   } catch (error) {
     logger.error(
-      `Failed to process attachment ${attachmentUuid} for case ${caseUuid}:`,
-      error,
+      `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
+      {
+        event: 'gathersg-process-attachment-failed',
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        caseUuid,
+        attachmentUuid,
+      },
     )
 
     if (error instanceof StepError) {

@@ -6,6 +6,11 @@ import { processAttachments } from '../../common/attachment'
 
 const mocks = vi.hoisted(() => ({
   putObject: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.logError, warn: vi.fn(), info: vi.fn() },
 }))
 
 vi.mock('@/helpers/s3', async (importOriginal) => {
@@ -125,6 +130,16 @@ describe('processAttachments', () => {
       kind: 'internal',
       message: expect.stringContaining('Failed to process attachment'),
     })
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to process attachment'),
+      {
+        event: 'gathersg-process-attachment-failed',
+        errorName: 'Error',
+        errorMessage: 'S3 down',
+        caseUuid: MOCK_CASE_UUID,
+        attachmentUuid: expect.any(String),
+      },
+    )
   })
 
   it('tags a malformed attachments payload as internal', async () => {
