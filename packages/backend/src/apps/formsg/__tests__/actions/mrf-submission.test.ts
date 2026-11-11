@@ -325,7 +325,7 @@ describe('mrf-submission action', () => {
         message: expect.stringContaining(
           '"name":"Invalid MRF data: submitted steps are not valid"',
         ),
-        kind: 'third-party',
+        kind: 'internal',
       })
     })
 
@@ -344,7 +344,7 @@ describe('mrf-submission action', () => {
         message: expect.stringContaining(
           '"name":"Invalid MRF data: unable to find submitted step"',
         ),
-        kind: 'third-party',
+        kind: 'internal',
       })
     })
 

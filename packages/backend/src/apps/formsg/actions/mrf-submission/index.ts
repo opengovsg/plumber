@@ -258,11 +258,11 @@ const action: IRawAction = {
     )
     // Ensure workflowContent exists and workflowStep index is a valid number.
     if (submittedStepsResult.success === false) {
-      // third-party: FormSG sends this payload, so a bad shape likely means a FormSG API change.
+      // internal: only a FormSG API change breaks this, and Plumber owns keeping up with it.
       throw new StepError({
         name: 'Invalid MRF data: submitted steps are not valid',
         solution: 'Click check step to sync your MRF form and try again.',
-        kind: 'third-party',
+        kind: 'internal',
       })
     }
 
@@ -270,11 +270,11 @@ const action: IRawAction = {
     const submittedStep =
       submittedStepsResult.data[submittedStepsResult.data.length - 1]
     if (!submittedStep) {
-      // third-party: FormSG sends this payload, so a bad shape likely means a FormSG API change.
+      // internal: only a FormSG API change breaks this, and Plumber owns keeping up with it.
       throw new StepError({
         name: 'Invalid MRF data: unable to find submitted step',
         solution: 'Click check step to sync your MRF form and try again.',
-        kind: 'third-party',
+        kind: 'internal',
       })
     }
 
