@@ -166,10 +166,11 @@ const action: IRawAction = {
     )
 
     if (updateRowValuesParseResult.success === false) {
+      // internal: only a Graph API change breaks this, and Plumber owns keeping up with it.
       throw new StepError({
         name: `Received invalid row data after update: '${updateRowValuesParseResult.error.issues[0].message}'`,
         solution: 'Double check your Excel file and retry the step if needed',
-        kind: 'third-party',
+        kind: 'internal',
       })
     }
     const updatedRow = updateRowValuesParseResult.data

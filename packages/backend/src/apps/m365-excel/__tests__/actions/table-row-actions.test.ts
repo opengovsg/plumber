@@ -143,11 +143,11 @@ describe('updateTableRow', () => {
     expect(mocks.request).not.toHaveBeenCalled()
   })
 
-  it('throws a third-party StepError when Graph returns an unexpected row after the update', async () => {
+  it('throws an internal StepError when Graph returns an unexpected row after the update', async () => {
     mocks.request.mockResolvedValue({ data: { values: [] } })
     const error = await catchStepError(
       updateTableRowAction.run(makeGlobalVariable(updateParameters)),
     )
-    expect(error.kind).toBe('third-party')
+    expect(error.kind).toBe('internal')
   })
 })
