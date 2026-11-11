@@ -465,7 +465,7 @@ describe('get case details', () => {
       onTestFinished(() => logError.mockRestore())
       httpGet.mockRejectedValueOnce(new Error('boom'))
 
-      await getCaseDetailsAction.run($).catch(() => undefined)
+      await expect(getCaseDetailsAction.run($)).rejects.toThrow()
 
       const fields = {
         errorName: 'Error',
