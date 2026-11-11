@@ -43,6 +43,7 @@ describe('action_catalog', () => {
     ],
     ['a bad trigger flag', `${HEADER}\ntiles,a,A,yes,,`],
     ['fractional minutes', `${HEADER}\ntiles,a,A,false,,1.5`],
+    ['an impossible date', `${HEADER}\ntiles,a,A,false,2024-02-31,`],
   ])('rejects %s', (_case, text) => {
     expect(() => parseActionCatalog(text)).toThrow()
   })
