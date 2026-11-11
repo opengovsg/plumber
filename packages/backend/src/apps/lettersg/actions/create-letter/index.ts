@@ -119,11 +119,12 @@ const action: IRawAction = {
     const responseResult = responseSchema.safeParse(rawResponse.data)
 
     if (responseResult.success === false) {
+      // internal: only a LetterSG API change breaks this, and Plumber owns keeping up with it.
       throw new StepError({
         name: getFirstZodErrorMessage(responseResult.error),
         solution:
           'LetterSG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
-        kind: 'third-party',
+        kind: 'internal',
       })
     }
 

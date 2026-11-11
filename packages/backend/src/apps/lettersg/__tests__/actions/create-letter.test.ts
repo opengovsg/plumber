@@ -150,10 +150,10 @@ describe('create letter from template', () => {
     expect(mockAdapter.history.post).toHaveLength(0)
   })
 
-  it('classifies an unexpected LetterSG response as third-party', async () => {
+  it('classifies an unexpected LetterSG response as internal', async () => {
     mockAdapter.onPost('/v1/letters').reply(200, { publicId: '123' })
     await expect(createLetterAction.run($)).rejects.toMatchObject({
-      kind: 'third-party',
+      kind: 'internal',
       message: expect.stringContaining(
         'LetterSG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
       ),
