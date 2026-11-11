@@ -245,6 +245,7 @@ describe('send message', () => {
     { label: '502', status: 502 },
     { label: '503', status: 503 },
     { label: 'network error with no status', code: 'ECONNREFUSED' },
+    { label: 'DNS failure with no status', code: 'ENOTFOUND' },
   ])(
     'should throw third-party step error for $label',
     async ({ status, code }) => {
@@ -269,9 +270,11 @@ describe('send message', () => {
     },
     { label: 'unlisted 4xx', errorStatusCode: 404 },
     { label: 'no status and no network code' },
+    { label: 'axios request error with no status', code: 'ERR_BAD_REQUEST' },
+    { label: 'cancelled request', code: 'ERR_CANCELED' },
   ])(
     'should rethrow the http error for $label',
-    async ({ errorStatusCode, errorDescription }) => {
+    async ({ errorStatusCode, errorDescription, code }) => {
       $.step.parameters.text = 'test message'
       $.step.parameters.chatId = '123'
       $.step.parameters.disableNotification = null
@@ -281,6 +284,7 @@ describe('send message', () => {
           description: errorDescription,
         },
         status: errorStatusCode,
+        code,
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
       const error = await sendMessageAction.run($).catch((e) => e)

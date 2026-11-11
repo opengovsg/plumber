@@ -8,6 +8,21 @@ import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import Step, { StepContext } from '@/models/step'
 
+// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
+const NETWORK_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'EPROTO',
+  'CERT_HAS_EXPIRED',
+])
+
 export async function throwSendMessageError(
   err: HttpError,
   step: IGlobalVariable['step'],
@@ -151,10 +166,10 @@ export async function throwSendMessageError(
         cause: err,
       })
     default:
-      // Axios also sets a code on 4xx responses, so a code means a network error only without a status.
       if (
         err.response.status >= 500 ||
-        (err.response.status === undefined && err.code)
+        (err.response.status === undefined &&
+          NETWORK_ERROR_CODES.has(err.code ?? ''))
       ) {
         throw new StepError({
           name: 'Telegram unavailable',
