@@ -1,5 +1,5 @@
 import { StepErrorKind } from '@plumber/types'
-import { APICallError, NoObjectGeneratedError, RetryError } from 'ai'
+import { APICallError, RetryError } from 'ai'
 
 export function getModelErrorKind(error: unknown): StepErrorKind {
   const apiCallError = RetryError.isInstance(error) ? error.lastError : error
@@ -12,10 +12,7 @@ export function getModelErrorKind(error: unknown): StepErrorKind {
       : 'third-party'
   }
 
-  if (
-    RetryError.isInstance(error) ||
-    NoObjectGeneratedError.isInstance(error)
-  ) {
+  if (RetryError.isInstance(error)) {
     return 'third-party'
   }
 

@@ -59,7 +59,7 @@ describe('getModelErrorKind', () => {
     )
   })
 
-  it('returns third-party when the model output does not match the schema', () => {
+  it('returns internal when the model output does not match the schema', () => {
     const error = new NoObjectGeneratedError({
       message: 'No object generated: response did not match schema.',
       response: { id: 'id', timestamp: new Date(), modelId: 'model' },
@@ -67,7 +67,7 @@ describe('getModelErrorKind', () => {
       finishReason: 'stop',
     })
 
-    expect(getModelErrorKind(error)).toBe('third-party')
+    expect(getModelErrorKind(error)).toBe('internal')
   })
 
   it('returns internal for an unknown error', () => {
