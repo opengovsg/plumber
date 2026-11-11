@@ -1,5 +1,6 @@
-import '@/instrumentation'
+// dd-trace must load before winston to inject trace IDs and dd.service into logs.
 import '@/helpers/tracer'
+import '@/instrumentation'
 import '@/config/orm'
 import '@/config/dynamodb'
 import '@/helpers/check-worker-readiness'
