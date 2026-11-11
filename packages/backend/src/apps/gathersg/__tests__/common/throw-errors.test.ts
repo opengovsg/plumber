@@ -144,6 +144,15 @@ describe('throwGatherSGStepError', () => {
       expect(readName(stepError)).toBe('An error occurred: read ECONNRESET')
     })
 
+    it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+      'tags a %s request error with no response as internal',
+      (code) => {
+        const error = makeHttpError({ message: code, code })
+
+        expect(catchStepError(error).kind).toBe('internal')
+      },
+    )
+
     it('tags a no-response error without a network code as internal', () => {
       const error = makeHttpError({ message: 'Missing API key' })
 
