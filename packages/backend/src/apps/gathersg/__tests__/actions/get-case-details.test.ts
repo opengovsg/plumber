@@ -1,5 +1,7 @@
 import type { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import app from '../../..'
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
@@ -456,6 +458,29 @@ describe('get case details', () => {
         kind: 'internal',
         message: expect.stringContaining("An error occurred: 'boom'"),
       })
+    })
+
+    it('logs only the error name and message when the action fails', async () => {
+      const logError = vi.spyOn(logger, 'error').mockReturnValue(logger)
+      onTestFinished(() => logError.mockRestore())
+      httpGet.mockRejectedValueOnce(new Error('boom'))
+
+      await getCaseDetailsAction.run($).catch(() => undefined)
+
+      const fields = {
+        errorName: 'Error',
+        errorMessage: 'boom',
+        caseUuid: MOCK_CASE_UUID,
+        stepId: $.step.id,
+      }
+      expect(logError).toHaveBeenCalledWith(
+        `Failed to get case details for case ${MOCK_CASE_UUID}`,
+        { event: 'gathersg-get-case-request-failed', ...fields },
+      )
+      expect(logError).toHaveBeenCalledWith(
+        `Failed to get case details for case ${MOCK_CASE_UUID}`,
+        { event: 'gathersg-get-case-details-failed', ...fields },
+      )
     })
   })
 })
