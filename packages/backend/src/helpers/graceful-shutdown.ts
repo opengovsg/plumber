@@ -1,4 +1,5 @@
 import logger from '@/helpers/logger'
+import { flushServerEvents } from '@/helpers/server-events'
 import { shutdownTelemetry } from '@/instrumentation'
 
 type Drain = () => Promise<unknown>
@@ -30,6 +31,13 @@ export function registerGracefulShutdown(
       }
     }
 
+    try {
+      await flushServerEvents()
+    } catch (error) {
+      logger.warn('Failed to flush server events during shutdown', {
+        error: errorMessage(error),
+      })
+    }
     try {
       await shutdownTelemetry()
     } catch (error) {

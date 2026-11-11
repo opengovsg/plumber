@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   shutdownTelemetry: vi.fn(),
+  flushServerEvents: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
@@ -9,6 +10,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/instrumentation', () => ({
   shutdownTelemetry: mocks.shutdownTelemetry,
+}))
+vi.mock('@/helpers/server-events', () => ({
+  flushServerEvents: mocks.flushServerEvents,
 }))
 vi.mock('@/helpers/logger', () => ({
   default: { info: mocks.info, warn: mocks.warn, error: mocks.error },
@@ -26,6 +30,7 @@ function flushPromises() {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.shutdownTelemetry.mockResolvedValue(undefined)
+  mocks.flushServerEvents.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -85,6 +90,39 @@ describe('registerGracefulShutdown', () => {
     await flushPromises()
 
     expect(drain).toHaveBeenCalledOnce()
+    expect(mocks.shutdownTelemetry).toHaveBeenCalledOnce()
+  })
+
+  it('flushes server events after the drains and before telemetry', async () => {
+    const order: string[] = []
+    mocks.flushServerEvents.mockImplementation(async () => {
+      order.push('events')
+    })
+    mocks.shutdownTelemetry.mockImplementation(async () => {
+      order.push('telemetry')
+    })
+    const drain = vi.fn(async () => {
+      order.push('drain')
+    })
+    registerGracefulShutdown(SIGNALS, [drain])
+
+    process.emit('SIGUSR2')
+    await flushPromises()
+
+    expect(order).toEqual(['drain', 'events', 'telemetry'])
+  })
+
+  it('still flushes telemetry when the event flush fails', async () => {
+    mocks.flushServerEvents.mockRejectedValue(new Error('PostHog down'))
+    registerGracefulShutdown(SIGNALS, [])
+
+    process.emit('SIGUSR2')
+    await flushPromises()
+
+    expect(mocks.warn).toHaveBeenCalledWith(
+      'Failed to flush server events during shutdown',
+      { error: 'PostHog down' },
+    )
     expect(mocks.shutdownTelemetry).toHaveBeenCalledOnce()
   })
 
