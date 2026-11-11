@@ -11,7 +11,11 @@ vi.mock('@/helpers/logger', () => ({
   },
 }))
 
-import { processFields, validateData } from '../../auth/decrypt-response'
+import {
+  decryptResponse,
+  processFields,
+  validateData,
+} from '../../auth/decrypt-response'
 import { HEX_ENCODED_FIELD_PREFIX } from '../../common/constants'
 
 const MOCK_FLOW: NonNullable<IGlobalVariable['flow']> = {
@@ -105,6 +109,33 @@ describe('validateData', () => {
       expect.objectContaining({
         event: 'ownself-gather-potential-infinite-loop',
       }),
+    )
+  })
+})
+
+describe('decryptResponse', () => {
+  beforeEach(() => {
+    mocks.error.mockReset()
+  })
+
+  it('logs only the error name and message when verification fails', async () => {
+    const $ = {
+      request: { body: { app: 'app', signature: 'bad', timestamp: '1' } },
+      step: { parameters: {} },
+      webhookUrl: 'https://example.com/webhook',
+    } as unknown as IGlobalVariable
+
+    await expect(decryptResponse($)).resolves.toEqual({
+      verified: false,
+      internalId: null,
+    })
+    expect(mocks.error).toHaveBeenCalledWith(
+      'Unable to decrypt gathersg response',
+      {
+        event: 'gathersg-decrypt-response-failed',
+        errorName: expect.any(String),
+        errorMessage: expect.any(String),
+      },
     )
   })
 })
