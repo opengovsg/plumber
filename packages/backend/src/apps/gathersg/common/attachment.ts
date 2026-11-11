@@ -44,10 +44,7 @@ function getAttachmentDownloadFailureKind(error: unknown): StepErrorKind {
   if (status === 401 || status === 403) {
     return 'config'
   }
-  if (status === 429) {
-    return 'internal'
-  }
-  return 'third-party'
+  return status >= 500 ? 'third-party' : 'internal'
 }
 
 async function downloadAndStoreAttachmentInS3(
