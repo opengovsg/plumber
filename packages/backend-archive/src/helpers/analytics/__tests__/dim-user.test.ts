@@ -121,15 +121,14 @@ describe('dimUserTable.fetchRows', () => {
     })
   })
 
-  it('reads first publish from config and verification from logins or pipes', async () => {
+  it('estimates first publish from published_at and verification from logins or pipes', async () => {
     const { db, raw } = makeDb([sqlRow('officer@tech.gov.sg')])
 
     await table.fetchRows(db)
 
     const sql = raw.mock.calls[0][0] as string
-    expect(sql).toContain(
-      "coalesce((config ->> 'firstPublishedAt')::timestamptz, published_at)",
-    )
+    expect(sql).toContain('min(published_at) AS first_published_at')
+    expect(sql).not.toContain('firstPublishedAt')
     expect(sql).toContain(
       '(u.last_login_at IS NOT NULL OR f.user_id IS NOT NULL) AS is_verified',
     )
