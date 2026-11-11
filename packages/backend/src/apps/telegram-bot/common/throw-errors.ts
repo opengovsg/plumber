@@ -2,26 +2,11 @@ import { IGlobalVariable } from '@plumber/types'
 import get from 'lodash.get'
 import { raw } from 'objection'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import Step, { StepContext } from '@/models/step'
-
-// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
-const NETWORK_ERROR_CODES = new Set([
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'ECONNABORTED',
-  'ETIMEDOUT',
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'EPIPE',
-  'EHOSTUNREACH',
-  'ENETUNREACH',
-  'EPROTO',
-  'CERT_HAS_EXPIRED',
-])
 
 export async function throwSendMessageError(
   err: HttpError,
@@ -166,11 +151,7 @@ export async function throwSendMessageError(
         cause: err,
       })
     default:
-      if (
-        err.response.status >= 500 ||
-        (err.response.status === undefined &&
-          NETWORK_ERROR_CODES.has(err.code ?? ''))
-      ) {
+      if (err.response.status >= 500 || isNetworkError(err)) {
         throw new StepError({
           name: 'Telegram unavailable',
           solution:
