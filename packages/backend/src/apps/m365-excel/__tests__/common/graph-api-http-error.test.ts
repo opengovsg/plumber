@@ -22,6 +22,7 @@ describe('toStepError', () => {
     [501, 'FileCorruptTryRepair'],
     [400, 'RangeExceedsLimit'],
     [403, 'AccessDenied'],
+    [403, 'accessDenied'],
   ])('maps %i %s to config', (status, code) => {
     const httpError = graphError(status, code)
     const stepError = toStepError(httpError)
@@ -64,7 +65,6 @@ describe('toStepError', () => {
   })
 
   it.each([
-    [403, 'accessDenied'],
     [409, 'InsertDeleteConflict'],
     [505, 'HttpVersionNotSupported'],
     [507, 'InsufficientStorage'],
@@ -75,9 +75,18 @@ describe('toStepError', () => {
     expect(stepError.cause).toBe(httpError)
   })
 
-  it('maps a 403 without a Graph error body to third-party', () => {
+  it('maps a 403 without a Graph error body to config', () => {
     const stepError = toStepError(makeHttpError({ status: 403 }))
-    expect(stepError.kind).toBe('third-party')
+    expect(stepError.kind).toBe('config')
+  })
+
+  it('tells the user to check sharing when Microsoft denies access', () => {
+    const stepError = toStepError(graphError(403, 'accessDenied'))
+    expect(JSON.parse(stepError.message)).toMatchObject({
+      name: 'Microsoft denied access to your Excel file',
+      solution:
+        "Check that the file's sharing settings have not changed, then try again.",
+    })
   })
 
   it('maps a network error to third-party', () => {

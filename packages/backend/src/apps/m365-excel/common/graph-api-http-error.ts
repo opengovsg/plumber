@@ -46,8 +46,9 @@ const TABLE_PROTECTED: GraphStepErrorInfo = {
 
 const ACCESS_DENIED: GraphStepErrorInfo = {
   name: 'Microsoft denied access to your Excel file',
-  solution: 'Try again later.',
-  kind: 'third-party',
+  solution:
+    "Check that the file's sharing settings have not changed, then try again.",
+  kind: 'config',
 }
 
 const CONFLICT: GraphStepErrorInfo = {
@@ -74,7 +75,7 @@ const CONFIG_400_CODES: ReadonlyMap<string, GraphStepErrorInfo> = new Map([
   ['RangeExceedsLimit', TABLE_TOO_LARGE],
 ])
 
-// Excel's `AccessDenied` means a protected sheet. SharePoint's `accessDenied` can mean Plumber lost site access.
+// Excel's `AccessDenied` means a protected sheet, which needs its own solution.
 const CONFIG_403_CODES: ReadonlyMap<string, GraphStepErrorInfo> = new Map([
   ['AccessDenied', TABLE_PROTECTED],
 ])
