@@ -55,7 +55,7 @@ const CONFLICT: GraphStepErrorInfo = {
   name: 'Excel could not complete this change',
   solution:
     'Check the error details below. Make sure nothing on your worksheet blocks this change, then try again.',
-  kind: 'third-party',
+  kind: 'config',
 }
 
 const UNAVAILABLE: GraphStepErrorInfo = {

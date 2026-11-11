@@ -23,6 +23,7 @@ describe('toStepError', () => {
     [400, 'RangeExceedsLimit'],
     [403, 'AccessDenied'],
     [403, 'accessDenied'],
+    [409, 'InsertDeleteConflict'],
   ])('maps %i %s to config', (status, code) => {
     const httpError = graphError(status, code)
     const stepError = toStepError(httpError)
@@ -65,7 +66,6 @@ describe('toStepError', () => {
   })
 
   it.each([
-    [409, 'InsertDeleteConflict'],
     [505, 'HttpVersionNotSupported'],
     [507, 'InsufficientStorage'],
   ])('maps %i %s to third-party', (status, code) => {
