@@ -216,7 +216,13 @@ const action: IRawAction = {
         },
       })
     } catch (error) {
-      logger.error('Failed to create case on GatherSG:', error)
+      logger.error('Failed to create case on GatherSG', {
+        event: 'gathersg-create-case-failed',
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        flowId: $.flow?.id,
+        stepId: $.step.id,
+      })
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError({
