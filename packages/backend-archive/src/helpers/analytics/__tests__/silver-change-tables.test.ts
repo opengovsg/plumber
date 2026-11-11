@@ -1,7 +1,8 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import { parquetReadObjects } from 'hyparquet'
 import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -93,5 +94,16 @@ describe('writeSilverChangeTables', () => {
       'day=2026-11-09.parquet',
       'day=2026-11-10.parquet',
     ])
+    const file = await readFile(
+      path.join(dir, 'silver/flow_step/day=2026-11-08.parquet'),
+    )
+    expect(
+      await parquetReadObjects({
+        file: file.buffer.slice(
+          file.byteOffset,
+          file.byteOffset + file.byteLength,
+        ) as ArrayBuffer,
+      }),
+    ).toEqual([{ day: '2026-11-08', id: 'step-2' }])
   })
 })

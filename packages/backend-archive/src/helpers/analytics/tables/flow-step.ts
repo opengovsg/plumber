@@ -134,7 +134,7 @@ export async function* fetchFlowStepPages(
 }
 
 /**
- * Steps whose updated_at falls on the day, soft deletes included. A step's current state is its latest row.
+ * Steps whose updated_at falls on the day, soft deletes included. A step's current state is its row with the latest day, then updated_at.
  *
  * IMPORTANT: a migration or script that writes steps directly skips updated_at. Re-baseline with --full after one.
  */

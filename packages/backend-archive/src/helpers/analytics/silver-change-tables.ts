@@ -113,7 +113,11 @@ async function writeChangeFile({
   rows: SilverRow[]
   full: boolean
 }): Promise<void> {
-  const body = encodeSilverTable(table, rows)
+  // A full copy after a direct write repeats older rows' updated_at, so a view picks each row's latest by day first.
+  const body = encodeSilverTable(
+    { columns: { day: 'STRING', ...table.columns } },
+    rows.map((row) => ({ day, ...row })),
+  )
   const key = buildSilverDayKey(table.name, day, part)
   await sink(key, body)
   logger.info({
