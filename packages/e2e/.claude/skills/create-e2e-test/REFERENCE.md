@@ -28,12 +28,15 @@ test.describe('Action <App>', () => {
     const uuid = randomUUID()
     const res = await request.post(ACTION_WEBHOOK_URL, { data: { uuid } })
     expect(res.status()).toBe(200)
-    expect(await checkWebhook(uuid, { success: true })).toBe(true)
+    // The webhook returns 200 once the job is queued, before the pipe finishes.
+    await expect
+      .poll(() => checkWebhook(uuid, { success: true }), { timeout: 30_000 })
+      .toBe(true)
   })
 })
 ```
 
-The pipe's final step posts its result to `${WEBHOOK_TESTER_HOSTNAME}/<uuid>`. `checkWebhook` reads it after one second. For pipes with delays, split trigger and check into two tests under `test.describe.serial`. See `action-slack.spec.ts`. For email actions, assert with `checkGmail` and put the UUID in the subject. See `action-postman.spec.ts`.
+The pipe's final step posts its result to `${WEBHOOK_TESTER_HOSTNAME}/<uuid>`. `checkWebhook` reads it once, so always wrap it in `expect.poll`. Keep the poll timeout below the test timeout. To assert a pipe stops early, first poll for a result the pipe writes before stopping, then assert the stopped key is absent. For pipes with delays, split trigger and check into two tests under `test.describe.serial`. See `action-slack.spec.ts`. For email actions, assert with `checkGmail` and put the UUID in the subject. See `action-postman.spec.ts`.
 
 ## Browser UI flow template
 
@@ -124,9 +127,11 @@ Open with a one-line count, e.g. "1 pipe needed on staging and UAT". Then one nu
 4. **Steps**: in order, with app, event and every field value. Take labels from the action's `arguments` in `packages/backend/src/apps/<app>/actions/<action>/`. Name trigger variables by payload key, e.g. "the webhook's `uuid` field".
 5. **Final step**: keep the webhook-tester step. Change only its body to the keys the spec asserts on.
 6. **Publish** the pipe.
-7. **Smoke test**: the user runs this, with the literal `WEBHOOK_TESTER_HOSTNAME` default from `environments.ts`. State the JSON keys it must print.
+7. **Smoke test**: the user runs this once per environment, with the literal `WEBHOOK_TESTER_HOSTNAME` default from `environments.ts`. Each run uses a fresh key, because staging and UAT share the webhook tester. State the JSON keys it must print.
    ```bash
-   curl -s -X POST <base-url>/webhooks/<pipe-id> -H 'content-type: application/json' -d '{"uuid":"smoke-1"}' && sleep 5 && curl -s <webhook-tester-hostname>/smoke-1
+   KEY=$(uuidgen | tr 'A-Z' 'a-z')
+   curl -s -X POST <base-url>/webhooks/<pipe-id> -H 'content-type: application/json' -d "{\"uuid\":\"$KEY\"}"
+   for i in $(seq 12); do sleep 5; OUT=$(curl -s <webhook-tester-hostname>/$KEY); [ -n "$OUT" ] && [ "$OUT" != "null" ] && { echo "$OUT"; break; }; done; [ -n "$OUT" ] && [ "$OUT" != "null" ] || echo "No result after 60s"
    ```
 8. **Update every manifest copy** with the new key under both profiles:
    - The shared `e2e` 1Password Environment, field `E2E_FIXTURE_MANIFEST`, as compact JSON.
