@@ -79,7 +79,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -92,7 +91,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(result.name).toBe('My Test Flow')
       expect(result.config).toEqual({
         aiBuilderConfig: {
-          type: 'form',
           traceId: '123',
           suggested: [
             { position: 1, appKey: 'scheduler', key: 'everyHour' },
@@ -171,7 +169,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -201,7 +198,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -265,7 +261,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -299,7 +294,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -328,7 +322,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -357,7 +350,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -395,7 +387,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -438,7 +429,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -474,7 +464,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -512,7 +501,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -548,7 +536,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -577,7 +564,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -621,7 +607,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
           },
         ],
         aiBuilderConfig: {
-          type: 'form',
           traceId: '123',
         },
       },
@@ -687,7 +672,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -741,7 +725,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -788,7 +771,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -828,7 +810,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -864,7 +845,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -907,7 +887,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -947,7 +926,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
@@ -981,7 +959,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
             },
           ],
           aiBuilderConfig: {
-            type: 'form',
             traceId: '123',
           },
         },
