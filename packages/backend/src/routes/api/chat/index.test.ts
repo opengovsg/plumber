@@ -126,7 +126,14 @@ vi.mock('@opentelemetry/api', async (importOriginal) => {
 })
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  type StreamTextTransform,
+  streamText,
+  type TextStreamPart,
+  type ToolSet,
+} from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import logger from '@/helpers/logger'
@@ -158,6 +165,37 @@ function makeRes() {
 }
 
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
+
+// Runs the route's support URL transform over a model reply that writes the placeholder.
+async function streamSupportLink(): Promise<string> {
+  const [[{ experimental_transform }]] = vi.mocked(streamText).mock.calls
+  const transform = (
+    experimental_transform as StreamTextTransform<ToolSet>[]
+  )[1]({ tools: {}, stopStream: () => undefined })
+  const reader = new ReadableStream<TextStreamPart<ToolSet>>({
+    start(controller) {
+      controller.enqueue({
+        type: 'text-delta',
+        id: 't1',
+        text: '{{SUPPORT_FORM_URL}}',
+      })
+      controller.enqueue({ type: 'text-end', id: 't1' })
+      controller.close()
+    },
+  })
+    .pipeThrough(transform)
+    .getReader()
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) {
+      return text
+    }
+    if (value.type === 'text-delta') {
+      text += value.text
+    }
+  }
+}
 
 describe('chat handler — GitBook MCP integration', () => {
   beforeEach(() => {
@@ -225,7 +263,7 @@ describe('chat handler — GitBook MCP integration', () => {
     )
   })
 
-  it('puts the support form URL with the chat ID pre-filled in the system messages', async () => {
+  it('streams the support form URL with the chat ID pre-filled', async () => {
     const handler = router.stack[0].route.stack[0].handle
     await handler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -235,31 +273,19 @@ describe('chat handler — GitBook MCP integration', () => {
       vi.fn(),
     )
 
-    expect(streamText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: expect.arrayContaining([
-          expect.objectContaining({
-            role: 'system',
-            content: expect.stringContaining(
-              'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
-            ),
-          }),
-        ]),
-      }),
+    expect(await streamSupportLink()).toBe(
+      'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
     )
   })
 
-  it('falls back to the bare support form URL when chatId is absent', async () => {
+  it('streams the bare support form URL when chatId is absent', async () => {
     const handler = router.stack[0].route.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
-    const [[{ messages }]] = vi.mocked(streamText).mock.calls
-    const chatContext = messages[1]
-    expect(chatContext.content).toContain(
-      'Support form URL for this chat: https://form.gov.sg/64929532701266001209ac32',
+    expect(await streamSupportLink()).toBe(
+      'https://form.gov.sg/64929532701266001209ac32',
     )
-    expect(chatContext.content).not.toContain('6a979221b8ae314641032f5c=')
   })
 
   it('wires the cache checkpoints and support URL transform into streamText', async () => {
@@ -489,7 +515,6 @@ describe('chat handler continuation', () => {
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: [
-          expect.objectContaining({ role: 'system' }),
           expect.objectContaining({ role: 'system' }),
           { role: 'user', content: [{ type: 'text', text: 'Create a pipe' }] },
           {

@@ -1,9 +1,6 @@
 import type { SystemModelMessage } from 'ai'
 
-import {
-  buildSupportFormUrl,
-  SUPPORT_FORM_URL_PLACEHOLDER,
-} from '@/helpers/ai/build-support-form-url'
+import { SUPPORT_FORM_URL_PLACEHOLDER } from '@/helpers/ai/build-support-form-url'
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 
 import { CACHE_CONTROL_PROVIDER_OPTIONS } from './cache-breakpoints'
@@ -13,12 +10,11 @@ import {
 } from './helpers'
 
 // IMPORTANT: must not vary by chat, or chats stop sharing the system prompt cache.
-const SUPPORT_FORM_URL_INSTRUCTION = `When you link the support form, write ${SUPPORT_FORM_URL_PLACEHOLDER} or the support form URL from the chat context below.`
+const SUPPORT_FORM_URL_INSTRUCTION = `When you link the support form, write ${SUPPORT_FORM_URL_PLACEHOLDER} exactly as the URL. The server replaces it with this chat's link.`
 
 interface BuildChatSystemMessagesOptions {
   basePrompt: string
   restrictedApps: string[]
-  chatId: string | undefined
   establishedFormConnection: EstablishedFormConnection | null
 }
 
@@ -30,16 +26,11 @@ interface BuildChatSystemMessagesOptions {
 export function buildChatSystemMessages({
   basePrompt,
   restrictedApps,
-  chatId,
   establishedFormConnection,
-}: BuildChatSystemMessagesOptions): [SystemModelMessage, SystemModelMessage] {
-  const chatContext = [
-    'Chat context:',
-    `Support form URL for this chat: ${buildSupportFormUrl(chatId)}`,
-    buildEstablishedConnectionReminder(establishedFormConnection).trim(),
-  ]
-    .filter(Boolean)
-    .join('\n\n')
+}: BuildChatSystemMessagesOptions): SystemModelMessage[] {
+  const connectionReminder = buildEstablishedConnectionReminder(
+    establishedFormConnection,
+  ).trim()
 
   return [
     {
@@ -47,6 +38,8 @@ export function buildChatSystemMessages({
       content: `${buildSystemPrompt(basePrompt, restrictedApps)}\n\n${SUPPORT_FORM_URL_INSTRUCTION}`,
       providerOptions: CACHE_CONTROL_PROVIDER_OPTIONS,
     },
-    { role: 'system', content: chatContext },
+    ...(connectionReminder
+      ? [{ role: 'system' as const, content: connectionReminder }]
+      : []),
   ]
 }

@@ -531,7 +531,7 @@ describe('Chat Route Handler', () => {
         role: 'system',
         // The base prompt plus the fixed support link line, with no restricted apps note.
         content:
-          'test prompt\n\nWhen you link the support form, write {{SUPPORT_FORM_URL}} or the support form URL from the chat context below.',
+          "test prompt\n\nWhen you link the support form, write {{SUPPORT_FORM_URL}} exactly as the URL. The server replaces it with this chat's link.",
       })
       expect(capturedMessages[0].content).not.toContain(
         'this user does not have access to the following apps',

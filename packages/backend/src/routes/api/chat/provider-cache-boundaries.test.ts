@@ -28,9 +28,6 @@ const BASE_PROMPT = [
   '| Slack | `slack` |',
 ].join('\n')
 
-const CHAT_A = '11111111-1111-4111-8111-111111111111'
-const CHAT_B = '22222222-2222-4222-8222-222222222222'
-
 type AnthropicBlock = Record<string, unknown> & { type: string }
 interface AnthropicRequestBody {
   system: AnthropicBlock[]
@@ -54,12 +51,10 @@ function anthropicResponse(content: unknown[], stopReason: string) {
 }
 
 async function runTwoSteps({
-  chatId,
   restrictedApps,
   history,
   withConnection,
 }: {
-  chatId: string
   restrictedApps: string[]
   history: ModelMessage[]
   withConnection: boolean
@@ -94,7 +89,6 @@ async function runTwoSteps({
       ...buildChatSystemMessages({
         basePrompt: BASE_PROMPT,
         restrictedApps,
-        chatId,
         establishedFormConnection: withConnection
           ? { connectionId: 'conn-1', formTitle: 'Leave form' }
           : null,
@@ -158,13 +152,11 @@ const history: ModelMessage[] = [
 describe('Bedrock request cache boundaries', () => {
   it('shares the cached prefix across chats and puts chat-specific content after it', async () => {
     const [a] = await runTwoSteps({
-      chatId: CHAT_A,
       restrictedApps: [],
       history,
       withConnection: true,
     })
     const [b] = await runTwoSteps({
-      chatId: CHAT_B,
       restrictedApps: [],
       history: [{ role: 'user', content: 'Hi' }],
       withConnection: false,
@@ -175,17 +167,15 @@ describe('Bedrock request cache boundaries', () => {
     expect(a.system[0]).toEqual(b.system[0])
     expect(a.system[0].cache_control).toEqual({ type: 'ephemeral' })
     expect(a.system[0].text).toContain('Support: {{SUPPORT_FORM_URL}}')
-    expect(a.system[0].text).not.toContain(CHAT_A)
     expect(a.system[0].text).not.toContain('conn-1')
     expect(a.system).toHaveLength(2)
     expect(a.system[1].cache_control).toBeUndefined()
-    expect(a.system[1].text).toContain(CHAT_A)
     expect(a.system[1].text).toContain('connection_id "conn-1"')
+    expect(b.system).toHaveLength(1)
   })
 
   it('places rolling conversation breakpoints within the 4-breakpoint limit', async () => {
     const [step1, step2] = await runTwoSteps({
-      chatId: CHAT_A,
       restrictedApps: [],
       history,
       withConnection: false,
@@ -236,7 +226,6 @@ describe('Bedrock request cache boundaries', () => {
       },
     ]).flat()
     const [step1] = await runTwoSteps({
-      chatId: CHAT_A,
       restrictedApps: [],
       history: [
         { role: 'user', content: 'Build the pipe.' },
@@ -258,7 +247,6 @@ describe('Bedrock request cache boundaries', () => {
 
   it('sends user messages unchanged apart from cache markers', async () => {
     const [step1, step2] = await runTwoSteps({
-      chatId: CHAT_A,
       restrictedApps: [],
       history,
       withConnection: false,

@@ -37,7 +37,6 @@ function build(
   return buildChatSystemMessages({
     basePrompt: BASE_PROMPT,
     restrictedApps,
-    chatId: '11111111-1111-4111-8111-111111111111',
     establishedFormConnection,
   })
 }
@@ -69,10 +68,10 @@ describe('buildChatSystemMessages permissions', () => {
 
 describe('buildChatSystemMessages connection reminder', () => {
   it('adds no connection reminder without a verified connection', () => {
-    const [cached, chatContext] = build([])
+    const messages = build([])
 
-    expect(cached.content).not.toContain('connection_id')
-    expect(chatContext.content).not.toContain('connection_id')
+    expect(messages).toHaveLength(1)
+    expect(messages[0].content).not.toContain('connection_id')
   })
 
   it('puts only the verified connection in the chat-specific block', () => {

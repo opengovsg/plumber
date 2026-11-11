@@ -193,7 +193,6 @@ const handleChatStream = observe(
         ...buildChatSystemMessages({
           basePrompt: prompt.prompt,
           restrictedApps,
-          chatId,
           establishedFormConnection,
         }),
         ...messages,
