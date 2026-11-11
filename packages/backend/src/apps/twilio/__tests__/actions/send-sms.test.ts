@@ -110,6 +110,9 @@ describe('send sms', () => {
     await expect(sendSmsAction.run($)).rejects.toMatchObject({
       kind: 'internal',
       cause: httpError,
+      message: expect.stringContaining(
+        '"solution":"Please contact plumber@open.gov.sg for assistance."',
+      ),
     })
   })
 
@@ -144,6 +147,17 @@ describe('send sms', () => {
     },
   )
 
+  it('tells the user to contact Plumber for an unlisted 4xx response', async () => {
+    mocks.httpPost.mockRejectedValueOnce(makeHttpError({ status: 409 }))
+
+    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+      kind: 'internal',
+      message: expect.stringContaining(
+        '"solution":"Please contact plumber@open.gov.sg for assistance."',
+      ),
+    })
+  })
+
   it('throws a third-party StepError for a network error', async () => {
     const httpError = makeHttpError({ code: 'ECONNRESET' })
     mocks.httpPost.mockRejectedValueOnce(httpError)
@@ -163,6 +177,9 @@ describe('send sms', () => {
       await expect(sendSmsAction.run($)).rejects.toMatchObject({
         kind: 'internal',
         cause: httpError,
+        message: expect.stringContaining(
+          '"solution":"Please contact plumber@open.gov.sg for assistance."',
+        ),
       })
     },
   )
@@ -174,6 +191,9 @@ describe('send sms', () => {
     await expect(sendSmsAction.run($)).rejects.toMatchObject({
       kind: 'internal',
       cause: httpError,
+      message: expect.stringContaining(
+        '"solution":"Please contact plumber@open.gov.sg for assistance."',
+      ),
     })
   })
 
