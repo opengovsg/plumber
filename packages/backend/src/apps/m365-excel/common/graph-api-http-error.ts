@@ -80,12 +80,26 @@ const CONFIG_403_CODES: ReadonlyMap<string, GraphStepErrorInfo> = new Map([
   ['AccessDenied', TABLE_PROTECTED],
 ])
 
+// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
+const NETWORK_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'EPROTO',
+  'CERT_HAS_EXPIRED',
+])
+
 function getGraphStepErrorInfo(error: HttpError): GraphStepErrorInfo {
   const status = error.response.status
 
-  // No code means a beforeRequest hook (e.g. token fetch) threw, not the network.
   if (status === undefined) {
-    return error.code ? UNAVAILABLE : UNEXPECTED
+    return NETWORK_ERROR_CODES.has(error.code ?? '') ? UNAVAILABLE : UNEXPECTED
   }
 
   const code = tryParseGraphApiError(error)?.code ?? ''

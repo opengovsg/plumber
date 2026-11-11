@@ -99,6 +99,24 @@ describe('toStepError', () => {
     expect(stepError.cause).toBe(httpError)
   })
 
+  it('maps a DNS failure to third-party', () => {
+    const httpError = makeHttpError({
+      code: 'ENOTFOUND',
+      message: 'getaddrinfo ENOTFOUND graph.microsoft.com',
+    })
+    expect(toStepError(httpError).kind).toBe('third-party')
+  })
+
+  it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+    'maps a %s request error with no response to internal',
+    (code) => {
+      const httpError = makeHttpError({ code, message: code })
+      const stepError = toStepError(httpError)
+      expect(stepError.kind).toBe('internal')
+      expect(stepError.cause).toBe(httpError)
+    },
+  )
+
   it('maps a no-response error without a code to internal', () => {
     // e.g. a token fetch failure thrown from beforeRequest.
     const httpError = makeHttpError({ message: 'Invalid tenant key' })
