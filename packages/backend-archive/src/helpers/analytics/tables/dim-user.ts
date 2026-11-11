@@ -36,7 +36,8 @@ export type DimUserRow = DimUserSqlRow & {
 }
 
 // The execution columns stay null until execution_daily exists.
-// first_published_at falls back to published_at for pipes created before first publish was tracked.
+// first_published_at is an estimate: unpublish clears published_at, so only live pipes count.
+// The exact first publish is the earliest flow_publish_succeeded event in PostHog.
 // is_verified: an OTP request creates the user row before the email is proven, and last_login_at
 // only exists from 19 Nov 2024. Owning any pipe, deleted or not, also proves the account.
 const DIM_USER_SQL = `
@@ -58,7 +59,7 @@ const DIM_USER_SQL = `
     SELECT
       user_id,
       min(created_at) AS first_created_at,
-      min(coalesce((config ->> 'firstPublishedAt')::timestamptz, published_at)) AS first_published_at
+      min(published_at) AS first_published_at
     FROM flows
     GROUP BY user_id
   ) f ON f.user_id = u.id
