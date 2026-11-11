@@ -30,11 +30,17 @@ const csvRowSchema = z.object({
   launched_at: z
     .string()
     .regex(/^(\d{4}-\d{2}-\d{2})?$/)
-    .transform((value) =>
-      value
-        ? DateTime.fromISO(value, { zone: 'Asia/Singapore' }).toJSDate()
-        : null,
-    ),
+    .transform((value, ctx) => {
+      if (!value) {
+        return null
+      }
+      const day = DateTime.fromISO(value, { zone: 'Asia/Singapore' })
+      if (!day.isValid) {
+        ctx.addIssue({ code: 'custom', message: `Invalid date ${value}` })
+        return z.NEVER
+      }
+      return day.toJSDate()
+    }),
   minutes_saved: z
     .string()
     .regex(/^(\d+)?$/)
