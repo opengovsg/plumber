@@ -1,7 +1,7 @@
 import type { StepErrorKind } from '@plumber/types'
 import { z } from 'zod'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
 interface PaySgStepErrorInfo {
@@ -35,8 +35,7 @@ function getPaySgStepErrorInfo(error: HttpError): PaySgStepErrorInfo {
   const status = error.response.status
 
   if (status === undefined) {
-    // No code means a beforeRequest hook threw before the request was sent.
-    return error.code
+    return isNetworkError(error)
       ? {
           name: 'Could not connect to PaySG',
           solution: TRY_AGAIN_LATER,

@@ -59,6 +59,24 @@ describe('rethrowAsPaySgStepError', () => {
     })
   })
 
+  it('maps a DNS failure with no response to third-party', () => {
+    const httpError = makeHttpError({ code: 'ENOTFOUND' })
+
+    expect(catchError(httpError)).toMatchObject({ kind: 'third-party' })
+  })
+
+  it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+    'maps a %s request error with no response to internal',
+    (code) => {
+      const httpError = makeHttpError({ code })
+
+      expect(catchError(httpError)).toMatchObject({
+        kind: 'internal',
+        cause: httpError,
+      })
+    },
+  )
+
   it('maps a beforeRequest failure (no status, no code) to internal', () => {
     const httpError = makeHttpError({ message: 'Missing API key' })
 
