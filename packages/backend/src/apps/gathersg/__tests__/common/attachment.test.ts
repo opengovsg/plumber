@@ -90,6 +90,18 @@ describe('processAttachments', () => {
     ).rejects.toMatchObject({ kind: 'third-party', cause: error })
   })
 
+  it.each([
+    ['an axios request error', { code: 'ERR_CANCELED', message: 'canceled' }],
+    ['a beforeRequest failure', { message: 'Missing API key' }],
+  ])('tags %s with no response as internal', async (_label, options) => {
+    const error = makeHttpError(options)
+    httpGet.mockRejectedValueOnce(error)
+
+    await expect(
+      processAttachments($, MOCK_CASE_UUID, MOCK_ATTACHMENTS),
+    ).rejects.toMatchObject({ kind: 'internal', cause: error })
+  })
+
   it('tags an S3 upload failure as internal', async () => {
     mocks.putObject.mockRejectedValueOnce(new Error('S3 down'))
 

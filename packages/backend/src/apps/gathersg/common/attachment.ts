@@ -3,7 +3,7 @@ import axios from 'axios'
 import FormData from 'form-data'
 import { z } from 'zod'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import {
@@ -38,6 +38,9 @@ function getAttachmentDownloadFailureKind(error: unknown): StepErrorKind {
     return 'internal'
   }
   const status = error.response?.status
+  if (status === undefined) {
+    return isNetworkError(error) ? 'third-party' : 'internal'
+  }
   if (status === 401 || status === 403) {
     return 'config'
   }
