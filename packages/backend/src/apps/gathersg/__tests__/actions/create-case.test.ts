@@ -80,11 +80,11 @@ describe('create case', () => {
     })
   })
 
-  it('tags an unexpected create response as third-party', async () => {
+  it('tags an unexpected create response as internal', async () => {
     httpPost.mockResolvedValueOnce({ data: { data: { uuid: 'case-uuid-1' } } })
 
     await expect(createCaseAction.run($)).rejects.toMatchObject({
-      kind: 'third-party',
+      kind: 'internal',
       message: expect.stringContaining('"name":"data:'),
     })
   })

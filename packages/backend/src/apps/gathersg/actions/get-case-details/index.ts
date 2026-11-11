@@ -72,10 +72,11 @@ const action: IRawAction = {
 
       const fields = rawData.data?.fields
       if (!fields) {
+        // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
         throw new StepError({
           name: `No data found for case ${caseUuid}`,
           solution: 'Please check that you have configured your step correctly',
-          kind: 'third-party',
+          kind: 'internal',
         })
       }
 

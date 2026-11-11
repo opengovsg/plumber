@@ -113,13 +113,13 @@ describe('processAttachments', () => {
     })
   })
 
-  it('tags a malformed attachments payload as third-party', async () => {
+  it('tags a malformed attachments payload as internal', async () => {
     await expect(
       processAttachments($, MOCK_CASE_UUID, {
         'attach-uuid-1': { name: '' },
       }),
     ).rejects.toMatchObject({
-      kind: 'third-party',
+      kind: 'internal',
       message: expect.stringContaining('Invalid attachments'),
     })
   })

@@ -335,10 +335,11 @@ const action: IRawAction = {
       })
       const response = responseSchema.safeParse(rawResponse.data)
       if (!response.success) {
+        // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
         throw new StepError({
           name: `${fromZodError(response.error).details[0].message}`,
           solution: UNEXPECTED_RESPONSE_SOLUTION,
-          kind: 'third-party',
+          kind: 'internal',
         })
       }
 
