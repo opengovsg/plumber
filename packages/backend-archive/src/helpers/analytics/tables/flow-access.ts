@@ -14,6 +14,7 @@ const flowAccessRowSchema = z.object({
 export type FlowAccessRow = z.infer<typeof flowAccessRowSchema>
 
 // flow_collaborators holds editors and viewers only. The owner comes from flows.user_id.
+// An owner row is the current owner dated from the pipe's creation. Join flow_transfer for handovers.
 // Removing a collaborator sets deleted_at and keeps the row, so past access stays countable.
 const FLOW_ACCESS_SQL = `
   SELECT
