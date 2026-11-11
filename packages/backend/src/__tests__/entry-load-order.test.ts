@@ -39,7 +39,13 @@ describe.each(ENTRY_POINTS)('%s', (entry) => {
       {
         cwd: BACKEND_ROOT,
         env: {
-          ...process.env,
+          // IMPORTANT: CI test visibility preloads dd-trace through NODE_OPTIONS. That hides the
+          // load order under test and routes the .ts fixture through the ESM loader.
+          ...Object.fromEntries(
+            Object.entries(process.env).filter(
+              ([key]) => key !== 'NODE_OPTIONS' && !key.startsWith('DD_'),
+            ),
+          ),
           APP_ENV: 'staging',
           TS_NODE_TRANSPILE_ONLY: 'true',
           TS_NODE_TRANSPILER: 'ts-node/transpilers/swc',
