@@ -1,6 +1,6 @@
 import type { StepErrorKind } from '@plumber/types'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import StepError from '@/errors/step'
 
 import { tryParseGraphApiError } from './parse-graph-api-error'
@@ -80,26 +80,11 @@ const CONFIG_403_CODES: ReadonlyMap<string, GraphStepErrorInfo> = new Map([
   ['AccessDenied', TABLE_PROTECTED],
 ])
 
-// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
-const NETWORK_ERROR_CODES = new Set([
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'ECONNABORTED',
-  'ETIMEDOUT',
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'EPIPE',
-  'EHOSTUNREACH',
-  'ENETUNREACH',
-  'EPROTO',
-  'CERT_HAS_EXPIRED',
-])
-
 function getGraphStepErrorInfo(error: HttpError): GraphStepErrorInfo {
   const status = error.response.status
 
   if (status === undefined) {
-    return NETWORK_ERROR_CODES.has(error.code ?? '') ? UNAVAILABLE : UNEXPECTED
+    return isNetworkError(error) ? UNAVAILABLE : UNEXPECTED
   }
 
   const code = tryParseGraphApiError(error)?.code ?? ''
