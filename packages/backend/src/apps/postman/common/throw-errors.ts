@@ -1,6 +1,6 @@
 import { IGlobalVariable, StepErrorKind } from '@plumber/types'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -113,21 +113,6 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
   return 'ERROR'
 }
 
-// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
-const NETWORK_ERROR_CODES = new Set([
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'ECONNABORTED',
-  'ETIMEDOUT',
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'EPIPE',
-  'EHOSTUNREACH',
-  'ENETUNREACH',
-  'EPROTO',
-  'CERT_HAS_EXPIRED',
-])
-
 // Postman 4xx and SES errors reaching the catch-all stem from Plumber's API key or SES setup.
 function getCatchAllKind(error: unknown): StepErrorKind {
   if (!(error instanceof HttpError)) {
@@ -135,9 +120,7 @@ function getCatchAllKind(error: unknown): StepErrorKind {
   }
   const status = error.response?.status
   if (status === undefined) {
-    return NETWORK_ERROR_CODES.has(error.code ?? '')
-      ? 'third-party'
-      : 'internal'
+    return isNetworkError(error) ? 'third-party' : 'internal'
   }
   return status >= 500 ? 'third-party' : 'internal'
 }
