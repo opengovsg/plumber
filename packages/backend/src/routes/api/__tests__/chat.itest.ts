@@ -529,7 +529,9 @@ describe('Chat Route Handler', () => {
       // (no need to say "this user does not have access to: ." when list is empty)
       expect(capturedMessages[0]).toMatchObject({
         role: 'system',
-        content: 'test prompt', // Just the base prompt, no note appended
+        // The base prompt plus the fixed support link line, with no restricted apps note.
+        content:
+          "test prompt\n\nWhen you link the support form, write {{SUPPORT_FORM_URL}} exactly as the URL. The server replaces it with this chat's link.",
       })
       expect(capturedMessages[0].content).not.toContain(
         'this user does not have access to the following apps',
