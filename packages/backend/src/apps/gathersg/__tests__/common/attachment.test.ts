@@ -78,7 +78,6 @@ describe('processAttachments', () => {
   })
 
   it.each([
-    ['a 404', { status: 404 }],
     ['a 504', { status: 504, data: '<html>Gateway Timeout</html>' }],
     ['a network error', { code: 'ETIMEDOUT', message: 'timeout' }],
   ])('tags %s download as third-party', async (_label, options) => {
@@ -89,6 +88,21 @@ describe('processAttachments', () => {
       processAttachments($, MOCK_CASE_UUID, MOCK_ATTACHMENTS),
     ).rejects.toMatchObject({ kind: 'third-party', cause: error })
   })
+
+  it.each([
+    ['a 400', { status: 400 }],
+    ['a 404', { status: 404 }],
+  ])(
+    'tags %s download as internal and keeps the cause',
+    async (_label, options) => {
+      const error = makeHttpError(options)
+      httpGet.mockRejectedValueOnce(error)
+
+      await expect(
+        processAttachments($, MOCK_CASE_UUID, MOCK_ATTACHMENTS),
+      ).rejects.toMatchObject({ kind: 'internal', cause: error })
+    },
+  )
 
   it.each([
     ['an axios request error', { code: 'ERR_CANCELED', message: 'canceled' }],
