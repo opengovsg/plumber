@@ -13,10 +13,27 @@ type LettersApiFieldErrorData = {
   errors?: Record<string, string>[]
 }
 
+// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
+const NETWORK_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'EPROTO',
+  'CERT_HAS_EXPIRED',
+])
+
 function getCatchAllKind(error: HttpError): StepErrorKind {
   const status = error.response.status
   if (status === undefined) {
-    return error.code ? 'third-party' : 'internal'
+    return NETWORK_ERROR_CODES.has(error.code ?? '')
+      ? 'third-party'
+      : 'internal'
   }
   return status >= 500 ? 'third-party' : 'internal'
 }

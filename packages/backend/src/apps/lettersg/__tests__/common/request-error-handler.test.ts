@@ -163,7 +163,7 @@ describe('lettersg requestErrorHandler', () => {
     expect(error.cause).toBeInstanceOf(HttpError)
   })
 
-  it.each(['ECONNRESET', 'ETIMEDOUT'])(
+  it.each(['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'])(
     'classifies a %s network error as third-party and keeps its HttpError cause',
     async (code) => {
       mockAdapter
@@ -177,6 +177,22 @@ describe('lettersg requestErrorHandler', () => {
       const error = await catchStepError(createLetter())
 
       expect(error.kind).toBe('third-party')
+      expect(error.cause).toBeInstanceOf(HttpError)
+    },
+  )
+
+  it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+    'classifies a %s request error with no status as internal',
+    async (code) => {
+      mockAdapter
+        .onPost('/v1/letters')
+        .reply((config: InternalAxiosRequestConfig) =>
+          Promise.reject(AxiosError.from(new Error(code), code, config)),
+        )
+
+      const error = await catchStepError(createLetter())
+
+      expect(error.kind).toBe('internal')
       expect(error.cause).toBeInstanceOf(HttpError)
     },
   )
