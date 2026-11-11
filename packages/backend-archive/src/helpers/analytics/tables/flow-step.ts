@@ -33,6 +33,8 @@ export type FlowStepRow = Omit<FlowStepSqlRow, 'resource_value'> & {
   resource_id: string | null
 }
 
+const TEMPLATE_PLACEHOLDER = 'plumber-template-variable'
+
 /**
  * Takes the object a step points at from the parameter the editor fills with a dropdown.
  *
@@ -42,14 +44,17 @@ export function toResourceId(
   appKey: string | null,
   value: string | null,
 ): string | null {
-  if (!value || value.includes('{{')) {
+  if (!value) {
     return null
   }
   if (appKey !== 'custom-api') {
-    return value
+    return value.includes('{{') ? null : value
   }
+  // A templated path is common, so only a templated host makes the URL per-run data.
   try {
-    return new URL(value).hostname || null
+    const host = new URL(value.replace(/\{\{[^}]*\}\}/g, TEMPLATE_PLACEHOLDER))
+      .hostname
+    return host && !host.includes(TEMPLATE_PLACEHOLDER) ? host : null
   } catch {
     return null
   }
