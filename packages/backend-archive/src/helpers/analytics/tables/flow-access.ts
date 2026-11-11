@@ -16,6 +16,7 @@ export type FlowAccessRow = z.infer<typeof flowAccessRowSchema>
 // flow_collaborators holds editors and viewers only. The owner comes from flows.user_id.
 // An owner row is the current owner dated from the pipe's creation. Join flow_transfer for handovers.
 // Removing a collaborator sets deleted_at and keeps the row, so past access stays countable.
+// Deleting a pipe leaves its collaborator rows untouched, so their access ends with the pipe.
 const FLOW_ACCESS_SQL = `
   SELECT
     f.user_id,
@@ -32,9 +33,10 @@ const FLOW_ACCESS_SQL = `
     c.flow_id,
     c.role,
     c.created_at,
-    c.deleted_at,
+    coalesce(c.deleted_at, cf.deleted_at) AS deleted_at,
     c.last_accessed_at
   FROM flow_collaborators c
+  JOIN flows cf ON cf.id = c.flow_id
   ORDER BY flow_id, created_at
 `
 
