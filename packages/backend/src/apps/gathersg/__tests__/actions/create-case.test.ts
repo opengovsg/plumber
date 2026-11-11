@@ -126,7 +126,7 @@ describe('create case', () => {
     onTestFinished(() => logError.mockRestore())
     httpPost.mockRejectedValueOnce(makeHttpError({ status: 504 }))
 
-    await createCaseAction.run($).catch(() => undefined)
+    await expect(createCaseAction.run($)).rejects.toThrow()
 
     expect(logError).toHaveBeenCalledWith('Failed to create case on GatherSG', {
       event: 'gathersg-create-case-failed',
