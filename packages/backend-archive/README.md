@@ -176,15 +176,16 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ## Exporting analytics tables
 
-The archival task writes the silver analytics tables to S3 each night, before it archives. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`.
+The archival task writes the silver analytics tables to S3 each night, before it archives. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`, except `flow_step`. `flow_step` writes one file per Singapore day at `silver/flow_step/day=YYYY-MM-DD.parquet`, holding only the steps whose `updated_at` falls on that day. PostHog bills each row it imports, so a nightly full copy would bill every step daily. The latest day file already in the folder is the watermark: a missed night is filled on the next run, and an empty folder gets a full copy. A full copy spans `day=YYYY-MM-DD.part-N.parquet` files of 50,000 steps.
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
-| Flag           | Meaning                                                                                                                                        |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`, `flow_stage`, `flow_access`, `flow_ai_suggestion`, `action_catalog`. |
-| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                           |
-| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                                 |
+| Flag           | Meaning                                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`, `flow_stage`, `flow_access`, `flow_ai_suggestion`, `action_catalog`, `flow_step`. |
+| `--full`       | Write `flow_step` as a full copy for yesterday. Run it after a migration or script writes `steps` directly, since those skip `updated_at`.                  |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                        |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                                              |
 
 Pass exactly one of `--out` and `--s3`.
 

@@ -7,6 +7,13 @@ import type { Knex } from 'knex'
 import logger from '@/helpers/archival/logger'
 import { putArchiveObject } from '@/helpers/archival/s3-client'
 
+import { previousSgtDay } from './sgt-day'
+import {
+  type SilverChangeTable,
+  type SilverKeyLister,
+  s3KeyLister,
+  writeSilverChangeTables,
+} from './silver-change-tables'
 import {
   buildSilverKey,
   encodeSilverTable,
@@ -18,6 +25,7 @@ import { dimUserTable } from './tables/dim-user'
 import { flowAccessTable } from './tables/flow-access'
 import { flowAiSuggestionTable } from './tables/flow-ai-suggestion'
 import { flowStageTable } from './tables/flow-stage'
+import { flowStepTable } from './tables/flow-step'
 import { flowTransferTable } from './tables/flow-transfer'
 
 export const SILVER_TABLES: SilverTable<SilverRow>[] = [
@@ -27,6 +35,10 @@ export const SILVER_TABLES: SilverTable<SilverRow>[] = [
   flowAccessTable,
   flowAiSuggestionTable,
   actionCatalogTable,
+]
+
+export const SILVER_CHANGE_TABLES: SilverChangeTable<SilverRow>[] = [
+  flowStepTable,
 ]
 
 // IMPORTANT: every environment shares one PostHog project, but each has its own
@@ -54,14 +66,23 @@ export function localDirSink(dir: string): SilverSink {
   }
 }
 
-export function selectSilverTables(names: string[]): SilverTable<SilverRow>[] {
-  const unknown = names.filter(
-    (name) => !SILVER_TABLES.some((table) => table.name === name),
+export function selectSilverTables(names: string[]): {
+  tables: SilverTable<SilverRow>[]
+  changeTables: SilverChangeTable<SilverRow>[]
+} {
+  const known = [...SILVER_TABLES, ...SILVER_CHANGE_TABLES].map(
+    (table) => table.name,
   )
+  const unknown = names.filter((name) => !known.includes(name))
   if (unknown.length > 0) {
     throw new Error(`Unknown silver tables: ${unknown.join(', ')}`)
   }
-  return SILVER_TABLES.filter((table) => names.includes(table.name))
+  return {
+    tables: SILVER_TABLES.filter((table) => names.includes(table.name)),
+    changeTables: SILVER_CHANGE_TABLES.filter((table) =>
+      names.includes(table.name),
+    ),
+  }
 }
 
 interface WriteSilverTablesParams {
@@ -90,20 +111,48 @@ export async function writeSilverTables({
   }
 }
 
-interface ExportSilverTablesParams {
-  db: Knex
+interface WriteAllSilverTablesParams extends WriteSilverTablesParams {
+  listKeys: SilverKeyLister
+  changeTables?: SilverChangeTable<SilverRow>[]
+  // Rewrites each change table as a full copy, after a direct database write.
+  full?: boolean
+  now?: Date
+}
+
+export async function writeAllSilverTables({
+  db,
+  sink,
+  listKeys,
+  tables = SILVER_TABLES,
+  changeTables = SILVER_CHANGE_TABLES,
+  full = false,
+  now = new Date(),
+}: WriteAllSilverTablesParams): Promise<void> {
+  await writeSilverTables({ db, sink, tables })
+  await writeSilverChangeTables({
+    db,
+    sink,
+    listKeys,
+    tables: changeTables,
+    yesterday: previousSgtDay(now),
+    full,
+  })
+}
+
+interface ExportSilverTablesParams extends Omit<
+  WriteAllSilverTablesParams,
+  'sink' | 'listKeys'
+> {
   s3Client: S3Client
   appEnv: string
   bucket: string | undefined
-  tables?: SilverTable<SilverRow>[]
 }
 
 export async function exportSilverTables({
-  db,
   s3Client,
   appEnv,
   bucket,
-  tables = SILVER_TABLES,
+  ...params
 }: ExportSilverTablesParams): Promise<void> {
   if (!EXPORT_APP_ENVS.has(appEnv)) {
     logger.info({ event: 'analytics.export.skipped', appEnv })
@@ -112,5 +161,9 @@ export async function exportSilverTables({
   if (!bucket) {
     throw new Error(`ANALYTICS_BUCKET must be set in ${appEnv}`)
   }
-  await writeSilverTables({ db, tables, sink: s3Sink(s3Client, bucket) })
+  await writeAllSilverTables({
+    ...params,
+    sink: s3Sink(s3Client, bucket),
+    listKeys: s3KeyLister(s3Client, bucket),
+  })
 }
