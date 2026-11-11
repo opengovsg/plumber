@@ -217,6 +217,30 @@ describe('Postman SMS request error handler', () => {
       expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
     })
 
+    it('treats a DNS failure as third-party', async () => {
+      const error = makeHttpError({
+        message: 'getaddrinfo ENOTFOUND',
+        code: 'ENOTFOUND',
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        kind: 'third-party',
+        cause: error,
+      })
+    })
+
+    it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+      'treats a %s request error with no status as internal',
+      async (code) => {
+        const error = makeHttpError({ message: code, code })
+
+        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+          kind: 'internal',
+          cause: error,
+        })
+      },
+    )
+
     it('treats a beforeRequest error as internal', async () => {
       const error = makeHttpError({
         message: 'Unsupported postman environment',
