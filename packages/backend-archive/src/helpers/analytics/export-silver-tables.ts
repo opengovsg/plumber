@@ -14,11 +14,17 @@ import {
   type SilverTable,
 } from './silver-table'
 import { dimUserTable } from './tables/dim-user'
+import { flowAccessTable } from './tables/flow-access'
+import { flowAiSuggestionTable } from './tables/flow-ai-suggestion'
+import { flowStageTable } from './tables/flow-stage'
 import { flowTransferTable } from './tables/flow-transfer'
 
 export const SILVER_TABLES: SilverTable<SilverRow>[] = [
   flowTransferTable,
   dimUserTable,
+  flowStageTable,
+  flowAccessTable,
+  flowAiSuggestionTable,
 ]
 
 // IMPORTANT: every environment shares one PostHog project, but each has its own
