@@ -13,7 +13,7 @@ import {
   parseOperand,
 } from './logic'
 
-function getParams($: Parameters<IRawAction['run']>[0]) {
+function getParams($: Parameters<NonNullable<IRawAction['run']>>[0]) {
   try {
     return paramsSchema.parse($.step.parameters)
   } catch (error) {
@@ -119,7 +119,7 @@ const action: IRawAction = {
         throw error
       }
       throw new StepError(
-        `Error processing dates: '${error.message}'`,
+        `Error processing dates: '${error instanceof Error ? error.message : String(error)}'`,
         'Ensure that you have selected the correct format for each date.',
       )
     }

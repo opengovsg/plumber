@@ -167,8 +167,12 @@ async function runBatch(
   //   non-retriable error): isolate EVERY job (reported `failed`, never retried)
   //   since retrying cannot help.
   try {
+    const ownerEmail = firstJob.user?.email
+    if (!ownerEmail) {
+      throw new Error('createTableRow batch has no pipe owner')
+    }
     await validateCanAccessFile(
-      firstJob.user?.email,
+      ownerEmail,
       extractAuthDataWithPlumberFolder(firstJob),
       fileId,
       firstJob.http,
