@@ -5,6 +5,7 @@ import apps from '@/apps'
 
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import type { FormsgPayloadWorkflowContent } from '../../common/types'
+import { NricFilter } from '../../triggers/new-submission'
 import {
   exampleV4Submission,
   makeExampleV4FormSchema,
@@ -558,6 +559,55 @@ describe('decrypt form response - MRF specific', () => {
       expect($.request.body.verifiedSubmitterInfo).toEqual({
         uinFin: 'S1234567A',
         sgidUinFin: 'S1234567A',
+      })
+    })
+
+    it('should map "cpUen (Step 1)" and "cpUid (Step 1)" to cpUen and cpUid', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(1)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: {
+          'cpUen (Step 1)': '201912345A',
+          'cpUid (Step 1)': 'S1234567D',
+        },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        cpUen: '201912345A',
+        cpUid: 'S1234567D',
+      })
+    })
+
+    it('should still map plain cpUen and cpUid keys correctly', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(0)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { cpUen: '201912345A', cpUid: 'S1234567D' },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        cpUen: '201912345A',
+        cpUid: 'S1234567D',
+      })
+    })
+
+    it('should apply the NRIC filter to step-suffixed uinFin keys', async () => {
+      $.step.parameters.nricFilter = NricFilter.Mask
+      $.request.body.data.workflowContent = makeWorkflowContent(1)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { 'uinFin (Step 1)': 'S1234567A' },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        uinFin: 'xxxxx567A',
+        sgidUinFin: 'xxxxx567A',
       })
     })
 
