@@ -79,7 +79,15 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
     const flow = await context.currentUser.$relatedQuery('flows', trx).insert({
       name: trimmedFlowName,
       config: {
-        aiBuilderConfig,
+        aiBuilderConfig: {
+          ...aiBuilderConfig,
+          // Analytics diffs these against the saved steps to see how much users change the proposal.
+          suggested: steps.map((step) => ({
+            position: step.position,
+            appKey: step.appKey ?? null,
+            key: step.key ?? null,
+          })),
+        },
       },
     })
 
