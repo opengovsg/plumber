@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
  * Options:
  *   --project=aiBuilder|pairAction    default aiBuilder
  *   --environment=prod|staging|uat    default prod
- *   --range=1d|7d|30d|90d             default 30d
+ *   --range=1d|7d|30d|90d|all         default 30d
  *   --from=YYYY-MM-DD --to=YYYY-MM-DD custom range, both days inclusive, local time
  *   --format=json|csv                 default json
  *   --userId=<id>                     only traces for this user
@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url'
  * Examples:
  *   pnpm run export-traces
  *   pnpm run export-traces --range=7d --format=csv
+ *   pnpm run export-traces --range=all
  *   pnpm run export-traces --from=2026-10-01 --to=2026-10-31 --environment=staging
  */
 import { buildLangfuseClient, PROJECTS } from './client.mjs'
@@ -39,6 +40,7 @@ const RANGES = [
   { key: '7d', label: 'Last 7 days', days: 7 },
   { key: '30d', label: 'Last 30 days', days: 30 },
   { key: '90d', label: 'Last 90 days', days: 90 },
+  { key: 'all', label: 'All time', days: null },
 ]
 const DEFAULT_RANGE = '30d'
 // Langfuse caps list endpoints at 100 items per page.
@@ -94,6 +96,9 @@ function formatDate(date) {
 }
 
 function rangeFromDays(days, now = new Date()) {
+  if (days === null) {
+    return { from: undefined, to: now }
+  }
   return { from: new Date(now.getTime() - days * 86_400_000), to: now }
 }
 
@@ -274,7 +279,7 @@ async function listTraceIds(client, options) {
         page,
         limit: PAGE_SIZE,
         orderBy: 'timestamp.asc',
-        fromTimestamp: options.range.from.toISOString(),
+        fromTimestamp: options.range.from?.toISOString(),
         toTimestamp: options.range.to.toISOString(),
         environment: options.environment,
         userId: options.userId,
@@ -438,7 +443,7 @@ function buildOutputPath(options) {
   const runAt = new Date().toISOString().replace(/[:.]/g, '-')
   const scope = options.traceId
     ? `trace-${options.traceId}`
-    : `${formatDate(options.range.from)}_to_${formatDate(new Date(options.range.to.getTime() - 1))}`
+    : `${options.range.from ? formatDate(options.range.from) : 'all-time'}_to_${formatDate(new Date(options.range.to.getTime() - 1))}`
   return join(
     OUT_DIR,
     `traces_${options.project}_${options.environment}_${scope}_${runAt}.${options.format}`,
@@ -458,7 +463,7 @@ async function main() {
     console.log(`Trace: ${options.traceId}`)
   } else {
     console.log(
-      `Range: ${options.range.from.toISOString()} → ${options.range.to.toISOString()}`,
+      `Range: ${options.range.from?.toISOString() ?? 'all time'} → ${options.range.to.toISOString()}`,
     )
   }
   if (options.userId) {
