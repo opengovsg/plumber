@@ -144,6 +144,9 @@ export function makeActionWorker(
             const unrecoverableError = new UnrecoverableError(
               err.message || 'Action failed to execute',
             )
+            // handleFailedJob logs each failure's kind for SLI computation, and
+            // reads the kind from this error's `cause`. Without the StepError
+            // as cause, every failure here would count as internal.
             attachHiddenCauseIfStepError(unrecoverableError, err)
             throw unrecoverableError
           },
