@@ -119,6 +119,8 @@ There are two kinds of skills, distinguished by whether they are listed in the s
 
 In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat).
 
+`analytics-guide` and `sql-query` answer product-metrics questions. They are staged here before moving to a shared skills repo. Plumber's own metric facts live in [docs/analytics/team/](docs/analytics/team/README.md).
+
 ### Skill overrides
 
 - **caveman**: default to `lite` mode (overrides the skill's own default of `full`).

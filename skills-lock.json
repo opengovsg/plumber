@@ -1,17 +1,23 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
     "caveman": {
       "source": "juliusbrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman/SKILL.md",
-      "computedHash": "dfbf85749fd474feeb0bbe60c779795ecd5dbec0083299b56e68916bc3ddd8c9"
+      "computedHash": ""
     },
     "graphite": {
       "source": "withgraphite/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/graphite/SKILL.md",
-      "computedHash": "9315b842df6de2a23216a2e72033fa99337398a8d62c11d6c320e55a6b810339"
+      "computedHash": ""
+    },
+    "querying-posthog-data": {
+      "source": "PostHog/ai-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/querying-posthog-data/SKILL.md",
+      "computedHash": "d6bbe9ba64cc0b725d7a292edbeec6fe6dbf14261459ca4d1685b9be0f0bd5fa"
     }
   }
 }
