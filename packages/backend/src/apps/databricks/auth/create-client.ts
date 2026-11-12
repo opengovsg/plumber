@@ -41,7 +41,7 @@ export const createSession = async (
     token,
   } satisfies ConnectionOptions
 
-  let connectedClient: IDBSQLClient
+  let connectedClient: IDBSQLClient | undefined
   try {
     connectedClient = await client.connect(connectOptions)
     const session = await connectedClient.openSession({
@@ -51,7 +51,7 @@ export const createSession = async (
     const endSession = async () => {
       try {
         await session.close()
-        await connectedClient.close()
+        await connectedClient?.close()
       } catch (e) {
         logger.warn('Unable to close session', e)
       }
