@@ -167,7 +167,7 @@ describe('s3', () => {
 
     it.each([
       [MALWARE_SCAN_STATUS.THREATS_FOUND, 'config'],
-      [MALWARE_SCAN_STATUS.UNSUPPORTED, 'internal'],
+      [MALWARE_SCAN_STATUS.UNSUPPORTED, 'config'],
       [MALWARE_SCAN_STATUS.ACCESS_DENIED, 'internal'],
       [MALWARE_SCAN_STATUS.FAILED, 'internal'],
       [undefined, 'internal'],
