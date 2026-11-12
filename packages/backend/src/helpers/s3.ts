@@ -171,7 +171,7 @@ function throwAttachmentError(
       throw new StepError({
         name: `Unsupported attachment: ${metadata.filename}`,
         solution: 'Please delete the attachment and try again.',
-        kind: 'internal',
+        kind: 'config',
       })
     case MALWARE_SCAN_STATUS.PENDING:
       throw new StepError({
