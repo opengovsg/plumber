@@ -23,7 +23,13 @@ import { fileURLToPath } from 'node:url'
  *   --format=json|csv                 default json
  *   --userId=<id>                     only sessions whose last trace belongs to this user
  *   --sessionId=<id>                  export one session and ignore the range
- *   --include=<fields>                comma-separated extras: metadata, fullOutput, observations, scores, or all
+ *   --include=<fields>                comma-separated extras, or all:
+ *                                       metrics        latencySeconds, totalCostUsd
+ *                                       counts         observationCount, scoreCount
+ *                                       metadata       trace metadata
+ *                                       fullOutput     raw output instead of the slimmed reply
+ *                                       observations   full observations (one extra request per session)
+ *                                       scores         full scores (one extra request per session)
  *   --concurrency=<n>                 parallel requests, default 5
  *   --yes                             skip prompts and use defaults
  *
@@ -50,12 +56,24 @@ const RANGES = [
   { key: 'all', label: 'All time', hours: null },
 ]
 const DEFAULT_RANGE = '30d'
-const EXTRA_FIELDS = ['metadata', 'fullOutput', 'observations', 'scores']
+const EXTRA_FIELDS = [
+  'metrics',
+  'counts',
+  'metadata',
+  'fullOutput',
+  'observations',
+  'scores',
+]
 // These need one extra request per session. Everything else comes from the last-trace lookup.
 const SLOW_FIELDS = ['observations', 'scores']
 const DETAIL_LEVELS = [
   { key: 'none', label: 'Core fields only (fast)' },
   { key: 'metadata', label: 'Core fields + metadata (fast)' },
+  {
+    key: 'metrics,counts',
+    label:
+      'Core fields + latency, cost and counts (slower, Langfuse computes them per trace)',
+  },
   {
     key: 'all',
     label:
@@ -632,10 +650,6 @@ const CORE_FIELDS = [
   ['tags', (t) => t.tags],
   ['input', (t) => t.input],
   ['output', (t) => slimOutput(t.output)],
-  ['latencySeconds', (t) => t.latency],
-  ['totalCostUsd', (t) => t.totalCost],
-  ['observationCount', (t) => t.observations?.length ?? 0],
-  ['scoreCount', (t) => t.scores?.length ?? 0],
   ['url', (t, c) => (t.htmlPath ? `${c.baseUrl}${t.htmlPath}` : undefined)],
 ]
 
@@ -661,6 +675,31 @@ function slimOutput(output) {
   }
 }
 
+// Opt-in because Langfuse computes these per trace, which slows each lookup.
+const OPTIONAL_FIELDS = {
+  metrics: [
+    ['latencySeconds', (t) => t.latency],
+    ['totalCostUsd', (t) => t.totalCost],
+  ],
+  counts: [
+    ['observationCount', (t) => t.observations?.length ?? 0],
+    ['scoreCount', (t) => t.scores?.length ?? 0],
+  ],
+}
+
+// Tells Langfuse which field groups to compute for the last-trace lookup.
+function buildListFields(include, needsFullTrace) {
+  if (needsFullTrace) {
+    return 'core'
+  }
+  return [
+    'core',
+    'io',
+    ...(include.includes('metrics') ? ['metrics'] : []),
+    ...(include.includes('counts') ? ['observations', 'scores'] : []),
+  ].join(',')
+}
+
 function buildFields(include) {
   const fields = include.includes('fullOutput')
     ? CORE_FIELDS.map((field) =>
@@ -669,8 +708,9 @@ function buildFields(include) {
     : CORE_FIELDS
   return [
     ...fields,
+    ...include.flatMap((field) => OPTIONAL_FIELDS[field] ?? []),
     ...include
-      .filter((field) => field !== 'fullOutput')
+      .filter((field) => ['metadata', 'observations', 'scores'].includes(field))
       .map((field) => [field, (t) => t[field]]),
   ]
 }
@@ -743,6 +783,7 @@ function buildOutputPath(options) {
  * Calls `onRecord` in session order. Sessions with no matching trace are counted in `skipped`.
  */
 async function fetchLastTraces(client, sessions, options, onRecord) {
+  const listFields = buildListFields(options.include, options.needsFullTrace)
   const progress = createProgress('Downloading last traces')
   const failures = []
   let skipped = 0
@@ -761,6 +802,7 @@ async function fetchLastTraces(client, sessions, options, onRecord) {
             orderBy: 'timestamp.desc',
             sessionId: session.id,
             environment: options.environment,
+            fields: listFields,
           },
           REQUEST_OPTIONS,
         )
