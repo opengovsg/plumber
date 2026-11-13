@@ -186,6 +186,7 @@ const handle504: ThrowingHandler = function ($, error) {
     delayType: 'step',
     delayInMs: 'default',
     maxAttempts: EXCEL_504_MAX_ATTEMPTS,
+    kind: get504Kind(error.response.config),
   })
 }
 
