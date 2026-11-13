@@ -48,6 +48,7 @@ describe('exportSilverTables', () => {
         appEnv,
         bucket: 'analytics-bucket',
         tables: [testTable],
+        changeTables: [],
       })
 
       expect(testTable.fetchRows).not.toHaveBeenCalled()
@@ -66,6 +67,7 @@ describe('exportSilverTables', () => {
         appEnv,
         bucket: 'analytics-bucket',
         tables: [testTable],
+        changeTables: [],
       })
 
       expect(s3.send).toHaveBeenCalledTimes(1)
@@ -89,6 +91,7 @@ describe('exportSilverTables', () => {
         appEnv: 'prod',
         bucket: undefined,
         tables: [testTable],
+        changeTables: [],
       }),
     ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
     expect(s3.send).not.toHaveBeenCalled()
@@ -116,10 +119,15 @@ describe('writeSilverTables to a local folder', () => {
 })
 
 describe('selectSilverTables', () => {
-  it('returns the named tables', () => {
-    expect(
-      selectSilverTables(['dim_user', 'flow_transfer']).map((t) => t.name),
-    ).toEqual(['flow_transfer', 'dim_user'])
+  it('splits the named tables into rebuilt and change tables', () => {
+    const { tables, changeTables } = selectSilverTables([
+      'flow_step',
+      'dim_user',
+      'flow_transfer',
+    ])
+
+    expect(tables.map((t) => t.name)).toEqual(['flow_transfer', 'dim_user'])
+    expect(changeTables.map((t) => t.name)).toEqual(['flow_step'])
   })
 
   it('rejects an unknown table name', () => {

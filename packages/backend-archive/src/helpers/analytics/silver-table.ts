@@ -30,6 +30,23 @@ export function buildSilverKey(tableName: string): string {
   return `${SILVER_PREFIX}${tableName}/current.parquet`
 }
 
+// Flat under the table folder, because the PostHog source pattern silver/*/*.parquet matches one level.
+// A day too large for one file spreads over part files. The file without a part number comes last and marks the day done.
+export function buildSilverDayKey(
+  tableName: string,
+  day: string,
+  part?: number,
+): string {
+  const suffix = part === undefined ? '' : `.part-${part}`
+  return `${SILVER_PREFIX}${tableName}/day=${day}${suffix}.parquet`
+}
+
+const DAY_DONE_KEY = /\/day=(\d{4}-\d{2}-\d{2})\.parquet$/
+
+export function parseSilverDayKey(key: string): string | null {
+  return DAY_DONE_KEY.exec(key)?.[1] ?? null
+}
+
 function toParquetValue(
   type: SilverColumnType,
   value: SilverRow[string],
@@ -41,7 +58,7 @@ function toParquetValue(
 }
 
 export function encodeSilverTable<Row extends SilverRow>(
-  table: SilverTable<Row>,
+  table: Pick<SilverTable<Row>, 'columns'>,
   rows: Row[],
 ): Buffer {
   const columns = Object.entries(table.columns) as [string, SilverColumnType][]
