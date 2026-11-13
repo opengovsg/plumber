@@ -5,7 +5,7 @@ import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 
 /**
- * Exports Langfuse traces to tools/langfuse/data/.
+ * Exports Langfuse traces to tools/langfuse/data/, newest first.
  *
  * Credentials come from the dev 1Password environment, so run it through pnpm:
  *   pnpm run export-traces [options]
@@ -343,24 +343,62 @@ function createProgress(label) {
   }
 }
 
+const INITIAL_WINDOW_MS = 3_600_000
+const MIN_WINDOW_MS = 60_000
+const MIN_PAGE_SIZE = 10
+const TARGET_TRACES_PER_WINDOW = 500
+// Langfuse launched in 2023, so "All time" starts here.
+const ALL_TIME_START = new Date('2023-01-01T00:00:00Z')
+
+// Langfuse answers 422 when its query times out. The SDK does not retry 422.
+const isQueryTimeout = (error) => error?.statusCode === 422
+
+function formatDuration(ms) {
+  const minutes = Math.round(ms / 60_000)
+  if (minutes < 60) {
+    return `${minutes}m`
+  }
+  const hours = Math.round(minutes / 60)
+  return hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`
+}
+
+function printStatus(line, { keep = false } = {}) {
+  if (process.stdout.isTTY) {
+    process.stdout.write(`\r${line}\x1b[K${keep ? '\n' : ''}`)
+  } else {
+    console.log(line)
+  }
+}
+
 /**
- * Lists traces with pages fetched in parallel, calling `onTrace` in timestamp order.
+ * Lists traces newest first, window by window, calling `onItem` in that order.
  *
+ * Langfuse times out on large queries, so each window is sized from the previous window's trace count.
+ * Walking backward meets the dense recent traces first, before sparse history grows the window.
  * `fields` asks the server to skip heavy field groups. Older servers ignore it.
  */
-async function listTraces(client, options, onTrace, { fields } = {}) {
+async function listTraces(
+  client,
+  options,
+  onItem,
+  { fields, map = (trace) => trace } = {},
+) {
   const seen = new Set()
   let mismatchedEnvironment = 0
   let missingEnvironment = 0
 
-  const fetchPage = (page) =>
+  const rangeStart = options.range.from ?? ALL_TIME_START
+  const rangeEnd = options.range.to
+  const rangeMs = Math.max(rangeEnd - rangeStart, 1)
+
+  const fetchPage = (from, to, page, limit) =>
     client.api.trace.list(
       {
         page,
-        limit: PAGE_SIZE,
-        orderBy: 'timestamp.asc',
-        fromTimestamp: options.range.from?.toISOString(),
-        toTimestamp: options.range.to.toISOString(),
+        limit,
+        orderBy: 'timestamp.desc',
+        fromTimestamp: from.toISOString(),
+        toTimestamp: to.toISOString(),
         environment: options.environment,
         userId: options.userId,
         fields,
@@ -368,51 +406,127 @@ async function listTraces(client, options, onTrace, { fields } = {}) {
       REQUEST_OPTIONS,
     )
 
-  const handlePage = async (response) => {
+  // Maps traces as pages arrive, so large raw outputs never pile up in memory.
+  const processPage = (response) => {
+    const result = { items: [], mismatched: 0, missing: 0 }
     for (const trace of response.data) {
       // Older Langfuse servers ignore the environment filter, so verify each trace.
       if (trace.environment === undefined) {
-        missingEnvironment++
+        result.missing++
       } else if (trace.environment !== options.environment) {
-        mismatchedEnvironment++
+        result.mismatched++
         continue
       }
-      // Offset pagination can repeat a trace when new traces arrive mid-export.
-      if (!seen.has(trace.id)) {
-        seen.add(trace.id)
-        await onTrace(trace)
-      }
+      result.items.push({ id: trace.id, item: map(trace) })
     }
+    return result
   }
 
-  const firstPage = await fetchPage(1)
-  const { totalPages, totalItems } = firstPage.meta
-  const progress = createProgress('Listing traces (pages)')
-  let pagesDone = 1
+  async function fetchWindow(from, to, limit) {
+    const first = await fetchPage(from, to, 1, limit)
+    const pages = [processPage(first)]
+    const remainingPages = Array.from(
+      { length: Math.max(first.meta.totalPages - 1, 0) },
+      (_, i) => i + 2,
+    )
+    let failed = false
+    await fetchInOrder(
+      remainingPages,
+      options.concurrency,
+      async (page) => {
+        if (failed) {
+          return null
+        }
+        try {
+          return processPage(await fetchPage(from, to, page, limit))
+        } catch (error) {
+          failed = true
+          throw error
+        }
+      },
+      (result) => {
+        pages.push(result)
+      },
+    )
+    return { pages, totalItems: first.meta.totalItems }
+  }
 
-  progress.update(pagesDone, Math.max(totalPages, 1))
-  await handlePage(firstPage)
+  let cursor = rangeEnd
+  let windowMs = Math.min(INITIAL_WINDOW_MS, rangeMs)
+  let limit = PAGE_SIZE
+  let targetTraces = TARGET_TRACES_PER_WINDOW
 
-  const remainingPages = Array.from(
-    { length: Math.max(totalPages - 1, 0) },
-    (_, i) => i + 2,
-  )
-  await fetchInOrder(
-    remainingPages,
-    options.concurrency,
-    async (page) => {
-      const response = await fetchPage(page)
-      progress.update(++pagesDone, totalPages)
-      return response
-    },
-    handlePage,
-  )
-  progress.finish()
-  console.log(`Found ${seen.size} traces.`)
+  while (cursor > rangeStart) {
+    const windowStart = new Date(
+      Math.max(cursor.getTime() - windowMs, rangeStart.getTime()),
+    )
+    const pct = Math.floor(((rangeEnd - cursor) / rangeMs) * 100)
+    printStatus(
+      `Listing traces: back to ${cursor.toISOString()} (${pct}%) · ${seen.size} found · window ${formatDuration(windowMs)}`,
+    )
+
+    let result
+    try {
+      result = await fetchWindow(windowStart, cursor, limit)
+    } catch (error) {
+      if (!isQueryTimeout(error)) {
+        throw error
+      }
+      // Each timeout costs a full server timeout, so shrink aggressively and remember the lower ceiling.
+      targetTraces = Math.max(MIN_PAGE_SIZE, Math.floor(targetTraces / 2))
+      if (windowMs > MIN_WINDOW_MS) {
+        windowMs = Math.max(MIN_WINDOW_MS, Math.floor(windowMs / 4))
+        printStatus(
+          `Langfuse timed out. Retrying with a ${formatDuration(windowMs)} window.`,
+          { keep: true },
+        )
+        continue
+      }
+      if (limit > MIN_PAGE_SIZE) {
+        limit = Math.max(MIN_PAGE_SIZE, Math.floor(limit / 2))
+        printStatus(
+          `Langfuse timed out. Retrying with ${limit} traces per page.`,
+          { keep: true },
+        )
+        continue
+      }
+      fail(
+        `Langfuse timed out on a ${formatDuration(windowMs)} window ending ${cursor.toISOString()} with ${limit} traces per page.`,
+      )
+    }
+
+    for (const page of result.pages) {
+      mismatchedEnvironment += page.mismatched
+      missingEnvironment += page.missing
+      for (const { id, item } of page.items) {
+        // Adjacent windows can share a boundary trace.
+        if (!seen.has(id)) {
+          seen.add(id)
+          await onItem(item)
+        }
+      }
+    }
+
+    cursor = windowStart
+    const idealMs =
+      result.totalItems === 0
+        ? windowMs * 2
+        : (windowMs * targetTraces) / result.totalItems
+    windowMs = Math.round(
+      Math.min(
+        Math.max(idealMs, windowMs / 4, MIN_WINDOW_MS),
+        windowMs * 2,
+        rangeMs,
+      ),
+    )
+  }
+  printStatus(`Listing traces: done (100%) · ${seen.size} found`, {
+    keep: true,
+  })
 
   if (mismatchedEnvironment > 0) {
     console.warn(
-      `Skipped ${mismatchedEnvironment} of ${totalItems} traces from other environments. The server ignored the environment filter.`,
+      `Skipped ${mismatchedEnvironment} traces from other environments. The server ignored the environment filter.`,
     )
   }
   if (missingEnvironment > 0) {
@@ -650,7 +764,8 @@ async function main() {
     options.format,
     fields.map(([name]) => name),
   )
-  const write = (trace) => writer.add(toRecord(trace, fields, baseUrl))
+  const toOutputRecord = (trace) => toRecord(trace, fields, baseUrl)
+  const write = (trace) => writer.add(toOutputRecord(trace))
   let failures = []
 
   await writer.start()
@@ -658,12 +773,15 @@ async function main() {
     failures = await fetchFullTraces(client, [options.traceId], options, write)
   } else if (needsFullTrace) {
     const ids = []
-    await listTraces(client, options, (trace) => ids.push(trace.id), {
+    await listTraces(client, options, (id) => ids.push(id), {
       fields: 'core',
+      map: (trace) => trace.id,
     })
     failures = await fetchFullTraces(client, ids, options, write)
   } else {
-    await listTraces(client, options, write)
+    await listTraces(client, options, (record) => writer.add(record), {
+      map: toOutputRecord,
+    })
   }
   const saved = await writer.end()
 
