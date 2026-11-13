@@ -196,10 +196,6 @@ export interface IStepAiBuilderConfig {
   tool: IStepAiBuilderTool
 }
 
-export interface IStepAiBuilderConnectionConflict {
-  connectionId: string
-  traceId?: string
-}
 export interface IStepConfig {
   stepName?: string
   approval?: IStepApprovalConfig
@@ -210,9 +206,6 @@ export interface IStepConfig {
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
   aiBuilderConfig?: IStepAiBuilderConfig[]
-  // Set when update_step_parameters hit a connectionConflict for this step.
-  // register_connection may override only while this matches its connection_id.
-  aiBuilderConnectionConflict?: IStepAiBuilderConnectionConflict
 }
 
 export interface IStepTemplateConfig {

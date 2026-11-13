@@ -75,7 +75,6 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       delete prevStepConfig['templateConfig']
       delete prevStepConfig['adminOverride']
       delete prevStepConfig['aiBuilderConfig']
-      delete prevStepConfig['aiBuilderConnectionConflict']
 
       const duplicatedStep = await duplicatedFlow
         .$relatedQuery('steps', trx)
