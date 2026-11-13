@@ -23,6 +23,21 @@ function clearColumnIds(rows: IJSONValue): ClearedColumnRow[] | undefined {
 }
 
 /**
+ * Templates also use this for owners. A pipe created from the template would
+ * otherwise point at the source pipe's tile.
+ */
+export function sanitizeTilesParameters(parameters: IJSONObject): IJSONObject {
+  const sanitized: IJSONObject = omit(parameters ?? {}, ['tableId'])
+  for (const key of ['rowData', 'filters']) {
+    const cleared = clearColumnIds(sanitized[key])
+    if (cleared) {
+      sanitized[key] = cleared
+    }
+  }
+  return sanitized
+}
+
+/**
  * IMPORTANT: Editors and Viewers who duplicate a Pipe must not receive the
  * owner's files, tables or secrets. Update this list when an app stores one
  * of these in step parameters.
@@ -30,16 +45,7 @@ function clearColumnIds(rows: IJSONValue): ClearedColumnRow[] | undefined {
 const COLLABORATOR_DUPLICATE_SANITIZERS: Record<string, ParameterSanitizer> = {
   'm365-excel': (parameters) =>
     omit(parameters, ['fileId', 'worksheetId', 'tableId']),
-  tiles: (parameters) => {
-    const sanitized: IJSONObject = omit(parameters, ['tableId'])
-    for (const key of ['rowData', 'filters']) {
-      const cleared = clearColumnIds(sanitized[key])
-      if (cleared) {
-        sanitized[key] = cleared
-      }
-    }
-    return sanitized
-  },
+  tiles: sanitizeTilesParameters,
   gathersg: (parameters) => omit(parameters, ['encryptionKey']),
   'custom-api': (parameters) => {
     const { customHeaders } = parameters
