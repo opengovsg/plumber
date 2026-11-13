@@ -20,6 +20,12 @@ const fields = [
     required: true,
   },
   { key: 'amount', label: 'Amount', type: 'string', required: true },
+  {
+    key: 'customHeaders',
+    label: 'Custom headers',
+    type: 'multirow-multicol',
+    required: false,
+  },
 ] as IField[]
 
 describe('findEmptyParameterError', () => {
@@ -47,7 +53,9 @@ describe('findEmptyParameterError', () => {
   it('rejects placeholder tokens but not step references', () => {
     for (const token of [
       '<recipient email>',
+      '<email>',
       '[TBD]',
+      '[ n/a ]',
       'TODO',
       'n/a',
       ' tbd ',
@@ -64,6 +72,23 @@ describe('findEmptyParameterError', () => {
     expect(
       findEmptyParameterError(fields, { subject: 'Re: [Ticket 42] update' }),
     ).toBeNull()
+  })
+
+  it('accepts real values that are wrapped in brackets', () => {
+    expect(
+      findEmptyParameterError(fields, { subject: '[For Action]' }),
+    ).toBeNull()
+    expect(
+      findEmptyParameterError(fields, {
+        destinationEmail: '<officer@agency.gov.sg>',
+      }),
+    ).toBeNull()
+  })
+
+  it('treats null on a required field as no value', () => {
+    expect(findEmptyParameterError(fields, { destinationEmail: null })).toMatch(
+      /^Recipient email has no value yet/,
+    )
   })
 
   it('treats an empty array or an array of blanks as no value', () => {
@@ -99,6 +124,21 @@ describe('findEmptyParameterError', () => {
         rowData: [{ columnId: 'c1', cellValue: 'x' }],
       }),
     ).toBeNull()
+  })
+
+  it('accepts an empty optional multirow-multicol field', () => {
+    expect(
+      findEmptyParameterError(fields, { customHeaders: [], amount: '10' }),
+    ).toBeNull()
+  })
+
+  it('accepts [] that repairs a saved non-array value', () => {
+    expect(
+      findEmptyParameterError(fields, { rowData: [] }, { rowData: 'oops' }),
+    ).toBeNull()
+    expect(
+      findEmptyParameterError(fields, { rowData: [] }, { rowData: [] }),
+    ).toMatch(/^Row data is empty/)
   })
 
   it('falls back to the key when a field has no label', () => {

@@ -13,14 +13,18 @@ export class InvalidStepParametersError extends UserFacingError {
 }
 
 // Whole-value tokens the model writes when it has no real value, e.g.
-// "<recipient email>", "[TBD]" or "TODO". A {{step...}} reference is a value.
+// "<recipient email>", "[TBD]" or "TODO". Real values can look similar: a
+// "[For Action]" subject or an "<officer@agency.gov.sg>" recipient.
 const PLACEHOLDER_PATTERNS = [
-  /^<[^>]*>$/,
-  /^\[[^\]]*\]$/,
+  /^<[^>@]*>$/,
+  /^\[\s*(tbd|todo|n\/a|placeholder)\s*\]$/i,
   /^(tbd|todo|n\/a|placeholder)$/i,
 ]
 
 function isBlankString(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return true
+  }
   if (typeof value !== 'string') {
     return false
   }
@@ -57,6 +61,7 @@ function isEmptyCollection(value: unknown): boolean {
 export function findEmptyParameterError(
   fields: IField[],
   parameters: Record<string, unknown>,
+  savedParameters: Record<string, unknown> = {},
 ): string | null {
   for (const field of fields) {
     if (!(field.key in parameters)) {
@@ -65,7 +70,22 @@ export function findEmptyParameterError(
     const value = parameters[field.key]
     const label = field.label ?? field.key
 
-    if (field.type === 'multirow-multicol' && isEmptyCollection(value)) {
+    // list_columns tells the model to replace a saved non-array with [].
+    const isRepair =
+      field.type === 'multirow-multicol' &&
+      Array.isArray(value) &&
+      value.length === 0 &&
+      savedParameters[field.key] !== undefined &&
+      !Array.isArray(savedParameters[field.key])
+    if (isRepair) {
+      continue
+    }
+
+    if (
+      field.type === 'multirow-multicol' &&
+      field.required &&
+      isEmptyCollection(value)
+    ) {
       return `${label} is empty. Collect the column values, or leave the field out of the call and test the step. Nothing was saved.`
     }
 
