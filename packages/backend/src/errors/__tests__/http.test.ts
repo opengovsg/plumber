@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { makeHttpError } from '@/../test/utils/make-http-error'
 
-import HttpError, { isNetworkError } from '../http'
+import HttpError, { isNetworkError, isNetworkErrorCode } from '../http'
 
 describe('http error', () => {
   it('removes non-allow-listed headers', () => {
@@ -78,4 +78,20 @@ describe('isNetworkError', () => {
       isNetworkError(makeHttpError({ status: 400, code: 'ERR_BAD_REQUEST' })),
     ).toBe(false)
   })
+})
+
+describe('isNetworkErrorCode', () => {
+  it.each(['ECONNRESET', 'ENOTFOUND', 'CERT_HAS_EXPIRED'])(
+    'is true for %s',
+    (code) => {
+      expect(isNetworkErrorCode(code)).toBe(true)
+    },
+  )
+
+  it.each([['ERR_CANCELED'], [''], [undefined], [123], [null]])(
+    'is false for %s',
+    (code) => {
+      expect(isNetworkErrorCode(code)).toBe(false)
+    },
+  )
 })

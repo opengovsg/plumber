@@ -79,9 +79,10 @@ const NETWORK_ERROR_CODES = new Set([
   'CERT_HAS_EXPIRED',
 ])
 
+export function isNetworkErrorCode(code: unknown): boolean {
+  return typeof code === 'string' && NETWORK_ERROR_CODES.has(code)
+}
+
 export function isNetworkError(error: HttpError): boolean {
-  return (
-    error.response.status === undefined &&
-    NETWORK_ERROR_CODES.has(error.code ?? '')
-  )
+  return error.response.status === undefined && isNetworkErrorCode(error.code)
 }
