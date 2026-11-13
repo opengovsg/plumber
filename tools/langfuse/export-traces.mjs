@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url'
  *   --userId=<id>                     only traces for this user
  *   --traceId=<id>                    export one trace and ignore the range
  *   --include=<fields>                comma-separated extras: metadata, observations, scores, or all
- *   --concurrency=<n>                 parallel trace fetches with observations or scores, default 5
+ *   --concurrency=<n>                 parallel requests, default 5
  *   --yes                             skip prompts and use defaults
  *
  * Examples:
@@ -342,16 +342,18 @@ function createProgress(label) {
   }
 }
 
-async function listTraces(client, options, onTrace) {
+/**
+ * Lists traces with pages fetched in parallel, calling `onTrace` in timestamp order.
+ *
+ * `fields` asks the server to skip heavy field groups. Older servers ignore it.
+ */
+async function listTraces(client, options, onTrace, { fields } = {}) {
   const seen = new Set()
-  let page = 1
-  let totalPages = 1
-  let totalItems = 0
   let mismatchedEnvironment = 0
   let missingEnvironment = 0
 
-  do {
-    const response = await client.api.trace.list(
+  const fetchPage = (page) =>
+    client.api.trace.list(
       {
         page,
         limit: PAGE_SIZE,
@@ -360,12 +362,12 @@ async function listTraces(client, options, onTrace) {
         toTimestamp: options.range.to.toISOString(),
         environment: options.environment,
         userId: options.userId,
+        fields,
       },
       REQUEST_OPTIONS,
     )
-    totalPages = response.meta.totalPages
-    totalItems = response.meta.totalItems
 
+  const handlePage = async (response) => {
     for (const trace of response.data) {
       // Older Langfuse servers ignore the environment filter, so verify each trace.
       if (trace.environment === undefined) {
@@ -380,18 +382,32 @@ async function listTraces(client, options, onTrace) {
         await onTrace(trace)
       }
     }
-
-    const line = `Listing traces: page ${page}/${Math.max(totalPages, 1)} · ${seen.size} found`
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r${line}\x1b[K`)
-    } else {
-      console.log(line)
-    }
-    page++
-  } while (page <= totalPages)
-  if (process.stdout.isTTY) {
-    process.stdout.write('\n')
   }
+
+  const firstPage = await fetchPage(1)
+  const { totalPages, totalItems } = firstPage.meta
+  const progress = createProgress('Listing traces (pages)')
+  let pagesDone = 1
+
+  progress.update(pagesDone, Math.max(totalPages, 1))
+  await handlePage(firstPage)
+
+  const remainingPages = Array.from(
+    { length: Math.max(totalPages - 1, 0) },
+    (_, i) => i + 2,
+  )
+  await fetchInOrder(
+    remainingPages,
+    options.concurrency,
+    async (page) => {
+      const response = await fetchPage(page)
+      progress.update(++pagesDone, totalPages)
+      return response
+    },
+    handlePage,
+  )
+  progress.finish()
+  console.log(`Found ${seen.size} traces.`)
 
   if (mismatchedEnvironment > 0) {
     console.warn(
@@ -609,7 +625,9 @@ async function main() {
     failures = await fetchFullTraces(client, [options.traceId], options, write)
   } else if (needsFullTrace) {
     const ids = []
-    await listTraces(client, options, (trace) => ids.push(trace.id))
+    await listTraces(client, options, (trace) => ids.push(trace.id), {
+      fields: 'core',
+    })
     failures = await fetchFullTraces(client, ids, options, write)
   } else {
     await listTraces(client, options, write)
