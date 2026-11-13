@@ -103,7 +103,10 @@ import { unpublishPipeService } from '@/services/mcp/unpublish-pipe'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 import { InvalidStepParametersError } from '@/services/mcp/validate-step-parameter-values'
 
-import { createMcpBridgeTools } from '../mcp-bridge-tools'
+import {
+  createMcpBridgeTools,
+  OVERRIDE_BEFORE_USER_REPLY_MESSAGE,
+} from '../mcp-bridge-tools'
 
 const mockUser = { id: 'u1' } as any
 const mockTraceId = 'trace-123'
@@ -397,6 +400,47 @@ describe('createMcpBridgeTools', () => {
 
     expect(result).toEqual({ error: 'nothing to override' })
     expect(onPipeChange).not.toHaveBeenCalled()
+  })
+
+  it('refuses register_connection in the same turn as the conflict', async () => {
+    vi.mocked(updateStepParametersService).mockResolvedValueOnce({
+      step: { id: 'step-1', parameters: {} },
+      connectionConflict: true,
+      connectionConflictMessage: 'In use by another pipe',
+    } as Awaited<ReturnType<typeof updateStepParametersService>>)
+    const overrideCalls = vi.mocked(overrideConnectionService).mock.calls.length
+    const onPipeChange = vi.fn()
+    const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
+    const args = {
+      pipe_id: 'flow-1',
+      step_id: 'step-1',
+      connection_id: 'conn-1',
+    }
+
+    await tools.update_step_parameters.execute(
+      { ...args, parameters: {} },
+      { toolCallId: 'update_step_parameters', messages: [] },
+    )
+    onPipeChange.mockClear()
+    const result = await tools.register_connection.execute(args, {
+      toolCallId: 'register_connection',
+      messages: [],
+    })
+
+    expect(result).toEqual({ error: OVERRIDE_BEFORE_USER_REPLY_MESSAGE })
+    expect(vi.mocked(overrideConnectionService).mock.calls).toHaveLength(
+      overrideCalls,
+    )
+    expect(onPipeChange).not.toHaveBeenCalled()
+
+    const nextTurn = createMcpBridgeTools(mockUser, mockTraceId)
+    await nextTurn.register_connection.execute(args, {
+      toolCallId: 'register_connection',
+      messages: [],
+    })
+    expect(vi.mocked(overrideConnectionService).mock.calls).toHaveLength(
+      overrideCalls + 1,
+    )
   })
 
   it('list_columns calls listColumnsService with camelCase args', async () => {

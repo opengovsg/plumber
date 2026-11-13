@@ -128,6 +128,35 @@ describe('overrideConnectionService', () => {
     expect(step?.config?.aiBuilderConnectionConflict).toBeUndefined()
   })
 
+  it('keeps config saved while the FormSG call is in flight', async () => {
+    await recordConflict(connection.id)
+    mocks.registerConnection.mockImplementation(async () => {
+      await Step.query()
+        .findById(triggerStepId)
+        .patch({ config: { stepName: 'Renamed' } })
+    })
+
+    await overrideConnectionService(user, triggerStepId, connection.id)
+
+    const step = await Step.query().findById(triggerStepId)
+    expect(step?.config?.stepName).toBe('Renamed')
+  })
+
+  it('keeps a marker for another connection recorded during the override', async () => {
+    const otherConnectionId = randomUUID()
+    await recordConflict(connection.id)
+    mocks.registerConnection.mockImplementation(async () => {
+      await recordConflict(otherConnectionId)
+    })
+
+    await overrideConnectionService(user, triggerStepId, connection.id)
+
+    const step = await Step.query().findById(triggerStepId)
+    expect(step?.config?.aiBuilderConnectionConflict).toEqual({
+      connectionId: otherConnectionId,
+    })
+  })
+
   it('keeps the marker when registration fails', async () => {
     await recordConflict(connection.id)
     mocks.isStillVerified.mockResolvedValue(false)
