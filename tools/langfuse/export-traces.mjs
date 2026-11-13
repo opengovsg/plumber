@@ -1,10 +1,10 @@
-import { createWriteStream, mkdirSync } from 'node:fs'
+import { createWriteStream, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 
 /**
- * Exports full Langfuse traces (with observations and scores) to tools/langfuse/data/.
+ * Exports Langfuse traces to tools/langfuse/data/.
  *
  * Credentials come from the dev 1Password environment, so run it through pnpm:
  *   pnpm run export-traces [options]
@@ -19,13 +19,15 @@ import { fileURLToPath } from 'node:url'
  *   --format=json|csv                 default json
  *   --userId=<id>                     only traces for this user
  *   --traceId=<id>                    export one trace and ignore the range
- *   --concurrency=<n>                 parallel trace fetches, default 5
+ *   --include=<fields>                comma-separated extras: metadata, observations, scores, or all
+ *   --concurrency=<n>                 parallel trace fetches with observations or scores, default 5
  *   --yes                             skip prompts and use defaults
  *
  * Examples:
  *   pnpm run export-traces
  *   pnpm run export-traces --range=7d --format=csv
  *   pnpm run export-traces --range=all
+ *   pnpm run export-traces --range=7d --include=observations,scores
  *   pnpm run export-traces --from=2026-10-01 --to=2026-10-31 --environment=staging
  */
 import { buildLangfuseClient, PROJECTS } from './client.mjs'
@@ -43,6 +45,18 @@ const RANGES = [
   { key: 'all', label: 'All time', days: null },
 ]
 const DEFAULT_RANGE = '30d'
+const EXTRA_FIELDS = ['metadata', 'observations', 'scores']
+// These need one request per trace. Everything else comes from the trace list pages.
+const SLOW_FIELDS = ['observations', 'scores']
+const DETAIL_LEVELS = [
+  { key: 'none', label: 'Core fields only (fast)' },
+  { key: 'metadata', label: 'Core fields + metadata (fast)' },
+  {
+    key: 'all',
+    label:
+      'Everything, with observations and scores (slow, one request per trace)',
+  },
+]
 // Langfuse caps list endpoints at 100 items per page.
 const PAGE_SIZE = 100
 const REQUEST_OPTIONS = { maxRetries: 4, timeoutInSeconds: 60 }
@@ -184,6 +198,7 @@ async function promptForMissing(flags) {
       answers.range = rangeKey
     }
 
+    answers.include ??= await ask(rl, 'Fields:', DETAIL_LEVELS, 'none')
     answers.format ??= await ask(rl, 'Format:', toOptions(FORMATS), 'json')
     return answers
   } finally {
@@ -230,9 +245,27 @@ async function resolveOptions(argv) {
     format: oneOf('format', flags.format ?? 'json', FORMATS),
     userId: typeof flags.userId === 'string' ? flags.userId : undefined,
     traceId: typeof flags.traceId === 'string' ? flags.traceId : undefined,
+    include: parseInclude(flags.include),
     concurrency,
     range,
   }
+}
+
+function parseInclude(value) {
+  if (value === undefined || value === 'none') {
+    return []
+  }
+  if (value === 'all') {
+    return EXTRA_FIELDS
+  }
+  const fields = String(value)
+    .split(',')
+    .map((field) => field.trim())
+    .filter(Boolean)
+  for (const field of fields) {
+    oneOf('include', field, [...EXTRA_FIELDS, 'all', 'none'])
+  }
+  return [...new Set(fields)]
 }
 
 function createProgress(label) {
@@ -265,8 +298,8 @@ function createProgress(label) {
   }
 }
 
-async function listTraceIds(client, options) {
-  const ids = new Set()
+async function listTraces(client, options, onTrace) {
+  const seen = new Set()
   let page = 1
   let totalPages = 1
   let totalItems = 0
@@ -297,10 +330,14 @@ async function listTraceIds(client, options) {
         mismatchedEnvironment++
         continue
       }
-      ids.add(trace.id)
+      // Offset pagination can repeat a trace when new traces arrive mid-export.
+      if (!seen.has(trace.id)) {
+        seen.add(trace.id)
+        await onTrace(trace)
+      }
     }
 
-    const line = `Listing traces: page ${page}/${Math.max(totalPages, 1)} · ${ids.size} found`
+    const line = `Listing traces: page ${page}/${Math.max(totalPages, 1)} · ${seen.size} found`
     if (process.stdout.isTTY) {
       process.stdout.write(`\r${line}\x1b[K`)
     } else {
@@ -323,7 +360,7 @@ async function listTraceIds(client, options) {
     )
   }
 
-  return [...ids]
+  return seen.size
 }
 
 /**
@@ -369,27 +406,33 @@ async function fetchInOrder(ids, concurrency, fetchOne, onResult) {
   )
 }
 
-const CSV_COLUMNS = [
+// Works for list items (observation and score ids) and full traces (objects).
+const CORE_FIELDS = [
   ['id', (t) => t.id],
   ['timestamp', (t) => t.timestamp],
   ['name', (t) => t.name],
   ['environment', (t) => t.environment],
   ['userId', (t) => t.userId],
   ['sessionId', (t) => t.sessionId],
-  ['release', (t) => t.release],
-  ['version', (t) => t.version],
   ['tags', (t) => t.tags],
+  ['input', (t) => t.input],
+  ['output', (t) => t.output],
   ['latencySeconds', (t) => t.latency],
   ['totalCostUsd', (t) => t.totalCost],
   ['observationCount', (t) => t.observations?.length ?? 0],
   ['scoreCount', (t) => t.scores?.length ?? 0],
-  ['htmlPath', (t) => t.htmlPath],
-  ['input', (t) => t.input],
-  ['output', (t) => t.output],
-  ['metadata', (t) => t.metadata],
-  ['observations', (t) => t.observations],
-  ['scores', (t) => t.scores],
+  ['url', (t, baseUrl) => (t.htmlPath ? `${baseUrl}${t.htmlPath}` : undefined)],
 ]
+
+function buildFields(include) {
+  return [...CORE_FIELDS, ...include.map((field) => [field, (t) => t[field]])]
+}
+
+function toRecord(trace, fields, baseUrl) {
+  return Object.fromEntries(
+    fields.map(([name, get]) => [name, get(trace, baseUrl) ?? null]),
+  )
+}
 
 function toCsvCell(value) {
   if (value === undefined || value === null) {
@@ -399,7 +442,7 @@ function toCsvCell(value) {
   return `"${text.replaceAll('"', '""')}"`
 }
 
-function createWriter(path, format) {
+function createWriter(path, format, columns) {
   const stream = createWriteStream(path, 'utf-8')
   let count = 0
 
@@ -410,20 +453,16 @@ function createWriter(path, format) {
 
   return {
     async start() {
-      await write(
-        format === 'json'
-          ? '[\n'
-          : `${CSV_COLUMNS.map(([name]) => name).join(',')}\n`,
-      )
+      await write(format === 'json' ? '[\n' : `${columns.join(',')}\n`)
     },
-    async add(trace) {
+    async add(record) {
       if (format === 'json') {
         await write(
-          `${count > 0 ? ',\n' : ''}${JSON.stringify(trace, null, 2)}`,
+          `${count > 0 ? ',\n' : ''}${JSON.stringify(record, null, 2)}`,
         )
       } else {
         await write(
-          `${CSV_COLUMNS.map(([, get]) => toCsvCell(get(trace))).join(',')}\n`,
+          `${columns.map((column) => toCsvCell(record[column])).join(',')}\n`,
         )
       }
       count++
@@ -435,6 +474,7 @@ function createWriter(path, format) {
       await new Promise((resolve, reject) => {
         stream.end((error) => (error ? reject(error) : resolve()))
       })
+      return count
     },
   }
 }
@@ -450,43 +490,11 @@ function buildOutputPath(options) {
   )
 }
 
-async function main() {
-  const options = await resolveOptions(process.argv.slice(2))
-  const client = buildLangfuseClient(options.project, process.env, {
-    timeout: 60000,
-  })
-
-  console.log(
-    `\nExporting ${options.project} traces (${options.environment}) as ${options.format}`,
-  )
-  if (options.traceId) {
-    console.log(`Trace: ${options.traceId}`)
-  } else {
-    console.log(
-      `Range: ${options.range.from?.toISOString() ?? 'all time'} → ${options.range.to.toISOString()}`,
-    )
-  }
-  if (options.userId) {
-    console.log(`User: ${options.userId}`)
-  }
-
-  const ids = options.traceId
-    ? [options.traceId]
-    : await listTraceIds(client, options)
-
-  if (ids.length === 0) {
-    console.log('No traces found. Nothing written.')
-    return
-  }
-
-  mkdirSync(OUT_DIR, { recursive: true })
-  const outPath = buildOutputPath(options)
-  const writer = createWriter(outPath, options.format)
-  const progress = createProgress('Downloading traces')
+async function fetchFullTraces(client, ids, options, onTrace) {
+  const progress = createProgress('Downloading observations and scores')
   const failures = []
   let done = 0
 
-  await writer.start()
   progress.update(0, ids.length)
   await fetchInOrder(
     ids,
@@ -506,14 +514,70 @@ async function main() {
     },
     async (trace) => {
       if (trace) {
-        await writer.add(trace)
+        await onTrace(trace)
       }
     },
   )
-  await writer.end()
   progress.finish()
+  return failures
+}
 
-  console.log(`Saved ${ids.length - failures.length} traces to ${outPath}`)
+async function main() {
+  const options = await resolveOptions(process.argv.slice(2))
+  const client = buildLangfuseClient(options.project, process.env, {
+    timeout: 60000,
+  })
+  const baseUrl = (process.env.PAIR_ROME_BASE_URL ?? '').replace(/\/+$/, '')
+  const fields = buildFields(options.include)
+  const needsFullTrace = options.include.some((field) =>
+    SLOW_FIELDS.includes(field),
+  )
+
+  console.log(
+    `\nExporting ${options.project} traces (${options.environment}) as ${options.format}`,
+  )
+  if (options.traceId) {
+    console.log(`Trace: ${options.traceId}`)
+  } else {
+    console.log(
+      `Range: ${options.range.from?.toISOString() ?? 'all time'} → ${options.range.to.toISOString()}`,
+    )
+  }
+  if (options.userId) {
+    console.log(`User: ${options.userId}`)
+  }
+  console.log(
+    `Extra fields: ${options.include.length ? options.include.join(', ') : 'none'}`,
+  )
+
+  mkdirSync(OUT_DIR, { recursive: true })
+  const outPath = buildOutputPath(options)
+  const writer = createWriter(
+    outPath,
+    options.format,
+    fields.map(([name]) => name),
+  )
+  const write = (trace) => writer.add(toRecord(trace, fields, baseUrl))
+  let failures = []
+
+  await writer.start()
+  if (options.traceId) {
+    failures = await fetchFullTraces(client, [options.traceId], options, write)
+  } else if (needsFullTrace) {
+    const ids = []
+    await listTraces(client, options, (trace) => ids.push(trace.id))
+    failures = await fetchFullTraces(client, ids, options, write)
+  } else {
+    await listTraces(client, options, write)
+  }
+  const saved = await writer.end()
+
+  if (saved === 0 && failures.length === 0) {
+    rmSync(outPath)
+    console.log('No traces found. Nothing written.')
+    return
+  }
+  console.log(`Saved ${saved} traces to ${outPath}`)
 
   if (failures.length > 0) {
     console.error(`\n${failures.length} traces failed to download:`)
