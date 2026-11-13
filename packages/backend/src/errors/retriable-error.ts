@@ -1,3 +1,5 @@
+import type { StepErrorKind } from '@plumber/types'
+
 import BaseError from './base'
 
 export const DEFAULT_DELAY_MS = 3000
@@ -8,6 +10,8 @@ interface RetriableErrorParams {
   delayType: 'step' | 'group' | 'queue'
   /** Optional override for the max number of job attempts before failing. */
   maxAttempts?: number
+  /** IMPORTANT: only labels the failure log, and never changes retry decisions. */
+  kind?: StepErrorKind
 }
 
 /**
@@ -38,17 +42,20 @@ export default class RetriableError extends BaseError {
   delayInMs: number
   delayType: RetriableErrorParams['delayType']
   maxAttempts?: number
+  readonly kind?: StepErrorKind
 
   constructor({
     error,
     delayInMs,
     delayType,
     maxAttempts,
+    kind,
   }: RetriableErrorParams) {
     super(error)
 
     this.delayInMs = delayInMs === 'default' ? DEFAULT_DELAY_MS : delayInMs
     this.delayType = delayType
     this.maxAttempts = maxAttempts
+    this.kind = kind
   }
 }

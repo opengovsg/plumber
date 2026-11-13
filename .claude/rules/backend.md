@@ -79,7 +79,7 @@ The backend has three error families. Do not add a new family.
 - A step failure the user sees: throw `StepError` with a `kind`.
 - A user-visible failure outside a step: throw `UserFacingError`, in GraphQL resolvers and REST endpoints (e.g. AI builder) alike.
 - Exception: a GraphQL resolver that needs a client error code (e.g. `BAD_USER_INPUT`) throws a class from `errors/graphql-errors/`. They extend the library type `GraphQLError` (see "Library error types"), so they are not a new family.
-- Anything else counts as a Plumber bug. This includes a raw `RetriableError` or `HttpError` that ran out of retries.
+- Anything else counts as a Plumber bug. This includes a raw `HttpError` or a `RetriableError` without `kind` that ran out of retries.
 
 ### `StepError`
 
@@ -89,9 +89,10 @@ The backend has three error families. Do not add a new family.
 - `kind` stays optional until every call site is migrated. New code always passes it.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
 - The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
-- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` without `kind` and any other error return `internal`.
+- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` or `RetriableError` without `kind` and any other error return `internal`.
 - `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) adds `event: 'action-job-failed'`, `willRetry`, `kind` and `appKey` to its per-attempt error log. Monitors read it with `@willRetry:false`, because logs are not sampled.
-- The log reads `kind` from the failed job's error when it is a `StepError`, else from its `cause`. Code that replaces a `StepError` with another error (e.g. `UnrecoverableError`) calls `attachHiddenCauseIfStepError` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError` with `kind`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `attachHiddenKindCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- A `RetriableError` takes an optional `kind` for its final failure once retries run out. Its `kind` never changes retry decisions, even `config`.
 
 #### Choosing `kind`
 

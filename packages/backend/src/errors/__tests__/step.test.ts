@@ -10,10 +10,7 @@ import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 import HttpError from '../http'
 import PartialStepError from '../partial-error'
 import RetriableError from '../retriable-error'
-import StepError, {
-  attachHiddenCauseIfStepError,
-  getStepErrorKind,
-} from '../step'
+import StepError, { attachHiddenKindCause, getStepErrorKind } from '../step'
 import { UserFacingError } from '../user-facing-error'
 
 const HTTP_ERROR = new HttpError({
@@ -116,6 +113,20 @@ describe('getStepErrorKind', () => {
     expect(getStepErrorKind(error)).toBe('config')
   })
 
+  it.each(['config', 'third-party', 'internal'] as const)(
+    'returns the kind of a RetriableError with kind %s',
+    (kind) => {
+      const error = new RetriableError({
+        error: 'e',
+        delayInMs: 'default',
+        delayType: 'step',
+        kind,
+      })
+
+      expect(getStepErrorKind(error)).toBe(kind)
+    },
+  )
+
   it('returns internal for a StepError without kind', () => {
     expect(getStepErrorKind(new StepError('n', 's'))).toBe('internal')
   })
@@ -124,7 +135,7 @@ describe('getStepErrorKind', () => {
     { label: 'plain Error', error: new Error('{"kind":"config"}') },
     { label: 'HttpError', error: HTTP_ERROR },
     {
-      label: 'RetriableError',
+      label: 'RetriableError without kind',
       error: new RetriableError({
         error: { kind: 'config' },
         delayInMs: 'default',
@@ -140,7 +151,7 @@ describe('getStepErrorKind', () => {
   })
 })
 
-describe('attachHiddenCauseIfStepError', () => {
+describe('attachHiddenKindCause', () => {
   const makeStepError = () =>
     new StepError({
       name: 'n',
@@ -153,17 +164,33 @@ describe('attachHiddenCauseIfStepError', () => {
     const stepError = makeStepError()
     const target = new UnrecoverableError('step failed')
 
-    attachHiddenCauseIfStepError(target, stepError)
+    attachHiddenKindCause(target, stepError)
 
     expect(target.cause).toBe(stepError)
     expect(Object.keys(target)).not.toContain('cause')
     expect(getStepErrorKind(target.cause)).toBe('third-party')
   })
 
-  it('ignores a non-StepError', () => {
+  it('attaches a RetriableError as a non-enumerable cause', () => {
+    const retriableError = new RetriableError({
+      error: 'e',
+      delayInMs: 'default',
+      delayType: 'step',
+      kind: 'third-party',
+    })
     const target = new UnrecoverableError('step failed')
 
-    attachHiddenCauseIfStepError(target, HTTP_ERROR)
+    attachHiddenKindCause(target, retriableError)
+
+    expect(target.cause).toBe(retriableError)
+    expect(Object.keys(target)).not.toContain('cause')
+    expect(getStepErrorKind(target.cause)).toBe('third-party')
+  })
+
+  it('ignores an error that carries no kind', () => {
+    const target = new UnrecoverableError('step failed')
+
+    attachHiddenKindCause(target, HTTP_ERROR)
 
     expect(Object.hasOwn(target, 'cause')).toBe(false)
   })
@@ -172,7 +199,7 @@ describe('attachHiddenCauseIfStepError', () => {
     const existingCause = new Error('existing')
     const target = new Error('step failed', { cause: existingCause })
 
-    attachHiddenCauseIfStepError(target, makeStepError())
+    attachHiddenKindCause(target, makeStepError())
 
     expect(target.cause).toBe(existingCause)
   })
@@ -198,7 +225,7 @@ describe('attachHiddenCauseIfStepError', () => {
       ],
     })
     const target = new UnrecoverableError('step failed')
-    attachHiddenCauseIfStepError(target, makeStepError())
+    attachHiddenKindCause(target, makeStepError())
 
     logger.error('job failed', { err: target })
     await new Promise((resolve) => setImmediate(resolve))
