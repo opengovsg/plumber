@@ -169,6 +169,35 @@ class ExecutionStep extends Base {
   }
 
   /**
+   * Retries add rows instead of updating them, so only each step's newest row
+   * per iteration counts.
+   */
+  static async haveLatestStepsSucceeded(executionId: string) {
+    const knex = ExecutionStep.knex()
+    const latestFailure = await knex
+      .select('latest.id')
+      .from('execution_steps as latest')
+      .where('latest.execution_id', executionId)
+      .where('latest.status', 'failure')
+      .whereNull('latest.deleted_at')
+      .whereNotExists((builder) =>
+        builder
+          .select('newer.id')
+          .from('execution_steps as newer')
+          .whereNull('newer.deleted_at')
+          .where('newer.execution_id', knex.ref('latest.execution_id'))
+          .where('newer.step_id', knex.ref('latest.step_id'))
+          .whereRaw(
+            `newer.metadata ->> 'iteration' IS NOT DISTINCT FROM latest.metadata ->> 'iteration'`,
+          )
+          .where('newer.created_at', '>', knex.ref('latest.created_at')),
+      )
+      .first()
+
+    return !latestFailure
+  }
+
+  /**
    * checks the state of the for-each execution by looking at the iterationStatus
    * metadata field
    *

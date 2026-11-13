@@ -9,6 +9,38 @@ import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
 
+export async function patchIterationStatusFromSteps(
+  executionId: string,
+  iteration: number,
+): Promise<void> {
+  try {
+    const iterationSteps = await ExecutionStep.getIterationSteps(
+      executionId,
+      iteration,
+    )
+
+    /**
+     * most partial success will be due to email by postman where there
+     * are blacklisted recipients.
+     * partial success is indicated by status = 'success' and errorDetails !== null
+     */
+    let status: 'success' | 'failure' | 'partial-success' = 'success'
+    if (iterationSteps.some((step) => step.status === 'failure')) {
+      status = 'failure'
+    } else if (iterationSteps.some((step) => step.errorDetails !== null)) {
+      status = 'partial-success'
+    }
+    await ExecutionStep.patchIterationStatus(executionId, iteration, status)
+  } catch (err) {
+    logger.error('Failed to patch iteration status', {
+      errorName: err instanceof Error ? err.name : undefined,
+      errorMessage: err instanceof Error ? err.message : String(err),
+      executionId,
+      iteration,
+    })
+  }
+}
+
 /**
  * this function helps to patch the execution status of steps in a pipe with for-each
  * it returns a boolean to decide whether to set the execution status to success
@@ -48,30 +80,7 @@ export default async function processForEachStatus({
      */
     // only need to check at the last step to set the execution status
     if (isLastStep) {
-      try {
-        const iterationSteps = await ExecutionStep.getIterationSteps(
-          executionId,
-          iteration,
-        )
-
-        /**
-         * check for partial success as failures would have been caught earlier
-         * most partial success will be due to email by postman where there
-         * are blacklisted recipients.
-         * partial success is indicated by status = 'success' and errorDetails !== null
-         */
-        const isIterationSuccessful = iterationSteps.every(
-          (step) => step.status === 'success' && step.errorDetails === null,
-        )
-        const status = isIterationSuccessful ? 'success' : 'partial-success'
-        await ExecutionStep.patchIterationStatus(executionId, iteration, status)
-      } catch (err) {
-        logger.error('Failed to patch iteration status', {
-          err,
-          executionId,
-          iteration,
-        })
-      }
+      await patchIterationStatusFromSteps(executionId, iteration)
 
       const { hasLastIterationRun, areAllStepsSuccessful } =
         await ExecutionStep.getForEachExecutionState(executionId)

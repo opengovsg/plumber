@@ -16,6 +16,7 @@ import { enqueueActionJob } from '@/queues/action'
 import type { processAction } from '@/services/action'
 
 import processForEachStatus from './for-each-status-manager'
+import { settleExecutionAfterSingleStep } from './settle-execution-after-single-step'
 
 /**
  * The subset of a `processAction` result that `advanceAfterStep` (helper D)
@@ -33,7 +34,8 @@ type AdvanceAfterStepInput = Pick<
   | 'executionStep'
   | 'nextStepMetadata'
   | 'executionError'
->
+> &
+  Partial<Pick<Awaited<ReturnType<typeof processAction>>, 'runOnlyThisStep'>>
 
 /**
  * Helper D — worker post-step advancement, shared by the single-job worker and
@@ -70,6 +72,7 @@ export async function advanceAfterStep({
     executionStep,
     nextStepMetadata,
     executionError,
+    runOnlyThisStep,
   } = processResult
   const { isQueueDelayable, span, worker, job } = context
 
@@ -91,6 +94,13 @@ export async function advanceAfterStep({
         job,
       },
     })
+  }
+
+  if (runOnlyThisStep) {
+    return settleExecutionAfterSingleStep(
+      executionId,
+      nextStepMetadata?.iteration,
+    )
   }
 
   if (!nextStep) {

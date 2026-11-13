@@ -484,6 +484,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         ...metadata,
       },
       executionError,
+      runOnlyThisStep: prepared.runOnlyThisStep,
     }
   }
 

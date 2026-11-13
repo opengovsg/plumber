@@ -353,6 +353,7 @@ async function finalizeSucceededJob(
         executionStep,
         nextStepMetadata: { ...prepared.metadata },
         executionError: null,
+        runOnlyThisStep: prepared.runOnlyThisStep,
       },
       currStep: prepared.step,
       context: {

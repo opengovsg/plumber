@@ -255,7 +255,8 @@ describe('processForEachStatus', () => {
       expect(logger.error).toHaveBeenCalledWith(
         'Failed to patch iteration status',
         {
-          err: error,
+          errorName: 'Error',
+          errorMessage: 'Database error',
           executionId: mockExecutionId,
           iteration: 1,
         },
