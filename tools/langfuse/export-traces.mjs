@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
  * Options:
  *   --project=aiBuilder|pairAction    default aiBuilder
  *   --environment=prod|staging|uat    default prod
- *   --range=1d|7d|30d|90d|all         default 30d
+ *   --range=1h|1d|7d|30d|90d|all      default 30d
  *   --from=YYYY-MM-DD --to=YYYY-MM-DD custom range, both days inclusive, local time
  *   --format=json|csv                 default json
  *   --userId=<id>                     only traces for this user
@@ -39,11 +39,12 @@ const OUT_DIR = join(__dirname, 'data')
 const ENVIRONMENTS = ['prod', 'staging', 'uat']
 const FORMATS = ['json', 'csv']
 const RANGES = [
-  { key: '1d', label: 'Last 1 day', days: 1 },
-  { key: '7d', label: 'Last 7 days', days: 7 },
-  { key: '30d', label: 'Last 30 days', days: 30 },
-  { key: '90d', label: 'Last 90 days', days: 90 },
-  { key: 'all', label: 'All time', days: null },
+  { key: '1h', label: 'Last 1 hour', hours: 1 },
+  { key: '1d', label: 'Last 1 day', hours: 24 },
+  { key: '7d', label: 'Last 7 days', hours: 7 * 24 },
+  { key: '30d', label: 'Last 30 days', hours: 30 * 24 },
+  { key: '90d', label: 'Last 90 days', hours: 90 * 24 },
+  { key: 'all', label: 'All time', hours: null },
 ]
 const DEFAULT_RANGE = '30d'
 const EXTRA_FIELDS = ['metadata', 'observations', 'scores']
@@ -110,11 +111,11 @@ function formatDate(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-function rangeFromDays(days, now = new Date()) {
-  if (days === null) {
+function rangeFromHours(hours, now = new Date()) {
+  if (hours === null) {
     return { from: undefined, to: now }
   }
-  return { from: new Date(now.getTime() - days * 86_400_000), to: now }
+  return { from: new Date(now.getTime() - hours * 3_600_000), to: now }
 }
 
 function customRange(fromValue, toValue) {
@@ -276,7 +277,7 @@ async function resolveOptions(argv) {
       flags.range ?? DEFAULT_RANGE,
       RANGES.map((r) => r.key),
     )
-    range = rangeFromDays(RANGES.find((r) => r.key === key).days)
+    range = rangeFromHours(RANGES.find((r) => r.key === key).hours)
   }
 
   return {
