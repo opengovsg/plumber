@@ -36,7 +36,9 @@ export type DimUserRow = DimUserSqlRow & {
 
 // The execution columns stay null until execution_daily exists.
 // is_verified: an OTP request creates the user row before the email is proven, and last_login_at
-// only exists from 19 Nov 2024. Owning any pipe, deleted or not, also proves the account.
+// only exists from 19 Nov 2024. Creating any pipe, deleted or not, also proves the account.
+// IMPORTANT: a transfer rewrites flows.user_id, so pipe milestones follow the creator, who is
+// the old owner of the pipe's first approved transfer.
 const DIM_USER_SQL = `
   SELECT
     u.id AS user_id,
@@ -53,10 +55,17 @@ const DIM_USER_SQL = `
   FROM users u
   LEFT JOIN (
     SELECT
-      user_id,
-      min(created_at) AS first_created_at
-    FROM flows
-    GROUP BY user_id
+      coalesce(t.old_owner_id, fl.user_id) AS user_id,
+      min(fl.created_at) AS first_created_at
+    FROM flows fl
+    LEFT JOIN LATERAL (
+      SELECT ft.old_owner_id
+      FROM flow_transfers ft
+      WHERE ft.flow_id = fl.id AND ft.status = 'approved'
+      ORDER BY ft.created_at
+      LIMIT 1
+    ) t ON true
+    GROUP BY 1
   ) f ON f.user_id = u.id
   ORDER BY u.created_at
 `
