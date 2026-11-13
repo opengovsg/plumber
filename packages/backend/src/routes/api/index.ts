@@ -10,6 +10,7 @@ import {
   requireAuthentication,
   setCurrentUserContext,
 } from './middleware/authentication'
+import templateDescriptionRouter from './template-description'
 import templatesRouter from './templates'
 
 const router: Router = Router()
@@ -30,6 +31,7 @@ router.use('/chat', chatRouter)
 router.use('/connections', connectionsRouter)
 router.use('/dynamic-data', dynamicDataRouter)
 router.use('/templates', templatesRouter)
+router.use('/template-description', templateDescriptionRouter)
 
 // Future routes can be added here:
 // router.use('/users', usersRouter)
