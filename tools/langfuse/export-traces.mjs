@@ -346,12 +346,36 @@ function createProgress(label) {
 const INITIAL_WINDOW_MS = 3_600_000
 const MIN_WINDOW_MS = 60_000
 const MIN_PAGE_SIZE = 10
-const TARGET_TRACES_PER_WINDOW = 500
+// Each chat trace carries hundreds of KB of output, so Rome times out at a few hundred traces per query.
+const TARGET_TRACES_PER_WINDOW = 100
+const OUTAGE_RETRY_DELAYS_MS = [10_000, 30_000, 60_000]
 // Langfuse launched in 2023, so "All time" starts here.
 const ALL_TIME_START = new Date('2023-01-01T00:00:00Z')
 
 // Langfuse answers 422 when its query times out. The SDK does not retry 422.
 const isQueryTimeout = (error) => error?.statusCode === 422
+
+// The SDK retries these within seconds, which is too short for a database restart.
+function isOutage(error) {
+  const status = error?.statusCode
+  if (status === undefined) {
+    return /timeout|fetch failed|ECONN|EHOST|ENOTFOUND|socket/i.test(
+      String(error?.message),
+    )
+  }
+  return status >= 500 || status === 408 || status === 429
+}
+
+function describeError(error) {
+  const status = error?.statusCode
+  const detail = error?.body?.error ?? error?.body?.message
+  if (status !== undefined) {
+    return `HTTP ${status}${detail ? `: ${detail}` : ''}`
+  }
+  return String(error?.message ?? error).split('\n')[0]
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function formatDuration(ms) {
   const minutes = Math.round(ms / 60_000)
@@ -455,6 +479,7 @@ async function listTraces(
   let windowMs = Math.min(INITIAL_WINDOW_MS, rangeMs)
   let limit = PAGE_SIZE
   let targetTraces = TARGET_TRACES_PER_WINDOW
+  let outageRetries = 0
 
   while (cursor > rangeStart) {
     const windowStart = new Date(
@@ -469,7 +494,17 @@ async function listTraces(
     try {
       result = await fetchWindow(windowStart, cursor, limit)
     } catch (error) {
+      if (isOutage(error) && outageRetries < OUTAGE_RETRY_DELAYS_MS.length) {
+        const delayMs = OUTAGE_RETRY_DELAYS_MS[outageRetries++]
+        printStatus(
+          `Langfuse failed (${describeError(error)}). Waiting ${delayMs / 1000}s before retry ${outageRetries}/${OUTAGE_RETRY_DELAYS_MS.length}.`,
+          { keep: true },
+        )
+        await sleep(delayMs)
+        continue
+      }
       if (!isQueryTimeout(error)) {
+        error.listedBackTo = cursor
         throw error
       }
       // Each timeout costs a full server timeout, so shrink aggressively and remember the lower ceiling.
@@ -490,8 +525,11 @@ async function listTraces(
         )
         continue
       }
-      fail(
-        `Langfuse timed out on a ${formatDuration(windowMs)} window ending ${cursor.toISOString()} with ${limit} traces per page.`,
+      throw Object.assign(
+        new Error(
+          `Langfuse timed out on a ${formatDuration(windowMs)} window ending ${cursor.toISOString()} with ${limit} traces per page.`,
+        ),
+        { listedBackTo: cursor },
       )
     }
 
@@ -508,6 +546,7 @@ async function listTraces(
     }
 
     cursor = windowStart
+    outageRetries = 0
     const idealMs =
       result.totalItems === 0
         ? windowMs * 2
@@ -710,10 +749,7 @@ async function fetchFullTraces(client, ids, options, onTrace) {
       try {
         return await client.api.trace.get(id, REQUEST_OPTIONS)
       } catch (error) {
-        failures.push({
-          id,
-          message: (error?.message ?? String(error)).split('\n')[0],
-        })
+        failures.push({ id, message: describeError(error) })
         return null
       } finally {
         progress.update(++done, ids.length)
@@ -767,30 +803,54 @@ async function main() {
   const toOutputRecord = (trace) => toRecord(trace, fields, baseUrl)
   const write = (trace) => writer.add(toOutputRecord(trace))
   let failures = []
+  let listingError
+
+  // A listing failure keeps what was already listed, so a long export is not lost.
+  const list = async (onItem, listOptions) => {
+    try {
+      await listTraces(client, options, onItem, listOptions)
+    } catch (error) {
+      if (error?.listedBackTo === undefined) {
+        throw error
+      }
+      if (process.stdout.isTTY) {
+        process.stdout.write('\n')
+      }
+      listingError = error
+    }
+  }
 
   await writer.start()
   if (options.traceId) {
     failures = await fetchFullTraces(client, [options.traceId], options, write)
   } else if (needsFullTrace) {
     const ids = []
-    await listTraces(client, options, (id) => ids.push(id), {
+    await list((id) => ids.push(id), {
       fields: 'core',
       map: (trace) => trace.id,
     })
     failures = await fetchFullTraces(client, ids, options, write)
   } else {
-    await listTraces(client, options, (record) => writer.add(record), {
-      map: toOutputRecord,
-    })
+    await list((record) => writer.add(record), { map: toOutputRecord })
   }
   const saved = await writer.end()
 
   if (saved === 0 && failures.length === 0) {
     rmSync(outPath)
-    console.log('No traces found. Nothing written.')
-    return
+    console.log(
+      listingError ? 'Nothing written.' : 'No traces found. Nothing written.',
+    )
+  } else {
+    console.log(`Saved ${saved} traces to ${outPath}`)
   }
-  console.log(`Saved ${saved} traces to ${outPath}`)
+
+  if (listingError) {
+    console.error(`\nListing stopped early: ${describeError(listingError)}`)
+    console.error(
+      `The export only covers ${listingError.listedBackTo.toISOString()} → ${options.range.to.toISOString()}.`,
+    )
+    process.exitCode = 1
+  }
 
   if (failures.length > 0) {
     console.error(`\n${failures.length} traces failed to download:`)
@@ -802,6 +862,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`\n${error instanceof Error ? error.message : error}`)
+  console.error(`\n${describeError(error)}`)
   process.exit(1)
 })
