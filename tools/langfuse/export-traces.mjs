@@ -1,5 +1,6 @@
 import { createWriteStream, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { emitKeypressEvents } from 'node:readline'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 
@@ -127,83 +128,126 @@ function customRange(fromValue, toValue) {
   return { from, to }
 }
 
-async function ask(rl, question, options, defaultKey) {
-  console.log(`\n${question}`)
-  options.forEach((option, index) => {
-    const marker = option.key === defaultKey ? ' (default)' : ''
-    console.log(`  ${index + 1}) ${option.label}${marker}`)
-  })
-  for (;;) {
-    const answer = (await rl.question('> ')).trim()
-    if (answer === '') {
-      return defaultKey
+const CYAN = '\x1b[36m'
+const DIM = '\x1b[2m'
+const RESET = '\x1b[0m'
+
+/**
+ * Arrow-key menu. Enter picks the highlighted option, which starts on the default.
+ */
+function ask(question, options, defaultKey) {
+  const { stdin, stdout } = process
+  let index = Math.max(
+    0,
+    options.findIndex((option) => option.key === defaultKey),
+  )
+
+  const render = () => {
+    for (const [i, option] of options.entries()) {
+      const marker = option.key === defaultKey ? ` ${DIM}(default)${RESET}` : ''
+      const line =
+        i === index
+          ? `${CYAN}❯ ${option.label}${RESET}${marker}`
+          : `  ${option.label}${marker}`
+      stdout.write(`\x1b[2K${line}\n`)
     }
-    const option = options[Number(answer) - 1]
-    if (option) {
-      return option.key
-    }
-    console.log(`Enter a number from 1 to ${options.length}.`)
   }
+
+  stdout.write(`\n${question} ${DIM}(↑/↓, Enter)${RESET}\n\x1b[?25l`)
+  render()
+
+  emitKeypressEvents(stdin)
+  stdin.setRawMode(true)
+  stdin.resume()
+
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      stdin.off('keypress', onKeypress)
+      stdin.setRawMode(false)
+      stdin.pause()
+      stdout.write('\x1b[?25h')
+    }
+
+    function onKeypress(text, key = {}) {
+      if (key.ctrl && key.name === 'c') {
+        cleanup()
+        process.exit(130)
+      }
+      if (key.name === 'return' || key.name === 'enter') {
+        cleanup()
+        // Collapses the menu into one line that shows the answer.
+        stdout.write(
+          `\x1b[${options.length + 1}A\x1b[0J${question} ${CYAN}${options[index].label}${RESET}\n`,
+        )
+        resolve(options[index].key)
+        return
+      }
+      if (key.name === 'up' || key.name === 'k') {
+        index = (index - 1 + options.length) % options.length
+      } else if (key.name === 'down' || key.name === 'j') {
+        index = (index + 1) % options.length
+      } else if (/^[1-9]$/.test(text ?? '') && Number(text) <= options.length) {
+        index = Number(text) - 1
+      } else {
+        return
+      }
+      stdout.write(`\x1b[${options.length}A`)
+      render()
+    }
+
+    stdin.on('keypress', onKeypress)
+  })
 }
 
-async function askDate(rl, label, defaultValue) {
-  for (;;) {
-    const answer = (
-      await rl.question(`${label} (YYYY-MM-DD, default ${defaultValue}): `)
-    ).trim()
-    const value = answer || defaultValue
-    try {
-      parseDate(label, value)
-      return value
-    } catch (error) {
-      console.log(error.message)
+async function askDate(label, defaultValue) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  try {
+    for (;;) {
+      const answer = (
+        await rl.question(`${label} (YYYY-MM-DD, default ${defaultValue}): `)
+      ).trim()
+      const value = answer || defaultValue
+      try {
+        parseDate(label, value)
+        return value
+      } catch (error) {
+        console.log(error.message)
+      }
     }
+  } finally {
+    rl.close()
   }
 }
 
 async function promptForMissing(flags) {
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  try {
-    const answers = { ...flags }
-    const toOptions = (values) => values.map((v) => ({ key: v, label: v }))
+  const answers = { ...flags }
+  const toOptions = (values) => values.map((v) => ({ key: v, label: v }))
 
-    answers.project ??= await ask(
-      rl,
-      'Project:',
-      toOptions(PROJECTS),
-      'aiBuilder',
-    )
-    answers.environment ??= await ask(
-      rl,
-      'Environment:',
-      toOptions(ENVIRONMENTS),
-      'prod',
-    )
+  answers.project ??= await ask('Project:', toOptions(PROJECTS), 'aiBuilder')
+  answers.environment ??= await ask(
+    'Environment:',
+    toOptions(ENVIRONMENTS),
+    'prod',
+  )
 
-    const rangeKey = await ask(
-      rl,
-      'Date range:',
-      [...RANGES, { key: 'custom', label: 'Custom date range' }],
-      DEFAULT_RANGE,
+  const rangeKey = await ask(
+    'Date range:',
+    [...RANGES, { key: 'custom', label: 'Custom date range' }],
+    DEFAULT_RANGE,
+  )
+  if (rangeKey === 'custom') {
+    answers.from = await askDate(
+      'Start date',
+      formatDate(addDays(new Date(), -30)),
     )
-    if (rangeKey === 'custom') {
-      const today = formatDate(new Date())
-      answers.from = await askDate(
-        rl,
-        'Start date',
-        formatDate(addDays(new Date(), -30)),
-      )
-      answers.to = await askDate(rl, 'End date', today)
-    } else {
-      answers.range = rangeKey
-    }
-
-    answers.include ??= await ask(rl, 'Fields:', DETAIL_LEVELS, 'none')
-    answers.format ??= await ask(rl, 'Format:', toOptions(FORMATS), 'json')
-    return answers
-  } finally {
-    rl.close()
+    answers.to = await askDate('End date', formatDate(new Date()))
+  } else {
+    answers.range = rangeKey
   }
+
+  answers.include ??= await ask('Fields:', DETAIL_LEVELS, 'none')
+  answers.format ??= await ask('Format:', toOptions(FORMATS), 'json')
+  return answers
 }
 
 async function resolveOptions(argv) {
