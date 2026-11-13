@@ -270,27 +270,36 @@ describe('M365 request error handlers', () => {
     )
   })
 
-  it('throws RetriableError with custom max attempts on 504 (live run)', async () => {
-    // Default $ doesn't have execution.testRun, so this is the live run path
-    mockAxiosAdapterToThrowOnce(504)
-    await http
-      .get('/test-url')
-      .then(() => {
-        expect.unreachable()
-      })
-      .catch((error): void => {
-        expect(error).toBeInstanceOf(RetriableError)
-        expect(error.delayType).toEqual('step')
-        expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
-        expect(error.maxAttempts).toEqual(EXCEL_504_MAX_ATTEMPTS)
-        // Message contains the user-friendly error (will be saved as errorDetails)
-        expect(error.message).toContain('Excel request timed out')
-      })
-    expect(mocks.logWarning).toHaveBeenCalledWith(
-      expect.stringContaining('HTTP 504'),
-      expect.objectContaining({ event: 'm365-http-504' }),
-    )
-  })
+  it.each([
+    ['post', '/workbook/tables/t/rows', 'config'],
+    ['patch', '/workbook/tables/t/rows/itemAt(index=1)', 'config'],
+    ['get', '/workbook/tables/t/range', 'third-party'],
+    ['post', '/workbook/createSession', 'third-party'],
+  ])(
+    'throws RetriableError with custom max attempts on a 504 from %s %s (live run), with kind %s',
+    async (method, url, kind) => {
+      // Default $ doesn't have execution.testRun, so this is the live run path
+      mockAxiosAdapterToThrowOnce(504)
+      await http
+        .request({ method, url })
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(RetriableError)
+          expect(error.delayType).toEqual('step')
+          expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
+          expect(error.maxAttempts).toEqual(EXCEL_504_MAX_ATTEMPTS)
+          expect(error.kind).toBe(kind)
+          // Message contains the user-friendly error (will be saved as errorDetails)
+          expect(error.message).toContain('Excel request timed out')
+        })
+      expect(mocks.logWarning).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 504'),
+        expect.objectContaining({ event: 'm365-http-504' }),
+      )
+    },
+  )
 
   it.each([
     ['post', '/workbook/tables/t/rows', 'config'],
