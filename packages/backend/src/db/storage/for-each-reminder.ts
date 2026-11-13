@@ -7,6 +7,7 @@ import {
 } from './constants'
 
 const FOR_EACH_REMINDER_ID = 'b8dd6c22-3578-460d-89e2-e2062b3601f2'
+const TILE_STEP_POSITION = 2
 
 export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
   id: FOR_EACH_REMINDER_ID,
@@ -22,19 +23,52 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
       parameters: { hour: '10', triggersOnWeekend: false },
     },
     {
-      position: 2,
+      position: TILE_STEP_POSITION,
       appKey: 'tiles',
       eventKey: 'findMultipleRows',
+      templateData: {
+        name: 'Event Sign ups',
+        columns: ['Name', 'Email', 'Mobile number', 'RSVPed', 'Reminder sent'],
+        rowData: [
+          {
+            Name: 'Anna Lee',
+            Email: 'anna_lee@email.com',
+            'Mobile number': '+6598625072',
+            RSVPed: 'Yes',
+          },
+          {
+            Name: 'Susan Tan Jia Ling',
+            Email: 'susan_tjl@email.com',
+          },
+          {
+            Name: 'Jane Lim',
+            Email: 'jane_98@email.com',
+            RSVPed: 'Yes',
+          },
+          {
+            Name: 'Amy Low',
+            Email: 'amy_low_ll@email.com',
+            RSVPed: 'Yes',
+          },
+          {
+            Name: 'Judy Ng',
+            Email: 'judy_00@email.com',
+          },
+        ],
+      },
       parameters: {
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
         filters: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('RSVPed'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'RSVPed'),
             value: 'Yes',
             operator: 'equals',
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Reminder sent'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Reminder sent',
+            ),
             operator: 'empty',
           },
         ],
@@ -71,45 +105,18 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
       appKey: 'tiles',
       eventKey: 'updateSingleRow',
       parameters: {
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('Replace with Row ID from step 3'),
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Reminder sent'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Reminder sent',
+            ),
             cellValue: 'Yes',
           },
         ],
       },
     },
   ],
-  tileTemplateData: {
-    name: 'Event Sign ups',
-    columns: ['Name', 'Email', 'Mobile number', 'RSVPed', 'Reminder sent'],
-    rowData: [
-      {
-        Name: 'Anna Lee',
-        Email: 'anna_lee@email.com',
-        'Mobile number': '+6598625072',
-        RSVPed: 'Yes',
-      },
-      {
-        Name: 'Susan Tan Jia Ling',
-        Email: 'susan_tjl@email.com',
-      },
-      {
-        Name: 'Jane Lim',
-        Email: 'jane_98@email.com',
-        RSVPed: 'Yes',
-      },
-      {
-        Name: 'Amy Low',
-        Email: 'amy_low_ll@email.com',
-        RSVPed: 'Yes',
-      },
-      {
-        Name: 'Judy Ng',
-        Email: 'judy_00@email.com',
-      },
-    ],
-  },
 }
