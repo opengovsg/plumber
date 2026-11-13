@@ -87,7 +87,7 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
 
   // The SES client fetches credentials from STS, so STS errors must retry like SES errors.
   if (!(error instanceof ServiceException)) {
-    return 'ERROR'
+    return isSesNetworkError(error) ? 'INTERMITTENT-ERROR' : 'ERROR'
   }
 
   const httpStatus = error.$metadata?.httpStatusCode
@@ -101,7 +101,7 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'RATE-LIMITED'
   }
 
-  // Server errors — 500+ are transient, worth retrying
+  // Server errors are transient, worth retrying.
   if (httpStatus !== undefined && httpStatus >= 500) {
     return 'INTERMITTENT-ERROR'
   }
@@ -128,7 +128,7 @@ function isSesNetworkError(error: unknown): boolean {
 // Postman 4xx and SES service errors reaching the catch-all stem from Plumber's API key or SES setup.
 function getCatchAllKind(error: unknown): StepErrorKind {
   if (!(error instanceof HttpError)) {
-    return isSesNetworkError(error) ? 'third-party' : 'internal'
+    return 'internal'
   }
   const status = error.response?.status
   if (status === undefined) {
@@ -269,6 +269,7 @@ export function throwPostmanStepError({
         error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'third-party',
       })
     case 'ERROR':
     default:
