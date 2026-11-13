@@ -19,10 +19,6 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
   const { app, templateStep, isNested } = props
   const { appKey, eventKey, position, sampleUrl, sampleUrlDescription } =
     templateStep
-  // sanity check
-  if (!app) {
-    return <></>
-  }
 
   const isTrigger = position === 1
   const isToolboxApp = appKey === TOOLBOX_APP_KEY
@@ -50,6 +46,11 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
         FALLBACK_EVENT_NAME
     }
   }
+
+  const stepName =
+    templateStep.config?.stepName ||
+    (isIfThen ? (templateStep.parameters?.branchName as string) : undefined) ||
+    (!appKey && !eventKey ? 'Unconfigured step' : eventName)
 
   return (
     <Card
@@ -84,7 +85,7 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
       )}
 
       <Flex alignItems="center" columnGap={4}>
-        <Text textStyle="subhead-1">{`${position}. ${eventName}`}</Text>
+        <Text textStyle="subhead-1">{`${position}. ${stepName}`}</Text>
         <Link
           href={sampleUrl ?? ''}
           target="blank"
