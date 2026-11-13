@@ -22,9 +22,19 @@ function makeGlobal(testRun = false): IGlobalVariable {
   } as unknown as IGlobalVariable
 }
 
-function makeSesError(name: string, message = 'SES error'): Error {
+function makeSesError(
+  name: string,
+  message = 'SES error',
+  { code, httpStatusCode }: { code?: string; httpStatusCode?: number } = {},
+): Error {
   const error = new Error(message)
   error.name = name
+  if (code !== undefined) {
+    Object.assign(error, { code })
+  }
+  if (httpStatusCode !== undefined) {
+    Object.assign(error, { $metadata: { httpStatusCode } })
+  }
   return error
 }
 
@@ -170,8 +180,16 @@ describe('throwPostmanStepError', () => {
         'a DNS failure with no status',
         makeHttpError({ code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND' }),
       ],
+      [
+        'an SES TimeoutError',
+        makeSesError('TimeoutError', 'read ECONNRESET', { code: 'ECONNRESET' }),
+      ],
+      [
+        'an SES DNS failure',
+        makeSesError('Error', 'getaddrinfo ENOTFOUND', { code: 'ENOTFOUND' }),
+      ],
     ])('tags %s as third-party and keeps the cause', (_label, error) => {
-      const thrown = catchThrown({ status: 'ERROR', error })
+      const thrown = catchThrown({ status: 'ERROR', error: error as HttpError })
 
       expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
       expect(readName(thrown as StepError)).toBe('Something went wrong')
@@ -211,7 +229,16 @@ describe('throwPostmanStepError', () => {
       ],
       [
         'SES MessageRejected',
-        makeSesError('MessageRejected', 'Email address is not verified.'),
+        makeSesError('MessageRejected', 'Email address is not verified.', {
+          httpStatusCode: 400,
+        }),
+      ],
+      [
+        'an SES error with a network code and a status',
+        makeSesError('Error', 'read ECONNRESET', {
+          code: 'ECONNRESET',
+          httpStatusCode: 400,
+        }),
       ],
       ['SES SendingPausedException', makeSesError('SendingPausedException')],
       [

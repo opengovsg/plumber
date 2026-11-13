@@ -1,6 +1,6 @@
 import { IGlobalVariable, StepErrorKind } from '@plumber/types'
 
-import HttpError, { isNetworkError } from '@/errors/http'
+import HttpError, { isNetworkError, isNetworkErrorCode } from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -113,10 +113,25 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
   return 'ERROR'
 }
 
-// Postman 4xx and SES errors reaching the catch-all stem from Plumber's API key or SES setup.
+// The AWS SDK reports network failures without an HTTP status, so a status means SES itself replied.
+function isSesNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+  const { $metadata, code } = error as {
+    $metadata?: { httpStatusCode?: number }
+    code?: unknown
+  }
+  if ($metadata?.httpStatusCode !== undefined) {
+    return false
+  }
+  return error.name === 'TimeoutError' || isNetworkErrorCode(code)
+}
+
+// Postman 4xx and SES service errors reaching the catch-all stem from Plumber's API key or SES setup.
 function getCatchAllKind(error: unknown): StepErrorKind {
   if (!(error instanceof HttpError)) {
-    return 'internal'
+    return isSesNetworkError(error) ? 'third-party' : 'internal'
   }
   const status = error.response?.status
   if (status === undefined) {
