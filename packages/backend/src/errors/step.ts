@@ -1,6 +1,7 @@
 import { IJSONObject, IStepError, StepErrorKind } from '@plumber/types'
 
 import HttpError from './http'
+import RetriableError from './retriable-error'
 
 //
 // Some generic solutions for common errors
@@ -67,7 +68,7 @@ export default class StepError extends Error {
 }
 
 export function getStepErrorKind(error: unknown): StepErrorKind {
-  if (error instanceof StepError) {
+  if (error instanceof StepError || error instanceof RetriableError) {
     // Unmigrated call sites have no kind yet, and an unknown cause counts as a Plumber bug.
     return error.kind ?? 'internal'
   }
@@ -75,15 +76,14 @@ export function getStepErrorKind(error: unknown): StepErrorKind {
 }
 
 /**
- * Lets `handleFailedJob` read the kind from the error that replaced the StepError.
+ * Lets `handleFailedJob` read the kind of an error that another error replaced.
  *
  * IMPORTANT: non-enumerable, so log redaction never walks into the StepError's HTTP cause.
  */
-export function attachHiddenCauseIfStepError(
-  target: Error,
-  error: unknown,
-): void {
-  if (!(error instanceof StepError) || Object.hasOwn(target, 'cause')) {
+export function attachHiddenKindCause(target: Error, error: unknown): void {
+  const carriesKind =
+    error instanceof StepError || error instanceof RetriableError
+  if (!carriesKind || Object.hasOwn(target, 'cause')) {
     return
   }
   Object.defineProperty(target, 'cause', {

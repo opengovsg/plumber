@@ -2,7 +2,8 @@ import type { IActionJobData, StepErrorKind } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import StepError, { attachHiddenCauseIfStepError } from '@/errors/step'
+import RetriableError from '@/errors/retriable-error'
+import StepError, { attachHiddenKindCause } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 
 import { handleFailedJob } from '../helpers/handle-failed-job'
@@ -48,7 +49,7 @@ const JOB = {
 
 function makeFailedJobError(cause?: unknown): UnrecoverableError {
   const err = new UnrecoverableError('step failed')
-  attachHiddenCauseIfStepError(err, cause)
+  attachHiddenKindCause(err, cause)
   return err
 }
 
@@ -115,6 +116,71 @@ describe('handleFailedJob failure log', () => {
     await handleFailedJob(JOB, makeFailedJobError(cause), 'queue')
 
     expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'internal' })
+  })
+
+  it.each<StepErrorKind>(['config', 'third-party', 'internal'])(
+    'logs the %s kind of a RetriableError cause',
+    async (kind) => {
+      const retriableError = new RetriableError({
+        error: 'e',
+        delayInMs: 'default',
+        delayType: 'queue',
+        kind,
+      })
+
+      await handleFailedJob(JOB, makeFailedJobError(retriableError), 'queue')
+
+      expect(getFailureLogs()[0][1]).toMatchObject({ kind })
+    },
+  )
+
+  it('logs the kind of a RetriableError that ran out of attempts', async () => {
+    const retriableError = new RetriableError({
+      error: 'e',
+      delayInMs: 'default',
+      delayType: 'step',
+      kind: 'third-party',
+    })
+    const lastAttemptJob = { ...JOB, attemptsMade: MAXIMUM_JOB_ATTEMPTS }
+
+    await handleFailedJob(
+      lastAttemptJob as unknown as JobPro<IActionJobData>,
+      retriableError,
+      'queue',
+    )
+
+    expect(getFailureLogs()[0][1]).toMatchObject({
+      willRetry: false,
+      kind: 'third-party',
+    })
+  })
+
+  it('logs internal for a RetriableError without kind', async () => {
+    const retriableError = new RetriableError({
+      error: 'e',
+      delayInMs: 'default',
+      delayType: 'step',
+    })
+
+    await handleFailedJob(JOB, retriableError, 'queue')
+
+    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'internal' })
+  })
+
+  it('logs the StepError kind hidden behind a RetriableError without kind', async () => {
+    const retriableError = new RetriableError({
+      error: 'e',
+      delayInMs: 'default',
+      delayType: 'step',
+    })
+    attachHiddenKindCause(
+      retriableError,
+      new StepError({ name: 'n', solution: 's', kind: 'config' }),
+    )
+
+    await handleFailedJob(JOB, retriableError, 'queue')
+
+    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'config' })
   })
 
   it('logs without appKey when the step lookup fails', async () => {

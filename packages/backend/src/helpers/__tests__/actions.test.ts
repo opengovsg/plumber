@@ -1,4 +1,9 @@
-import type { IActionJobData, IApp, IJSONObject } from '@plumber/types'
+import type {
+  IActionJobData,
+  IApp,
+  IJSONObject,
+  StepErrorKind,
+} from '@plumber/types'
 import {
   type JobPro,
   UnrecoverableError,
@@ -8,7 +13,8 @@ import { type Span } from 'dd-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { getStepErrorKind } from '@/errors/step'
+import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import Step from '@/models/step'
 
 import { makeHttpError } from '../../../test/utils/make-http-error'
@@ -334,6 +340,63 @@ describe('action helper functions', () => {
           }),
         ).toThrow(error)
       })
+
+      it.each<StepErrorKind | undefined>([
+        'config',
+        'third-party',
+        'internal',
+        undefined,
+      ])('retries a RetriableError with kind %s', (kind) => {
+        const error = new RetriableError({
+          error: 'test error',
+          delayInMs: 100,
+          delayType: 'step',
+          kind,
+        })
+
+        expect(() =>
+          handleFailedStepAndThrow({
+            errorDetails: {},
+            executionError: error,
+            context: MOCK_CONTEXT,
+          }),
+        ).toThrow(error)
+        expect(mocks.addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
+      })
+
+      it.each<RetriableError['delayType']>(['step', 'group', 'queue'])(
+        'hides the RetriableError as the cause once %s retries run out',
+        (delayType) => {
+          const error = new RetriableError({
+            error: 'test error',
+            delayInMs: 100,
+            delayType,
+            kind: 'third-party',
+          })
+
+          let thrown: unknown
+          try {
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError: error,
+              context: {
+                ...MOCK_CONTEXT,
+                job: {
+                  attemptsMade: MAXIMUM_JOB_ATTEMPTS - 1,
+                  attemptsStarted: MAXIMUM_JOB_ATTEMPTS,
+                } as unknown as JobPro<IActionJobData>,
+              },
+            })
+          } catch (e) {
+            thrown = e
+          }
+
+          expect(thrown).toBeInstanceOf(UnrecoverableError)
+          expect((thrown as Error).cause).toBe(error)
+          expect(Object.keys(thrown as Error)).not.toContain('cause')
+          expect(getStepErrorKind((thrown as Error).cause)).toBe('third-party')
+        },
+      )
     })
 
     describe('other error type handling', () => {
