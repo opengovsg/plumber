@@ -17,10 +17,6 @@ import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
-import {
-  clearConnectionConflict,
-  recordConnectionConflict,
-} from './connection-conflict'
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
 import { verifyConnectionRegistrationService } from './verify-connection-registration'
@@ -225,18 +221,18 @@ export async function updateStepParametersService({
         )
 
         if (verification.status === 'VERIFIED') {
-          await clearConnectionConflict(stepId, { connectionId })
+          await Step.query()
+            .patchAndFetchById(stepId, { connectionId })
+            .throwIfNotFound()
           result.step.connectionId = connectionId
           result.connectionRegistered = true
         } else if (verification.status === 'UNREGISTERED') {
           await registerConnectionService(user, stepId, connectionId)
-          await clearConnectionConflict(stepId)
           result.step.connectionId = connectionId
           result.connectionRegistered = true
         } else {
           result.connectionConflict = true
           result.connectionConflictMessage = verification.message
-          await recordConnectionConflict(stepId, connectionId, traceId)
           try {
             const schema = await fetchFormSchemaForStep(
               user,
