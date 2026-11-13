@@ -120,7 +120,7 @@ describe('dimUserTable.fetchRows', () => {
     })
   })
 
-  it('reads verification from logins or pipes, and no publish time', async () => {
+  it('reads verification from logins or created pipes, and no publish time', async () => {
     const { db, raw } = makeDb([sqlRow('officer@tech.gov.sg')])
 
     await table.fetchRows(db)
@@ -130,6 +130,7 @@ describe('dimUserTable.fetchRows', () => {
     expect(sql).toContain(
       '(u.last_login_at IS NOT NULL OR f.user_id IS NOT NULL) AS is_verified',
     )
+    expect(sql).toContain("ft.status = 'approved'")
   })
 
   it('rejects a row whose shape changed', async () => {
