@@ -15,6 +15,11 @@ import {
 } from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
 import {
+  type ChatHistoryMessage,
+  isReplyToConnectionConflict,
+  NO_CONNECTION_CONFLICT_MESSAGE,
+} from '@/services/mcp/connection-conflict-reply'
+import {
   createFlowWithStepsService,
   type McpStepInput,
 } from '@/services/mcp/create-flow-with-steps'
@@ -37,15 +42,14 @@ import {
   listColumnsService,
 } from '@/services/mcp/list-columns'
 import {
-  NoConnectionConflictError,
-  overrideConnectionService,
-} from '@/services/mcp/override-connection'
-import {
   isPublishedPipeError,
   type PublishedPipeErrorResult,
   publishedPipeErrorResult,
 } from '@/services/mcp/published-pipe-error'
-import type { RegisterConnectionResult } from '@/services/mcp/register-connection'
+import {
+  type RegisterConnectionResult,
+  registerConnectionService,
+} from '@/services/mcp/register-connection'
 import {
   type UnpublishPipeResult,
   unpublishPipeService,
@@ -57,9 +61,6 @@ import {
 import { InvalidStepParametersError } from '@/services/mcp/validate-step-parameter-values'
 
 type ListAppsInput = Record<string, IApp[]>
-export const OVERRIDE_BEFORE_USER_REPLY_MESSAGE =
-  'The user has not answered the override question yet. Relay the conflict message, ask whether to override, and wait for their reply. Nothing was changed.'
-
 type McpToolError = { error: string } | PublishedPipeErrorResult
 
 function mcpToolError(
@@ -95,11 +96,8 @@ export function createMcpBridgeTools(
     parameters: IJSONObject,
     parameterLabels?: Record<string, string>,
   ) => void,
+  chatHistory: ChatHistoryMessage[] = [],
 ) {
-  // One instance serves one user message. A conflict recorded here has not
-  // been shown to the user yet, so no answer to the override question exists.
-  const stepsWithConflictThisTurn = new Set<string>()
-
   const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
       description:
@@ -317,9 +315,6 @@ export function createMcpBridgeTools(
             connectionId: connection_id,
             traceId,
           })
-          if (result.connectionConflict) {
-            stepsWithConflictThisTurn.add(step_id)
-          }
           onPipeChange?.(pipe_id)
           onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
           return result
@@ -441,7 +436,7 @@ export function createMcpBridgeTools(
         'Register a FormSG connection on a trigger step, overwriting any existing webhook. ' +
         'Call ONLY after the user has explicitly confirmed they want to overwrite the existing webhook. ' +
         'On success the connection is persisted to the step. ' +
-        'Returns { error } when this step has no webhook conflict on record for this connection; relay it and ask which pipe or form the user means.',
+        'Returns { error } unless your previous message showed a connectionConflict for this step and connection and the user has replied to it. Relay the error and ask which pipe or form the user means.',
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe containing the step'),
         step_id: z.uuid().describe('ID of the trigger step to register'),
@@ -456,11 +451,11 @@ export function createMcpBridgeTools(
         step_id,
         connection_id,
       }): Promise<RegisterConnectionResult | McpToolError> => {
-        if (stepsWithConflictThisTurn.has(step_id)) {
-          return { error: OVERRIDE_BEFORE_USER_REPLY_MESSAGE }
+        if (!isReplyToConnectionConflict(chatHistory, step_id, connection_id)) {
+          return { error: NO_CONNECTION_CONFLICT_MESSAGE }
         }
         try {
-          const result = await overrideConnectionService(
+          const result = await registerConnectionService(
             user,
             step_id,
             connection_id,
@@ -468,9 +463,6 @@ export function createMcpBridgeTools(
           onPipeChange?.(pipe_id)
           return result
         } catch (error) {
-          if (error instanceof NoConnectionConflictError) {
-            return { error: error.message }
-          }
           return publishedPipeOrThrow(error)
         }
       },
