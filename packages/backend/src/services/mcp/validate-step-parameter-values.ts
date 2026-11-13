@@ -1,5 +1,7 @@
 import type { IField } from '@plumber/types'
 
+import get from 'lodash/get'
+
 import { UserFacingError } from '@/errors/user-facing-error'
 
 export const NO_PARAMETER_VALUES_MESSAGE =
@@ -42,6 +44,48 @@ function hasNoValue(value: unknown): boolean {
   return isBlankString(value)
 }
 
+// The editor stores an empty body as markup such as "<p></p>". An image
+// alone is still a body.
+function isEmptyRichText(value: unknown): boolean {
+  if (typeof value !== 'string' || /<img\b/i.test(value)) {
+    return false
+  }
+  return isBlankString(
+    value.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/gi, ' '),
+  )
+}
+
+// Mirrors the editor's isFieldHidden. A hidden field is never asked for, such
+// as a Tiles filter value when the operator is "Is empty".
+function isFieldHidden(field: IField, siblings: Record<string, unknown>) {
+  const condition = field.hiddenIf
+  if (!condition) {
+    return false
+  }
+  switch (condition.op) {
+    case 'always_true':
+      return true
+    case 'equals':
+      return get(siblings, condition.fieldKey) === condition.fieldValue
+    case 'not_equals':
+      return get(siblings, condition.fieldKey) !== condition.fieldValue
+    case 'is_empty': {
+      const sibling = get(siblings, condition.fieldKey)
+      return typeof sibling === 'string'
+        ? !sibling
+        : sibling === null || sibling === undefined
+    }
+    case 'in':
+      return condition.fieldValues.includes(get(siblings, condition.fieldKey))
+    case 'not_in':
+      return !condition.fieldValues.includes(get(siblings, condition.fieldKey))
+  }
+}
+
+function isRow(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 function isEmptyCollection(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.length === 0
@@ -63,8 +107,9 @@ export function findEmptyParameterError(
   parameters: Record<string, unknown>,
   savedParameters: Record<string, unknown> = {},
 ): string | null {
+  const siblings = { ...savedParameters, ...parameters }
   for (const field of fields) {
-    if (!(field.key in parameters)) {
+    if (!(field.key in parameters) || isFieldHidden(field, siblings)) {
       continue
     }
     const value = parameters[field.key]
@@ -89,8 +134,25 @@ export function findEmptyParameterError(
       return `${label} is empty. Collect the column values, or leave the field out of the call and test the step. Nothing was saved.`
     }
 
-    if (field.required && hasNoValue(value)) {
+    if (
+      field.required &&
+      (field.type === 'rich-text' ? isEmptyRichText(value) : hasNoValue(value))
+    ) {
       return `${label} has no value yet. Ask the user for it before saving. Nothing was saved.`
+    }
+
+    if (
+      (field.type === 'multirow-multicol' || field.type === 'multirow') &&
+      Array.isArray(value)
+    ) {
+      for (const [index, row] of value.entries()) {
+        const rowError = isRow(row)
+          ? findEmptyParameterError(field.subFields, row)
+          : null
+        if (rowError) {
+          return `${label}, row ${index + 1}: ${rowError}`
+        }
+      }
     }
   }
   return null
