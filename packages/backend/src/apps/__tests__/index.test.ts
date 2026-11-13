@@ -33,3 +33,28 @@ describe('get-apps query', () => {
     expect(exportedAppNamesSet).toEqual(rankingMapAppsSet)
   })
 })
+
+describe('action catalog', () => {
+  // Analytics names app-actions from this file. The first two columns never hold a comma.
+  it('lists every trigger and action', () => {
+    const catalogPath = join(
+      __dirname,
+      '../../../../backend-archive/data/action-catalog.csv',
+    )
+    const listed = new Set(
+      fs
+        .readFileSync(catalogPath, 'utf8')
+        .trim()
+        .split('\n')
+        .slice(1)
+        .map((line) => line.split(',').slice(0, 2).join('.')),
+    )
+    const registered = Object.values(exportedApps).flatMap((app) =>
+      [...(app.triggers ?? []), ...(app.actions ?? [])].map(
+        (event) => `${app.key}.${event.key}`,
+      ),
+    )
+
+    expect(registered.filter((key) => !listed.has(key))).toEqual([])
+  })
+})
