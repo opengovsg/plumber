@@ -1,3 +1,8 @@
+import {
+  MessageRejected,
+  SESv2ServiceException,
+  TooManyRequestsException,
+} from '@aws-sdk/client-sesv2'
 import { IGlobalVariable, StepErrorKind } from '@plumber/types'
 
 import HttpError, { isNetworkError, isNetworkErrorCode } from '@/errors/http'
@@ -75,14 +80,16 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'ATTACHMENT-SIZE-EXCEEDED'
   }
 
-  // SES SDK errors expose $metadata.httpStatusCode
-  const httpStatus = (error as { $metadata?: { httpStatusCode?: number } })
-    .$metadata?.httpStatusCode
+  if (!(error instanceof SESv2ServiceException)) {
+    return 'ERROR'
+  }
 
-  // Rate limiting — 429 or known throttling error names
+  const httpStatus = error.$metadata?.httpStatusCode
+
+  // ThrottlingException has no modeled SDK class, so match it by name.
   if (
     httpStatus === 429 ||
-    error.name === 'TooManyRequestsException' ||
+    error instanceof TooManyRequestsException ||
     error.name === 'ThrottlingException'
   ) {
     return 'RATE-LIMITED'
@@ -93,38 +100,22 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'INTERMITTENT-ERROR'
   }
 
-  // MessageRejected — check message for specific sub-cases
-  if (error.name === 'MessageRejected') {
+  if (error instanceof MessageRejected) {
     const msg = error.message?.toLowerCase() ?? ''
     if (msg.includes('blacklisted') || msg.includes('suppression list')) {
       return 'BLACKLISTED'
     }
-    return 'ERROR'
-  }
-
-  // Account-level issues — not retriable, surface as ERROR
-  if (
-    error.name === 'SendingPausedException' ||
-    error.name === 'AccountSuspendedException'
-  ) {
-    return 'ERROR'
   }
 
   return 'ERROR'
 }
 
-// The AWS SDK reports network failures without an HTTP status, so a status means SES itself replied.
+// Network failures and timeouts never reach SES, so the SDK does not wrap them in its exception class.
 function isSesNetworkError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
+  if (!(error instanceof Error) || error instanceof SESv2ServiceException) {
     return false
   }
-  const { $metadata, code } = error as {
-    $metadata?: { httpStatusCode?: number }
-    code?: unknown
-  }
-  if ($metadata?.httpStatusCode !== undefined) {
-    return false
-  }
+  const { code } = error as { code?: unknown }
   return error.name === 'TimeoutError' || isNetworkErrorCode(code)
 }
 

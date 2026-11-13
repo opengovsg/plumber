@@ -1,3 +1,11 @@
+import {
+  AccountSuspendedException,
+  InternalServiceErrorException,
+  MessageRejected,
+  SendingPausedException,
+  SESv2ServiceException,
+  TooManyRequestsException,
+} from '@aws-sdk/client-sesv2'
 import { IGlobalVariable } from '@plumber/types'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -7,7 +15,10 @@ import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
-import { throwPostmanStepError } from '../../common/throw-errors'
+import {
+  getSesErrorStatus,
+  throwPostmanStepError,
+} from '../../common/throw-errors'
 
 vi.mock('../../common/send-blacklist-email', () => ({
   createRequestBlacklistFormLink: vi.fn(() => 'https://form.example'),
@@ -22,20 +33,17 @@ function makeGlobal(testRun = false): IGlobalVariable {
   } as unknown as IGlobalVariable
 }
 
-function makeSesError(
-  name: string,
-  message = 'SES error',
-  { code, httpStatusCode }: { code?: string; httpStatusCode?: number } = {},
-): Error {
+function makeNamedError(name: string, message: string, code?: string): Error {
   const error = new Error(message)
   error.name = name
   if (code !== undefined) {
     Object.assign(error, { code })
   }
-  if (httpStatusCode !== undefined) {
-    Object.assign(error, { $metadata: { httpStatusCode } })
-  }
   return error
+}
+
+function makeMessageRejected(message: string): MessageRejected {
+  return new MessageRejected({ message, $metadata: { httpStatusCode: 400 } })
 }
 
 type ThrowParams = Parameters<typeof throwPostmanStepError>[0]
@@ -125,7 +133,7 @@ describe('throwPostmanStepError', () => {
       ],
       [
         'SES AttachmentSizeExceededError',
-        makeSesError('AttachmentSizeExceededError') as HttpError,
+        makeNamedError('AttachmentSizeExceededError', 'too big') as HttpError,
       ],
     ])('tags %s as config', (_label, error) => {
       const thrown = catchThrown({ status: 'ATTACHMENT-SIZE-EXCEEDED', error })
@@ -182,11 +190,11 @@ describe('throwPostmanStepError', () => {
       ],
       [
         'an SES TimeoutError',
-        makeSesError('TimeoutError', 'read ECONNRESET', { code: 'ECONNRESET' }),
+        makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
       ],
       [
         'an SES DNS failure',
-        makeSesError('Error', 'getaddrinfo ENOTFOUND', { code: 'ENOTFOUND' }),
+        makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
       ],
     ])('tags %s as third-party and keeps the cause', (_label, error) => {
       const thrown = catchThrown({ status: 'ERROR', error: error as HttpError })
@@ -229,21 +237,27 @@ describe('throwPostmanStepError', () => {
       ],
       [
         'SES MessageRejected',
-        makeSesError('MessageRejected', 'Email address is not verified.', {
-          httpStatusCode: 400,
-        }),
+        makeMessageRejected('Email address is not verified.'),
       ],
       [
         'an SES error with a network code and a status',
-        makeSesError('Error', 'read ECONNRESET', {
+        Object.assign(makeMessageRejected('read ECONNRESET'), {
           code: 'ECONNRESET',
-          httpStatusCode: 400,
         }),
       ],
-      ['SES SendingPausedException', makeSesError('SendingPausedException')],
+      [
+        'SES SendingPausedException',
+        new SendingPausedException({
+          message: 'Sending paused',
+          $metadata: { httpStatusCode: 400 },
+        }),
+      ],
       [
         'SES AccountSuspendedException',
-        makeSesError('AccountSuspendedException'),
+        new AccountSuspendedException({
+          message: 'Account suspended',
+          $metadata: { httpStatusCode: 400 },
+        }),
       ],
       ['a plain Error', new Error('failed to build MIME')],
     ])('tags %s as internal', (_label, error) => {
@@ -263,5 +277,90 @@ describe('throwPostmanStepError', () => {
     ],
   ])('keeps %s as a RetriableError', (status, error) => {
     expect(catchThrown({ status, error })).toBeInstanceOf(RetriableError)
+  })
+})
+
+describe('getSesErrorStatus', () => {
+  it.each([
+    [
+      'TooManyRequestsException',
+      new TooManyRequestsException({
+        message: 'Maximum sending rate exceeded.',
+        $metadata: { httpStatusCode: 429 },
+      }),
+    ],
+    [
+      'an unmodeled ThrottlingException',
+      new SESv2ServiceException({
+        name: 'ThrottlingException',
+        $fault: 'client',
+        message: 'Rate exceeded',
+        $metadata: { httpStatusCode: 400 },
+      }),
+    ],
+    [
+      'an unmodeled 429',
+      new SESv2ServiceException({
+        name: 'UnknownError',
+        $fault: 'client',
+        message: 'Too many requests',
+        $metadata: { httpStatusCode: 429 },
+      }),
+    ],
+  ])('returns RATE-LIMITED for %s', (_label, error) => {
+    expect(getSesErrorStatus(error)).toBe('RATE-LIMITED')
+  })
+
+  it('returns INTERMITTENT-ERROR for an SES 500', () => {
+    const error = new InternalServiceErrorException({
+      message: 'Internal failure',
+      $metadata: { httpStatusCode: 500 },
+    })
+
+    expect(getSesErrorStatus(error)).toBe('INTERMITTENT-ERROR')
+  })
+
+  it.each([
+    'Address blacklisted.',
+    'Email address is on the account suppression list.',
+  ])('returns BLACKLISTED for MessageRejected "%s"', (message) => {
+    expect(getSesErrorStatus(makeMessageRejected(message))).toBe('BLACKLISTED')
+  })
+
+  it('returns ATTACHMENT-SIZE-EXCEEDED for AttachmentSizeExceededError', () => {
+    const error = makeNamedError('AttachmentSizeExceededError', 'too big')
+
+    expect(getSesErrorStatus(error)).toBe('ATTACHMENT-SIZE-EXCEEDED')
+  })
+
+  it.each([
+    [
+      'MessageRejected without a blacklist reason',
+      makeMessageRejected('Email address is not verified.'),
+    ],
+    [
+      'SendingPausedException',
+      new SendingPausedException({
+        message: 'Sending paused',
+        $metadata: { httpStatusCode: 400 },
+      }),
+    ],
+    [
+      'a plain Error named MessageRejected',
+      makeNamedError('MessageRejected', 'Address blacklisted.'),
+    ],
+    [
+      'a plain Error named TooManyRequestsException',
+      makeNamedError('TooManyRequestsException', 'SES error'),
+    ],
+    [
+      'a plain Error with a 429 status',
+      Object.assign(new Error('SES error'), {
+        $metadata: { httpStatusCode: 429 },
+      }),
+    ],
+    ['a non-Error', 'boom'],
+  ])('returns ERROR for %s', (_label, error) => {
+    expect(getSesErrorStatus(error)).toBe('ERROR')
   })
 })
