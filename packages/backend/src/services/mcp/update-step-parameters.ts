@@ -161,6 +161,7 @@ export async function updateStepParametersService({
     const emptyValueMessage = findEmptyParameterError(
       rawTriggerOrAction?.arguments ?? [],
       filteredParameters,
+      step.parameters ?? {},
     )
     if (emptyValueMessage) {
       throw new InvalidStepParametersError(emptyValueMessage)
