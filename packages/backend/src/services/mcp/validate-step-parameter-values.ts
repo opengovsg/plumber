@@ -50,9 +50,12 @@ function isEmptyRichText(value: unknown): boolean {
   if (typeof value !== 'string' || /<img\b/i.test(value)) {
     return false
   }
-  return isBlankString(
-    value.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/gi, ' '),
-  )
+  // Only checks for visible text. The result is never stored or rendered.
+  const text = value
+    .split(/<[^>]*>/)
+    .join(' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+  return isBlankString(text)
 }
 
 // Mirrors the editor's isFieldHidden. A hidden field is never asked for, such
