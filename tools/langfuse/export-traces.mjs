@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
  *   --format=json|csv                 default json
  *   --userId=<id>                     only traces for this user
  *   --traceId=<id>                    export one trace and ignore the range
- *   --include=<fields>                comma-separated extras: metadata, observations, scores, or all
+ *   --include=<fields>                comma-separated extras: metadata, fullOutput, observations, scores, or all
  *   --concurrency=<n>                 parallel requests, default 5
  *   --yes                             skip prompts and use defaults
  *
@@ -47,7 +47,7 @@ const RANGES = [
   { key: 'all', label: 'All time', hours: null },
 ]
 const DEFAULT_RANGE = '30d'
-const EXTRA_FIELDS = ['metadata', 'observations', 'scores']
+const EXTRA_FIELDS = ['metadata', 'fullOutput', 'observations', 'scores']
 // These need one request per trace. Everything else comes from the trace list pages.
 const SLOW_FIELDS = ['observations', 'scores']
 const DETAIL_LEVELS = [
@@ -56,7 +56,7 @@ const DETAIL_LEVELS = [
   {
     key: 'all',
     label:
-      'Everything, with observations and scores (slow, one request per trace)',
+      'Everything, with full LLM output, observations and scores (slow, one request per trace)',
   },
 ]
 // Langfuse caps list endpoints at 100 items per page.
@@ -477,7 +477,7 @@ const CORE_FIELDS = [
   ['sessionId', (t) => t.sessionId],
   ['tags', (t) => t.tags],
   ['input', (t) => t.input],
-  ['output', (t) => t.output],
+  ['output', (t) => slimOutput(t.output)],
   ['latencySeconds', (t) => t.latency],
   ['totalCostUsd', (t) => t.totalCost],
   ['observationCount', (t) => t.observations?.length ?? 0],
@@ -485,8 +485,40 @@ const CORE_FIELDS = [
   ['url', (t, baseUrl) => (t.htmlPath ? `${baseUrl}${t.htmlPath}` : undefined)],
 ]
 
+/**
+ * Keeps the reply text from an AI SDK result.
+ *
+ * `request` and `steps` repeat the system prompt and tool definitions, which make up most of the export size.
+ */
+function slimOutput(output) {
+  const isAiSdkResult =
+    output !== null &&
+    typeof output === 'object' &&
+    ('request' in output || 'steps' in output)
+  if (!isAiSdkResult) {
+    return output
+  }
+  return {
+    text: output.text,
+    object: output.object,
+    finishReason: output.finishReason,
+    model: output.response?.modelId,
+    usage: output.totalUsage ?? output.usage,
+  }
+}
+
 function buildFields(include) {
-  return [...CORE_FIELDS, ...include.map((field) => [field, (t) => t[field]])]
+  const fields = include.includes('fullOutput')
+    ? CORE_FIELDS.map((field) =>
+        field[0] === 'output' ? ['output', (t) => t.output] : field,
+      )
+    : CORE_FIELDS
+  return [
+    ...fields,
+    ...include
+      .filter((field) => field !== 'fullOutput')
+      .map((field) => [field, (t) => t[field]]),
+  ]
 }
 
 function toRecord(trace, fields, baseUrl) {
