@@ -1,11 +1,17 @@
 import { TEMPLATES } from '@/db/storage'
+import { getUserVisibleTemplates } from '@/helpers/get-user-visible-templates'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getTemplates: QueryResolvers['getTemplates'] = (_parent, params) => {
+const getTemplates: QueryResolvers['getTemplates'] = async (
+  _parent,
+  params,
+  context,
+) => {
   const tag = params?.tag
   if (!tag) {
-    return TEMPLATES // retrieve all templates if tag is not present
+    // User templates have no tags, so only an untagged query includes them.
+    return getUserVisibleTemplates(context.currentUser.id)
   }
 
   return TEMPLATES.filter((template) => {
