@@ -18,8 +18,49 @@ const fields = [
     label: 'Row data',
     type: 'multirow-multicol',
     required: true,
+    subFields: [
+      { key: 'columnId', type: 'string', required: true },
+      { key: 'cellValue', type: 'string', required: false },
+    ],
   },
   { key: 'amount', label: 'Amount', type: 'string', required: true },
+  { key: 'body', label: 'Body', type: 'rich-text', required: true },
+  {
+    key: 'letterParams',
+    label: 'Letter fields',
+    type: 'multirow-multicol',
+    required: true,
+    subFields: [
+      { key: 'field', label: 'Field', type: 'string', required: true },
+      { key: 'value', label: 'Value', type: 'string', required: true },
+    ],
+  },
+  {
+    key: 'cells',
+    label: 'Values',
+    type: 'multirow-multicol',
+    required: true,
+    subFields: [
+      { key: 'address', label: 'Cell address', type: 'string', required: true },
+      { key: 'value', label: 'Value', type: 'string', required: false },
+    ],
+  },
+  {
+    key: 'filters',
+    label: 'Filters',
+    type: 'multirow-multicol',
+    required: true,
+    subFields: [
+      { key: 'operator', label: 'Operator', type: 'dropdown', required: true },
+      {
+        key: 'value',
+        label: 'Value',
+        type: 'string',
+        required: true,
+        hiddenIf: { fieldKey: 'operator', op: 'equals', fieldValue: 'empty' },
+      },
+    ],
+  },
   {
     key: 'customHeaders',
     label: 'Custom headers',
@@ -139,6 +180,65 @@ describe('findEmptyParameterError', () => {
     expect(
       findEmptyParameterError(fields, { rowData: [] }, { rowData: [] }),
     ).toMatch(/^Row data is empty/)
+  })
+
+  it('rejects a blank or placeholder required cell inside a row', () => {
+    expect(
+      findEmptyParameterError(fields, {
+        letterParams: [
+          { field: 'Name', value: 'Ada' },
+          { field: 'Amount', value: '' },
+        ],
+      }),
+    ).toBe(
+      'Letter fields, row 2: Value has no value yet. Ask the user for it before saving. Nothing was saved.',
+    )
+    expect(
+      findEmptyParameterError(fields, {
+        letterParams: [{ field: 'Amount', value: 'TBD' }],
+      }),
+    ).toMatch(/^Letter fields, row 1: Value has no value yet/)
+    expect(
+      findEmptyParameterError(fields, {
+        letterParams: [{ field: 'Name', value: '{{step.x.answer}}' }],
+      }),
+    ).toBeNull()
+  })
+
+  it('accepts a blank optional cell, which clears an Excel cell', () => {
+    expect(
+      findEmptyParameterError(fields, {
+        cells: [{ address: 'A1', value: '' }],
+      }),
+    ).toBeNull()
+  })
+
+  it('skips a required cell that the row hides', () => {
+    expect(
+      findEmptyParameterError(fields, {
+        filters: [{ operator: 'empty', value: '' }],
+      }),
+    ).toBeNull()
+    expect(
+      findEmptyParameterError(fields, {
+        filters: [{ operator: 'eq', value: '' }],
+      }),
+    ).toMatch(/^Filters, row 1: Value has no value yet/)
+  })
+
+  it('treats empty rich-text markup as no value', () => {
+    for (const body of ['<p></p>', '<p> </p>', '<p>&nbsp;</p><p><br></p>']) {
+      expect(findEmptyParameterError(fields, { body })).toMatch(
+        /^Body has no value yet/,
+      )
+    }
+    for (const body of [
+      '<p>Hello</p>',
+      '<p>{{step.x.answer}}</p>',
+      '<p><img src="https://example.com/logo.png"></p>',
+    ]) {
+      expect(findEmptyParameterError(fields, { body })).toBeNull()
+    }
   })
 
   it('falls back to the key when a field has no label', () => {

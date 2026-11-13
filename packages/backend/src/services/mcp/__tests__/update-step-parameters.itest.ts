@@ -1128,6 +1128,10 @@ describe('empty value guard', () => {
   })
 
   it('rejects an empty rowData array on a Tiles step', async () => {
+    await Step.query()
+      .findById(tilesStepId)
+      .patch({ parameters: { tableId: randomUUID() } })
+
     await expect(
       updateStepParametersService({
         user,
