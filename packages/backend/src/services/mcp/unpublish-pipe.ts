@@ -36,6 +36,7 @@ export async function unpublishPipeService(
     userId: user.id,
     // assertNotUpdatedSince compares epoch milliseconds, not ISO strings.
     updatedAt: String(new Date(flow.updatedAt).getTime()),
+    source: 'mcp',
   })
 
   return {
