@@ -17,9 +17,12 @@
     "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
     "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts",
     "analytics:export": "ts-node --swc src/scripts/export-analytics.ts",
-    "analytics:export-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/export-analytics.ts"
+    "analytics:export-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/export-analytics.ts",
+    "analytics:mutation-log": "ts-node --swc src/scripts/export-mutation-log.ts",
+    "analytics:mutation-log-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/export-mutation-log.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "catalog:",
     "@aws-sdk/client-s3": "catalog:",
     "dotenv": "catalog:",
     "hyparquet-writer": "0.16.12",

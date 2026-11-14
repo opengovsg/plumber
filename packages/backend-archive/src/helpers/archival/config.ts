@@ -103,4 +103,5 @@ export const archivalConfig = {
   archiveMaxRuntimeMs: requireIntStrict('ARCHIVE_MAX_RUNTIME_MS'),
   appEnv: process.env.APP_ENV ?? 'development',
   analyticsBucket: process.env.ANALYTICS_BUCKET,
+  analyticsRequestLogGroup: process.env.ANALYTICS_REQUEST_LOG_GROUP,
 }
