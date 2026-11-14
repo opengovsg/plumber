@@ -111,7 +111,7 @@ describe('send sms', () => {
       kind: 'internal',
       cause: httpError,
       message: expect.stringContaining(
-        '"solution":"Please contact support@plumber.gov.sg for assistance."',
+        '"solution":"Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance."',
       ),
     })
   })
@@ -153,7 +153,7 @@ describe('send sms', () => {
     await expect(sendSmsAction.run($)).rejects.toMatchObject({
       kind: 'internal',
       message: expect.stringContaining(
-        '"solution":"Please contact support@plumber.gov.sg for assistance."',
+        '"solution":"Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance."',
       ),
     })
   })
@@ -178,7 +178,7 @@ describe('send sms', () => {
         kind: 'internal',
         cause: httpError,
         message: expect.stringContaining(
-          '"solution":"Please contact support@plumber.gov.sg for assistance."',
+          '"solution":"Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance."',
         ),
       })
     },
@@ -192,7 +192,7 @@ describe('send sms', () => {
       kind: 'internal',
       cause: httpError,
       message: expect.stringContaining(
-        '"solution":"Please contact support@plumber.gov.sg for assistance."',
+        '"solution":"Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance."',
       ),
     })
   })
