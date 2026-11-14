@@ -11,6 +11,7 @@ import {
 } from 'vitest'
 
 import retryExecutionStep from '@/graphql/mutations/retry-execution-step'
+import * as launchDarkly from '@/helpers/launch-darkly'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -34,6 +35,8 @@ describe('retryExecutionStep mutation', () => {
   let mockExecutionStep: ExecutionStep
   let mockStep: Step
   let getActionJobSpy: MockInstance
+  let getLdFlagValueSpy: MockInstance
+  let enqueueActionJobSpy: MockInstance
   let mockJob: {
     retry: MockInstance
     data: Record<string, unknown>
@@ -57,6 +60,12 @@ describe('retryExecutionStep mutation', () => {
     getActionJobSpy = vi
       .spyOn(actionQueue, 'getActionJob')
       .mockResolvedValue(mockJob as never)
+    getLdFlagValueSpy = vi
+      .spyOn(launchDarkly, 'getLdFlagValue')
+      .mockResolvedValue(false)
+    enqueueActionJobSpy = vi
+      .spyOn(actionQueue, 'enqueueActionJob')
+      .mockResolvedValue(undefined as never)
 
     context = await generateMockContext()
     owner = context.currentUser
@@ -311,6 +320,124 @@ describe('retryExecutionStep mutation', () => {
       await retryExecutionStep(null, { input: genericInputParams }, context)
 
       expect(patchIterationStatusSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('successful execution step', () => {
+    beforeEach(async () => {
+      getLdFlagValueSpy.mockResolvedValue(true)
+      await mockExecution.$query().patch({ status: 'success' })
+      await mockExecutionStep
+        .$query()
+        .patch({ status: 'success', errorDetails: null })
+    })
+
+    it('is not found when the flag is off', async () => {
+      getLdFlagValueSpy.mockResolvedValue(false)
+
+      await expect(
+        retryExecutionStep(null, { input: genericInputParams }, context),
+      ).rejects.toThrow('Execution step not found')
+      expect(enqueueActionJobSpy).not.toHaveBeenCalled()
+    })
+
+    it('rejects viewers', async () => {
+      context.currentUser = viewer
+
+      await expect(
+        retryExecutionStep(null, { input: genericInputParams }, context),
+      ).rejects.toThrow('Execution step not found')
+      expect(enqueueActionJobSpy).not.toHaveBeenCalled()
+    })
+
+    it('rejects while the execution is still running', async () => {
+      await mockExecution.$query().patch({ status: null })
+
+      await expect(
+        retryExecutionStep(null, { input: genericInputParams }, context),
+      ).rejects.toThrow('This pipe run is still in progress')
+      expect(enqueueActionJobSpy).not.toHaveBeenCalled()
+    })
+
+    it('rejects MRF steps', async () => {
+      await mockStep.$query().patch({ appKey: 'formsg', key: 'mrfSubmission' })
+
+      await expect(
+        retryExecutionStep(null, { input: genericInputParams }, context),
+      ).rejects.toThrow('This step cannot be retried after it succeeds')
+    })
+
+    it('enqueues a new job without reusing the completed one', async () => {
+      await retryExecutionStep(null, { input: genericInputParams }, context)
+
+      expect(getActionJobSpy).not.toHaveBeenCalled()
+      expect(enqueueActionJobSpy).toHaveBeenCalledWith({
+        appKey: 'postman',
+        actionKey: 'sendTransactionalEmail',
+        jobName: `${mockExecution.id}-${mockStep.id}`,
+        jobData: {
+          flowId: mockFlow.id,
+          executionId: mockExecution.id,
+          stepId: mockStep.id,
+          metadata: {},
+          runOnlyThisStep: true,
+        },
+        jobOptions: expect.objectContaining({ attempts: expect.any(Number) }),
+      })
+    })
+
+    it('clears the execution status', async () => {
+      await retryExecutionStep(null, { input: genericInputParams }, context)
+
+      expect((await mockExecution.$query()).status).toBeNull()
+    })
+
+    it('re-runs a for-each step in its own iteration', async () => {
+      await mockExecutionStep.$query().patch({ metadata: { iteration: 2 } })
+      const patchIterationStatusSpy = vi
+        .spyOn(ExecutionStep, 'patchIterationStatus')
+        .mockResolvedValue(undefined)
+
+      await retryExecutionStep(null, { input: genericInputParams }, context)
+
+      expect(patchIterationStatusSpy).toHaveBeenCalledWith(
+        mockExecution.id,
+        2,
+        null,
+      )
+      expect(enqueueActionJobSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jobName: `${mockExecution.id}-${mockStep.id}-2`,
+          jobData: expect.objectContaining({ metadata: { iteration: 2 } }),
+        }),
+      )
+    })
+
+    it('restores the statuses when enqueueing fails', async () => {
+      await ExecutionStep.query().insert({
+        executionId: mockExecution.id,
+        stepId: mockStep.id,
+        status: 'success',
+        appKey: 'toolbox',
+        key: 'forEach',
+        dataOut: {},
+        metadata: { iterationStatus: { iteration_2: 'partial-success' } },
+      })
+      await mockExecutionStep.$query().patch({ metadata: { iteration: 2 } })
+      enqueueActionJobSpy.mockRejectedValue(new Error('Redis is down'))
+
+      await expect(
+        retryExecutionStep(null, { input: genericInputParams }, context),
+      ).rejects.toThrow('Redis is down')
+
+      expect((await mockExecution.$query()).status).toBe('success')
+      const forEachExecutionStep = await ExecutionStep.query().findOne({
+        execution_id: mockExecution.id,
+        key: 'forEach',
+      })
+      expect(forEachExecutionStep.metadata.iterationStatus).toEqual({
+        iteration_2: 'partial-success',
+      })
     })
   })
 })

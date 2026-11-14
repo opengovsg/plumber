@@ -1153,6 +1153,10 @@ export interface IActionJobData {
    * The start time a delay step set for this job, in epoch milliseconds.
    */
   scheduledAt?: number
+  /**
+   * Re-runs a successful step on its own, without running the steps after it.
+   */
+  runOnlyThisStep?: boolean
 }
 
 export interface IActionRunResult {

@@ -43,6 +43,7 @@ type ProcessActionOptions = {
   testRun?: boolean
   metadata?: TestRunStepMetadata
   loggedInUser?: User
+  runOnlyThisStep?: boolean
 }
 
 async function enqueueFirstForEachStep({
@@ -161,6 +162,7 @@ export type PreparedActionExecution = {
   computedParameters: ReturnType<typeof computeParameters>
   metadata: TestRunStepMetadata
   testRun: boolean
+  runOnlyThisStep: boolean
 }
 
 /**
@@ -179,6 +181,7 @@ export async function prepareActionExecution(
     testRun = false,
     metadata = {},
     loggedInUser,
+    runOnlyThisStep = false,
   } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
@@ -261,6 +264,7 @@ export async function prepareActionExecution(
     computedParameters,
     metadata,
     testRun,
+    runOnlyThisStep,
   }
 }
 
@@ -353,6 +357,10 @@ export async function resolveNextStep({
   const flowId = flow.id
   const stepId = step.id
   const executionId = execution.id
+
+  if (prepared.runOnlyThisStep) {
+    return null
+  }
 
   let nextStep: Step | null = null
   switch (runResult.nextStep?.command) {
@@ -476,6 +484,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         ...metadata,
       },
       executionError,
+      runOnlyThisStep: prepared.runOnlyThisStep,
     }
   }
 
