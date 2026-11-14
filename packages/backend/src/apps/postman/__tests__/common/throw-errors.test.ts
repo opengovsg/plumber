@@ -266,6 +266,9 @@ describe('throwPostmanStepError', () => {
 
       expect(thrown).toMatchObject({ kind: 'internal', cause: error })
       expect(readName(thrown as StepError)).toBe('Something went wrong')
+      expect((thrown as StepError).message).toContain(
+        '"solution":"Please contact support@plumber.gov.sg for assistance."',
+      )
     })
   })
 
