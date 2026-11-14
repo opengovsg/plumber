@@ -88,6 +88,15 @@ export const transformData: TransformSpec['transformData'] = async (
     const valueAsDateTime = parseValue(dateTimeFormat, valueToTransform)
     const result = performDateMath(valueAsDateTime, ops)
 
+    // Luxon returns an invalid date when a user's amount goes past its range.
+    if (!result.isValid) {
+      throw new StepError({
+        name: 'The amount of time is out of range',
+        solution: 'Enter a smaller amount of time.',
+        kind: 'config',
+      })
+    }
+
     $.setActionItem({
       raw: {
         result: dateTimeToString(dateTimeFormat, result),

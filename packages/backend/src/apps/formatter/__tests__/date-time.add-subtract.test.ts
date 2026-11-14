@@ -373,6 +373,24 @@ describe('add / subtract date time', () => {
       },
     )
 
+    it.each(['add', 'subtract'])(
+      'marks an out-of-range %s amount as config',
+      async (opType) => {
+        $.step.parameters = {
+          dateTimeFormat: 'formsgDateField',
+          addSubtractDateTimeOps: [
+            { opType, timeUnit: 'days', timeAmount: '1711929600000' },
+          ],
+        }
+        const result = transformData($, '01 Apr 2024')
+        await expect(result).rejects.toMatchObject({ kind: 'config' })
+        await expect(result).rejects.toThrow(
+          'The amount of time is out of range',
+        )
+        expect(mocks.logError).not.toHaveBeenCalled()
+      },
+    )
+
     it('marks an Excel formatted date output as internal and logs it', async () => {
       $.step.parameters = {
         dateTimeFormat: 'excelFormattedDate',
