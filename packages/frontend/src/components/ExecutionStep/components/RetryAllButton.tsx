@@ -12,8 +12,10 @@ import { BULK_RETRY_EXECUTIONS } from '@/graphql/mutations/bulk-retry-executions
 
 import { RetryVariant } from './RetryButton'
 
+type RetryAllVariant = Exclude<RetryVariant, 'retry-only-this-step'>
+
 const variantConfigs: Record<
-  RetryVariant,
+  RetryAllVariant,
   { text: string; icon: React.ReactElement }
 > = {
   retry: {
@@ -28,7 +30,7 @@ const variantConfigs: Record<
 
 interface RetryAllButtonProps {
   execution: IExecution
-  variant?: RetryVariant
+  variant?: RetryAllVariant
 }
 
 export const RetryAllButton = ({

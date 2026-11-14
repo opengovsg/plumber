@@ -10,6 +10,8 @@ export const BANNER_TEXT_FLAG = 'banner_display'
  * Feature flags
  */
 export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
+export const RETRY_SUCCESSFUL_EXECUTION_STEP_FLAG =
+  'allow_retry_successful_execution_step'
 export const SGID_FEATURE_FLAG = 'sgid-login'
 /**
  * String flag with values 'all' | 'ogp' | 'off'. 'all' shows the one.gov.sg
