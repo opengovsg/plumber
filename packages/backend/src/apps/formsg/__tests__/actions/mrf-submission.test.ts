@@ -87,7 +87,10 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.testRun($)).rejects.toThrow('Misconfigured MRF step')
+      await expect(action.testRun($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Misconfigured MRF step"'),
+        kind: 'internal',
+      })
     })
 
     it('should throw when mrf parameter has invalid schema', async () => {
@@ -103,7 +106,10 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.testRun($)).rejects.toThrow('Misconfigured MRF step')
+      await expect(action.testRun($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Misconfigured MRF step"'),
+        kind: 'internal',
+      })
     })
   })
 
@@ -258,9 +264,12 @@ describe('mrf-submission action', () => {
       const $ = createMockGlobalVariable()
       setupRunMocks({ flowSteps: [] })
 
-      await expect(action.run($)).rejects.toThrow(
-        'Previous executable step not found',
-      )
+      await expect(action.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          '"name":"Previous executable step not found"',
+        ),
+        kind: 'internal',
+      })
     })
 
     it('should pause execution when previous execution step is not found', async () => {
@@ -312,9 +321,12 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.run($)).rejects.toThrow(
-        'Invalid MRF data: submitted steps are not valid',
-      )
+      await expect(action.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          '"name":"Invalid MRF data: submitted steps are not valid"',
+        ),
+        kind: 'internal',
+      })
     })
 
     it('should throw when submitted step is not found', async () => {
@@ -328,9 +340,12 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.run($)).rejects.toThrow(
-        'Invalid MRF data: unable to find submitted step',
-      )
+      await expect(action.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          '"name":"Invalid MRF data: unable to find submitted step"',
+        ),
+        kind: 'internal',
+      })
     })
 
     it('should continue when mrf step does not require approval', async () => {

@@ -8,6 +8,7 @@ import {
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import HttpError from '@/errors/http'
+import { attachHiddenCauseIfStepError } from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -234,7 +235,9 @@ export function makeSubTriggerWorker(
             logger.error('[sub-trigger] error', { error: error.message })
           }
         }
-        throw new UnrecoverableError(error.message)
+        const unrecoverableError = new UnrecoverableError(error.message)
+        attachHiddenCauseIfStepError(unrecoverableError, error)
+        throw unrecoverableError
       }
     }),
     defaultWorkerOptions,

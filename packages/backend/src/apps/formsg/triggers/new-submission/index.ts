@@ -77,19 +77,22 @@ const trigger: IRawTrigger = {
 
   async testRun($: IGlobalVariable, testRunMetadata?: { preferMock: boolean }) {
     if (!$.auth.data) {
-      throw new StepError(
-        'Missing FormSG connection',
-        'Click on choose connection and set up your form credentials.',
-      )
+      throw new StepError({
+        name: 'Missing FormSG connection',
+        solution:
+          'Click on choose connection and set up your form credentials.',
+        kind: 'config',
+      })
     }
 
     const testRunMetadataRes =
       formsgTestRunMetadataSchema.safeParse(testRunMetadata)
     if (!testRunMetadataRes.success) {
-      throw new StepError(
-        'Something went wrong',
-        'Invalid test run metadata. Please refresh and try again.',
-      )
+      throw new StepError({
+        name: 'Something went wrong',
+        solution: 'Invalid test run metadata. Please refresh and try again.',
+        kind: 'internal',
+      })
     }
 
     // data out should never be empty after test step is pressed once: either mock or actual data
@@ -120,21 +123,31 @@ const trigger: IRawTrigger = {
       try {
         await createMrfSteps($, mrfWorkflowData)
       } catch (error) {
-        logger.error('Error syncing MRF steps', error)
-        throw new StepError(
-          'Error syncing MRF steps',
-          'This should not happen, please contact support.',
-        )
+        logger.error('Error syncing MRF steps', {
+          event: 'formsg-sync-mrf-steps-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          flowId: $.flow.id,
+          stepId: $.step.id,
+        })
+        throw new StepError({
+          name: 'Error syncing MRF steps',
+          solution:
+            'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+          kind: 'internal',
+        })
       }
     } else {
       // remove mrf object from parameters and remove mrf steps (if any)
       try {
         await removeMrfSteps($.flow.id)
       } catch {
-        throw new StepError(
-          'Error removing MRF steps',
-          'This should not happen, please contact support.',
-        )
+        throw new StepError({
+          name: 'Error removing MRF steps',
+          solution:
+            'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+          kind: 'internal',
+        })
       }
     }
 

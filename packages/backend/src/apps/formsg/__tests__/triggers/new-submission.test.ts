@@ -13,6 +13,9 @@ import { ADDRESS_LABELS } from '../../common/constants'
 import { FormSchema, ParsedMrfWorkflowStep } from '../../common/types'
 import trigger from '../../triggers/new-submission'
 
+const PLUMBER_SUPPORT_SOLUTION =
+  'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.'
+
 const pushTriggerItemMock = vi.fn()
 const getLastExecutionStepMock = vi.fn()
 
@@ -39,6 +42,15 @@ const mocks = vi.hoisted(() => ({
   removeMrfSteps: vi.fn(),
   createMrfSteps: vi.fn(),
   parseWorkflowData: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+    warn: vi.fn(),
+    info: vi.fn(),
+  },
 }))
 
 vi.mock('../../triggers/new-submission/get-mock-data', () => ({
@@ -154,6 +166,28 @@ describe('new submission trigger', () => {
       mocks.getMockData.mockResolvedValue(mockData)
       mocks.getFormDetailsFromGlobalVariable.mockReturnValue({
         formId: '123',
+      })
+    })
+
+    it('throws a config StepError when no connection is chosen', async () => {
+      await expect(
+        trigger.testRun({ ...$, auth: {} } as unknown as IGlobalVariable, {
+          preferMock: true,
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Missing FormSG connection"'),
+        kind: 'config',
+      })
+    })
+
+    it('throws an internal StepError when test run metadata is invalid', async () => {
+      await expect(
+        trigger.testRun($, { preferMock: 'yes' } as unknown as {
+          preferMock: boolean
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Something went wrong"'),
+        kind: 'internal',
       })
     })
 
@@ -367,18 +401,37 @@ describe('new submission trigger', () => {
         mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
         mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
-          'Error syncing MRF steps',
-        )
+        const error = await trigger
+          .testRun($, { preferMock: true })
+          .catch((e) => e)
+
+        expect(error).toMatchObject({
+          message: expect.stringContaining('"name":"Error syncing MRF steps"'),
+          kind: 'internal',
+        })
+        expect(error.message).toContain(PLUMBER_SUPPORT_SOLUTION)
+        expect(mocks.logError).toHaveBeenCalledWith('Error syncing MRF steps', {
+          event: 'formsg-sync-mrf-steps-failed',
+          errorName: 'Error',
+          errorMessage: 'db error',
+          flowId: $.flow.id,
+          stepId: $.step.id,
+        })
       })
 
       it('should throw StepError when removeMrfSteps fails', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
         mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
-          'Error removing MRF steps',
-        )
+        const error = await trigger
+          .testRun($, { preferMock: true })
+          .catch((e) => e)
+
+        expect(error).toMatchObject({
+          message: expect.stringContaining('"name":"Error removing MRF steps"'),
+          kind: 'internal',
+        })
+        expect(error.message).toContain(PLUMBER_SUPPORT_SOLUTION)
       })
 
       it('should call removeMrfSteps for multirespondent forms with empty workflow', async () => {
