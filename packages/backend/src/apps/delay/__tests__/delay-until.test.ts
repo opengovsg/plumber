@@ -196,6 +196,81 @@ describe('Delay until action', () => {
     await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
   })
 
+  describe('StepError kind', () => {
+    it('is config for an invalid date or time format', async () => {
+      $.step.parameters = {
+        delayUntil: VALID_DATE,
+        delayUntilTime: INVALID_TIME,
+      }
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('Incorrect date or time format'),
+        kind: 'config',
+      })
+    })
+
+    it('is config for an empty date variable', async () => {
+      $.step.parameters = {
+        delayUntil: '',
+        delayUntilTime: VALID_TIME,
+      }
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('Incorrect date or time format'),
+        kind: 'config',
+      })
+    })
+
+    it('is config when delayTimestamp was already past when the run started', async () => {
+      $.execution.createdAt = DateTime.now().minus({ hours: 1 }).toISO()
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'config',
+      })
+    })
+
+    it('is third-party when delayTimestamp passed after the run started', async () => {
+      const runStart = DateTime.now().minus({ hours: 1 })
+      $.execution.createdAt = runStart.toISO()
+      const delayTimestamp = runStart.plus({ minutes: 30 })
+      $.step.parameters = {
+        delayUntil: delayTimestamp.toPlumberFormat('dd MMM yyyy'),
+        delayUntilTime: delayTimestamp.toPlumberFormat('HH:mm'),
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'third-party',
+      })
+    })
+
+    it('is third-party for a past delayTimestamp when the run start time is unknown', async () => {
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'third-party',
+      })
+    })
+  })
+
   describe('retry logic', () => {
     it('allows past timestamp when retrying after past timestamp error', async () => {
       $.step.parameters = {

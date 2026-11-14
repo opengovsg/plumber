@@ -110,10 +110,11 @@ const action: IRawAction = {
     }
 
     if (isNaN(delayTimestamp)) {
-      throw new StepError(
-        'Incorrect date or time format',
-        `* Date must be in DD MMM YYYY and time in HH:MM format.\n* If you're using a variable, make sure it returns values in these formats.`,
-      )
+      throw new StepError({
+        name: 'Incorrect date or time format',
+        solution: `* Date must be in DD MMM YYYY and time in HH:MM format.\n* If you're using a variable, make sure it returns values in these formats.`,
+        kind: 'config',
+      })
     }
 
     /**
@@ -132,10 +133,22 @@ const action: IRawAction = {
         }
       } else {
         // Update in `useExecutionStepStatus.ts` if the error name changes
-        throw new StepError(
-          'Delay until timestamp entered is in the past',
-          'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
-        )
+        throw new StepError({
+          name: 'Delay until timestamp entered is in the past',
+          solution:
+            'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
+          // Kind depends on why delayTimestamp has passed:
+          // - Execution (i.e. trigger) started after configured time: config
+          //   (Delay until's own parameter).
+          // - A retry: third-party (another step failed).
+          // - An earlier delay: third-party (another step).
+          // - Slow steps or a queue backlog: third-party (outside delay).
+          kind:
+            $.execution.createdAt !== undefined &&
+            delayTimestamp < new Date($.execution.createdAt).getTime()
+              ? 'config'
+              : 'third-party',
+        })
       }
     }
 
