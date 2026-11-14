@@ -1,4 +1,7 @@
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import StepError from '@/errors/step'
 
 import { makeActionWorker } from '../helpers/make-action-worker'
 
@@ -44,7 +47,8 @@ vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
 }))
 
-vi.mock('@taskforcesh/bullmq-pro', () => ({
+vi.mock('@taskforcesh/bullmq-pro', async (importActual) => ({
+  ...(await importActual<typeof import('@taskforcesh/bullmq-pro')>()),
   WorkerPro: mocks.workerConstructor,
 }))
 
@@ -290,5 +294,26 @@ describe('makeActionWorker', () => {
         )
       },
     )
+
+    it('keeps a StepError as the hidden cause when processAction fails', async () => {
+      makeActionWorker({
+        appKey: 'test-app',
+        queueName: '{test-app-queue}',
+        queueConfig: { isQueueDelayable: false, workerType: 'action' },
+      })
+      const stepError = new StepError({
+        name: 'n',
+        solution: 's',
+        kind: 'config',
+      })
+      mocks.processAction.mockRejectedValueOnce(stepError)
+
+      const thrown = (await getProcessor()(baseJob).catch(
+        (error) => error,
+      )) as Error
+
+      expect(thrown).toBeInstanceOf(UnrecoverableError)
+      expect(thrown.cause).toBe(stepError)
+    })
   })
 })

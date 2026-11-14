@@ -159,29 +159,33 @@ export const MAX_FILE_SIZE = 1024 * 1024 * 20 // 20MB
 function throwAttachmentError(
   errorType: string,
   metadata: Record<string, string>,
-) {
-  let name
-  let solution
+): never {
   switch (errorType) {
     case MALWARE_SCAN_STATUS.THREATS_FOUND:
-      name = `Attachment malware scan found threats in: ${metadata.filename}`
-      solution = 'Please delete the attachment and try again.'
-      break
+      throw new StepError({
+        name: `Attachment malware scan found threats in: ${metadata.filename}`,
+        solution: 'Please delete the attachment and try again.',
+        kind: 'config',
+      })
     case MALWARE_SCAN_STATUS.UNSUPPORTED:
-      name = `Unsupported attachment: ${metadata.filename}`
-      solution = 'Please delete the attachment and try again.'
-      break
+      throw new StepError({
+        name: `Unsupported attachment: ${metadata.filename}`,
+        solution: 'Please delete the attachment and try again.',
+        kind: 'config',
+      })
     case MALWARE_SCAN_STATUS.PENDING:
-      name = `Attachment malware scan in progress`
-      solution = 'Please try again in a few minutes.'
-      break
+      throw new StepError({
+        name: `Attachment malware scan in progress`,
+        solution: 'Please try again in a few minutes.',
+        kind: 'internal',
+      })
     default:
-      name = `Attachment malware scan failed`
-      solution = 'Please try again in a few minutes.'
-      break
+      throw new StepError({
+        name: `Attachment malware scan failed`,
+        solution: 'Please try again in a few minutes.',
+        kind: 'internal',
+      })
   }
-
-  throw new StepError(name, solution)
 }
 
 function requireDevEnv(name: string, value: string | undefined): string {

@@ -512,10 +512,11 @@ export const processAction = async (options: ProcessActionOptions) => {
       // resolver's `executionStep` return) instead of throwing out of
       // processAction as a raw error.
       if (testRun) {
-        const executionError = new StepError(
-          'This file is busy right now.',
-          'Please try again in a moment.',
-        )
+        const executionError = new StepError({
+          name: 'This file is busy right now.',
+          solution: 'Please try again in a moment.',
+          kind: 'internal',
+        })
         setActionOutputError($, executionError)
         return recordAndResolve({}, executionError)
       }

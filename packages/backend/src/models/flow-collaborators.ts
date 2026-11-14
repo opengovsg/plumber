@@ -1,8 +1,7 @@
-import { IFlowCollabRole, IGlobalVariable } from '@plumber/types'
+import { IFlowCollabRole } from '@plumber/types'
 import { Transaction } from 'objection'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
-import StepError from '@/errors/step'
 import { checkUserPermission } from '@/helpers/check-user-permission'
 
 import Base from './base'
@@ -69,13 +68,11 @@ class FlowCollaborator extends Base {
     userId,
     flowId,
     requiredRole,
-    $ = undefined,
     trx,
   }: {
     userId: string
     flowId: string
     requiredRole: IFlowCollabRole
-    $?: IGlobalVariable
     trx?: Transaction
   }): Promise<IFlowCollabRole | never> => {
     // flow owner is identified by the flow.userId
@@ -100,14 +97,6 @@ class FlowCollaborator extends Base {
       !collaborator ||
       !checkUserPermission(collaborator.role, requiredRole)
     ) {
-      if ($) {
-        throw new StepError(
-          'You do not have sufficient permissions for this pipe',
-          `Please ensure that you are ${
-            requiredRole === 'viewer' ? 'a' : 'an'
-          } ${requiredRole} of this pipe.`,
-        )
-      }
       throw new ForbiddenError(
         'You do not have sufficient permissions for this pipe',
       )
