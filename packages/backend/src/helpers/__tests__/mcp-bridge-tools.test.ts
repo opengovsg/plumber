@@ -70,6 +70,10 @@ vi.mock('@/services/mcp/register-connection', () => ({
     .fn()
     .mockResolvedValue({ connectionRegistered: true }),
 }))
+vi.mock('@/services/mcp/connection-conflict-reply', () => ({
+  NO_CONNECTION_CONFLICT_MESSAGE: 'no conflict to override',
+  isReplyToConnectionConflict: vi.fn().mockReturnValue(true),
+}))
 vi.mock('@/services/mcp/unpublish-pipe', () => ({
   unpublishPipeService: vi.fn().mockResolvedValue({
     pipeId: 'f1',
@@ -89,6 +93,7 @@ import { UserFacingError } from '@/errors/user-facing-error'
 import { MrfPipeStepsError } from '@/services/mcp/add-mrf-actions'
 import { addTileColumnsService } from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
+import { isReplyToConnectionConflict } from '@/services/mcp/connection-conflict-reply'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
 import { createTileService } from '@/services/mcp/create-tile'
@@ -350,6 +355,36 @@ describe('createMcpBridgeTools', () => {
         { toolCallId: 'register_connection', messages: [] },
       ),
     ).rejects.toThrow('Connection is not verified')
+  })
+
+  it('register_connection refuses unless the user is replying to the conflict', async () => {
+    vi.mocked(isReplyToConnectionConflict).mockReturnValueOnce(false)
+    const callsBefore = vi.mocked(registerConnectionService).mock.calls.length
+    const onPipeChange = vi.fn()
+    const chatHistory = [{ role: 'user', parts: [] as unknown[] }]
+    const tools = createMcpBridgeTools(
+      mockUser,
+      mockTraceId,
+      onPipeChange,
+      undefined,
+      chatHistory,
+    )
+
+    const result = await tools.register_connection.execute(
+      { pipe_id: 'flow-1', step_id: 'step-1', connection_id: 'conn-1' },
+      { toolCallId: 'register_connection', messages: [] },
+    )
+
+    expect(result).toEqual({ error: 'no conflict to override' })
+    expect(vi.mocked(isReplyToConnectionConflict)).toHaveBeenCalledWith(
+      chatHistory,
+      'step-1',
+      'conn-1',
+    )
+    expect(vi.mocked(registerConnectionService).mock.calls).toHaveLength(
+      callsBefore,
+    )
+    expect(onPipeChange).not.toHaveBeenCalled()
   })
 
   it('list_columns calls listColumnsService with camelCase args', async () => {
