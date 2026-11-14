@@ -1,4 +1,10 @@
-import { APICallError, NoObjectGeneratedError, RetryError } from 'ai'
+import {
+  APICallError,
+  JSONParseError,
+  NoObjectGeneratedError,
+  RetryError,
+  TypeValidationError,
+} from 'ai'
 import { describe, expect, it } from 'vitest'
 
 import { getModelErrorKind } from '@/apps/pair/common/get-model-error-kind'
@@ -36,6 +42,30 @@ describe('getModelErrorKind', () => {
       )
     },
   )
+
+  it('returns third-party for a 200 response body that is not valid JSON', () => {
+    const error = new APICallError({
+      message: 'Invalid JSON response',
+      url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
+      requestBodyValues: {},
+      statusCode: 200,
+      cause: new JSONParseError({ text: '{broken', cause: new SyntaxError() }),
+    })
+
+    expect(getModelErrorKind(error)).toBe('third-party')
+  })
+
+  it('returns internal for a 200 response body that does not match the SDK schema', () => {
+    const error = new APICallError({
+      message: 'Invalid JSON response',
+      url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
+      requestBodyValues: {},
+      statusCode: 200,
+      cause: new TypeValidationError({ value: {}, cause: new Error() }),
+    })
+
+    expect(getModelErrorKind(error)).toBe('internal')
+  })
 
   it('returns third-party for a network error', () => {
     expect(getModelErrorKind(makeApiCallError(undefined))).toBe('third-party')
