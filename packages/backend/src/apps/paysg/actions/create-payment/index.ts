@@ -130,7 +130,7 @@ const action: IRawAction = {
       throw new StepError({
         name: `${firstError.message} at "${firstError.path}"`,
         solution:
-          'PaySG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
+          'PaySG returned an unexpected response. Please contact support@plumber.gov.sg for assistance.',
         kind: 'internal',
       })
     }
