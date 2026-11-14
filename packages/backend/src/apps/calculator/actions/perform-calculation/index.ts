@@ -77,7 +77,7 @@ const action = {
             ? `Error performing calculation: '${error.message}'`
             : 'Error performing calculation',
         solution:
-          'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+          'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
         kind: 'internal',
       })
     }
