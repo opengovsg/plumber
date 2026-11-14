@@ -1,3 +1,6 @@
+import { parsePipeId, readLastPipeSubject, type PipeId } from '@plumber/shared'
+
+import type Flow from '@/models/flow'
 import type User from '@/models/user'
 import { listConnectionsService } from '@/services/mcp/list-connections'
 
@@ -143,4 +146,109 @@ export function buildEstablishedConnectionReminder(
   const formRef = connection.formId ? ` (form id "${connection.formId}")` : ''
 
   return `\n\nKnown fact, verified server-side just now — not from your own memory of earlier turns: the user already connected FormSG connection_id "${connection.connectionId}"${formRef} for the form "${connection.formTitle}" earlier in this conversation. When assigning this trigger's connection in Phase 2b step a, use this connection_id directly via update_step_parameters with parameter_labels: { "connection_id": "${connection.formTitle}" }. Do NOT emit a connection picker, do NOT say the form's URL is known but unconnected, and do NOT ask for a secret key for this trigger — this connection is already fully verified.`
+}
+
+export async function loadPipeForChatPreview(
+  user: User,
+  pipeId: string,
+): Promise<Flow | null> {
+  const parsed = parsePipeId(pipeId)
+  if (!parsed) {
+    return null
+  }
+
+  const row = await user
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findOne({ 'flows.id': parsed })
+
+  return row ?? null
+}
+
+// IMPORTANT: Never put the pipe name in the reminder. The name is free text any editor can set.
+const VERIFIED_PREFIX =
+  '\n\nKnown fact, verified server-side just now. Trust this over your memory of earlier turns. '
+
+function editablePipeReminder(pipeId: PipeId): string {
+  return `${VERIFIED_PREFIX}The user selected pipe_id "${pipeId}" as the subject of this chat, and they can edit it. Call get_flow with that pipe_id before any change. Use the existing pipe tools. Call create_pipe only when the user asks for a new pipe.`
+}
+
+// IMPORTANT: Selecting a live pipe must not lead the model to unpublish_pipe. Any editor could stop another owner's pipe.
+function publishedPipeReminder(pipeId: PipeId): string {
+  return `${VERIFIED_PREFIX}The user selected pipe_id "${pipeId}", but it is published. This chat cannot change published pipes. Do not call unpublish_pipe or any tool with that id. Tell the user to unpublish the pipe in the Plumber editor, then select it again here.`
+}
+
+function refusalReminder(pipeId: PipeId): string {
+  return `${VERIFIED_PREFIX}The user referenced pipe_id "${pipeId}". It is not a pipe they can edit. Do not call any tool with that id. Tell the user you cannot open that pipe and ask them to choose another or describe a new workflow.`
+}
+
+function toSubjectEntries(messages: ChatRequest['messages']) {
+  return messages.flatMap((message) =>
+    message.parts.flatMap((part) =>
+      part.type === 'text' ? [{ author: message.role, text: part.text }] : [],
+    ),
+  )
+}
+
+// Later turns must not re-seed, or the preview reverts after create_pipe.
+function isSelectionTurn(
+  messages: ChatRequest['messages'],
+  pipeId: PipeId,
+): boolean {
+  const latestUserMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === 'user')
+  if (!latestUserMessage) {
+    return false
+  }
+  return (
+    readLastPipeSubject(toSubjectEntries([latestUserMessage]))?.pipeId ===
+    pipeId
+  )
+}
+
+export interface PipeSubject {
+  reminder: string
+  seedPipeId: PipeId | null
+  editable: boolean
+}
+
+const NO_PIPE_SUBJECT: PipeSubject = {
+  reminder: '',
+  seedPipeId: null,
+  editable: false,
+}
+
+export async function establishPipeSubject(
+  user: User,
+  messages: ChatRequest['messages'],
+  previewPipeId?: string,
+): Promise<PipeSubject> {
+  const subject = readLastPipeSubject(toSubjectEntries(messages))
+  if (!subject) {
+    return NO_PIPE_SUBJECT
+  }
+
+  // History alone cannot show a newer pipe, because tool results are dropped on refresh.
+  const selectionTurn = isSelectionTurn(messages, subject.pipeId)
+  if (!selectionTurn && parsePipeId(previewPipeId ?? '') !== subject.pipeId) {
+    return NO_PIPE_SUBJECT
+  }
+
+  const row = await loadPipeForChatPreview(user, subject.pipeId)
+  if (!row) {
+    return { ...NO_PIPE_SUBJECT, reminder: refusalReminder(subject.pipeId) }
+  }
+
+  if (row.active) {
+    return {
+      ...NO_PIPE_SUBJECT,
+      reminder: publishedPipeReminder(subject.pipeId),
+    }
+  }
+
+  return {
+    reminder: editablePipeReminder(subject.pipeId),
+    seedPipeId: selectionTurn ? subject.pipeId : null,
+    editable: true,
+  }
 }

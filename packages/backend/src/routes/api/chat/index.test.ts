@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
     steps: [] as unknown[],
     totalUsage: { inputTokens: 0, cachedInputTokens: 0 },
   },
+  findAccessibleFlow: vi.fn(),
+  listConnections: vi.fn(),
 }))
 
 vi.mock('@ai-sdk/mcp', () => ({
@@ -58,6 +60,15 @@ vi.mock('@/models/flow', () => ({
 vi.mock('@/models/connection', () => ({
   default: { query: vi.fn() },
 }))
+
+vi.mock('@/services/mcp/list-connections', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/services/mcp/list-connections')>()
+  return {
+    ...actual,
+    listConnectionsService: mocks.listConnections,
+  }
+})
 
 vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: vi.fn().mockResolvedValue({
@@ -126,6 +137,7 @@ vi.mock('@opentelemetry/api', async (importOriginal) => {
 })
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
+import { buildPipeSubjectSentence, parsePipeId } from '@plumber/shared'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -138,7 +150,6 @@ import {
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
-import Flow from '@/models/flow'
 
 // @ts-expect-error top-level await is supported by Vitest's ESM runner
 const { default: router } = await import('./index')
@@ -150,7 +161,13 @@ function makeReq(body = {}) {
       ...body,
     },
     context: {
-      currentUser: { id: 'user-1', email: 'test@example.com' },
+      currentUser: {
+        id: 'user-1',
+        email: 'test@example.com',
+        withAccessibleFlows: () => ({
+          findOne: mocks.findAccessibleFlow,
+        }),
+      },
     },
   }
 }
@@ -641,17 +658,14 @@ FIELD: columns
 })
 
 describe('chat handler — data-pipeState connectionLabel resolution', () => {
+  const PIPE_ID = '123e4567-e89b-12d3-a456-426614174000'
+
   function mockFlowSteps(steps: unknown[]) {
-    vi.mocked(Flow.query).mockReturnValue({
-      findById: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue({
-          $relatedQuery: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockResolvedValue(steps),
-          }),
-        }),
+    mocks.findAccessibleFlow.mockResolvedValue({
+      $relatedQuery: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue(steps),
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    })
   }
 
   function mockConnections(connections: unknown[]) {
@@ -683,7 +697,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
     // active pipe, the same way onPipeChange is invoked in real usage.
     vi.mocked(createMcpBridgeTools).mockImplementation(
       (_user, _traceId, onPipeChange) => {
-        onPipeChange?.('pipe-1')
+        onPipeChange?.(PIPE_ID)
         return { plumber_tool: vi.fn() } as unknown as ReturnType<
           typeof createMcpBridgeTools
         >
@@ -715,7 +729,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
 
     expect(getWrittenPipeState()).toEqual(
       expect.objectContaining({
-        pipeId: 'pipe-1',
+        pipeId: PIPE_ID,
         steps: [
           expect.objectContaining({
             id: 'step-1',
@@ -828,5 +842,125 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         (s: { connectionLabel: string | null }) => s.connectionLabel,
       ),
     ).toEqual(['My Workspace', 'My Workspace'])
+  })
+})
+
+describe('chat handler — selected pipe preview seeding', () => {
+  const PIPE_ID = '123e4567-e89b-12d3-a456-426614174000'
+
+  function selectionMessage() {
+    const pipeId = parsePipeId(PIPE_ID)
+    if (!pipeId) {
+      throw new Error('fixture is not a pipe id')
+    }
+    return {
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: buildPipeSubjectSentence({
+            displayName: 'Leave form',
+            pipeId,
+            place: 'opening',
+          }),
+        },
+      ],
+    }
+  }
+
+  function writtenPartTypes() {
+    return mocks.writerWrite.mock.calls.map(([part]) => part.type)
+  }
+
+  function finishWithText(text: string) {
+    const finish = ({
+      onFinish,
+    }: {
+      onFinish?: (event: { text: string }) => Promise<void>
+    }) => {
+      if (onFinish) {
+        mocks.onFinishPromise = onFinish({ text })
+      }
+      return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+    }
+    vi.mocked(streamText).mockImplementationOnce(
+      finish as unknown as typeof streamText,
+    )
+  }
+
+  async function runTurn(messages: unknown[]) {
+    const handler = router.stack[0].route.stack[0].handle
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq({ messages }) as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        version: 'production',
+        disabledMcpServers: [],
+      },
+    })
+    const bridgeTools = { plumber_tool: vi.fn() }
+    vi.mocked(createMcpBridgeTools).mockReturnValue(
+      bridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
+    )
+    mocks.findAccessibleFlow.mockResolvedValue({
+      active: false,
+      $relatedQuery: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue([]),
+      }),
+    })
+  })
+
+  it('opens the selected pipe on the selection turn', async () => {
+    await runTurn([selectionMessage()])
+
+    const pipeState = mocks.writerWrite.mock.calls.find(
+      ([part]) => part.type === 'data-pipeState',
+    )
+    expect(pipeState?.[0].data.pipeId).toBe(PIPE_ID)
+  })
+
+  it('keeps a workflow proposal when no pipe tool ran', async () => {
+    finishWithText('<!-- WORKFLOW_METADATA {} -->')
+
+    await runTurn([selectionMessage()])
+
+    expect(writtenPartTypes()).toContain('data-isChatReady')
+    expect(writtenPartTypes()).not.toContain('data-pipeState')
+  })
+
+  it('drops the connected-form reminder while a selected pipe is editable', async () => {
+    mocks.listConnections.mockResolvedValue([
+      { id: 'conn-1', verified: true, label: 'Leave form' },
+    ])
+    const formMessage = {
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: 'I\'ve connected my FormSG form "Leave form" (id: conn-1).',
+        },
+      ],
+    }
+    function systemPrompt() {
+      const call = vi.mocked(streamText).mock.lastCall
+      return call?.[0].messages
+        ?.filter((m) => m.role === 'system')
+        .map((m) => m.content)
+        .join('\n\n')
+    }
+
+    await runTurn([formMessage])
+    expect(systemPrompt()).toContain('connection_id "conn-1"')
+
+    await runTurn([formMessage, selectionMessage()])
+    expect(systemPrompt()).not.toContain('connection_id "conn-1"')
   })
 })

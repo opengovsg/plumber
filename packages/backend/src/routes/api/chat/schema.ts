@@ -246,6 +246,11 @@ export const chatRequestSchema = z.object({
    * Remove one release after rollout, once old clients have drained.
    */
   sessionId: optionalTracingId,
+  /**
+   * The pipe the client's preview shows. A selected pipe stays the chat subject
+   * only while this still matches it. Lenient so a bad value never fails the request.
+   */
+  previewPipeId: z.string().max(64).optional(),
 })
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>

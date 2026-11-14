@@ -1,10 +1,13 @@
+import { buildPipeSubjectSentence, parsePipeId } from '@plumber/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type User from '@/models/user'
 
 import {
   buildEstablishedConnectionReminder,
+  establishPipeSubject,
   extractCandidateFormConnection,
+  loadPipeForChatPreview,
   resolveEstablishedFormConnection,
   stripReasoningParts,
 } from './helpers'
@@ -189,5 +192,145 @@ describe('buildEstablishedConnectionReminder', () => {
     expect(reminder).toContain('Workshop Registration')
     expect(reminder).toContain('654ab1234abc1a012345f1e0')
     expect(reminder).toContain('Do NOT emit a connection picker')
+  })
+})
+
+const PIPE_ID = '123e4567-e89b-12d3-a456-426614174000'
+const OTHER_PIPE_ID = '223e4567-e89b-12d3-a456-426614174000'
+const SENTENCE_NAME = 'User typed name'
+const ROW_NAME = 'PIPE_NAME_MUST_NOT_LEAK'
+
+function mustPipeId(value: string) {
+  const pipeId = parsePipeId(value)
+  if (!pipeId) {
+    throw new Error(`fixture is not a pipe id: ${value}`)
+  }
+  return pipeId
+}
+
+function selectedPipeText(id: string) {
+  return buildPipeSubjectSentence({
+    displayName: SENTENCE_NAME,
+    pipeId: mustPipeId(id),
+    place: 'later',
+  })
+}
+
+function selectedPipeMessage(id: string) {
+  return userMessage(selectedPipeText(id))
+}
+
+function expectReminderOmitsNames(reminder: string) {
+  expect(reminder).not.toContain(SENTENCE_NAME)
+  expect(reminder).not.toContain(ROW_NAME)
+}
+
+function userForPipe(row: { active: boolean; name: string } | null) {
+  const findOne = vi.fn().mockResolvedValue(row)
+  const withAccessibleFlows = vi.fn().mockReturnValue({ findOne })
+  return {
+    user: { withAccessibleFlows } as unknown as User,
+    withAccessibleFlows,
+    findOne,
+  }
+}
+
+describe('loadPipeForChatPreview', () => {
+  it('returns null for a non-uuid without querying', async () => {
+    const access = userForPipe(null)
+    await expect(
+      loadPipeForChatPreview(access.user, 'pipe-1'),
+    ).resolves.toBeNull()
+    expect(access.withAccessibleFlows).not.toHaveBeenCalled()
+  })
+
+  it('loads an editor-accessible pipe by id', async () => {
+    const row = { active: false, name: ROW_NAME }
+    const access = userForPipe(row)
+    await expect(loadPipeForChatPreview(access.user, PIPE_ID)).resolves.toBe(
+      row,
+    )
+    expect(access.withAccessibleFlows).toHaveBeenCalledWith({
+      requiredRole: 'editor',
+    })
+    expect(access.findOne).toHaveBeenCalledWith({ 'flows.id': PIPE_ID })
+  })
+})
+
+describe('establishPipeSubject', () => {
+  it('returns an empty reminder when no user sentence selects a pipe', async () => {
+    const access = userForPipe(null)
+    await expect(
+      establishPipeSubject(access.user, [
+        userMessage('describe a new workflow'),
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', text: selectedPipeText(PIPE_ID) }],
+        },
+      ]),
+    ).resolves.toEqual({ reminder: '', seedPipeId: null, editable: false })
+    expect(access.withAccessibleFlows).not.toHaveBeenCalled()
+  })
+
+  it('seeds an unpublished pipe the user can edit', async () => {
+    const access = userForPipe({ active: false, name: ROW_NAME })
+    const result = await establishPipeSubject(access.user, [
+      selectedPipeMessage(PIPE_ID),
+    ])
+    expect(result.seedPipeId).toBe(PIPE_ID)
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('they can edit it')
+    expect(result.reminder).not.toContain('unpublish_pipe')
+    expectReminderOmitsNames(result.reminder)
+  })
+
+  it('refuses a published pipe and uses the last selection', async () => {
+    const access = userForPipe({ active: true, name: ROW_NAME })
+    const result = await establishPipeSubject(access.user, [
+      selectedPipeMessage(OTHER_PIPE_ID),
+      selectedPipeMessage(PIPE_ID),
+    ])
+    expect(result.seedPipeId).toBeNull()
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('it is published')
+    expect(result.reminder).toContain('unpublish_pipe')
+    expect(result.reminder).not.toContain(OTHER_PIPE_ID)
+    expectReminderOmitsNames(result.reminder)
+  })
+
+  it('refuses a pipe id the user cannot edit', async () => {
+    const access = userForPipe(null)
+    const result = await establishPipeSubject(access.user, [
+      selectedPipeMessage(PIPE_ID),
+    ])
+    expect(result.seedPipeId).toBeNull()
+    expect(result.reminder).toContain(PIPE_ID)
+    expect(result.reminder).toContain('not a pipe they can edit')
+    expectReminderOmitsNames(result.reminder)
+  })
+
+  const laterTurn: ChatRequest['messages'] = [
+    selectedPipeMessage(PIPE_ID),
+    { role: 'assistant', parts: [{ type: 'text', text: 'Done.' }] },
+    userMessage('add a Slack step'),
+  ]
+
+  it('keeps the subject without a seed while the preview shows it', async () => {
+    const access = userForPipe({ active: false, name: ROW_NAME })
+    const result = await establishPipeSubject(access.user, laterTurn, PIPE_ID)
+    expect(result.seedPipeId).toBeNull()
+    expect(result.editable).toBe(true)
+    expect(result.reminder).toContain(PIPE_ID)
+  })
+
+  it.each([
+    ['the preview moved to another pipe', OTHER_PIPE_ID],
+    ['the preview never opened the pipe', undefined],
+  ])('drops the subject when %s', async (_case, previewPipeId) => {
+    const access = userForPipe({ active: false, name: ROW_NAME })
+    await expect(
+      establishPipeSubject(access.user, laterTurn, previewPipeId),
+    ).resolves.toEqual({ reminder: '', seedPipeId: null, editable: false })
+    expect(access.withAccessibleFlows).not.toHaveBeenCalled()
   })
 })
