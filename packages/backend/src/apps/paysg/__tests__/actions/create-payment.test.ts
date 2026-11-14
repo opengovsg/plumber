@@ -261,7 +261,7 @@ describe('create payment', () => {
     await expect(createPaymentAction.run($)).rejects.toMatchObject({
       kind: 'internal',
       message: expect.stringContaining(
-        'PaySG returned an unexpected response. Please contact support@plumber.gov.sg for assistance.',
+        'PaySG returned an unexpected response. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
       ),
     })
   })
