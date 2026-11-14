@@ -14,7 +14,8 @@ const UNKNOWN_ERROR_GROUP: SlackErrorGroup = {
   codes: [],
   kind: 'internal',
   name: (code) => `Slack request failed (${code})`,
-  solution: 'Please contact support@plumber.gov.sg for assistance.',
+  solution:
+    'Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
 }
 
 const invalidConnectionName = (code: string) =>
