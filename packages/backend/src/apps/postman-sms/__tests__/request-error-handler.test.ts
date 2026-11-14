@@ -56,6 +56,41 @@ describe('Postman SMS request error handler', () => {
       })
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+  })
+
+  describe('HTTP 401 with invalid_api_key_provided', () => {
+    it('throws a config StepError asking the user to reconnect', async () => {
+      const error = makeHttpError({
+        message: 'Request failed with status code 401',
+        status: 401,
+        data: { error: { code: 'invalid_api_key_provided' } },
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid Postman API key"'),
+        kind: 'config',
+      })
+    })
+  })
+
+  describe('HTTP 400 with invalid_ip_address_used', () => {
+    it('throws a config StepError about the IP whitelist', async () => {
+      const error = makeHttpError({
+        message: 'Request failed with status code 400',
+        status: 400,
+        data: { error: { code: 'invalid_ip_address_used' } },
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          `"name":"Plumber's IPs are not whitelisted in your campaign"`,
+        ),
+        kind: 'config',
+      })
     })
   })
 
@@ -112,6 +147,109 @@ describe('Postman SMS request error handler', () => {
 
       await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
       await expect(requestErrorHandler($, error)).rejects.not.toThrow(TypeError)
+    })
+  })
+
+  describe('catch-all kind', () => {
+    it('keeps the StepError name', async () => {
+      const error = makeHttpError({ message: 'bad request', status: 400 })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Error sending SMS"'),
+      })
+    })
+
+    it.each([
+      [400, 'multiple_auth_provided'],
+      [401, 'authentication_required'],
+      [403, 'forbidden_action'],
+      [404, 'invalid_path'],
+      [409, 'duplicate_request'],
+    ])('treats %s with code %s as internal', async (status, code) => {
+      const error = makeHttpError({
+        message: `Request failed with status code ${status}`,
+        status,
+        data: { error: { code } },
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Error sending SMS"'),
+        kind: 'internal',
+        cause: error,
+      })
+    })
+
+    it.each([400, 401, 403, 404])(
+      'treats unlisted %s as internal',
+      async (status) => {
+        const error = makeHttpError({
+          message: `Request failed with status code ${status}`,
+          status,
+          code: 'ERR_BAD_REQUEST',
+        })
+
+        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+          kind: 'internal',
+          cause: error,
+        })
+      },
+    )
+
+    it('treats 504 as third-party and keeps its HttpError cause', async () => {
+      const error = makeHttpError({
+        message: 'Request failed with status code 504',
+        status: 504,
+      })
+
+      const thrown = await requestErrorHandler($, error).catch((e) => e)
+      expect(thrown).toBeInstanceOf(StepError)
+      expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
+    })
+
+    it('treats a network error as third-party and keeps its HttpError cause', async () => {
+      const error = makeHttpError({
+        message: 'read ECONNRESET',
+        code: 'ECONNRESET',
+      })
+
+      const thrown = await requestErrorHandler($, error).catch((e) => e)
+      expect(thrown).toBeInstanceOf(StepError)
+      expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
+    })
+
+    it('treats a DNS failure as third-party', async () => {
+      const error = makeHttpError({
+        message: 'getaddrinfo ENOTFOUND',
+        code: 'ENOTFOUND',
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        kind: 'third-party',
+        cause: error,
+      })
+    })
+
+    it.each(['ERR_BAD_REQUEST', 'ERR_CANCELED'])(
+      'treats a %s request error with no status as internal',
+      async (code) => {
+        const error = makeHttpError({ message: code, code })
+
+        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+          kind: 'internal',
+          cause: error,
+        })
+      },
+    )
+
+    it('treats a beforeRequest error as internal', async () => {
+      const error = makeHttpError({
+        message: 'Unsupported postman environment',
+      })
+
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        kind: 'internal',
+        cause: error,
+      })
     })
   })
 })
