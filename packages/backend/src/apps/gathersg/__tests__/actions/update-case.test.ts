@@ -924,11 +924,11 @@ describe('update case', () => {
       expect(mocks.httpPatch).not.toHaveBeenCalled()
     })
 
-    it('tags a PATCH response without traceId as third-party', async () => {
+    it('tags a PATCH response without traceId as internal', async () => {
       mocks.httpPatch.mockReturnValueOnce({ data: {} } as never)
 
       await expect(updateCaseAction.run($)).rejects.toMatchObject({
-        kind: 'third-party',
+        kind: 'internal',
       })
     })
 

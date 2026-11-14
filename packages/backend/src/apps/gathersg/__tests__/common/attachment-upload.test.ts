@@ -53,7 +53,7 @@ describe('gathersg attachment upload helpers', () => {
       expect(token).toBe('tok-123')
     })
 
-    it('tags a response without a token as third-party', async () => {
+    it('tags a response without a token as internal', async () => {
       mocks.httpPost.mockResolvedValueOnce({ data: { data: {} } })
 
       await expect(
@@ -63,7 +63,7 @@ describe('gathersg attachment upload helpers', () => {
           caseUuid: MOCK_CASE_UUID,
         }),
       ).rejects.toMatchObject({
-        kind: 'third-party',
+        kind: 'internal',
         message: expect.stringContaining(
           'Ownself Gather did not return an upload token',
         ),

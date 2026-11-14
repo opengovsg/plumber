@@ -103,10 +103,11 @@ export async function resolveCaseIdentifier(
     logger.error(
       `Case search response for case ref ${caseIdentifier} did not match the expected shape`,
     )
+    // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
     throw new StepError({
       name: `Unable to read the case search result for case ref ${caseIdentifier}`,
       solution: 'Please check that you have configured your step correctly',
-      kind: 'third-party',
+      kind: 'internal',
     })
   }
 

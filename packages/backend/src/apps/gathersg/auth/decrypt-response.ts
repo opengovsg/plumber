@@ -160,7 +160,11 @@ export async function decryptResponse(
       }
     }
   } catch (err) {
-    logger.error('Unable to decrypt gathersg response', { error: err })
+    logger.error('Unable to decrypt gathersg response', {
+      event: 'gathersg-decrypt-response-failed',
+      errorName: err instanceof Error ? err.name : typeof err,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return { verified: false, internalId: null }
   }
 }

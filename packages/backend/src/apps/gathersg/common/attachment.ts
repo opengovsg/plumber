@@ -3,7 +3,7 @@ import axios from 'axios'
 import FormData from 'form-data'
 import { z } from 'zod'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import {
@@ -38,13 +38,13 @@ function getAttachmentDownloadFailureKind(error: unknown): StepErrorKind {
     return 'internal'
   }
   const status = error.response?.status
+  if (status === undefined) {
+    return isNetworkError(error) ? 'third-party' : 'internal'
+  }
   if (status === 401 || status === 403) {
     return 'config'
   }
-  if (status === 429) {
-    return 'internal'
-  }
-  return 'third-party'
+  return status >= 500 ? 'third-party' : 'internal'
 }
 
 async function downloadAndStoreAttachmentInS3(
@@ -106,8 +106,14 @@ async function downloadAndStoreAttachmentInS3(
     return s3Id
   } catch (error) {
     logger.error(
-      `Failed to process attachment ${attachmentUuid} for case ${caseUuid}:`,
-      error,
+      `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
+      {
+        event: 'gathersg-process-attachment-failed',
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        caseUuid,
+        attachmentUuid,
+      },
     )
 
     if (error instanceof StepError) {
@@ -136,11 +142,12 @@ export async function processAttachments(
   const parsedAttachments = attachmentsSchema.safeParse(attachments)
 
   if (!parsedAttachments.success) {
+    // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
     throw new StepError({
       name: `Invalid attachments: ${parsedAttachments.error.message}`,
       solution:
         'Please check that your case attachments are accessible and try again.',
-      kind: 'third-party',
+      kind: 'internal',
     })
   }
 
@@ -183,11 +190,12 @@ export async function generateUploadToken(
 
   const token = data?.data?.token
   if (!token) {
+    // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
     throw new StepError({
       name: 'Ownself Gather did not return an upload token',
       solution:
         'Please try again. If this persists, check that your Ownself Gather API key is valid.',
-      kind: 'third-party',
+      kind: 'internal',
     })
   }
   return token
