@@ -95,7 +95,20 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ id: $.step.parameters.tableId })
-      await expect(createRowAction.run($)).rejects.toThrow(StepError)
+      await expect(createRowAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Tile not found"'),
+        kind: 'config',
+      })
+    })
+
+    it('should throw a config error if a column ID is not in the tile', async () => {
+      $.step.parameters.rowData = [
+        { columnId: 'invalid_column', cellValue: '123' },
+      ]
+      await expect(createRowAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid column ID(s)"'),
+        kind: 'config',
+      })
     })
   },
 )

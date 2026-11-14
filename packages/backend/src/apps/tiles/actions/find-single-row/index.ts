@@ -9,7 +9,11 @@ import { getTableOperations } from '@/models/tiles/factory'
 import { TableRowFilter } from '@/models/tiles/types'
 
 import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
-import { validateFilters } from '../../common/validate-filters'
+import {
+  validateDynamoDbFilterOperators,
+  validateFilterOperators,
+  validateFilters,
+} from '../../common/validate-filters'
 import { FindSingleRowOutput } from '../../types'
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -91,10 +95,11 @@ const action: IRawAction = {
       .withGraphFetched('columns')
 
     if (!table) {
-      throw new StepError(
-        'Tile not found',
-        'Tile may have been deleted. Please check your tile.',
-      )
+      throw new StepError({
+        name: 'Tile not found',
+        solution: 'Tile may have been deleted. Please check your tile.',
+        kind: 'config',
+      })
     }
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
@@ -102,6 +107,11 @@ const action: IRawAction = {
     // Check that filters are valid
     try {
       validateFilters(filters, table.columns)
+      if (table.db === 'pg') {
+        validateFilterOperators(filters)
+      } else {
+        validateDynamoDbFilterOperators(filters)
+      }
     } catch (e) {
       logger.error({
         message: 'Invalid filters',
@@ -111,10 +121,12 @@ const action: IRawAction = {
         action: 'find-single-row',
         error: e,
       })
-      throw new StepError(
-        'Invalid filters',
-        'One or more filters are invalid. Please check that the columns in your filters still exist',
-      )
+      throw new StepError({
+        name: 'Invalid filters',
+        solution:
+          'One or more filters are invalid. Please check that the columns in your filters still exist',
+        kind: 'config',
+      })
     }
     // Retrieve the manual scan limit override, converting it to a number.
     // If the conversion results in NaN, we set scanLimit to undefined.
