@@ -17,7 +17,10 @@ import { NricFilter } from '../triggers/new-submission/index'
 import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 import { computeSubmissionTime } from './helpers/compute-submission-time'
 import { processResponsesV3 } from './helpers/process-v3-responses'
-import { processResponsesV4 } from './helpers/process-v4-responses'
+import {
+  type MappedFormField,
+  processResponsesV4,
+} from './helpers/process-v4-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
@@ -127,7 +130,11 @@ export async function decryptFormResponse(
   const version = data.version
 
   const shouldStoreAttachments = $.flow.hasFileProcessingActions
-  let submission: DecryptedContent | null = null
+  let submission:
+    | (Omit<DecryptedContent, 'responses'> & {
+        responses: MappedFormField[]
+      })
+    | null = null
   let attachments: DecryptedAttachments | null = null
 
   if (version >= 3) {
@@ -194,7 +201,7 @@ export async function decryptFormResponse(
     const verifiedEmails: string[] = []
 
     for (const [index, formField] of submission.responses.entries()) {
-      const { _id, ...rest } = formField
+      const { _id, tableColumnTitles, ...rest } = formField
       // perform null character sanitisation for all answer fields so that it can be inserted into the DB
       if (rest.answer && typeof rest.answer === 'string') {
         rest.answer = rest.answer.replaceAll('\u0000', '')
@@ -218,6 +225,7 @@ export async function decryptFormResponse(
           rest.answer = convertTableAnswerArrayToTableObject(
             rest.question,
             rest.answerArray,
+            tableColumnTitles,
           )
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>
@@ -232,7 +240,11 @@ export async function decryptFormResponse(
       ) {
         // An empty table has no rows. It still needs a table object, or the
         // variable label is blank.
-        rest.answer = convertTableAnswerArrayToTableObject(rest.question, [])
+        rest.answer = convertTableAnswerArrayToTableObject(
+          rest.question,
+          [],
+          tableColumnTitles,
+        )
       }
 
       // delete metadata from fields
