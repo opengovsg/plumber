@@ -133,7 +133,7 @@ const trigger: IRawTrigger = {
         throw new StepError({
           name: 'Error syncing MRF steps',
           solution:
-            'This should not happen. Please contact support@plumber.gov.sg for assistance.',
+            'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
           kind: 'internal',
         })
       }
@@ -145,7 +145,7 @@ const trigger: IRawTrigger = {
         throw new StepError({
           name: 'Error removing MRF steps',
           solution:
-            'This should not happen. Please contact support@plumber.gov.sg for assistance.',
+            'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
           kind: 'internal',
         })
       }
