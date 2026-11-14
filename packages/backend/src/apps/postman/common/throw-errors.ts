@@ -288,7 +288,8 @@ export function throwPostmanStepError({
       }
       throw new StepError({
         name: 'Something went wrong',
-        solution: 'Please contact support@plumber.gov.sg for assistance.',
+        solution:
+          'Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
         kind: getCatchAllKind(error),
         cause: error,
       })
