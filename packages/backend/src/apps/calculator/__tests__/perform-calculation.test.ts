@@ -7,6 +7,13 @@ import performCalculationAction from '../actions/perform-calculation'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('perform calculation', () => {
@@ -62,6 +69,7 @@ describe('perform calculation', () => {
     { firstNumber: 'not a number', op: 'divide', secondNumber: '8.5' },
     { firstNumber: '850', op: 'invalid op', secondNumber: '8.5' },
     { firstNumber: '850', op: 'add', secondNumber: '' },
+    { firstNumber: '', op: 'add', secondNumber: '8.5' },
   ])(
     'rejects bad parameters (firstNumber = $firstNumber, op = $op, secondNumber = $secondNumber)',
     async (params) => {
@@ -76,6 +84,7 @@ describe('perform calculation', () => {
           expect(err.message).toEqual(
             expect.stringContaining('Configuration problem: '),
           )
+          expect(err.kind).toBe('config')
         }
       }
     },
@@ -100,8 +109,39 @@ describe('perform calculation', () => {
               "Error performing calculation: 'Division by zero'",
             ),
           )
+          expect(err.kind).toBe('config')
+          expect(mocks.logError).not.toHaveBeenCalled()
         }
       }
     },
   )
+
+  it('treats a non-Big.js Error as internal without logging it', async () => {
+    $.step.parameters = { firstNumber: '1', op: 'add', secondNumber: '2' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw new TypeError('boom')
+    })
+    const result = performCalculationAction.run($)
+    await expect(result).rejects.toMatchObject({
+      message: expect.stringContaining("Error performing calculation: 'boom'"),
+      kind: 'internal',
+    })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+    )
+    expect(mocks.logError).not.toHaveBeenCalled()
+  })
+
+  it('treats a thrown non-Error value as internal without logging it', async () => {
+    $.step.parameters = { firstNumber: '1', op: 'add', secondNumber: '2' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw 'not an Error'
+    })
+    const result = performCalculationAction.run($)
+    await expect(result).rejects.toMatchObject({ kind: 'internal' })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+    )
+    expect(mocks.logError).not.toHaveBeenCalled()
+  })
 })

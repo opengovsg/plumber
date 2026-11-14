@@ -1,5 +1,10 @@
 const BIG_JS_PREFIX = '[big.js] '
 
+// Big.js throws plain Errors, so its prefix is the only way to tell them apart.
+export function isBigJsError(error: unknown): error is Error {
+  return error instanceof Error && error.message.startsWith(BIG_JS_PREFIX)
+}
+
 // Big.js prefixes their errors with '[big.js] ', let's remove that to
 // prevent confusion.
 export function formatBigJsErrorMessage(error: Error): string {
