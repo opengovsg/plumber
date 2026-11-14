@@ -123,7 +123,7 @@ const action: IRawAction = {
       throw new StepError({
         name: getFirstZodErrorMessage(responseResult.error),
         solution:
-          'LetterSG returned an unexpected response. Please contact plumber@open.gov.sg for assistance.',
+          'LetterSG returned an unexpected response. Please contact support@plumber.gov.sg for assistance.',
         kind: 'internal',
       })
     }
