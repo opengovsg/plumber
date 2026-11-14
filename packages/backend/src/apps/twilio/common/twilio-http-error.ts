@@ -52,7 +52,7 @@ function getTwilioStepErrorInfo(error: HttpError): TwilioStepErrorInfo {
         }
       : {
           name: 'Could not send the request to Twilio',
-          solution: 'Please contact plumber@open.gov.sg for assistance.',
+          solution: 'Please contact support@plumber.gov.sg for assistance.',
           kind: 'internal',
         }
   }
@@ -112,7 +112,7 @@ function getTwilioStepErrorInfo(error: HttpError): TwilioStepErrorInfo {
   const prefix = `Twilio rejected the request (HTTP ${status})`
   return {
     name: body ? `${prefix}: ${body.message}` : prefix,
-    solution: 'Please contact plumber@open.gov.sg for assistance.',
+    solution: 'Please contact support@plumber.gov.sg for assistance.',
     kind: 'internal',
   }
 }
