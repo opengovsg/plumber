@@ -97,8 +97,9 @@ describe('send message', () => {
   it.each([
     { errorDescription: 'read ECONNRESET' },
     { errorDescription: 'connect ETIMEDOUT 127.0.0.1:3002' },
+    { errorDescription: 'socket hang up' },
   ])(
-    'should throw step error for non-http format errors',
+    'should throw third-party retriable error for non-http format error $errorDescription',
     async ({ errorDescription }) => {
       $.step.parameters.text = 'test message'
       $.step.parameters.chatId = '123'
@@ -110,10 +111,38 @@ describe('send message', () => {
         },
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
+      const error = await sendMessageAction.run($).catch((e) => e)
+      expect(error).toBeInstanceOf(RetriableError)
+      expect(error).toMatchObject({ kind: 'third-party' })
     },
   )
+
+  it('should throw third-party retriable error for an ETIMEDOUT code', async () => {
+    $.step.parameters.text = 'test message'
+    $.step.parameters.chatId = '123'
+    $.step.parameters.disableNotification = null
+
+    const httpError = makeHttpError({
+      message: 'connect ETIMEDOUT 149.154.166.110:443',
+      code: 'ETIMEDOUT',
+    })
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    const error = await sendMessageAction.run($).catch((e) => e)
+    expect(error).toBeInstanceOf(RetriableError)
+    expect(error).toMatchObject({ kind: 'third-party' })
+  })
+
+  it('should throw third-party retriable error for 504 error code', async () => {
+    $.step.parameters.text = 'test message'
+    $.step.parameters.chatId = '123'
+    $.step.parameters.disableNotification = null
+
+    const httpError = makeHttpError({ status: 504 })
+    mocks.httpPost.mockRejectedValueOnce(httpError)
+    const error = await sendMessageAction.run($).catch((e) => e)
+    expect(error).toBeInstanceOf(RetriableError)
+    expect(error).toMatchObject({ kind: 'third-party' })
+  })
 
   it.each([
     {
@@ -186,7 +215,9 @@ describe('send message', () => {
     })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
+    const error = await sendMessageAction.run($).catch((e) => e)
+    expect(error).toBeInstanceOf(RetriableError)
+    expect(error.kind).toBeUndefined()
   })
 
   it('should throw config step error for 403 error code', async () => {
