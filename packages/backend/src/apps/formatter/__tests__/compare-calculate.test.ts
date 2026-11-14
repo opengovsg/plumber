@@ -232,7 +232,7 @@ describe('compare-calculate prototype', () => {
       )
       await expect(result).rejects.toMatchObject({ kind: 'internal' })
       await expect(result).rejects.toThrow(
-        'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
+        'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
       )
       expect(mocks.logError).toHaveBeenCalledWith(
         expect.any(String),

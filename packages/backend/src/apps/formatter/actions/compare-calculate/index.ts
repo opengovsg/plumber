@@ -150,7 +150,7 @@ const action: IRawAction = {
       throw new StepError({
         name: `Error processing dates: '${error.message}'`,
         solution:
-          'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
+          'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
         kind: 'internal',
       })
     }

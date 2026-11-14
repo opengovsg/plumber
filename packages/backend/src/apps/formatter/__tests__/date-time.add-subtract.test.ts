@@ -384,7 +384,7 @@ describe('add / subtract date time', () => {
         'Excel formatted date is an input-only format',
       )
       await expect(result).rejects.toThrow(
-        'There was an unexpected problem. Please contact plumber@open.gov.sg for assistance.',
+        'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
       )
       expect(mocks.logError).toHaveBeenCalledWith(
         expect.any(String),
