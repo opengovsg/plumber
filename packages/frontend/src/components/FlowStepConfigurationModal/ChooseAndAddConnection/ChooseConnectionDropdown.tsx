@@ -33,17 +33,22 @@ function ChooseConnectionDropdown({
   )
 
   const canAddNew = application?.auth?.connectionType === 'user-added'
+  const connectionModalLabel = application?.auth?.connectionModalLabel
+  // An empty string hides the label.
+  const fieldLabel =
+    connectionModalLabel?.connectionFieldLabel ?? 'Choose connection'
   const items = [...connectionOptions]
 
   return (
     <>
       <FormControl>
-        <FormLabel isRequired>Choose connection</FormLabel>
+        {fieldLabel && <FormLabel isRequired>{fieldLabel}</FormLabel>}
         <SingleSelect
           name="choose-connection"
           colorScheme="secondary"
           isRequired={true}
           isClearable={false}
+          placeholder={connectionModalLabel?.connectionFieldPlaceholder}
           isDisabled={isDisabled}
           items={items}
           value={value || ''}
@@ -53,8 +58,8 @@ function ChooseConnectionDropdown({
               ? {
                   type: 'modal',
                   label:
-                    application?.auth?.connectionModalLabel
-                      ?.addConnectionLabel ?? DEFAULT_ADD_CONNECTION_LABEL,
+                    connectionModalLabel?.addConnectionLabel ??
+                    DEFAULT_ADD_CONNECTION_LABEL,
                   onSelected: onAddNewConnection,
                   isCreating: false,
                 }

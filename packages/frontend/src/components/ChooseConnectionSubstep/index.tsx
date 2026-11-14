@@ -8,6 +8,7 @@ import { BiLink, BiRefresh, BiSolidCircle } from 'react-icons/bi'
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
+import { PAIR_APP_KEY, PAIR_URL } from '@/helpers/pair'
 import useAuthentication from '@/hooks/useAuthentication'
 
 import { NON_EDITABLE_APP_CONNECTIONS } from '../Editor/constants'
@@ -135,6 +136,10 @@ function ChooseConnectionSubstep(
     return true
   }, [testConnectionData, testResultLoading])
 
+  const connectionModalLabel = application.auth?.connectionModalLabel
+  const connectedStatusPrefix =
+    connectionModalLabel?.connectedStatusPrefix ?? 'Connected to'
+
   const connectionStatus: ConnectionStatus = useMemo(() => {
     if (!connection) {
       if (application.key === APP_ALLOWING_EMPTY_CONNECTION) {
@@ -177,6 +182,8 @@ function ChooseConnectionSubstep(
             ) ?? '',
           text: '(View folder)',
         }
+      } else if (application.key === PAIR_APP_KEY) {
+        connectionLink = { url: PAIR_URL, text: 'View in Pair' }
       } else if (application.key === DATABRICKS_APP_KEY) {
         connectionLink = {
           url: databricksWorkspaceLinkGenerator(connectionOption) ?? '',
@@ -186,7 +193,7 @@ function ChooseConnectionSubstep(
 
       // For FormSG, we provide a link to the form for easier reference
       return {
-        text: `Connected to ${connectionOption.label}`,
+        text: `${connectedStatusPrefix} ${connectionOption.label}`,
         color: 'green.500',
         connectionLink,
       }
@@ -198,6 +205,7 @@ function ChooseConnectionSubstep(
     application.key,
     testConnectionData?.testConnection?.message,
     currentUser?.email,
+    connectedStatusPrefix,
   ])
 
   return (
@@ -252,7 +260,9 @@ function ChooseConnectionSubstep(
                 cursor: 'not-allowed',
               }}
             >
-              {connection ? 'Reconnect' : 'Connect'}
+              {connection
+                ? (connectionModalLabel?.changeConnectionLabel ?? 'Reconnect')
+                : 'Connect'}
             </Button>
           </span>
         </Tooltip>
