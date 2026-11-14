@@ -1,4 +1,5 @@
 import type { IGlobalVariable } from '@plumber/types'
+import type { DateTime } from 'luxon'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
@@ -24,10 +25,27 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
       throw error
     }
 
-    throw new StepError(
-      `Configuration problem: '${firstZodParseError(error)}'`,
-      GenericSolution.ReconfigureInvalidField,
-    )
+    throw new StepError({
+      name: `Configuration problem: '${firstZodParseError(error)}'`,
+      solution: GenericSolution.ReconfigureInvalidField,
+      kind: 'config',
+    })
+  }
+}
+
+function parseValue(
+  dateTimeFormat: Parameters<typeof parseDateTime>[0],
+  valueToTransform: string,
+): DateTime {
+  try {
+    return parseDateTime(dateTimeFormat, valueToTransform)
+  } catch (error) {
+    throw new StepError({
+      name: `Error with the original value: '${error.message}'`,
+      solution:
+        'Ensure that you have selected the correct date format for your original value.',
+      kind: 'config',
+    })
   }
 }
 
@@ -44,7 +62,7 @@ export const spec = {
   transformData: async ($, valueToTransform) => {
     try {
       const { dateTimeFormat, formatString } = getParams($)
-      const dateTime = parseDateTime(dateTimeFormat, valueToTransform)
+      const dateTime = parseValue(dateTimeFormat, valueToTransform)
 
       $.setActionItem({
         raw: {
@@ -56,10 +74,12 @@ export const spec = {
         throw error
       }
 
-      throw new StepError(
-        `Error with the original value: '${error.message}'`,
-        'Ensure that you have selected the correct date format for your original value.',
-      )
+      throw new StepError({
+        name: `Error with the original value: '${error.message}'`,
+        solution:
+          'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
     }
   },
 } satisfies TransformSpec
