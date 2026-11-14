@@ -10,15 +10,19 @@ import {
 } from '@chakra-ui/react'
 import { Tab, Tabs } from '@opengovsg/design-system-react'
 import type { IExecution, IExecutionStep } from '@plumber/types'
+import { useContext } from 'react'
 
 import ErrorResult from '@/components/ErrorResult'
 import JSONViewer from '@/components/JSONViewer'
+import { RETRY_SUCCESSFUL_EXECUTION_STEP_FLAG } from '@/config/flags'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { EXECUTION_STEP_PER_PAGE } from '@/pages/Execution'
 
 import AppIconWithStatus from './components/AppIconWithStatus'
 import DelayPausedAlert from './components/DelayPausedAlert'
 import { RetryAllButton } from './components/RetryAllButton'
 import RetryButton from './components/RetryButton'
+import { canRetryOnlyThisStep } from './helpers/canRetryOnlyThisStep'
 import { useExecutionStepStatus } from './hooks/useExecutionStepStatus'
 
 type ExecutionStepProps = {
@@ -59,6 +63,18 @@ export default function ExecutionStep({
     jobId,
   })
 
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const showRetryOnlyThisStep =
+    getFlagValue(RETRY_SUCCESSFUL_EXECUTION_STEP_FLAG, false) &&
+    canRetryOnlyThisStep({
+      appKey: appKey ?? '',
+      stepStatus: status,
+      executionStatus: execution.status,
+      // Every execution records its trigger as its first step.
+      isTrigger: !isInForEach && getStepPosition(page, index) === 1,
+      role: execution.flow?.role,
+    })
+
   const showAlertTab = isDelayPaused
   const showErrorTab = hasError && !isDelayPaused
 
@@ -97,6 +113,12 @@ export default function ExecutionStep({
                   variant={isDelayPaused ? 'resume' : undefined}
                 />
               </>
+            )}
+            {showRetryOnlyThisStep && (
+              <RetryButton
+                executionStepId={executionStep.id}
+                variant="retry-only-this-step"
+              />
             )}
           </HStack>
         </HStack>

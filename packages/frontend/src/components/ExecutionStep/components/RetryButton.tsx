@@ -1,6 +1,10 @@
 import { useMutation } from '@apollo/client'
 import { HStack, Icon, Text } from '@chakra-ui/react'
-import { Button, useToast } from '@opengovsg/design-system-react'
+import {
+  Button,
+  TouchableTooltip,
+  useToast,
+} from '@opengovsg/design-system-react'
 import { useState } from 'react'
 import { BiErrorCircle, BiPlay, BiRedo } from 'react-icons/bi'
 
@@ -9,7 +13,7 @@ import { RETRY_EXECUTION_STEP } from '@/graphql/mutations/retry-execution-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
-export type RetryVariant = 'retry' | 'resume'
+export type RetryVariant = 'retry' | 'resume' | 'retry-only-this-step'
 
 interface VariantConfig {
   defaultText: string
@@ -17,6 +21,7 @@ interface VariantConfig {
   icon: JSX.Element
   successText: string
   failureText: string
+  tooltip?: string
 }
 
 const variantConfigs: Record<RetryVariant, VariantConfig> = {
@@ -35,6 +40,15 @@ const variantConfigs: Record<RetryVariant, VariantConfig> = {
     icon: <Icon boxSize={6} as={BiPlay} />,
     successText: 'Resume started',
     failureText: 'Resume failed',
+  },
+  'retry-only-this-step': {
+    defaultText: 'Retry this step only',
+    successMessage:
+      'Retry has been enqueued. Your page should reload after a few seconds with the updated status.',
+    icon: <Icon boxSize={6} as={BiRedo} />,
+    successText: 'Retry started',
+    failureText: 'Retry failed',
+    tooltip: 'Later steps will not run.',
   },
 }
 
@@ -89,7 +103,7 @@ const RetryButton = ({
   })
 
   if (isRetrySuccessful == null) {
-    return (
+    const button = (
       <Button
         variant="clear"
         leftIcon={config.icon}
@@ -97,6 +111,11 @@ const RetryButton = ({
       >
         {customButtonText ?? config.defaultText}
       </Button>
+    )
+    return config.tooltip ? (
+      <TouchableTooltip label={config.tooltip}>{button}</TouchableTooltip>
+    ) : (
+      button
     )
   } else {
     return (
