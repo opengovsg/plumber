@@ -7,6 +7,7 @@ import {
   TooManyRequestsException,
 } from '@aws-sdk/client-sesv2'
 import { IGlobalVariable } from '@plumber/types'
+import { ServiceException } from '@smithy/smithy-client'
 import { describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
@@ -318,6 +319,29 @@ describe('getSesErrorStatus', () => {
     })
 
     expect(getSesErrorStatus(error)).toBe('INTERMITTENT-ERROR')
+  })
+
+  // The SES client fetches credentials from STS, whose errors are not SESv2ServiceExceptions.
+  it('returns INTERMITTENT-ERROR for an STS 500', () => {
+    const error = new ServiceException({
+      name: 'InternalFailure',
+      $fault: 'server',
+      message: 'STS internal failure',
+      $metadata: { httpStatusCode: 500 },
+    })
+
+    expect(getSesErrorStatus(error)).toBe('INTERMITTENT-ERROR')
+  })
+
+  it('returns RATE-LIMITED for an STS ThrottlingException', () => {
+    const error = new ServiceException({
+      name: 'ThrottlingException',
+      $fault: 'client',
+      message: 'Rate exceeded',
+      $metadata: { httpStatusCode: 400 },
+    })
+
+    expect(getSesErrorStatus(error)).toBe('RATE-LIMITED')
   })
 
   it.each([

@@ -1,9 +1,9 @@
 import {
   MessageRejected,
-  SESv2ServiceException,
   TooManyRequestsException,
 } from '@aws-sdk/client-sesv2'
 import { IGlobalVariable, StepErrorKind } from '@plumber/types'
+import { ServiceException } from '@smithy/smithy-client'
 
 import HttpError, { isNetworkError, isNetworkErrorCode } from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
@@ -80,7 +80,8 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'ATTACHMENT-SIZE-EXCEEDED'
   }
 
-  if (!(error instanceof SESv2ServiceException)) {
+  // The SES client fetches credentials from STS, so STS errors must retry like SES errors.
+  if (!(error instanceof ServiceException)) {
     return 'ERROR'
   }
 
@@ -110,9 +111,9 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
   return 'ERROR'
 }
 
-// Network failures and timeouts never reach SES, so the SDK does not wrap them in its exception class.
+// Network failures and timeouts never reach AWS, so the SDK does not wrap them in its exception class.
 function isSesNetworkError(error: unknown): boolean {
-  if (!(error instanceof Error) || error instanceof SESv2ServiceException) {
+  if (!(error instanceof Error) || error instanceof ServiceException) {
     return false
   }
   const { code } = error as { code?: unknown }

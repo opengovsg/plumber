@@ -364,6 +364,9 @@ importers:
       '@sesamecare-oss/redlock':
         specifier: 1.4.0
         version: 1.4.0(ioredis@5.9.3(supports-color@5.5.0))
+      '@smithy/smithy-client':
+        specifier: 4.12.13
+        version: 4.12.13
       '@taskforcesh/bullmq-pro':
         specifier: 7.44.0
         version: 7.44.0(supports-color@5.5.0)
