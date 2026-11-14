@@ -27,7 +27,7 @@ describe('Postman SMS request error handler', () => {
   })
 
   describe('HTTP 429 (Too Many Requests)', () => {
-    it('throws `step` RetriableError with default delay when retry-after header is missing', async () => {
+    it('throws `step` RetriableError with default delay and no kind when retry-after header is missing', async () => {
       const error = makeHttpError({
         message: 'Request failed with status code 429',
         status: 429,
@@ -39,6 +39,7 @@ describe('Postman SMS request error handler', () => {
       await expect(requestErrorHandler($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
+        kind: undefined,
       })
     })
   })
@@ -95,22 +96,26 @@ describe('Postman SMS request error handler', () => {
   })
 
   describe('Other errors', () => {
-    it.each([500, 502, 503, 520, 524])('should retry on %s', async (status) => {
-      const error = makeHttpError({
-        message: 'Internal server error',
-        status,
-      })
+    it.each([500, 502, 503, 520, 524])(
+      'should retry on %s as third-party',
+      async (status) => {
+        const error = makeHttpError({
+          message: 'Internal server error',
+          status,
+        })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
-        RetriableError,
-      )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
-        delayType: 'step',
-        delayInMs: 3000,
-      })
-    })
+        await expect(requestErrorHandler($, error)).rejects.toThrow(
+          RetriableError,
+        )
+        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+          delayType: 'step',
+          delayInMs: 3000,
+          kind: 'third-party',
+        })
+      },
+    )
 
-    it('should retry on read ETIMEDOUT', async () => {
+    it('should retry on read ETIMEDOUT as third-party', async () => {
       const error = makeHttpError({
         message: 'read ETIMEDOUT',
       })
@@ -121,10 +126,11 @@ describe('Postman SMS request error handler', () => {
       await expect(requestErrorHandler($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
+        kind: 'third-party',
       })
     })
 
-    it('should retry on connection ETIMEDOUT', async () => {
+    it('should retry on connection ETIMEDOUT as third-party', async () => {
       const error = makeHttpError({
         message: 'connect ETIMEDOUT 1.2.3.4:443',
         code: 'ETIMEDOUT',
@@ -136,6 +142,7 @@ describe('Postman SMS request error handler', () => {
       await expect(requestErrorHandler($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
+        kind: 'third-party',
       })
     })
 
