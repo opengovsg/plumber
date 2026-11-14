@@ -3,9 +3,13 @@ import Big from 'big.js'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
+import logger from '@/helpers/logger'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
-import { formatBigJsErrorMessage } from '../../common/format-bigjs-error-message'
+import {
+  formatBigJsErrorMessage,
+  isBigJsError,
+} from '../../common/format-bigjs-error-message'
 import { fields, fieldSchema } from './fields'
 
 const action = {
@@ -45,19 +49,33 @@ const action = {
           solution: GenericSolution.ReconfigureInvalidField,
           kind: 'config',
         })
-      } else if (error instanceof Error) {
+      }
+
+      if (isBigJsError(error)) {
         throw new StepError({
           name: `Error performing rounding: '${formatBigJsErrorMessage(error)}'`,
           solution: 'Ensure that you have entered valid numbers.',
           kind: 'config',
         })
-      } else {
-        throw new StepError({
-          name: `Error performing rounding`,
-          solution: 'Ensure that you have entered valid numbers.',
-          kind: 'internal',
-        })
       }
+
+      logger.error('Rounding failed', {
+        event: 'calculator-round-to-decimal-places-failed',
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+        executionId: $.execution?.id,
+      })
+      throw new StepError({
+        name:
+          error instanceof Error
+            ? `Error performing rounding: '${error.message}'`
+            : 'Error performing rounding',
+        solution:
+          'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+        kind: 'internal',
+      })
     }
   },
 } satisfies IRawAction

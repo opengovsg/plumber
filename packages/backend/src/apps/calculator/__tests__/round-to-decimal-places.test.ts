@@ -7,6 +7,13 @@ import roundtoDecimalPlacesAction from '../actions/round-to-decimal-places'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('perform calculation', () => {
@@ -159,15 +166,49 @@ describe('perform calculation', () => {
       ),
       kind: 'config',
     })
+    expect(mocks.logError).not.toHaveBeenCalled()
   })
 
-  it('treats a thrown non-Error value as internal', async () => {
+  it('treats a non-Big.js Error as internal and logs it', async () => {
+    $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw new TypeError('boom')
+    })
+    const result = roundtoDecimalPlacesAction.run($)
+    await expect(result).rejects.toMatchObject({
+      message: expect.stringContaining("Error performing rounding: 'boom'"),
+      kind: 'internal',
+    })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+    )
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: 'calculator-round-to-decimal-places-failed',
+        errorName: 'TypeError',
+        errorMessage: 'boom',
+      }),
+    )
+  })
+
+  it('treats a thrown non-Error value as internal and logs it', async () => {
     $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
     mocks.setActionItem.mockImplementationOnce(() => {
       throw 'not an Error'
     })
-    await expect(roundtoDecimalPlacesAction.run($)).rejects.toMatchObject({
-      kind: 'internal',
-    })
+    const result = roundtoDecimalPlacesAction.run($)
+    await expect(result).rejects.toMatchObject({ kind: 'internal' })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+    )
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: 'calculator-round-to-decimal-places-failed',
+        errorName: 'string',
+        errorMessage: 'not an Error',
+      }),
+    )
   })
 })

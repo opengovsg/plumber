@@ -7,6 +7,13 @@ import performCalculationAction from '../actions/perform-calculation'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('perform calculation', () => {
@@ -103,18 +110,52 @@ describe('perform calculation', () => {
             ),
           )
           expect(err.kind).toBe('config')
+          expect(mocks.logError).not.toHaveBeenCalled()
         }
       }
     },
   )
 
-  it('treats a thrown non-Error value as internal', async () => {
+  it('treats a non-Big.js Error as internal and logs it', async () => {
+    $.step.parameters = { firstNumber: '1', op: 'add', secondNumber: '2' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw new TypeError('boom')
+    })
+    const result = performCalculationAction.run($)
+    await expect(result).rejects.toMatchObject({
+      message: expect.stringContaining("Error performing calculation: 'boom'"),
+      kind: 'internal',
+    })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+    )
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: 'calculator-perform-calculation-failed',
+        errorName: 'TypeError',
+        errorMessage: 'boom',
+      }),
+    )
+  })
+
+  it('treats a thrown non-Error value as internal and logs it', async () => {
     $.step.parameters = { firstNumber: '1', op: 'add', secondNumber: '2' }
     mocks.setActionItem.mockImplementationOnce(() => {
       throw 'not an Error'
     })
-    await expect(performCalculationAction.run($)).rejects.toMatchObject({
-      kind: 'internal',
-    })
+    const result = performCalculationAction.run($)
+    await expect(result).rejects.toMatchObject({ kind: 'internal' })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+    )
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: 'calculator-perform-calculation-failed',
+        errorName: 'string',
+        errorMessage: 'not an Error',
+      }),
+    )
   })
 })
