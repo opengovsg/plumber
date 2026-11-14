@@ -169,7 +169,7 @@ describe('perform calculation', () => {
     expect(mocks.logError).not.toHaveBeenCalled()
   })
 
-  it('treats a non-Big.js Error as internal and logs it', async () => {
+  it('treats a non-Big.js Error as internal without logging it', async () => {
     $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
     mocks.setActionItem.mockImplementationOnce(() => {
       throw new TypeError('boom')
@@ -182,17 +182,10 @@ describe('perform calculation', () => {
     await expect(result).rejects.toThrow(
       'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
     )
-    expect(mocks.logError).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        event: 'calculator-round-to-decimal-places-failed',
-        errorName: 'TypeError',
-        errorMessage: 'boom',
-      }),
-    )
+    expect(mocks.logError).not.toHaveBeenCalled()
   })
 
-  it('treats a thrown non-Error value as internal and logs it', async () => {
+  it('treats a thrown non-Error value as internal without logging it', async () => {
     $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
     mocks.setActionItem.mockImplementationOnce(() => {
       throw 'not an Error'
@@ -202,13 +195,6 @@ describe('perform calculation', () => {
     await expect(result).rejects.toThrow(
       'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
     )
-    expect(mocks.logError).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        event: 'calculator-round-to-decimal-places-failed',
-        errorName: 'string',
-        errorMessage: 'not an Error',
-      }),
-    )
+    expect(mocks.logError).not.toHaveBeenCalled()
   })
 })

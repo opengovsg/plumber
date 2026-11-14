@@ -3,7 +3,6 @@ import Big from 'big.js'
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
-import logger from '@/helpers/logger'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
 import {
@@ -59,14 +58,6 @@ const action = {
         })
       }
 
-      logger.error('Rounding failed', {
-        event: 'calculator-round-to-decimal-places-failed',
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        flowId: $.flow?.id,
-        stepId: $.step?.id,
-        executionId: $.execution?.id,
-      })
       throw new StepError({
         name:
           error instanceof Error
