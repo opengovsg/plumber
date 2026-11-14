@@ -97,17 +97,29 @@ The backend has three error families. Do not add a new family.
 
 The thrower chooses `kind`. Never derive it later from messages or status codes.
 
-- `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries: `handleFailedStepAndThrow` (`helpers/actions/handle-failed-step-and-throw.ts`) throws `UnrecoverableError` for it.
-- `third-party`: an external service is down or unreachable (e.g. 5xx, network errors, timeouts). Counts as bad, but apart from Plumber bugs.
+- `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries, unless its cause is an `HttpError` that `handleHttpError` retries. Both live in `helpers/actions/handle-failed-step-and-throw.ts`.
+  - The final failure still logs `kind: config`, because the `StepError` rides as the hidden `cause`.
+  - `isRetriableHttpError` (same file) holds the retry conditions. A thrower calls it to choose `kind` before it throws.
+- `third-party`: an external service is down or unreachable (e.g. 5xx, network errors, timeouts), or another step caused the failure (see "App-specific cases"). Counts as bad, but apart from Plumber bugs.
 - `internal`: a Plumber bug. Counts as bad.
+
+Rules for choosing:
+
+- Choose `config` only with high confidence. When unsure, choose `internal` or `third-party`. custom-api is the exception (see "App-specific cases"). A later PR can tighten it with prod evidence.
+- The thrower may branch on input values it holds (e.g. whether a date is ISO 8601).
+- In a catch-all, only listed user-fixable 4xx statuses or error codes become `config`. Each listed code has a test. Unlisted 4xx → `internal`. 5xx and network errors (`isNetworkError` in `errors/http.ts`) → `third-party`.
 
 Special cases:
 
 - A rate limit (429, `RATE-LIMITED`) is `internal`. Plumber must drain its queues fast enough to avoid rate limits.
-- A user's own endpoint failing (custom-api) is `config`. The user owns the endpoint.
 - Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
 - An error likely caused by an external API changing its format is `internal`, not `third-party` (e.g. an unexpected response body). Plumber owns keeping up with API changes.
+
+App-specific cases:
+
+- custom-api is an escape hatch for power users, and Plumber guarantees nothing about it. Every failure is `config`, unless it is clearly a Plumber bug (e.g. a non-`HttpError`). This includes 429, 5xx, timeouts and network errors. Retriable causes still retry (see `config` above).
+- A control-flow action makes no outbound call (e.g. delay). If an earlier step caused its failure, choose `third-party` (e.g. delay-until misses its time because an earlier step retried after a rate limit).
 
 ### `UserFacingError`
 
