@@ -53,10 +53,17 @@ describe('getModelErrorKind', () => {
     )
   })
 
-  it('returns third-party for a retry error whose last error is not an API call error', () => {
-    expect(getModelErrorKind(makeRetryError(new Error('boom')))).toBe(
-      'third-party',
-    )
+  it('returns internal for a retry error whose last error is a credential failure', () => {
+    const error = new RetryError({
+      message: 'Failed after 2 attempts',
+      reason: 'errorNotRetryable',
+      errors: [
+        makeApiCallError(503),
+        new Error('Could not load credentials from any providers'),
+      ],
+    })
+
+    expect(getModelErrorKind(error)).toBe('internal')
   })
 
   it('returns internal when the model output does not match the schema', () => {
