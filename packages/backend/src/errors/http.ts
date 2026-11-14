@@ -63,3 +63,26 @@ export default class HttpError extends BaseError {
     }
   }
 }
+
+// axios also sets codes like ERR_CANCELED for requests Plumber failed to send, which are Plumber bugs.
+const NETWORK_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'EPROTO',
+  'CERT_HAS_EXPIRED',
+])
+
+export function isNetworkErrorCode(code: unknown): boolean {
+  return typeof code === 'string' && NETWORK_ERROR_CODES.has(code)
+}
+
+export function isNetworkError(error: HttpError): boolean {
+  return error.response.status === undefined && isNetworkErrorCode(error.code)
+}

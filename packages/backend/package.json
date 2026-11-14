@@ -65,6 +65,7 @@
     "@plumber/types": "workspace:*",
     "@posthog/ai": "8.16.3",
     "@sesamecare-oss/redlock": "1.4.0",
+    "@smithy/smithy-client": "4.12.13",
     "@taskforcesh/bullmq-pro": "7.44.0",
     "ai": "catalog:",
     "ajv-formats": "2.1.1",
