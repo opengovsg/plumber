@@ -24,11 +24,13 @@ import SecretKeyWarningDialog from '@/pages/AiBuilder/components/ChatInterface/S
 import TileSetupPicker from '@/pages/AiBuilder/components/ChatInterface/TileSetupPicker'
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
+import SelectPipePopover from '@/pages/AiBuilder/components/SelectPipePopover'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 import {
   buildNoOptionsFoundMessage,
   containsSecretKey,
 } from '@/pages/AiBuilder/helpers'
+import { showComposerChips, type PipeChip } from '@/pages/AiBuilder/pipe-chip'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { buildColumnTableReply } from './helpers/columnTableReply'
@@ -59,6 +61,7 @@ interface PromptInputProps {
    * before a secret key has been added.
    */
   attachedForm?: { label: string; isConnected?: boolean } | null
+  pipeChip?: PipeChip
 }
 
 // Display-only chip anchoring the conversation's form to the composer.
@@ -115,6 +118,7 @@ export default function PromptInput({
   onConnectForm,
   onSelectExistingForm,
   attachedForm,
+  pipeChip,
 }: PromptInputProps) {
   const { steps } = useAiBuilderContext()
   const [input, setInput] = useState<string>(initialValue)
@@ -347,9 +351,11 @@ export default function PromptInput({
     )
   }
 
-  const showChipsRow = Boolean(
-    (onConnectForm && onSelectExistingForm) || attachedForm,
-  )
+  const showChipsRow = showComposerChips({
+    formCallbacks: Boolean(onConnectForm && onSelectExistingForm),
+    attachedForm: Boolean(attachedForm),
+    pipeChip: pipeChip ?? { kind: 'hidden' },
+  })
 
   return (
     <Box w="full" maxW="4xl">
@@ -409,21 +415,30 @@ export default function PromptInput({
         </Flex>
 
         <Flex px={2} pb={1} pt={1} align="center" gap={2}>
-          {showChipsRow &&
-            (attachedForm?.isConnected ? (
-              <FormChip form={attachedForm} />
-            ) : onConnectForm && onSelectExistingForm ? (
-              <ConnectFormPopover
-                isStreaming={isStreaming}
-                onSelectExisting={onSelectExistingForm}
-                onAddNewForm={onConnectForm}
-              />
-            ) : attachedForm ? (
-              // Dead-end fallback: a URL is known but not connected, and
-              // there's no trigger left to retry through (e.g. post-pipe,
-              // before the LLM's connection picker has fired).
-              <FormChip form={attachedForm} />
-            ) : null)}
+          {showChipsRow && (
+            <>
+              {attachedForm?.isConnected ? (
+                <FormChip form={attachedForm} />
+              ) : onConnectForm && onSelectExistingForm ? (
+                <ConnectFormPopover
+                  isStreaming={isStreaming}
+                  onSelectExisting={onSelectExistingForm}
+                  onAddNewForm={onConnectForm}
+                />
+              ) : attachedForm ? (
+                // Dead-end fallback: a URL is known but not connected, and
+                // there's no trigger left to retry through (e.g. post-pipe,
+                // before the LLM's connection picker has fired).
+                <FormChip form={attachedForm} />
+              ) : null}
+              {pipeChip?.kind === 'pick' ? (
+                <SelectPipePopover
+                  isStreaming={isStreaming}
+                  onSelect={pipeChip.onSelect}
+                />
+              ) : null}
+            </>
+          )}
 
           <Flex ml="auto" pr={1} align="center" flexShrink={0}>
             {isStreaming ? (
