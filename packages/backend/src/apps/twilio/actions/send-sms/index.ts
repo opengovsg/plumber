@@ -1,6 +1,8 @@
 import { IRawAction } from '@plumber/types'
 import qs from 'qs'
 
+import { rethrowAsTwilioStepError } from '../../common/twilio-http-error'
+
 const action: IRawAction = {
   name: 'Send an SMS',
   key: 'sendSms',
@@ -41,14 +43,16 @@ const action: IRawAction = {
     const fromNumber = ($.step.parameters.fromNumber as string).trim()
     const toNumber = ($.step.parameters.toNumber as string).trim()
 
-    const response = await $.http.post(
-      requestPath,
-      qs.stringify({
-        Body: messageBody,
-        From: fromNumber,
-        To: toNumber,
-      }),
-    )
+    const response = await $.http
+      .post(
+        requestPath,
+        qs.stringify({
+          Body: messageBody,
+          From: fromNumber,
+          To: toNumber,
+        }),
+      )
+      .catch(rethrowAsTwilioStepError)
     const { from, to, body, status, sid } = response.data
     $.setActionItem({ raw: { from, to, body, status, sid, success: true } })
   },
