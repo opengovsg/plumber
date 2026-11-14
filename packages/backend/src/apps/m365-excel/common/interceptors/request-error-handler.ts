@@ -1,4 +1,5 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, StepErrorKind } from '@plumber/types'
+import type { AxiosRequestConfig } from 'axios'
 
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -151,6 +152,13 @@ const EXCEL_504_ERROR_MESSAGE = {
    - Fix: Simplify the formulas, or set the calculation mode to Manual (Formulas tab > Calculation Options).`,
 }
 
+// Only a row write's timeout reliably points at the user's slow workbook.
+function get504Kind(config: AxiosRequestConfig | undefined): StepErrorKind {
+  const isWrite = config?.method !== undefined && config.method !== 'get'
+  const isCreateSession = config?.url?.endsWith('/createSession') ?? false
+  return isWrite && !isCreateSession ? 'config' : 'third-party'
+}
+
 const handle504: ThrowingHandler = function ($, error) {
   logger.warn('Received HTTP 504 from MS Graph', {
     event: 'm365-http-504',
@@ -164,10 +172,11 @@ const handle504: ThrowingHandler = function ($, error) {
 
   // For test runs, fail immediately with user-friendly message
   if ($.execution?.testRun) {
-    throw new StepError(
-      EXCEL_504_ERROR_MESSAGE.name,
-      EXCEL_504_ERROR_MESSAGE.solution,
-    )
+    throw new StepError({
+      name: EXCEL_504_ERROR_MESSAGE.name,
+      solution: EXCEL_504_ERROR_MESSAGE.solution,
+      kind: get504Kind(error.response.config),
+    })
   }
 
   // For live runs, throw RetriableError with user-friendly message
