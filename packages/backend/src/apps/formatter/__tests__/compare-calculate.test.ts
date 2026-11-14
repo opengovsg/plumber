@@ -219,7 +219,7 @@ describe('compare-calculate prototype', () => {
       })
     })
 
-    it('marks a failure after parsing the dates as internal and logs it', async () => {
+    it('marks a failure after parsing the dates as internal without logging it', async () => {
       vi.mocked(computeDifference).mockImplementationOnce(() => {
         throw new Error('boom')
       })
@@ -234,14 +234,7 @@ describe('compare-calculate prototype', () => {
       await expect(result).rejects.toThrow(
         'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
       )
-      expect(mocks.logError).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          event: 'formatter-compare-calculate-failed',
-          errorName: 'Error',
-          errorMessage: 'boom',
-        }),
-      )
+      expect(mocks.logError).not.toHaveBeenCalled()
     })
   })
 })

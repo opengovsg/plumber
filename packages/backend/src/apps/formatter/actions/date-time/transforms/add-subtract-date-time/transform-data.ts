@@ -3,7 +3,6 @@ import { DateTime, type DurationLikeObject } from 'luxon'
 import z, { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
-import logger from '@/helpers/logger'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
 import type { TransformSpec } from '../../../../common/transform-spec'
@@ -107,14 +106,6 @@ export const transformData: TransformSpec['transformData'] = async (
       throw error
     }
 
-    logger.error('Add / subtract date time failed after parsing the value', {
-      event: 'formatter-add-subtract-date-time-failed',
-      errorName: error instanceof Error ? error.name : typeof error,
-      errorMessage: error instanceof Error ? error.message : String(error),
-      flowId: $.flow?.id,
-      stepId: $.step?.id,
-      executionId: $.execution?.id,
-    })
     throw new StepError({
       name: `Error processing dates: '${error.message}'`,
       solution:

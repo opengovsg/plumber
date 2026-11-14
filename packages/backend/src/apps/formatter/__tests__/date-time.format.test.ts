@@ -324,7 +324,7 @@ describe('convert date time', () => {
       },
     )
 
-    it('marks a formatting failure after parsing as internal and logs it', async () => {
+    it('marks a formatting failure after parsing as internal without logging it', async () => {
       vi.spyOn(DateTime.prototype, 'toPlumberFormat').mockImplementation(() => {
         throw new Error('boom')
       })
@@ -337,14 +337,7 @@ describe('convert date time', () => {
       await expect(result).rejects.toThrow(
         'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
       )
-      expect(mocks.logError).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          event: 'formatter-convert-date-time-failed',
-          errorName: 'Error',
-          errorMessage: 'boom',
-        }),
-      )
+      expect(mocks.logError).not.toHaveBeenCalled()
     })
   })
 })

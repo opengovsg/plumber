@@ -391,7 +391,7 @@ describe('add / subtract date time', () => {
       },
     )
 
-    it('marks an Excel formatted date output as internal and logs it', async () => {
+    it('marks an Excel formatted date output as internal without logging it', async () => {
       $.step.parameters = {
         dateTimeFormat: 'excelFormattedDate',
         addSubtractDateTimeOps: addOneDay,
@@ -404,16 +404,7 @@ describe('add / subtract date time', () => {
       await expect(result).rejects.toThrow(
         'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
       )
-      expect(mocks.logError).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          event: 'formatter-add-subtract-date-time-failed',
-          errorName: 'Error',
-          errorMessage: expect.stringContaining(
-            'Excel formatted date is an input-only format',
-          ),
-        }),
-      )
+      expect(mocks.logError).not.toHaveBeenCalled()
     })
   })
 })
