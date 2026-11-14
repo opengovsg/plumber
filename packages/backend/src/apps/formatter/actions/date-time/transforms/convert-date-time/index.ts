@@ -86,7 +86,7 @@ export const spec = {
       throw new StepError({
         name: `Error with the original value: '${error.message}'`,
         solution:
-          'There was an unexpected problem. Please contact support@plumber.gov.sg for assistance.',
+          'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
         kind: 'internal',
       })
     }
