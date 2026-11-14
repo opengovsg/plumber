@@ -1,5 +1,6 @@
 import { UserFacingError } from '@/errors/user-facing-error'
 import type User from '@/models/user'
+import { loadAccessibleFlow } from '@/services/access'
 import { updateFlowStatusService } from '@/services/flow/update-flow-status'
 
 export interface UnpublishPipeResult {
@@ -12,11 +13,12 @@ export async function unpublishPipeService(
   user: User,
   pipeId: string,
 ): Promise<UnpublishPipeResult> {
-  const flow = await user
-    .withAccessibleFlows({ requiredRole: 'editor' })
-    .findOne({ 'flows.id': pipeId })
-    .withGraphJoined('steps')
-    .orderBy('steps.position', 'asc')
+  const flow = await loadAccessibleFlow({
+    user,
+    flowId: pipeId,
+    role: 'editor',
+    graph: 'steps',
+  })
 
   if (!flow) {
     throw new UserFacingError('Pipe not found')
