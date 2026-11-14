@@ -2,10 +2,11 @@ import type { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendEmailAction from '../../actions/send-email'
 
 const mocks = vi.hoisted(() => ({
-  httpPost: vi.fn(() => ({})),
+  httpPost: vi.fn(async () => ({})),
 }))
 
 describe('send payment email', () => {
@@ -61,6 +62,32 @@ describe('send payment email', () => {
           },
         },
       )
+    },
+  )
+
+  it('throws a config StepError when a field is invalid', async () => {
+    $.step.parameters.paymentId = ' '
+
+    await expect(sendEmailAction.run($)).rejects.toMatchObject({
+      kind: 'config',
+    })
+    expect(mocks.httpPost).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { status: 404, kind: 'config' },
+    { status: 500, kind: 'third-party' },
+    { status: 429, kind: 'internal' },
+  ])(
+    'throws a $kind StepError with the HttpError as cause on a $status response',
+    async ({ status, kind }) => {
+      const httpError = makeHttpError({ status })
+      mocks.httpPost.mockRejectedValueOnce(httpError as never)
+
+      await expect(sendEmailAction.run($)).rejects.toMatchObject({
+        kind,
+        cause: httpError,
+      })
     },
   )
 })
