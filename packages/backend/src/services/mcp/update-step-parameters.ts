@@ -19,6 +19,11 @@ import type User from '@/models/user'
 
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
+import {
+  findEmptyParameterError,
+  InvalidStepParametersError,
+  NO_PARAMETER_VALUES_MESSAGE,
+} from './validate-step-parameter-values'
 import { verifyConnectionRegistrationService } from './verify-connection-registration'
 
 export interface UpdateStepParametersInput {
@@ -140,6 +145,23 @@ export async function updateStepParametersService({
     const filteredParameters = Object.fromEntries(
       Object.entries(parameters).filter(([k]) => allowedKeys.has(k)),
     ) as IJSONObject
+
+    // The model sometimes saves an empty value instead of asking the user.
+    // Refusing here gives it an error to relay; a prompt rule alone did not.
+    if (
+      connectionId === undefined &&
+      Object.keys(filteredParameters).length === 0
+    ) {
+      throw new InvalidStepParametersError(NO_PARAMETER_VALUES_MESSAGE)
+    }
+    const emptyValueMessage = findEmptyParameterError(
+      rawTriggerOrAction?.arguments ?? [],
+      filteredParameters,
+      step.parameters ?? {},
+    )
+    if (emptyValueMessage) {
+      throw new InvalidStepParametersError(emptyValueMessage)
+    }
 
     let patchedParameters = filteredParameters
     let version = step.version
