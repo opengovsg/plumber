@@ -14,7 +14,7 @@ import { FormSchema, ParsedMrfWorkflowStep } from '../../common/types'
 import trigger from '../../triggers/new-submission'
 
 const PLUMBER_SUPPORT_SOLUTION =
-  'This should not happen. Please contact plumber@open.gov.sg for assistance.'
+  'This should not happen. Please contact support@plumber.gov.sg for assistance.'
 
 const pushTriggerItemMock = vi.fn()
 const getLastExecutionStepMock = vi.fn()
