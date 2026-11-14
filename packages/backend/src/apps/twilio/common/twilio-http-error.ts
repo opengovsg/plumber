@@ -15,16 +15,24 @@ interface TwilioStepErrorInfo {
 const USER_FIXABLE_TWILIO_ERROR_CODES = new Set([
   21211, // Invalid 'To' phone number
   21212, // Invalid 'From' number
+  21265, // 'To' number cannot be a short code
   21266, // 'To' and 'From' numbers cannot be the same
+  21267, // Alphanumeric sender ID cannot be used on trial accounts
   21408, // Geo permissions disabled for the destination region
   21602, // Message body is required
   21603, // 'From' or 'MessagingServiceSid' is required
   21604, // 'To' phone number is required
   21606, // 'From' number is not a message-capable number for this account
+  21607, // Trial accounts must send from the trial or sandbox number
   21608, // Trial account cannot message unverified numbers
   21610, // Recipient has unsubscribed
+  21612, // Message cannot be sent with this 'To' and 'From' combination
   21614, // 'To' number is not a valid mobile number
   21617, // Message body exceeds 1600 characters
+  21659, // 'From' is not a Twilio number, or short code country mismatch
+  21660, // 'From' number does not belong to this account
+  21661, // 'From' number is not SMS-capable
+  21910, // 'From' and 'To' are on different channels
 ])
 
 // https://www.twilio.com/docs/usage/twilios-response

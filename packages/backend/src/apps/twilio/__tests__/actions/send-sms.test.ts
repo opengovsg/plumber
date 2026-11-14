@@ -79,8 +79,8 @@ describe('send sms', () => {
   })
 
   it.each([
-    21211, 21212, 21266, 21408, 21602, 21603, 21604, 21606, 21608, 21610, 21614,
-    21617,
+    21211, 21212, 21265, 21266, 21267, 21408, 21602, 21603, 21604, 21606, 21607,
+    21608, 21610, 21612, 21614, 21617, 21659, 21660, 21661, 21910,
   ])('throws a config StepError for Twilio error code %i', async (code) => {
     const httpError = makeHttpError({
       status: 400,
@@ -100,7 +100,7 @@ describe('send sms', () => {
   it.each([
     {
       label: 'an unlisted Twilio error code',
-      data: twilioErrorBody(21612, 'x'),
+      data: twilioErrorBody(21264, 'x'),
     },
     { label: 'no Twilio error code', data: undefined },
   ])('throws an internal StepError for a 400 with $label', async ({ data }) => {
