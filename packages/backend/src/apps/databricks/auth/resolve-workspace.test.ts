@@ -1,80 +1,78 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
+const LEGACY = {
+  serverHostname: 'legacy.example',
+  httpPath: '/sql/legacy',
+  catalog: 'legacy_catalog',
+  clientId: 'legacy-client',
+  clientSecret: 'legacy-client-value',
+}
 
-const NEW_ENV = {
-  DATABRICKS_NEW_SERVER_HOSTNAME: 'new.example',
-  DATABRICKS_NEW_HTTP_PATH: '/sql/new',
-  DATABRICKS_NEW_CATALOG: 'new_catalog',
-  DATABRICKS_NEW_CLIENT_ID: 'new-client',
-  DATABRICKS_NEW_CLIENT_SECRET: 'new-client-value',
-} as const
-
-// oxfmt-ignore
-type ResolvedCredentials = ReturnType<typeof resolveDatabricksWorkspace> // pragma: allowlist secret
+const CREATED = {
+  serverHostname: 'new.example',
+  httpPath: '/sql/new',
+  catalog: 'new_catalog',
+  clientId: 'new-client',
+  clientSecret: 'new-client-value',
+}
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.resetModules()
 })
 
-function stubNewEnv(
-  overrides: Partial<Record<keyof typeof NEW_ENV, string>> = {},
-) {
-  const values = { ...NEW_ENV, ...overrides }
+function stubLegacyEnv() {
+  vi.stubEnv('DATABRICKS_SERVER_HOSTNAME', LEGACY.serverHostname)
+  vi.stubEnv('DATABRICKS_HTTP_PATH', LEGACY.httpPath)
+  vi.stubEnv('DATABRICKS_CATALOG', LEGACY.catalog)
+  vi.stubEnv('DATABRICKS_CLIENT_ID', LEGACY.clientId)
+  vi.stubEnv('DATABRICKS_CLIENT_SECRET', LEGACY.clientSecret)
+}
+
+function stubNewEnv(overrides: Partial<Record<string, string>> = {}) {
+  const values = {
+    DATABRICKS_NEW_SERVER_HOSTNAME: CREATED.serverHostname,
+    DATABRICKS_NEW_HTTP_PATH: CREATED.httpPath,
+    DATABRICKS_NEW_CATALOG: CREATED.catalog,
+    DATABRICKS_NEW_CLIENT_ID: CREATED.clientId,
+    DATABRICKS_NEW_CLIENT_SECRET: CREATED.clientSecret,
+    ...overrides,
+  }
   for (const [key, value] of Object.entries(values)) {
     vi.stubEnv(key, value)
   }
 }
 
-function matchesLegacy(credentials: ResolvedCredentials): boolean {
-  return (
-    credentials.serverHostname === process.env.DATABRICKS_SERVER_HOSTNAME &&
-    credentials.httpPath === process.env.DATABRICKS_HTTP_PATH &&
-    credentials.catalog === process.env.DATABRICKS_CATALOG &&
-    credentials.clientId === process.env.DATABRICKS_CLIENT_ID &&
-    credentials.clientSecret === process.env.DATABRICKS_CLIENT_SECRET &&
-    credentials.serverHostname.length > 0
-  )
-}
-
-function matchesNew(credentials: ResolvedCredentials): boolean {
-  return (
-    credentials.serverHostname === process.env.DATABRICKS_NEW_SERVER_HOSTNAME &&
-    credentials.httpPath === process.env.DATABRICKS_NEW_HTTP_PATH &&
-    credentials.catalog === process.env.DATABRICKS_NEW_CATALOG &&
-    credentials.clientId === process.env.DATABRICKS_NEW_CLIENT_ID &&
-    credentials.clientSecret === process.env.DATABRICKS_NEW_CLIENT_SECRET &&
-    credentials.serverHostname.length > 0
-  )
+async function loadResolver() {
+  vi.resetModules()
+  const loaded = await import('./resolve-workspace') // pragma: allowlist secret
+  return loaded.resolveDatabricksWorkspace // pragma: allowlist secret
 }
 
 // oxfmt-ignore
 describe('resolveDatabricksWorkspace', () => { // pragma: allowlist secret
-  it('returns the legacy host when the caller passes legacy', () => {
-    // oxfmt-ignore
-    const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
+  it('returns the legacy host when the caller passes legacy', async () => {
+    stubLegacyEnv()
+    const resolveDatabricksWorkspace = await loadResolver() // pragma: allowlist secret
 
-    expect(matchesLegacy(credentials)).toBe(true)
-    expect(
-      credentials.serverHostname === process.env.DATABRICKS_SERVER_HOSTNAME,
-    ).toBe(true)
+    expect(resolveDatabricksWorkspace('legacy')).toEqual(LEGACY) // pragma: allowlist secret
   })
 
-  it('returns the new credentials when the new vars are set', () => {
+  it('returns the new credentials when the new vars are set', async () => {
+    stubLegacyEnv()
     stubNewEnv()
+    const resolveDatabricksWorkspace = await loadResolver() // pragma: allowlist secret
 
-    // oxfmt-ignore
-    const credentials = resolveDatabricksWorkspace('new') // pragma: allowlist secret
-
-    expect(matchesNew(credentials)).toBe(true)
+    expect(resolveDatabricksWorkspace('new')).toEqual(CREATED) // pragma: allowlist secret
   })
 
-  it('throws when the new hostname is empty', () => {
+  it('throws when the new hostname is empty', async () => {
+    stubLegacyEnv()
     stubNewEnv({ DATABRICKS_NEW_SERVER_HOSTNAME: '' })
+    const resolveDatabricksWorkspace = await loadResolver() // pragma: allowlist secret
 
     // oxfmt-ignore
-    expect(() => resolveDatabricksWorkspace('new')).toThrow() // pragma: allowlist secret
-    // oxfmt-ignore
-    expect(matchesLegacy(resolveDatabricksWorkspace('legacy'))).toBe(true) // pragma: allowlist secret
+    expect(() => resolveDatabricksWorkspace('new')).toThrow(/DATABRICKS_NEW_SERVER_HOSTNAME/) // pragma: allowlist secret
+    expect(resolveDatabricksWorkspace('legacy')).toEqual(LEGACY) // pragma: allowlist secret
   })
 })
