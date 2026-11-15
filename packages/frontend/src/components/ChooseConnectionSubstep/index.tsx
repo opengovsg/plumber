@@ -162,7 +162,6 @@ function ChooseConnectionSubstep(
         }
       } else if (application.key === DATABRICKS_APP_KEY) {
         const screenName = connection.formattedData?.screenName
-        // oxfmt-ignore
         const exploreUrl =
           typeof screenName === 'string'
             ? databricksWorkspaceUrl(screenName, connectionOption.env) // pragma: allowlist secret

@@ -11,16 +11,10 @@ import { EditorContext } from '@/contexts/Editor'
 import { DATABRICKS_APP_KEY } from '../FlowStepConfigurationModal/constants'
 import ChooseConnectionSubstep from './index'
 
-const { SCREEN_NAME, DROPDOWN_LABEL, CONNECTION_ENV } = vi.hoisted(() => {
-  const screenName = 'user_example_com'
-  return {
-    SCREEN_NAME: screenName,
-    DROPDOWN_LABEL: `[DEPRECATED] ${screenName}`,
-    CONNECTION_ENV: JSON.stringify({
-      hostname: 'example.cloud.databricks.com',
-      catalog: 'main',
-    }),
-  }
+const SCREEN_NAME = 'user_example_com'
+const CONNECTION_ENV = JSON.stringify({
+  hostname: 'example.cloud.databricks.com',
+  catalog: 'main',
 })
 
 vi.mock('@/contexts/Editor', async () => {
@@ -40,12 +34,6 @@ vi.mock('@apollo/client', async (importOriginal) => ({
         registrationVerified: true,
       },
     },
-  }),
-}))
-vi.mock('../FlowStepConfigurationModal/ChooseAndAddConnection', () => ({
-  optionGenerator: () => ({
-    label: DROPDOWN_LABEL,
-    env: CONNECTION_ENV,
   }),
 }))
 
@@ -127,8 +115,8 @@ async function renderDrawer(formattedData: IJSONObject): Promise<void> {
 }
 
 describe('databricks explore link', () => {
-  it('keeps a deprecated dropdown label out of the href', async () => {
-    await renderDrawer({ screenName: SCREEN_NAME })
+  it('builds the href from screenName', async () => {
+    await renderDrawer({ screenName: SCREEN_NAME, env: CONNECTION_ENV })
 
     const anchor = container.querySelector('a')
     const href = anchor?.getAttribute('href') ?? ''
@@ -136,22 +124,24 @@ describe('databricks explore link', () => {
     expect(anchor).not.toBeNull()
     expect(href.endsWith(SCREEN_NAME)).toBe(true)
     expect(href.includes('DEPRECATED')).toBe(false)
-    expect(connectedSentence()).toBe(`Connected to ${DROPDOWN_LABEL}`)
+    expect(connectedSentence()).toBe(`Connected to ${SCREEN_NAME}`)
   })
 
   it.each([
     {
       name: 'screenName is omitted',
-      formattedData: {},
+      formattedData: { env: CONNECTION_ENV },
+      label: 'Unnamed',
     },
     {
       name: 'screenName is not a string',
-      formattedData: { screenName: 1 },
+      formattedData: { screenName: 1, env: CONNECTION_ENV },
+      label: '1',
     },
-  ])('renders no explore link when $name', async ({ formattedData }) => {
+  ])('renders no explore link when $name', async ({ formattedData, label }) => {
     await renderDrawer(formattedData)
 
     expect(container.querySelector('a')).toBeNull()
-    expect(connectedSentence()).toBe(`Connected to ${DROPDOWN_LABEL}`)
+    expect(connectedSentence()).toBe(`Connected to ${label}`)
   })
 })

@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  databricksWorkspaceUrl as buildExploreUrl, // pragma: allowlist secret
-} from './databricks-workspace-url' // pragma: allowlist secret
+import { databricksWorkspaceUrl } from './databricks-workspace-url' // pragma: allowlist secret
 
 const ENV = JSON.stringify({
   hostname: 'example.cloud.databricks.com',
   catalog: 'main',
 })
 
-describe('explore url', () => {
+describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
   it('uses screenName for the last path segment', () => {
     const screenName = 'user_example_com'
 
-    const url = buildExploreUrl(screenName, ENV)
+    const url = databricksWorkspaceUrl(screenName, ENV) // pragma: allowlist secret
 
     expect(url).toBe(
       'https://example.cloud.databricks.com/explore/data/main/user_example_com',
@@ -22,24 +20,45 @@ describe('explore url', () => {
   })
 
   it('returns null when env is empty', () => {
-    expect(buildExploreUrl('user_example_com', '')).toBeNull()
-    expect(buildExploreUrl('user_example_com', null)).toBeNull()
-    expect(buildExploreUrl('user_example_com', undefined)).toBeNull()
+    expect(databricksWorkspaceUrl('user_example_com', '')).toBeNull() // pragma: allowlist secret
+    expect(databricksWorkspaceUrl('user_example_com', null)).toBeNull() // pragma: allowlist secret
+    expect(databricksWorkspaceUrl('user_example_com', undefined)).toBeNull() // pragma: allowlist secret
   })
 
   it('returns null when env is not JSON', () => {
-    expect(buildExploreUrl('user_example_com', '{')).toBeNull()
+    expect(databricksWorkspaceUrl('user_example_com', '{')).toBeNull() // pragma: allowlist secret
   })
 
   it('returns null when hostname or catalog is missing', () => {
     expect(
-      buildExploreUrl(
+      databricksWorkspaceUrl( // pragma: allowlist secret
         'user_example_com',
         JSON.stringify({ hostname: 'example.cloud.databricks.com' }),
       ),
     ).toBeNull()
     expect(
-      buildExploreUrl('user_example_com', JSON.stringify({ catalog: 'main' })),
+      databricksWorkspaceUrl( // pragma: allowlist secret
+        'user_example_com',
+        JSON.stringify({ catalog: 'main' }),
+      ),
+    ).toBeNull()
+  })
+
+  it('returns null when hostname or catalog is not a string', () => {
+    expect(
+      databricksWorkspaceUrl( // pragma: allowlist secret
+        'user_example_com',
+        JSON.stringify({ hostname: 123, catalog: 'main' }),
+      ),
+    ).toBeNull()
+    expect(
+      databricksWorkspaceUrl( // pragma: allowlist secret
+        'user_example_com',
+        JSON.stringify({
+          hostname: 'example.cloud.databricks.com',
+          catalog: 1,
+        }),
+      ),
     ).toBeNull()
   })
 })
