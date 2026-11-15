@@ -70,7 +70,10 @@ function connectedSentence(): string {
   return (copy.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
 
-async function renderDrawer(formattedData: IJSONObject): Promise<void> {
+async function renderDrawer(
+  formattedData: IJSONObject,
+  generation?: string | null,
+): Promise<void> {
   const step: IStep = {
     id: 'step-1',
     appKey: DATABRICKS_APP_KEY,
@@ -89,6 +92,7 @@ async function renderDrawer(formattedData: IJSONObject): Promise<void> {
     connection: {
       id: 'connection',
       formattedData,
+      generation,
     },
   }
 
@@ -115,13 +119,23 @@ async function renderDrawer(formattedData: IJSONObject): Promise<void> {
 }
 
 describe('databricks explore link', () => {
-  it('builds the href from screenName', async () => {
+  it('keeps a legacy label prefix out of the href', async () => {
     await renderDrawer({ screenName: SCREEN_NAME, env: CONNECTION_ENV })
 
     const anchor = container.querySelector('a')
     const href = anchor?.getAttribute('href') ?? ''
 
     expect(anchor).not.toBeNull()
+    expect(href.endsWith(SCREEN_NAME)).toBe(true)
+    expect(href.includes('DEPRECATED')).toBe(false)
+    expect(connectedSentence()).toBe(`Connected to [DEPRECATED] ${SCREEN_NAME}`)
+  })
+
+  it('leaves a new connection unlabeled', async () => {
+    await renderDrawer({ screenName: SCREEN_NAME, env: CONNECTION_ENV }, 'new')
+
+    const href = container.querySelector('a')?.getAttribute('href') ?? ''
+
     expect(href.endsWith(SCREEN_NAME)).toBe(true)
     expect(href.includes('DEPRECATED')).toBe(false)
     expect(connectedSentence()).toBe(`Connected to ${SCREEN_NAME}`)
@@ -131,12 +145,12 @@ describe('databricks explore link', () => {
     {
       name: 'screenName is omitted',
       formattedData: { env: CONNECTION_ENV },
-      label: 'Unnamed',
+      label: '[DEPRECATED] Unnamed',
     },
     {
       name: 'screenName is not a string',
       formattedData: { screenName: 1, env: CONNECTION_ENV },
-      label: '1',
+      label: '[DEPRECATED] 1',
     },
   ])('renders no explore link when $name', async ({ formattedData, label }) => {
     await renderDrawer(formattedData)
