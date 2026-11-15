@@ -6,7 +6,7 @@ import type {
 import qs from 'qs'
 
 const scopes = ['chat:write', 'chat:write.customize', 'chat:write.public']
-const userScopes = ['channels:read', 'chat:write', 'search:read', 'users:read']
+const userScopes = ['channels:read', 'chat:write', 'users:read']
 
 export default async function generateAuthUrl($: IGlobalVariable) {
   // Our own auth, so safe to cast $.app.auth

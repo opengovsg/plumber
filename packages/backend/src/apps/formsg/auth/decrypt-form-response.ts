@@ -22,6 +22,9 @@ import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
+// V4 and MRF payloads suffix verified keys with the step, e.g. "cpUen (Step 1)".
+// Brackets break the variable regex, so we map them back to the legacy keys.
+const VERIFIED_KEY_STEP_SUFFIX = / \(Step \d+\)$/
 
 function processLocalAddress(answerArray: string[]): string[] {
   const answer = [...answerArray]
@@ -324,10 +327,13 @@ export async function decryptFormResponse(
     const verifiedSubmitterInfo: Record<string, string> = {}
     if (submission.verified) {
       for (const key of Object.keys(submission.verified)) {
+        // TODO: FormSG only collects login data on Step 1 today. Revisit if
+        // FormSG adds logins on later steps, since step keys would collide.
+        const baseKey = key.replace(VERIFIED_KEY_STEP_SUFFIX, '')
         let value = submission.verified[key]
 
         // @deprecated: filterNrics not supported new pipes
-        if (NRIC_VERIFIED_FIELDS.has(key)) {
+        if (NRIC_VERIFIED_FIELDS.has(baseKey)) {
           value = filterNric($, value)
           if (!value) {
             continue
@@ -335,18 +341,11 @@ export async function decryptFormResponse(
         }
 
         // for backwards compatibility with old forms that were created with sgID authType
-        if (
-          key === 'uinFin' ||
-          key === 'sgidUinFin' ||
-          // v3 mrf forms send nric as "uinFin (Step 1)"
-          // brackets break the variable regex and is not the same as mock data
-          // we need to map it back to uinFin
-          key.startsWith('uinFin')
-        ) {
+        if (baseKey === 'uinFin' || baseKey === 'sgidUinFin') {
           verifiedSubmitterInfo['uinFin'] = value
           verifiedSubmitterInfo['sgidUinFin'] = value
         } else {
-          verifiedSubmitterInfo[key] = value
+          verifiedSubmitterInfo[baseKey] = value
         }
       }
     }

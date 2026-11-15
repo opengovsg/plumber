@@ -3,18 +3,18 @@ import { generateObject } from 'ai'
 import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
+import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
 import logger from '@/helpers/logger'
-import { engineProvider } from '@/helpers/pair'
+import { imageModel, structuredOutputProviderOptions } from '@/helpers/pair'
 import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
+import { getModelErrorKind } from '../../common/get-model-error-kind'
+import { getModelErrorLogFields } from '../../common/get-model-error-log-fields'
 import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { hasProvidedImage, schema } from './schema'
-
-const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
   name: 'Process image',
@@ -96,10 +96,11 @@ const action: IRawAction = {
     const validatedParameters = schema.safeParse($.step.parameters)
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
-      throw new StepError(
-        firstError.message,
-        GenericSolution.ReconfigureInvalidField,
-      )
+      throw new StepError({
+        name: firstError.message,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
     const { image, responseFields, continueIfNoFile } = validatedParameters.data
 
@@ -121,34 +122,39 @@ const action: IRawAction = {
 
       const content = await getImageContent(image[0], $.flow.id)
 
-      const { object } = await generateObject({
-        model,
-        schema: responseSchema,
-        messages: [
-          {
-            role: 'user',
-            content,
-          },
-        ],
-        experimental_telemetry: {
-          isEnabled: true,
-          functionId: 'pair-action-process-image',
-          metadata: {
-            userId: $.user.email,
-            executionId: $.execution.id,
-            flowId: $.flow.id,
-            stepId: $.step.id,
-            tags: ['pair', 'action', 'process-image'],
-          },
-        },
-      })
+      const { object } = await withAiTelemetryContext(
+        { distinctId: $.user.id, aiSessionId: $.execution.id },
+        () =>
+          generateObject({
+            model: imageModel,
+            schema: responseSchema,
+            providerOptions: structuredOutputProviderOptions,
+            messages: [
+              {
+                role: 'user',
+                content,
+              },
+            ],
+            experimental_telemetry: {
+              isEnabled: true,
+              functionId: 'pair-action-process-image',
+              metadata: {
+                userId: $.user.email,
+                executionId: $.execution.id,
+                flowId: $.flow.id,
+                stepId: $.step.id,
+                tags: ['pair', 'action', 'process-image'],
+              },
+            },
+          }),
+      )
 
       $.setActionItem({
         raw: { ...object } as IJSONObject,
       })
     } catch (error) {
       logger.error('Failed to process image', {
-        error,
+        ...getModelErrorLogFields(error),
         flowId: $.flow.id,
         executionId: $.execution.id,
         stepId: $.step.id,
@@ -156,19 +162,25 @@ const action: IRawAction = {
         s3Id: image[0],
       })
 
-      if (isBedrockImageTooLargeError(error)) {
-        throw new StepError(
-          'Image is too large',
-          'Please limit your images to 4MB or less and try again.',
-        )
+      // Keeps user-facing reasons, e.g. a malware scan result or an unsupported file type.
+      if (error instanceof StepError) {
+        throw error
       }
 
-      /**
-       * The error is already logged above, so we don't surface `error.message`
-       * here. litellm's error message is a long, noisy string with repeated
-       * fallback-attempt details tacked on.
-       */
-      throw new StepError('Failed to process image', 'Please try again.', error)
+      if (isBedrockImageTooLargeError(error)) {
+        throw new StepError({
+          name: 'Image is too large',
+          solution: 'Please limit your images to 4MB or less and try again.',
+          kind: 'config',
+        })
+      }
+
+      // The error is already logged above. Its raw message is not written for users.
+      throw new StepError({
+        name: 'Failed to process image',
+        solution: 'Please try again.',
+        kind: getModelErrorKind(error),
+      })
     }
   },
 }

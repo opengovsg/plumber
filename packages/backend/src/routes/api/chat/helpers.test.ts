@@ -6,6 +6,7 @@ import {
   buildEstablishedConnectionReminder,
   extractCandidateFormConnection,
   resolveEstablishedFormConnection,
+  stripReasoningParts,
 } from './helpers'
 import type { ChatRequest } from './schema'
 
@@ -20,6 +21,34 @@ vi.mock('@/services/mcp/list-connections', () => ({
 function userMessage(text: string): ChatRequest['messages'][number] {
   return { role: 'user', parts: [{ type: 'text', text }] }
 }
+
+describe('stripReasoningParts', () => {
+  it('removes reasoning parts and keeps all other parts', () => {
+    const messages: ChatRequest['messages'] = [
+      userMessage('hi'),
+      {
+        role: 'assistant',
+        parts: [
+          { type: 'step-start' },
+          {
+            type: 'reasoning',
+            text: 'thinking',
+            providerMetadata: { anthropic: { signature: 'sig' } },
+          },
+          { type: 'text', text: 'hello' },
+        ],
+      },
+    ]
+
+    expect(stripReasoningParts(messages)).toEqual([
+      userMessage('hi'),
+      {
+        role: 'assistant',
+        parts: [{ type: 'step-start' }, { type: 'text', text: 'hello' }],
+      },
+    ])
+  })
+})
 
 describe('extractCandidateFormConnection', () => {
   it('returns null when no message matches the connected-form pattern', () => {

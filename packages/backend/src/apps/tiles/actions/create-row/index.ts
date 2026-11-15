@@ -101,10 +101,11 @@ const action: IRawAction = {
 
     const table = await TableMetadata.query().findById(tableId)
     if (!table) {
-      throw new StepError(
-        'Tile not found',
-        'Tile may have been deleted. Please check your tile.',
-      )
+      throw new StepError({
+        name: 'Tile not found',
+        solution: 'Tile may have been deleted. Please check your tile.',
+        kind: 'config',
+      })
     }
 
     await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
@@ -122,10 +123,12 @@ const action: IRawAction = {
     )
 
     if (!(await table.validateRows([rowDataObject]))) {
-      throw new StepError(
-        'Invalid column ID(s)',
-        'Column(s) may have been deleted or modified. Please check your tile and pipe setup.',
-      )
+      throw new StepError({
+        name: 'Invalid column ID(s)',
+        solution:
+          'Column(s) may have been deleted or modified. Please check your tile and pipe setup.',
+        kind: 'config',
+      })
     }
 
     const tableOperations = getTableOperations(table.db)

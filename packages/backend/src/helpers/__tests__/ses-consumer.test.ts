@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   consumerStart: vi.fn(),
@@ -84,11 +84,6 @@ describe('SES consumer wiring', () => {
     mocks.sqsQueueUrl =
       'https://sqs.ap-southeast-1.amazonaws.com/123/ses-events'
     mocks.sesCredentials = undefined
-  })
-
-  afterEach(() => {
-    // Clear SIGTERM listeners registered by tests so they don't accumulate
-    process.removeAllListeners('SIGTERM')
   })
 
   it('does not start the consumer when SQS_QUEUE_URL is unset', async () => {
@@ -240,57 +235,43 @@ describe('SES consumer wiring', () => {
     await expect(handleMessage(message)).rejects.toThrow('db down')
   })
 
-  it('stopSesConsumer stops the consumer if it was started', async () => {
-    const { startSesConsumer, stopSesConsumer } = await importFresh()
-    startSesConsumer()
-    stopSesConsumer()
-
-    expect(mocks.consumerStop).toHaveBeenCalledTimes(1)
-  })
-
   it('stopSesConsumer is a no-op if the consumer was never started', async () => {
     mocks.sqsQueueUrl = ''
 
     const { startSesConsumer, stopSesConsumer } = await importFresh()
     startSesConsumer()
-    stopSesConsumer()
+    await stopSesConsumer()
 
     expect(mocks.consumerStop).not.toHaveBeenCalled()
   })
 
-  it('SIGTERM stops the consumer, awaits "stopped", then logs shutdown complete', async () => {
+  it('does not register its own SIGTERM listener', async () => {
+    const before = process.listenerCount('SIGTERM')
+
     const { startSesConsumer } = await importFresh()
     startSesConsumer()
 
-    expect(process.listenerCount('SIGTERM')).toBe(1)
+    expect(process.listenerCount('SIGTERM')).toBe(before)
+  })
 
-    // Fire SIGTERM. shutdownOnSigterm should:
-    //   1. register a one-time 'stopped' listener on the consumer
-    //   2. call consumer.stop()
-    //   3. await the 'stopped' event
-    //   4. log 'shutdown complete'
-    process.emit('SIGTERM' as never)
+  it('stopSesConsumer resolves only after the consumer emits "stopped"', async () => {
+    const { startSesConsumer, stopSesConsumer } = await importFresh()
+    startSesConsumer()
 
-    // Let the async handler register its 'stopped' listener and call stop()
+    let isResolved = false
+    const stopping = stopSesConsumer().then(() => {
+      isResolved = true
+    })
     await new Promise((resolve) => setImmediate(resolve))
 
     expect(mocks.consumerStop).toHaveBeenCalledTimes(1)
+    expect(isResolved).toBe(false)
+
     const stoppedCall = mocks.consumerOnce.mock.calls.find(
       ([eventName]) => eventName === 'stopped',
     )
-    expect(stoppedCall).toBeDefined()
-
-    // Shutdown is still pending — log should NOT have fired yet
-    expect(mocks.loggerInfo).not.toHaveBeenCalledWith(
-      expect.stringContaining('shutdown complete'),
-    )
-
-    // Resolve the await by invoking the registered listener
-    const stoppedListener = stoppedCall![1] as () => void
-    stoppedListener()
-
-    // Now the handler can complete and log
-    await new Promise((resolve) => setImmediate(resolve))
+    ;(stoppedCall![1] as () => void)()
+    await stopping
 
     expect(mocks.loggerInfo).toHaveBeenCalledWith(
       expect.stringContaining('shutdown complete'),

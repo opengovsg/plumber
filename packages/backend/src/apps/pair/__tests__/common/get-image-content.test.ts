@@ -14,6 +14,7 @@ vi.mock('@/helpers/s3', async (importOriginal) => {
 })
 
 import { getImageContent } from '@/apps/pair/common/get-image-content'
+import StepError from '@/errors/step'
 import { COMMON_S3_BUCKET } from '@/helpers/s3'
 
 describe('getImageContent', () => {
@@ -61,5 +62,18 @@ describe('getImageContent', () => {
     )
 
     expect(mocks.getObjectFromS3Id).not.toHaveBeenCalled()
+  })
+
+  it('throws a config StepError for an unsupported file type', async () => {
+    mocks.getObjectFromS3Id.mockResolvedValue({
+      name: 'document.docx',
+      data: new Uint8Array([1, 2, 3]),
+    })
+
+    await expect(
+      getImageContent(`s3:${COMMON_S3_BUCKET}:key`, 'flow-id'),
+    ).rejects.toSatisfy(
+      (error) => error instanceof StepError && error.kind === 'config',
+    )
   })
 })

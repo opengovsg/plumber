@@ -23,7 +23,7 @@ const postgresReady = {
 const setupContainers = createGlobalSetup([
   postgres({
     name: 'postgres',
-    image: 'postgres:14.8-alpine',
+    image: 'postgres:18.4-alpine',
     environment: {
       POSTGRES_DB: process.env.POSTGRES_DATABASE as string,
       POSTGRES_USER: process.env.POSTGRES_USERNAME as string,

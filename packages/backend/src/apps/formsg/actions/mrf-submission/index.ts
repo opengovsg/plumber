@@ -96,10 +96,11 @@ function validateMrfStep($: IGlobalVariable): ParsedMrfWorkflowStep {
     mrf: ParsedMrfWorkflowStep
   }
   if (!mrf || parsedMrfWorkflowStepSchema.safeParse(mrf).success === false) {
-    throw new StepError(
-      'Misconfigured MRF step',
-      'Reconnect your MRF form and try again.',
-    )
+    throw new StepError({
+      name: 'Misconfigured MRF step',
+      solution: 'Reconnect your MRF form and try again.',
+      kind: 'internal',
+    })
   }
   return mrf
 }
@@ -202,10 +203,12 @@ const action: IRawAction = {
       $.step.position,
     )
     if (!previousExecutableStep) {
-      throw new StepError(
-        'Previous executable step not found',
-        'The previous executable step was not found. This should not happen.',
-      )
+      throw new StepError({
+        name: 'Previous executable step not found',
+        solution:
+          'The previous executable step was not found. This should not happen.',
+        kind: 'internal',
+      })
     }
 
     if (
@@ -255,22 +258,24 @@ const action: IRawAction = {
     )
     // Ensure workflowContent exists and workflowStep index is a valid number.
     if (submittedStepsResult.success === false) {
-      // If these are missing, something has gone wrong in the form submission or wiring.
-      throw new StepError(
-        'Invalid MRF data: submitted steps are not valid',
-        'Click check step to sync your MRF form and try again.',
-      )
+      // internal: only a FormSG API change breaks this, and Plumber owns keeping up with it.
+      throw new StepError({
+        name: 'Invalid MRF data: submitted steps are not valid',
+        solution: 'Click check step to sync your MRF form and try again.',
+        kind: 'internal',
+      })
     }
 
     // Find the last submitted step which is the current step
     const submittedStep =
       submittedStepsResult.data[submittedStepsResult.data.length - 1]
     if (!submittedStep) {
-      // Should never happen unless the workflow schema did not sync or was changed.
-      throw new StepError(
-        'Invalid MRF data: unable to find submitted step',
-        'Click check step to sync your MRF form and try again.',
-      )
+      // internal: only a FormSG API change breaks this, and Plumber owns keeping up with it.
+      throw new StepError({
+        name: 'Invalid MRF data: unable to find submitted step',
+        solution: 'Click check step to sync your MRF form and try again.',
+        kind: 'internal',
+      })
     }
 
     // If this workflow step does not require approval (no approval_field), we can immediately enqueue the next step.

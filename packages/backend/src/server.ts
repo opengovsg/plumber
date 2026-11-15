@@ -1,10 +1,12 @@
-import '@/instrumentation'
+// dd-trace must load before winston to inject trace IDs and dd.service into logs.
 import '@/helpers/tracer'
+import '@/instrumentation'
 import '@/config/app-env-vars'
 import type { Server } from 'http'
 
 import app from '@/app'
 import appConfig from '@/config/app'
+import { registerGracefulShutdown } from '@/helpers/graceful-shutdown'
 import logger from '@/helpers/logger'
 
 const port = appConfig.port
@@ -15,13 +17,15 @@ const server: Server = app.listen(port, () => {
   logger.info(`Server is listening on ${port}`)
 })
 
-function shutdown(server: Server) {
-  server.close()
-}
-
-process.on('SIGTERM', () => {
-  shutdown(server)
-})
+registerGracefulShutdown(
+  ['SIGTERM', 'SIGINT'],
+  [
+    () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve())
+      }),
+  ],
+)
 
 // As per AWS guidelines, we should set the server timeout to be longer than ALB idle timeout
 // https://repost.aws/knowledge-center/elb-alb-troubleshoot-502-errors

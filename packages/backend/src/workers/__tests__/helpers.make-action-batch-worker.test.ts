@@ -23,8 +23,13 @@ const mocks = vi.hoisted(() => {
     processOn: vi.fn(),
     prepareActionExecution: vi.fn(),
     handleFailedJob: vi.fn(),
+    recordLateScheduledStart: vi.fn(),
   }
 })
+
+vi.mock('@/workers/helpers/record-late-scheduled-start', () => ({
+  recordLateScheduledStart: mocks.recordLateScheduledStart,
+}))
 
 vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
@@ -53,7 +58,7 @@ vi.mock('@/config/redis', async (importActual) => ({
 vi.mock('@/helpers/tracer', () => ({
   default: {
     wrap: vi.fn((_name: string, processor: unknown) => processor),
-    scope: () => ({ active: (): null => null }),
+    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
   },
 }))
 
@@ -160,6 +165,7 @@ describe('makeActionBatchWorker', () => {
     const batchJob = {
       id: 'job-1',
       data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
+      opts: {},
       setAsFailed: vi.fn(),
     }
 
@@ -176,5 +182,57 @@ describe('makeActionBatchWorker', () => {
     expect(failedJob).toBe(batchJob)
     expect(failedJobError.cause).toBe(stepError)
     expect(Object.keys(failedJobError)).not.toContain('cause')
+  })
+
+  describe('processor', () => {
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it.each<{ name: string; config: IActionBatchQueue }>([
+      { name: 'with a queue-wide rate limit', config: batchConfig },
+      {
+        name: 'without a queue-wide rate limit',
+        config: { getGroupConfigForJob: vi.fn() },
+      },
+    ])(
+      'records late scheduled starts for every member before preparing the batch $name',
+      async ({ config }) => {
+        const members = [
+          { id: '1', group: { id: 'file-1' } },
+          { id: '2', group: undefined },
+        ].map(({ id, group }) => ({
+          id,
+          data: {
+            flowId: 'flow-1',
+            executionId: `execution-${id}`,
+            stepId: 'step-1',
+          },
+          opts: group ? { group } : {},
+          setAsFailed: vi.fn(),
+        }))
+        mocks.prepareActionExecution.mockRejectedValue(new Error('no step'))
+        makeActionBatchWorker({ ...workerParams, batchConfig: config })
+        const calls = mocks.workerConstructor.mock.calls as unknown as [
+          string,
+          (job: unknown) => Promise<void>,
+        ][]
+
+        await calls.at(-1)[1]({ getBatch: () => members })
+
+        for (const member of members) {
+          expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
+            job: member,
+            queueName: '{app-actions-m365-excel-batch}',
+            rateLimited:
+              config.queueRateLimit !== undefined ||
+              member.opts.group !== undefined,
+          })
+        }
+        expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
+          mocks.prepareActionExecution,
+        )
+      },
+    )
   })
 })

@@ -29,10 +29,13 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
   let cursor: string | null = null
   let totalArchived = 0
+  let totalTestArchived = 0
   let totalSkipped = 0
+  // IMPORTANT: store counts, not IDs. A flow can own 100k+ executions, and logging every ID
+  // produced multi-MB lines that stdout could not flush before the process exited.
   const archivedByFlow = new Map<
     string,
-    { executionIds: string[]; testExecutionIds: string[] }
+    { executionsCount: number; testExecutionsCount: number }
   >()
   // SGT date (yyyy-MM-dd) -> appKey -> key -> count
   const stepCounts = new Map<string, Map<string, Map<string, number>>>()
@@ -171,36 +174,36 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
             }
           }
 
-          // LEFT JOIN steps to fill in app_key/key for old rows that predate
-          // the denormalised columns being added to execution_steps.
-          // TODO: once all pre-denormalisation rows have been archived, drop the
-          // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
-          const steps = (await archivalDbReader('execution_steps')
-            .select(
-              'execution_steps.id',
-              'execution_steps.execution_id as executionId',
-              'execution_steps.step_id as stepId',
-              archivalDbReader.raw(
-                'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
-              ),
-              archivalDbReader.raw(
-                'COALESCE(execution_steps.key, steps.key) as "key"',
-              ),
-              'execution_steps.job_id as jobId',
-              'execution_steps.status',
-              'execution_steps.data_in as dataIn',
-              'execution_steps.data_out as dataOut',
-              'execution_steps.error_details as errorDetails',
-              'execution_steps.metadata',
-              'execution_steps.created_at as createdAt',
-              'execution_steps.updated_at as updatedAt',
-              'execution_steps.deleted_at as deletedAt',
-            )
-            .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
-            .where('execution_steps.execution_id', execution.id)
-            .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
-
           try {
+            // LEFT JOIN steps to fill in app_key/key for old rows that predate
+            // the denormalised columns being added to execution_steps.
+            // TODO: once all pre-denormalisation rows have been archived, drop the
+            // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
+            const steps = (await archivalDbReader('execution_steps')
+              .select(
+                'execution_steps.id',
+                'execution_steps.execution_id as executionId',
+                'execution_steps.step_id as stepId',
+                archivalDbReader.raw(
+                  'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
+                ),
+                archivalDbReader.raw(
+                  'COALESCE(execution_steps.key, steps.key) as "key"',
+                ),
+                'execution_steps.job_id as jobId',
+                'execution_steps.status',
+                'execution_steps.data_in as dataIn',
+                'execution_steps.data_out as dataOut',
+                'execution_steps.error_details as errorDetails',
+                'execution_steps.metadata',
+                'execution_steps.created_at as createdAt',
+                'execution_steps.updated_at as updatedAt',
+                'execution_steps.deleted_at as deletedAt',
+              )
+              .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
+              .where('execution_steps.execution_id', execution.id)
+              .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
+
             const outcome = await archiveExecution(execution, steps, {
               dryRun,
               bucket: archiveBucket,
@@ -235,13 +238,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       if (outcome === 'archived') {
         batchArchived++
         const entry = archivedByFlow.get(execution.flowId) ?? {
-          executionIds: [],
-          testExecutionIds: [],
+          executionsCount: 0,
+          testExecutionsCount: 0,
         }
         if (execution.testRun) {
-          entry.testExecutionIds.push(execution.id)
+          entry.testExecutionsCount++
+          totalTestArchived++
         } else {
-          entry.executionIds.push(execution.id)
+          entry.executionsCount++
         }
         archivedByFlow.set(execution.flowId, entry)
 
@@ -289,23 +293,9 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     }
   }
 
-  for (const [flowId, { executionIds, testExecutionIds }] of archivedByFlow) {
-    logger.info({
-      event: 'archival.flow.archived',
-      flowId,
-      executionIds,
-      testExecutionIds,
-      executionsCount: executionIds.length,
-      testExecutionsCount: testExecutionIds.length,
-    })
+  for (const [flowId, counts] of archivedByFlow) {
+    logger.info({ event: 'archival.flow.archived', flowId, ...counts })
   }
-
-  logger.info({
-    event: 'archival.run.complete',
-    executions_archived: totalArchived,
-    executions_skipped: totalSkipped,
-    durationMs: Date.now() - startedAt,
-  })
 
   const stepCountsObj: Record<
     string,
@@ -319,20 +309,41 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     stepCountsObj[date] = appObj
   }
 
-  await putArchiveObject({
-    s3Client: archiveS3Client,
-    bucket: archiveBucket,
-    key: `_meta/runs/${runAt}.json`,
-    body: JSON.stringify({
-      runAt,
-      dryRun,
-      executionsArchived: totalArchived,
-      executionsSkipped: totalSkipped,
-      flowsAffected: archivedByFlow.size,
-      stepCounts: stepCountsObj,
-      nullStepCount,
-      durationMs: Date.now() - startedAt,
-    }),
-    contentType: 'application/json',
-  })
+  const durationMs = Date.now() - startedAt
+  const counts = {
+    executions_archived: totalArchived,
+    real_executions_archived: totalArchived - totalTestArchived,
+    test_executions_archived: totalTestArchived,
+    executions_skipped: totalSkipped,
+    durationMs,
+  }
+
+  // Write the summary before logging completion, so run.complete only appears
+  // once nothing else can fail.
+  try {
+    await putArchiveObject({
+      s3Client: archiveS3Client,
+      bucket: archiveBucket,
+      key: `_meta/runs/${runAt}.json`,
+      body: JSON.stringify({
+        runAt,
+        dryRun,
+        executionsArchived: totalArchived,
+        realExecutionsArchived: totalArchived - totalTestArchived,
+        testExecutionsArchived: totalTestArchived,
+        executionsSkipped: totalSkipped,
+        flowsAffected: archivedByFlow.size,
+        stepCounts: stepCountsObj,
+        nullStepCount,
+        durationMs,
+      }),
+      contentType: 'application/json',
+    })
+  } catch (err) {
+    // The executions are already archived, so this log is the only remaining record of the run's counts.
+    logger.error({ event: 'archival.run.meta_write_failed', ...counts, err })
+    throw err
+  }
+
+  logger.info({ event: 'archival.run.complete', ...counts })
 }

@@ -1,22 +1,14 @@
-import '@/types/luxon-extensions'
+import '@/config/datetime'
+import './load-app-env'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
-import { config } from 'dotenv'
-import { Settings as LuxonSettings } from 'luxon'
+import { posthogHost, posthogProjectToken } from '@plumber/shared'
 import { z } from 'zod'
 
 import { requireEnv } from './require-env'
-
-// Placeholders backstop missing keys. Local dev gets its real values from 1Password,
-// which dotenv never overrides.
-// IMPORTANT: without the guard, placeholders would satisfy a deployed environment's
-// missing-env-var checks.
-if ((process.env.APP_ENV ?? 'development') === 'development') {
-  config({ path: path.resolve(__dirname, '../../../.env-example') })
-}
 
 // IMPORTANT: ECS runs `node` directly, so npm_package_version is unset there.
 const getVersion = (): string =>
@@ -33,25 +25,20 @@ export type CoreConfig = {
   port: string
   webAppUrl: string
   webhookUrl: string
-  appEnv: string
-  isProd: boolean
-  isDev: boolean
   version: string
   baseUrl: string
   encryptionKey: string
   sessionSecretKey: string
   adminJwtSecretKey: string
   serveWebAppSeparately: boolean
-  redisHost: string
-  redisPort: number
-  redisUsername?: string
-  redisPassword?: string
-  redisTls: boolean
-  redisClusterMode: boolean
   enableBullMQDashboard: boolean
   s3CommonBucket: string
   adminUserEmail: string
   requestBodySizeLimit: string
+  posthog: {
+    projectToken: string
+    host: string
+  }
   postman: {
     apiKey: string
     fromAddress: string
@@ -83,12 +70,17 @@ export type CoreConfig = {
   gathersg: {
     publicKey: string
   }
+  bedrock: {
+    region: string
+    model: string
+    imageModel: string
+    fallbackModel: string
+    /**
+     * Local dev only. Deployed environments authenticate with the ECS task role.
+     */
+    devApiKey?: string
+  }
   pair: {
-    foundry: {
-      apiKey: string
-      model: string
-      imageModel: string
-    }
     rome: {
       baseUrl: string
       cloudflare: {
@@ -136,13 +128,8 @@ let webhookUrl = new URL(
 ).toString()
 webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1) // remove trailing slash
 
-const appEnv = process.env.APP_ENV || 'development'
-
 const coreConfig: CoreConfig = {
   port,
-  appEnv: appEnv,
-  isProd: appEnv === 'prod',
-  isDev: appEnv === 'development',
   version: getVersion(),
   baseUrl: requireEnv('BASE_URL', process.env.BASE_URL),
   webAppUrl,
@@ -151,16 +138,14 @@ const coreConfig: CoreConfig = {
   sessionSecretKey: process.env.SESSION_SECRET_KEY || '',
   adminJwtSecretKey: process.env.ADMIN_JWT_SECRET_KEY || '',
   serveWebAppSeparately: process.env.SERVE_WEB_APP_SEPARATELY === 'true',
-  redisHost: process.env.REDIS_HOST || '127.0.0.1',
-  redisPort: parseInt(process.env.REDIS_PORT || '6379'),
-  redisUsername: process.env.REDIS_USERNAME,
-  redisPassword: process.env.REDIS_PASSWORD,
-  redisTls: process.env.REDIS_TLS === 'true',
-  redisClusterMode: process.env.REDIS_CLUSTER_MODE === 'true',
   adminUserEmail: requireEnv('ADMIN_USER_EMAIL', process.env.ADMIN_USER_EMAIL),
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
   s3CommonBucket: requireEnv('S3_COMMON_BUCKET', process.env.S3_COMMON_BUCKET),
   requestBodySizeLimit: '1mb',
+  posthog: {
+    projectToken: posthogProjectToken,
+    host: posthogHost,
+  },
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename ?? ''),
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
@@ -213,18 +198,20 @@ const coreConfig: CoreConfig = {
       process.env.GATHERSG_PUBLIC_KEY,
     ),
   },
+  bedrock: {
+    region: requireEnv('BEDROCK_REGION', process.env.BEDROCK_REGION),
+    model: requireEnv('BEDROCK_MODEL', process.env.BEDROCK_MODEL),
+    imageModel: requireEnv(
+      'BEDROCK_IMAGE_MODEL',
+      process.env.BEDROCK_IMAGE_MODEL,
+    ),
+    fallbackModel: requireEnv(
+      'BEDROCK_FALLBACK_MODEL',
+      process.env.BEDROCK_FALLBACK_MODEL,
+    ),
+    devApiKey: process.env.BEDROCK_API_KEY,
+  },
   pair: {
-    foundry: {
-      apiKey: requireEnv(
-        'PAIR_FOUNDRY_API_KEY',
-        process.env.PAIR_FOUNDRY_API_KEY,
-      ),
-      model: requireEnv('PAIR_FOUNDRY_MODEL', process.env.PAIR_FOUNDRY_MODEL),
-      imageModel: requireEnv(
-        'PAIR_FOUNDRY_IMAGE_MODEL',
-        process.env.PAIR_FOUNDRY_IMAGE_MODEL,
-      ),
-    },
     rome: {
       baseUrl: requireEnv('PAIR_ROME_BASE_URL', process.env.PAIR_ROME_BASE_URL),
       cloudflare: {
@@ -302,9 +289,5 @@ if (
     'MAX_JOB_ATTEMPTS environment variable is not a valid integer!',
   )
 }
-
-// Force SGT date-time formatting no matter what
-LuxonSettings.defaultZone = 'Asia/Singapore'
-LuxonSettings.defaultLocale = 'en-SG'
 
 export default coreConfig

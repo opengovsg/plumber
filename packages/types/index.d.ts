@@ -39,7 +39,7 @@ export interface IConnection {
   key: string
   data: string
   formattedData?: IJSONObject
-  userId: string
+  userId: string | null
   verified: boolean
   count?: number
   flowCount?: number
@@ -150,6 +150,13 @@ export interface IExecutionStep {
 export interface IExecutionStepMetadata {
   isMock?: boolean
   lastTestSubmissionDate?: string
+  /**
+   * IDs of every question in the FormSG form at the time of the test run.
+   *
+   * Lets the editor tell a deleted question apart from one a submission merely
+   * omitted, e.g. hidden by logic or left unanswered.
+   */
+  formFieldIds?: string[]
   iteration?: number
   iterations?: number
   iterationStatus?: Record<
@@ -212,8 +219,8 @@ export interface IStep {
   flowId: string
   key?: string
   appKey?: string
-  iconUrl: string
-  webhookUrl: string
+  iconUrl: string | null
+  webhookUrl: string | null
   type: 'action' | 'trigger'
   connectionId?: string
   status: string
@@ -294,7 +301,7 @@ export interface IFlow {
   createdAt: string
   updatedAt: string
   remoteWebhookId?: string | null
-  lastInternalId: () => Promise<string>
+  lastInternalId: () => Promise<string | null | undefined>
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
   template?: ITemplate
@@ -1142,6 +1149,10 @@ export interface IActionJobData {
    * of the job's original (potentially very stale) enqueue time.
    */
   retryTimestamp?: number
+  /**
+   * The start time a delay step set for this job, in epoch milliseconds.
+   */
+  scheduledAt?: number
 }
 
 export interface IActionRunResult {
@@ -1366,6 +1377,8 @@ export type IGlobalVariable = {
   execution: {
     id: string
     testRun: boolean
+    // ISO 8601. Undefined outside an execution, e.g. in dynamic data.
+    createdAt?: string
   }
   metadata?: IJSONObject
   webhookUrl?: string

@@ -5,9 +5,11 @@ import {
   getM365TenantInfo,
   type M365TenantInfo,
 } from '@/config/app-env-vars/m365'
+import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
 import { AuthData } from './auth-data'
+import { rethrowHttpErrorAsStepError } from './graph-api-http-error'
 
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0#roles-property-values
 const sharePointRolesSchema = z.array(z.enum(['read', 'write', 'owner']))
@@ -106,15 +108,17 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
   // More info on siteUser.loginName:
   // - https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/get-user-identity-and-properties-in-sharepoint#retrieve-current-website-user-identity-by-using-the-web-object
   // - https://learn.microsoft.com/en-us/answers/questions/349797/understanding-login-name-format-of-sharepoint
-  const sharePointFilePermissionsResponse = await http.get(
-    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
-    {
-      urlPathParams: {
-        fileId,
-        sharePointSiteId: tenant.sharePointSiteId,
+  const sharePointFilePermissionsResponse = await http
+    .get(
+      `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/permissions?$filter=grantedToV2/siteUser/loginName+ne+null&$select=grantedToV2,roles`,
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
       },
-    },
-  )
+    )
+    .catch(rethrowHttpErrorAsStepError)
   const permissions = sharepointFilePermissionsSchema.parse(
     sharePointFilePermissionsResponse.data,
   )
@@ -229,15 +233,17 @@ async function queryFilePrivacyInfo(
   fileId: string,
   http: IHttpClient,
 ): Promise<z.infer<typeof fileInfoResponseSchema>> {
-  const response = await http.get(
-    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/?$select=sensitivityLabel,parentReference&$expand=permissions`,
-    {
-      urlPathParams: {
-        fileId,
-        sharePointSiteId: tenant.sharePointSiteId,
+  const response = await http
+    .get(
+      `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/?$select=sensitivityLabel,parentReference&$expand=permissions`,
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
       },
-    },
-  )
+    )
+    .catch(rethrowHttpErrorAsStepError)
   return fileInfoResponseSchema.parse(response.data)
 }
 
@@ -272,7 +278,12 @@ export async function validateCanAccessFile(
     // (This means it's possible for users to DoS other users by renaming their
     // folder to the victim's email, but we can track such abusers and follow up
     // with them.)
-    throw new Error('File must be in your Plumber folder')
+    throw new StepError({
+      name: 'File must be in your Plumber folder',
+      solution:
+        'Move the file directly into your Plumber folder, then select it again.',
+      kind: 'config',
+    })
   }
 
   const emailCandidates = getWriteAccessEmailCandidates(userEmail.toLowerCase())
@@ -285,18 +296,30 @@ export async function validateCanAccessFile(
         http,
       )
   if (!userCanWriteToFile) {
-    throw new Error('You need write access to use this file in your pipe.')
+    throw new StepError({
+      name: 'You need write access to use this file in your pipe.',
+      solution: 'Ask the file owner to give you edit access, then try again.',
+      kind: 'config',
+    })
   }
 
   if (!sensitivityLabelGuid) {
-    throw new Error('Your file needs a sensitivity label.')
+    throw new StepError({
+      name: 'Your file needs a sensitivity label.',
+      solution:
+        'Add a sensitivity label to your file in Excel, then try again.',
+      kind: 'config',
+    })
   }
 
   const isAllowedSensitivity =
     tenant.allowedSensitivityLabelGuids.has(sensitivityLabelGuid)
   if (!isAllowedSensitivity) {
-    throw new Error(
-      'File sensitivity should be up to Restricted and Sensitive-Normal.',
-    )
+    throw new StepError({
+      name: 'File sensitivity should be up to Restricted and Sensitive-Normal.',
+      solution:
+        'Change the sensitivity label of your file to Restricted and Sensitive-Normal or lower, then try again.',
+      kind: 'config',
+    })
   }
 }

@@ -2,6 +2,7 @@ import { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 
 import createTableRowAction from '../../actions/create-table-row'
 
@@ -223,7 +224,10 @@ describe('createTableRow runBatch', () => {
 
     // The valid job committed; the bad one was reported failed and excluded.
     expect(results[0]).toEqual({ status: 'success' })
-    expect(results[1].status).toBe('failed')
+    expect(results[1]).toMatchObject({
+      status: 'failed',
+      error: { kind: 'config' },
+    })
 
     // One POST carrying only the valid job's row.
     expect(postCalls()).toHaveLength(1)
@@ -257,7 +261,14 @@ describe('createTableRow runBatch', () => {
 
     // The bad-column job is isolated; the whole batch is NOT sunk.
     expect(results[0]).toEqual({ status: 'success' })
-    expect(results[1].status).toBe('failed')
+    expect(results[1]).toMatchObject({
+      status: 'failed',
+      error: { kind: 'config' },
+    })
+    // The helper's StepError is recorded as-is, not wrapped in another one.
+    expect(
+      JSON.parse((results[1] as { error: StepError }).error.message).name,
+    ).toBe('Column "Nonexistent" does not exist in your table.')
     expect(results[2]).toEqual({ status: 'success' })
 
     // One POST carrying only the two valid rows; the un-buildable row is excluded.
@@ -319,7 +330,11 @@ describe('createTableRow runBatch', () => {
   it('fails the whole batch when the shared file-access check is denied', async () => {
     mocks.validateCanAccessFile.mockReset()
     mocks.validateCanAccessFile.mockRejectedValue(
-      new Error('You need write access to use this file.'),
+      new StepError({
+        name: 'You need write access to use this file in your pipe.',
+        solution: 'Ask the file owner to give you edit access, then try again.',
+        kind: 'config',
+      }),
     )
 
     const jobs = [
@@ -333,6 +348,9 @@ describe('createTableRow runBatch', () => {
     // isolates every job - no session, no POST, no outputs.
     expect(mocks.validateCanAccessFile).toHaveBeenCalledTimes(1)
     expect(results.every((r) => r.status === 'failed')).toBe(true)
+    results.forEach((r) =>
+      expect(r).toMatchObject({ error: { kind: 'config' } }),
+    )
     expect(mocks.acquire).not.toHaveBeenCalled()
     expect(postCalls()).toHaveLength(0)
     jobs.forEach((job) => expect(job.$.setActionItem).not.toHaveBeenCalled())
@@ -407,6 +425,21 @@ describe('createTableRow runBatch', () => {
       /different files or tables/,
     )
     expect(mocks.acquire).not.toHaveBeenCalled()
+  })
+
+  it('fails the whole batch with a config StepError when the header row is empty', async () => {
+    mocks.request.mockImplementation(async () => ({
+      data: { rowIndex: HEADER_ROW_INDEX, values: [[]] },
+    }))
+
+    const jobs = [{ $: makeGlobalVariable(rowParameters('Alice', '30')) }]
+
+    const error = await createTableRowAction
+      .runBatch(jobs)
+      .catch((err: unknown) => err)
+    expect(error).toBeInstanceOf(StepError)
+    expect(error).toMatchObject({ kind: 'config' })
+    expect(postCalls()).toHaveLength(0)
   })
 
   it('is a no-op for an empty batch', async () => {

@@ -110,7 +110,7 @@ export async function advanceAfterStep({
 
   const jobName = `${executionId}-${nextStep.id}`
 
-  const jobPayload = {
+  const jobPayload: IActionJobData = {
     flowId,
     executionId,
     stepId: nextStep.id,
@@ -120,10 +120,14 @@ export async function advanceAfterStep({
   let jobOptions = DEFAULT_JOB_OPTIONS
 
   if (currStep.appKey === 'delay') {
+    const delay = delayAsMilliseconds(currStep.key, executionStep.dataOut)
     jobOptions = {
       ...DEFAULT_JOB_OPTIONS,
-      delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
+      delay,
     }
+    // Used to check if the step after a delay step started late, for SLO purposes.
+    // IMPORTANT: a past delayUntil target gives a negative delay, and BullMQ runs that job at once.
+    jobPayload.scheduledAt = Date.now() + Math.max(delay, 0)
   }
 
   try {

@@ -2,11 +2,12 @@ import type { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import getPaymentAction from '../../actions/get-payment'
 import { MOCK_PAYMENT } from '../utils'
 
 const mocks = vi.hoisted(() => ({
-  httpGet: vi.fn(() => ({
+  httpGet: vi.fn(async () => ({
     data: MOCK_PAYMENT,
   })),
 }))
@@ -79,4 +80,41 @@ describe('get payment', () => {
       },
     })
   })
+
+  it('throws a config StepError when a field is invalid', async () => {
+    $.step.parameters.paymentId = ' '
+
+    await expect(getPaymentAction.run($)).rejects.toMatchObject({
+      kind: 'config',
+    })
+    expect(mocks.httpGet).not.toHaveBeenCalled()
+  })
+
+  it('throws an internal StepError when PaySG returns an unexpected response', async () => {
+    mocks.httpGet.mockResolvedValueOnce({ data: { id: 123 } } as never)
+
+    await expect(getPaymentAction.run($)).rejects.toMatchObject({
+      kind: 'internal',
+      message: expect.stringContaining(
+        'PaySG returned an unexpected response. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+      ),
+    })
+  })
+
+  it.each([
+    { status: 404, kind: 'config' },
+    { status: 500, kind: 'third-party' },
+    { status: 429, kind: 'internal' },
+  ])(
+    'throws a $kind StepError with the HttpError as cause on a $status response',
+    async ({ status, kind }) => {
+      const httpError = makeHttpError({ status })
+      mocks.httpGet.mockRejectedValueOnce(httpError as never)
+
+      await expect(getPaymentAction.run($)).rejects.toMatchObject({
+        kind,
+        cause: httpError,
+      })
+    },
+  )
 })

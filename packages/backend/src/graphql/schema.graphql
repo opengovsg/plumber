@@ -460,6 +460,7 @@ type ExecutionStep {
 type ExecutionStepMetadata {
   isMock: Boolean
   lastTestSubmissionDate: String
+  formFieldIds: [String!]
   iteration: Int
   iterations: Int
   iterationStatus: JSONObject

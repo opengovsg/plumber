@@ -8,6 +8,7 @@ import {
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import HttpError from '@/errors/http'
+import { attachHiddenCauseIfStepError } from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -20,6 +21,7 @@ import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 interface MakeSubTriggerWorkerParams {
@@ -78,6 +80,8 @@ export function makeSubTriggerWorker(
         ...getJobQueueTimingTags(job),
         workerVersion: appConfig.version,
       })
+
+      await recordLateScheduledStart({ job, queueName, rateLimited: false })
 
       const $ = await globalVariable({
         flow,
@@ -231,7 +235,9 @@ export function makeSubTriggerWorker(
             logger.error('[sub-trigger] error', { error: error.message })
           }
         }
-        throw new UnrecoverableError(error.message)
+        const unrecoverableError = new UnrecoverableError(error.message)
+        attachHiddenCauseIfStepError(unrecoverableError, error)
+        throw unrecoverableError
       }
     }),
     defaultWorkerOptions,

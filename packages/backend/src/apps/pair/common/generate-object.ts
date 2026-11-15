@@ -2,8 +2,12 @@ import { AttributeValue } from '@opentelemetry/api'
 import { generateObject as AiSdkGenerateObject } from 'ai'
 import z from 'zod'
 
+import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
-import { model } from '@/helpers/pair'
+import { model, structuredOutputProviderOptions } from '@/helpers/pair'
+
+import { getModelErrorKind } from './get-model-error-kind'
+import { getModelErrorLogFields } from './get-model-error-log-fields'
 
 async function generateObject(
   prompt: string,
@@ -14,6 +18,7 @@ async function generateObject(
     const { object } = await AiSdkGenerateObject({
       model,
       schema,
+      providerOptions: structuredOutputProviderOptions,
       system:
         "Based on the user's prompt, generate an object that adheres to the provided schema.",
       prompt,
@@ -27,10 +32,14 @@ async function generateObject(
     return object
   } catch (error) {
     logger.error('Failed to generate object', {
-      error,
+      ...getModelErrorLogFields(error),
       ...metadata,
     })
-    throw error
+    throw new StepError({
+      name: 'Failed to process prompt',
+      solution: 'Please try again.',
+      kind: getModelErrorKind(error),
+    })
   }
 }
 

@@ -14,8 +14,30 @@ const mocks = vi.hoisted(() => {
 
     // Misc mocks
     processOn: vi.fn(),
+
+    // Processor mocks
+    findStepById: vi.fn(),
+    processAction: vi.fn(),
+    advanceAfterStep: vi.fn(),
+    recordLateScheduledStart: vi.fn(),
   }
 })
+
+vi.mock('@/models/step', () => ({
+  default: { query: () => ({ findById: mocks.findStepById }) },
+}))
+
+vi.mock('@/services/action', () => ({
+  processAction: mocks.processAction,
+}))
+
+vi.mock('@/workers/helpers/advance-after-step', () => ({
+  advanceAfterStep: mocks.advanceAfterStep,
+}))
+
+vi.mock('@/workers/helpers/record-late-scheduled-start', () => ({
+  recordLateScheduledStart: mocks.recordLateScheduledStart,
+}))
 
 vi.mock('@/queues/action', () => ({
   enqueueActionJob: vi.fn(),
@@ -43,7 +65,8 @@ vi.mock('@/config/redis', async (importActual) => ({
 
 vi.mock('@/helpers/tracer', () => ({
   default: {
-    wrap: vi.fn(() => ({})),
+    wrap: vi.fn((_name, processor) => processor),
+    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
   },
 }))
 
@@ -188,4 +211,84 @@ describe('makeActionWorker', () => {
       )
     },
   )
+
+  describe('processor', () => {
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    const baseJob = {
+      id: '1',
+      data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
+      opts: {},
+    }
+
+    function getProcessor() {
+      const calls = mocks.workerConstructor.mock.calls as unknown as [
+        string,
+        (job: unknown) => Promise<void>,
+      ][]
+      return calls.at(-1)[1]
+    }
+
+    const groupLimitedQueueConfig = {
+      isQueueDelayable: false,
+      workerType: 'action' as const,
+      getGroupConfigForJob: vi.fn(),
+      groupLimits: { type: 'concurrency' as const, concurrency: 1 },
+    }
+
+    it.each([
+      {
+        name: 'a queue without rate limits',
+        queueConfig: { isQueueDelayable: false, workerType: 'action' as const },
+        group: undefined,
+        rateLimited: false,
+      },
+      {
+        name: 'a grouped job on a group-limited queue',
+        queueConfig: groupLimitedQueueConfig,
+        group: { id: 'table-1-findSingleRow' },
+        rateLimited: true,
+      },
+      {
+        name: 'an ungrouped job on a group-limited queue',
+        queueConfig: groupLimitedQueueConfig,
+        group: undefined,
+        rateLimited: false,
+      },
+      {
+        name: 'an ungrouped job on a queue with a queue-wide rate limit',
+        queueConfig: {
+          isQueueDelayable: true,
+          workerType: 'action' as const,
+          queueRateLimit: { max: 1, duration: 5000 },
+        },
+        group: undefined,
+        rateLimited: true,
+      },
+    ])(
+      'records late scheduled starts before running the step for $name (rateLimited: $rateLimited)',
+      async ({ queueConfig, group, rateLimited }) => {
+        const job = { ...baseJob, opts: group ? { group } : {} }
+        mocks.processAction.mockResolvedValueOnce({})
+        makeActionWorker({
+          appKey: 'test-app',
+          queueName: '{test-app-queue}',
+          queueConfig,
+        })
+
+        await getProcessor()(job)
+
+        expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
+          job,
+          queueName: '{test-app-queue}',
+          rateLimited,
+        })
+        expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
+          mocks.processAction,
+        )
+      },
+    )
+  })
 })

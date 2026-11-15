@@ -17,6 +17,7 @@ import { processAction } from '@/services/action'
 
 import { advanceAfterStep } from './advance-after-step'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { requeueOnFileLockContention } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -88,6 +89,8 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
+  const queueHasRateLimit = Boolean(params.queueConfig.queueRateLimit)
+  const queueHasGroupLimits = Boolean(params.queueConfig.groupLimits)
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
     tracer.wrap(
@@ -115,6 +118,15 @@ export function makeActionWorker(
           jobId,
           ...getJobQueueTimingTags(job),
           workerVersion: appConfig.version,
+        })
+
+        await recordLateScheduledStart({
+          job,
+          queueName,
+          // An ungrouped job on a group-limited queue never waits on a group limit.
+          rateLimited:
+            queueHasRateLimit ||
+            (queueHasGroupLimits && job.opts.group !== undefined),
         })
 
         const processResult = await processAction({ ...jobData, jobId }).catch(

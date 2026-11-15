@@ -80,6 +80,9 @@ describe.each([['ddb'], ['pg']])(
           id: '123',
           userId: context.currentUser.id,
         },
+        execution: {
+          id: '789',
+        },
         step: {
           id: '456',
           appKey: tiles.name,
@@ -156,8 +159,45 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ table_id: $.step.parameters.tableId })
-      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+      await expect(findSingleRowAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Tile not found"'),
+        kind: 'config',
+      })
     })
+
+    it('should throw a config error if a filter column is not in the tile', async () => {
+      const filters = $.step.parameters.filters as TableRowFilter[]
+      filters[0].columnId = 'invalid_column'
+      await expect(findSingleRowAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid filters"'),
+        kind: 'config',
+      })
+    })
+
+    it('should throw a config error if a filter has no operator', async () => {
+      $.step.parameters.filters = [
+        { columnId: dummyColumnIds[0], value: 'abc' },
+      ]
+      await expect(findSingleRowAction.run($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid filters"'),
+        kind: 'config',
+      })
+    })
+
+    it.runIf(databaseType === 'ddb')(
+      'should skip a filter with no operator if another filter uses its column',
+      async () => {
+        const filters = $.step.parameters.filters as TableRowFilter[]
+        $.step.parameters.filters = [
+          filters[0],
+          { columnId: dummyColumnIds[0], value: 'abc' },
+        ]
+        await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+        expect($.setActionItem).toHaveBeenCalledWith({
+          raw: expect.objectContaining({ rowsFound: 1 }),
+        })
+      },
+    )
 
     it('should call getTableRows with scan limit if exists in step config', async () => {
       const getTableRowsSpy = vi

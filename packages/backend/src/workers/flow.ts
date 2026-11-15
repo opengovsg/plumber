@@ -96,7 +96,3 @@ worker.on('error', (err) => {
     err: err.stack,
   })
 })
-
-process.on('SIGTERM', async () => {
-  await worker.close()
-})

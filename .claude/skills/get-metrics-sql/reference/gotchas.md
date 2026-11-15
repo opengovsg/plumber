@@ -174,7 +174,7 @@ against prod too — check the running version with `SELECT version();` if you n
 specific GUC or syntax is available, rather than assuming a version number.
 
 What each setting does (verify against `pg_settings` on whichever Postgres version you're targeting,
-rather than assuming — behavior below was confirmed against the dev container's Postgres 14):
+rather than assuming — defaults below were confirmed against the dev container's Postgres 18):
 
 - `max_parallel_workers_per_gather = 0` — disables parallel workers for this transaction. Each
   parallel worker gets its own `work_mem`, so parallelism multiplies peak memory per node; disabling
@@ -187,11 +187,8 @@ rather than assuming — behavior below was confirmed against the dev container'
   wrong at large scale; disabling it trades some CPU (subqueries re-execute instead of being cached)
   for a more predictable memory footprint. Has a real effect (default is `on`; requires PG14+ — check
   `SELECT version();` if targeting an older Postgres).
-- `hash_mem_multiplier = 1.0` — on PG13/14, this is a no-op: the built-in default (`boot_val`) is
-  already `1`. It only defaults to `2` from PG15 onward. Harmless to keep in the snippet regardless
-  (protects against a future major-version upgrade silently doubling hash memory) — check
-  `SHOW hash_mem_multiplier;` if you want to confirm which case applies on the version you're running
-  against.
+- `hash_mem_multiplier = 1.0` — halves the memory a hash node may use. Has a real effect (default
+  is `2` from PG15 onward; it was `1` on PG13/14).
 
 **Don't apply this by default to every query** — it trades speed for memory safety, and most queries
 in this skill (against `flows`/`steps`/`users`/`connections`, which are far smaller than

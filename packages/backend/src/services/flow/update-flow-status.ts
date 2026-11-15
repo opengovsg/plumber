@@ -9,9 +9,15 @@ import {
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import { getRepeatDelayedJobIds } from '@/helpers/repeatable-jobs'
+import { captureServerEvent } from '@/helpers/server-events'
 import Flow from '@/models/flow'
 import type Step from '@/models/step'
 import flowQueue from '@/queues/flow'
+
+import {
+  buildFlowStatusEvent,
+  type FlowStatusSource,
+} from './flow-status-event'
 
 const JOB_NAME = 'flow'
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
@@ -21,6 +27,7 @@ export interface UpdateFlowStatusInput {
   active: boolean
   userId: string
   updatedAt: string
+  source?: FlowStatusSource
 }
 
 const validateFlowSteps = (steps: Step[]) => {
@@ -48,6 +55,7 @@ export async function updateFlowStatusService({
   active,
   userId,
   updatedAt,
+  source = 'app',
 }: UpdateFlowStatusInput): Promise<Flow> {
   // Do nothing if status did not change
   if (flow.active === active) {
@@ -61,6 +69,7 @@ export async function updateFlowStatusService({
     validateFlowBlocks(flow.steps, flow.id)
   }
   const jobName = `${JOB_NAME}-${flow.id}`
+  const previousPublishedAt = flow.publishedAt
 
   const triggerStep = await flow.getTriggerStep()
   const trigger = await triggerStep.getTriggerCommand()
@@ -189,6 +198,11 @@ export async function updateFlowStatusService({
       }
     }
   })
+
+  // After the commit, so a rolled-back change sends nothing.
+  captureServerEvent(
+    buildFlowStatusEvent({ flow, active, userId, source, previousPublishedAt }),
+  )
 
   return flow
 }

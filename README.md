@@ -39,6 +39,32 @@ Plumber doesn't officially support Windows as a dev environment, but some contri
 
 See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup steps and known issues.
 
+## AI Builder observability
+
+AI Builder exports traces to Rome through the existing Langfuse processors and Cloudflare Access headers.
+It also exports the same traces to PostHog.
+The PostHog project token and host live in `packages/shared/src/constants.ts`.
+The frontend uses the same values.
+The host must accept `/i/v0/ai/otel`.
+
+PostHog receives AI Builder and PAIR action traces, including prompts, responses, and tool calls.
+Base64 images and files are redacted from PostHog's copy. Rome retains the original content.
+PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
+`OTEL_BSP_MAX_EXPORT_BATCH_SIZE=50` caps the span count.
+PostHog identifies users by their Plumber user ID.
+It groups AI Builder turns by `chatId` and PAIR action calls by execution ID.
+`withAiTelemetryContext` in `packages/backend/src/helpers/ai/posthog-client.ts` sets both values.
+Both destinations retain the OpenTelemetry trace ID.
+The server flushes both destinations after draining HTTP requests during graceful shutdown.
+
+In staging, send a chat that calls a tool and compare both trace timelines.
+Confirm matching trace IDs, tool spans, token usage, and PostHog user attribution.
+No custom truncation or byte-aware batch splitting is applied.
+PostHog can reject exports above its 4 MB limit, losing that batch from PostHog.
+OpenTelemetry export warnings and errors appear in backend logs.
+Rome continues exporting independently.
+See [PostHog's OpenTelemetry documentation](https://posthog.com/docs/ai-observability/installation/opentelemetry).
+
 ## Acknowledgements
 
 Plumber is a fork of the open source project [Automatisch](https://github.com/automatisch/automatisch). We would like to thank the team for their contributions to the open source community. Please refer to the license files [[1](./LICENSE.md),[2](./LICENSE.agpl)] for more information.

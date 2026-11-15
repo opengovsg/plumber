@@ -3,6 +3,7 @@ import TurndownService from 'turndown'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
+import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
 
 import {
   DEFAULT_PROMPT_VALUES,
@@ -109,10 +110,11 @@ const action: IRawAction = {
 
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
-      throw new StepError(
-        firstError.message,
-        GenericSolution.ReconfigureInvalidField,
-      )
+      throw new StepError({
+        name: firstError.message,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
 
     const { prompt, responseFields } = validatedParameters.data
@@ -129,13 +131,17 @@ const action: IRawAction = {
 
     const dynamicSchema = generateSchemaFromFields(responseFields)
 
-    const response = await generateObject(convertedPrompt, dynamicSchema, {
-      userId: $.user.email,
-      flowId: $.flow.id,
-      stepId: $.step.id,
-      executionId: $.execution.id,
-      tags: ['pair', 'action', 'generate-text'],
-    })
+    const response = await withAiTelemetryContext(
+      { distinctId: $.user.id, aiSessionId: $.execution.id },
+      () =>
+        generateObject(convertedPrompt, dynamicSchema, {
+          userId: $.user.email,
+          flowId: $.flow.id,
+          stepId: $.step.id,
+          executionId: $.execution.id,
+          tags: ['pair', 'action', 'generate-text'],
+        }),
+    )
 
     $.setActionItem({
       raw: { ...response },

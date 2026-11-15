@@ -7,6 +7,13 @@ import roundtoDecimalPlacesAction from '../actions/round-to-decimal-places'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('perform calculation', () => {
@@ -140,8 +147,54 @@ describe('perform calculation', () => {
           expect(err.message).toEqual(
             expect.stringContaining('Configuration problem: '),
           )
+          expect(err.kind).toBe('config')
         }
       }
     },
   )
+
+  it('treats a Big.js error as config', async () => {
+    // Big.js caps decimal places at 1e6, which the field schema does not check.
+    $.step.parameters = {
+      value: '1.5',
+      op: 'roundOff',
+      toDecimalPlaces: '1000001',
+    }
+    await expect(roundtoDecimalPlacesAction.run($)).rejects.toMatchObject({
+      message: expect.stringContaining(
+        "Error performing rounding: 'Invalid decimal places'",
+      ),
+      kind: 'config',
+    })
+    expect(mocks.logError).not.toHaveBeenCalled()
+  })
+
+  it('treats a non-Big.js Error as internal without logging it', async () => {
+    $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw new TypeError('boom')
+    })
+    const result = roundtoDecimalPlacesAction.run($)
+    await expect(result).rejects.toMatchObject({
+      message: expect.stringContaining("Error performing rounding: 'boom'"),
+      kind: 'internal',
+    })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+    )
+    expect(mocks.logError).not.toHaveBeenCalled()
+  })
+
+  it('treats a thrown non-Error value as internal without logging it', async () => {
+    $.step.parameters = { value: '1.5', op: 'roundOff', toDecimalPlaces: '0' }
+    mocks.setActionItem.mockImplementationOnce(() => {
+      throw 'not an Error'
+    })
+    const result = roundtoDecimalPlacesAction.run($)
+    await expect(result).rejects.toMatchObject({ kind: 'internal' })
+    await expect(result).rejects.toThrow(
+      'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+    )
+    expect(mocks.logError).not.toHaveBeenCalled()
+  })
 })

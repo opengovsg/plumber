@@ -9,12 +9,8 @@ import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
 
-function handleZodError(error: ZodError): never {
-  const firstError = fromZodError(error).details[0]
-  throw new StepError(
-    `${firstError.message}`,
-    GenericSolution.ReconfigureInvalidField,
-  )
+function getFirstZodErrorMessage(error: ZodError): string {
+  return `${fromZodError(error).details[0].message}`
 }
 
 const action: IRawAction = {
@@ -112,14 +108,24 @@ const action: IRawAction = {
     const payloadResult = requestSchema.safeParse($.step.parameters)
 
     if (payloadResult.success === false) {
-      handleZodError(payloadResult.error)
+      throw new StepError({
+        name: getFirstZodErrorMessage(payloadResult.error),
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
 
     const rawResponse = await $.http.post('/v1/letters', payloadResult.data)
     const responseResult = responseSchema.safeParse(rawResponse.data)
 
     if (responseResult.success === false) {
-      handleZodError(responseResult.error)
+      // internal: only a LetterSG API change breaks this, and Plumber owns keeping up with it.
+      throw new StepError({
+        name: getFirstZodErrorMessage(responseResult.error),
+        solution:
+          'LetterSG returned an unexpected response. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
     }
 
     const response = responseResult.data

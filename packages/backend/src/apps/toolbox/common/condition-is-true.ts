@@ -1,19 +1,42 @@
-import type { IJSONObject, IJSONValue } from '@plumber/types'
+import type { IJSONObject, IJSONValue, StepErrorKind } from '@plumber/types'
+import { DateTime } from 'luxon'
 
+import StepError from '@/errors/step'
 import { generateTimestampFromFormats } from '@/helpers/generate-timestamp-from-formats'
+
+export function makeConditionGroupError(
+  groupNumber: number,
+  message: string,
+  kind: StepErrorKind,
+): StepError {
+  return new StepError({
+    name: `Error in condition group ${groupNumber}: ${message}`,
+    solution: 'Check that the condition has been configured properly.',
+    kind,
+  })
+}
 
 function compareNumbers(
   field: IJSONValue,
   condition: 'gte' | 'gt' | 'lte' | 'lt',
   value: IJSONValue,
+  groupNumber: number,
 ): boolean {
   // WARNING: can only compare safely up till Number.MAX_SAFE_INTEGER but BigInt cannot compare floats...
   if (isNaN(Number(field))) {
-    throw new Error('Non-number used in field for comparison')
+    throw makeConditionGroupError(
+      groupNumber,
+      'Non-number used in field for comparison',
+      'config',
+    )
   }
 
   if (isNaN(Number(value))) {
-    throw new Error('Non-number used in value for comparison')
+    throw makeConditionGroupError(
+      groupNumber,
+      'Non-number used in value for comparison',
+      'config',
+    )
   }
 
   switch (condition) {
@@ -40,25 +63,41 @@ const VALID_DATETIME_FORMATS = [
   'd LLL yyyy h:mm:ss a',
 ]
 
+// Plumber variables (e.g. scheduler, FormSG submission time) emit ISO 8601, which no fixed format matches.
+function parseDate(input: IJSONValue): number {
+  const timestamp = generateTimestampFromFormats(
+    input as string,
+    VALID_DATETIME_FORMATS,
+  )
+  if (!isNaN(timestamp) || typeof input !== 'string') {
+    return timestamp
+  }
+  const isoDateTime = DateTime.fromISO(input)
+  return isoDateTime.isValid ? isoDateTime.toMillis() : NaN
+}
+
 function compareDates(
   field: IJSONValue,
   condition: 'before' | 'after',
   value: IJSONValue,
+  groupNumber: number,
 ) {
-  const fieldTimestamp = generateTimestampFromFormats(
-    field as string,
-    VALID_DATETIME_FORMATS,
-  )
+  const fieldTimestamp = parseDate(field)
   if (isNaN(fieldTimestamp)) {
-    throw new Error('Invalid date used in field for comparison')
+    throw makeConditionGroupError(
+      groupNumber,
+      'Invalid date used in field for comparison',
+      'config',
+    )
   }
 
-  const valueTimestamp = generateTimestampFromFormats(
-    value as string,
-    VALID_DATETIME_FORMATS,
-  )
+  const valueTimestamp = parseDate(value)
   if (isNaN(valueTimestamp)) {
-    throw new Error('Invalid date used in value for comparison')
+    throw makeConditionGroupError(
+      groupNumber,
+      'Invalid date used in value for comparison',
+      'config',
+    )
   }
 
   switch (condition) {
@@ -69,7 +108,10 @@ function compareDates(
   }
 }
 
-export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
+export default function conditionIsTrue(
+  conditionArgs: IJSONObject,
+  groupNumber: number,
+): boolean {
   // `value` is named `text` for legacy reasons.
   const { field, is, condition, text: value } = conditionArgs
 
@@ -80,13 +122,13 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       break
     case 'before':
     case 'after':
-      result = compareDates(field, condition, value)
+      result = compareDates(field, condition, value, groupNumber)
       break
     case 'gte':
     case 'gt':
     case 'lte':
     case 'lt':
-      result = compareNumbers(field, condition, value)
+      result = compareNumbers(field, condition, value, groupNumber)
       break
     case 'contains':
       result = field.toString().includes(value.toString())
@@ -106,8 +148,10 @@ export default function conditionIsTrue(conditionArgs: IJSONObject): boolean {
       result = field === null || field === undefined || field === ''
       break
     default:
-      throw new Error(
+      throw makeConditionGroupError(
+        groupNumber,
         `Conditional logic block contains an unknown operator: ${condition}`,
+        'internal',
       )
   }
 

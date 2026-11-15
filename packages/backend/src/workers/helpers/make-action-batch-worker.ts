@@ -34,6 +34,7 @@ import {
 import { advanceAfterStep } from './advance-after-step'
 import { handleFailedJob } from './handle-failed-job'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { fileLockRequeueDelayMs } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -125,6 +126,7 @@ type FailedJob = {
  */
 type BatchContext = {
   queueName: string
+  queueRateLimit: IActionBatchQueue['queueRateLimit']
   worker: WorkerPro<IActionJobData>
   job: JobPro<IActionJobData>
   span: Span | null
@@ -626,6 +628,17 @@ async function processBatch(ctx: BatchContext): Promise<void> {
   const batchJobs = job.getBatch()
   // groupAffinity puts one group in each batch. The container job has no gid.
   tagBatchStart(ctx, batchJobs, batchJobs[0]?.gid)
+  await Promise.all(
+    batchJobs.map((batchJob) =>
+      recordLateScheduledStart({
+        job: batchJob,
+        queueName: ctx.queueName,
+        // Only grouped jobs wait on the group concurrency cap.
+        rateLimited:
+          ctx.queueRateLimit !== undefined || batchJob.opts.group !== undefined,
+      }),
+    ),
+  )
 
   const { preparedOk, prepareFailed } = await prepareBatch(
     ctx.queueName,
@@ -760,7 +773,13 @@ export function makeActionBatchWorker(
     // Fix the trace service name to workers.action.batch regardless of queue
     // name, so all batch processing is monitored together.
     tracer.wrap('workers.action.batch', async (job) =>
-      processBatch({ queueName, worker, job, span: tracer.scope().active() }),
+      processBatch({
+        queueName,
+        queueRateLimit: params.batchConfig.queueRateLimit,
+        worker,
+        job,
+        span: tracer.scope().active(),
+      }),
     ),
     workerOptions,
   )

@@ -27,6 +27,7 @@ import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { TOOLBOX_APP_KEY, useIfThenV1Initializer } from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import { getSelectableActions } from '../helpers/selectable-actions'
 import { useIsAppSelectable } from '../hooks/useIsAppSelectable'
 import FeedbackFooter from './FeedbackFooter'
 import { HighlightedText } from './HighlightedText'
@@ -299,7 +300,7 @@ export default function ChooseApp(props: ChooseAppProps) {
 
                     const triggersOrActions = isTrigger
                       ? app.triggers
-                      : app.actions?.filter((action) => !action.hiddenFromUser)
+                      : getSelectableActions(app, getFlagValue)
                     const singleTriggerOrAction =
                       triggersOrActions?.length === 1
                         ? triggersOrActions[0]

@@ -15,6 +15,7 @@
     "build": "turbo run build",
     "start": "pnpm --filter backend run start",
     "start:worker": "pnpm --filter backend run start:worker",
+    "start:reconciler": "pnpm --filter backend run start:reconciler",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "turbo run format",
@@ -46,5 +47,5 @@
     "vitest": "^4.1.11",
     "wait-on": "^7.2.0"
   },
-  "version": "1.101.0"
+  "version": "1.104.0"
 }

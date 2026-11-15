@@ -1,14 +1,27 @@
+// dd-trace must load before winston to inject trace IDs and dd.service into logs.
 import '@/helpers/tracer'
+import '@/instrumentation'
 import '@/config/orm'
 import '@/config/dynamodb'
 import '@/helpers/check-worker-readiness'
-import '@/workers/flow'
-import '@/workers/trigger'
-import '@/workers/action'
+import { registerGracefulShutdown } from '@/helpers/graceful-shutdown'
 import logger from '@/helpers/logger'
-import { startSesConsumer } from '@/helpers/ses-consumer'
+import { startSesConsumer, stopSesConsumer } from '@/helpers/ses-consumer'
+import { closeActionWorkers } from '@/workers/action'
+import { worker as flowWorker } from '@/workers/flow'
+import { worker as triggerWorker } from '@/workers/trigger'
 
 startSesConsumer()
+
+registerGracefulShutdown(
+  ['SIGTERM'],
+  [
+    () => flowWorker.close(),
+    () => triggerWorker.close(),
+    closeActionWorkers,
+    stopSesConsumer,
+  ],
+)
 
 process.on('uncaughtException', (err) => {
   try {

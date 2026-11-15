@@ -20,30 +20,50 @@
       "outputs": []
     },
     "typecheck": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "typecheck:strict": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "POSTHOG_API_KEY",
+        "POSTHOG_PROJECT_ID",
+        "POSTHOG_HOST",
+        "RELEASE_VERSION"
+      ],
+      "passThroughEnv": [
+        "GITHUB_ACTIONS",
+        "GITHUB_SHA",
+        "GITHUB_REF_NAME",
+        "GITHUB_REPOSITORY",
+        "GITHUB_SERVER_URL"
+      ],
       "outputs": ["dist/**"]
     },
     "test:unit": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "test:integration": {
+      "dependsOn": ["^build"],
       "cache": false,
       "outputs": []
     },
     "test": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "worker": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     }

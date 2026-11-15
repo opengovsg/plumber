@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
   // so it stashes the promise here for tests to await before asserting on
   // anything onFinish does asynchronously (Flow/Connection lookups, writes).
   onFinishPromise: Promise.resolve() as Promise<unknown>,
+  finishUsage: {
+    steps: [] as unknown[],
+    totalUsage: { inputTokens: 0, cachedInputTokens: 0 },
+  },
 }))
 
 vi.mock('@ai-sdk/mcp', () => ({
@@ -27,7 +31,7 @@ vi.mock('ai', async (importOriginal) => {
           onFinish?: (event: { text: string }) => Promise<void>
         }) => {
           if (onFinish) {
-            mocks.onFinishPromise = onFinish({ text: '' })
+            mocks.onFinishPromise = onFinish({ text: '', ...mocks.finishUsage })
           }
           return { toUIMessageStream: vi.fn().mockReturnValue({}) }
         },
@@ -84,12 +88,7 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
-  chatModel: 'mock-model',
-  model: 'mock-model',
-  MODEL_TYPE: 'mock-model-type',
-  engineProvider: {
-    chat: vi.fn().mockReturnValue('mock-model'),
-  },
+  model: { modelId: 'mock-model' },
 }))
 
 vi.mock('@/helpers/stream', () => ({
@@ -115,12 +114,26 @@ vi.mock('@langfuse/tracing', () => ({
   updateActiveTrace: vi.fn(),
 }))
 
-vi.mock('@opentelemetry/api', () => ({
-  trace: { getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }) },
-}))
+vi.mock('@opentelemetry/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@opentelemetry/api')>()
+  return {
+    ...actual,
+    trace: {
+      ...actual.trace,
+      getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }),
+    },
+  }
+})
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  type StreamTextTransform,
+  streamText,
+  type TextStreamPart,
+  type ToolSet,
+} from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import logger from '@/helpers/logger'
@@ -152,6 +165,37 @@ function makeRes() {
 }
 
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
+
+// Runs the route's support URL transform over a model reply that writes the placeholder.
+async function streamSupportLink(): Promise<string> {
+  const [[{ experimental_transform }]] = vi.mocked(streamText).mock.calls
+  const transform = (
+    experimental_transform as StreamTextTransform<ToolSet>[]
+  )[1]({ tools: {}, stopStream: () => undefined })
+  const reader = new ReadableStream<TextStreamPart<ToolSet>>({
+    start(controller) {
+      controller.enqueue({
+        type: 'text-delta',
+        id: 't1',
+        text: '{{SUPPORT_FORM_URL}}',
+      })
+      controller.enqueue({ type: 'text-end', id: 't1' })
+      controller.close()
+    },
+  })
+    .pipeThrough(transform)
+    .getReader()
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) {
+      return text
+    }
+    if (value.type === 'text-delta') {
+      text += value.text
+    }
+  }
+}
 
 describe('chat handler — GitBook MCP integration', () => {
   beforeEach(() => {
@@ -219,7 +263,7 @@ describe('chat handler — GitBook MCP integration', () => {
     )
   })
 
-  it('substitutes the support form URL placeholder with the chat ID pre-filled', async () => {
+  it('streams the support form URL with the chat ID pre-filled', async () => {
     const handler = router.stack[0].route.stack[0].handle
     await handler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,31 +273,63 @@ describe('chat handler — GitBook MCP integration', () => {
       vi.fn(),
     )
 
-    expect(streamText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: expect.arrayContaining([
-          expect.objectContaining({
-            role: 'system',
-            content: expect.stringContaining(
-              'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
-            ),
-          }),
-        ]),
-      }),
+    expect(await streamSupportLink()).toBe(
+      'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
     )
   })
 
-  it('falls back to the bare support form URL when chatId is absent', async () => {
+  it('streams the bare support form URL when chatId is absent', async () => {
     const handler = router.stack[0].route.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
-    const [[{ messages }]] = vi.mocked(streamText).mock.calls
-    const systemMessage = messages.find((m) => m.role === 'system')
-    expect(systemMessage?.content).toContain(
-      'Support: https://form.gov.sg/64929532701266001209ac32',
+    expect(await streamSupportLink()).toBe(
+      'https://form.gov.sg/64929532701266001209ac32',
     )
-    expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
+  })
+
+  it('wires the cache checkpoints and support URL transform into streamText', async () => {
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ messages, prepareStep, experimental_transform }]] =
+      vi.mocked(streamText).mock.calls
+    expect(messages[0]).toEqual(
+      expect.objectContaining({
+        role: 'system',
+        content: expect.stringContaining('Support: {{SUPPORT_FORM_URL}}'),
+        providerOptions: {
+          anthropic: { cacheControl: { type: 'ephemeral' } },
+        },
+      }),
+    )
+    expect(prepareStep).toEqual(expect.any(Function))
+    expect(experimental_transform).toHaveLength(3)
+  })
+
+  it('passes tools to streamText in name order', async () => {
+    vi.mocked(createMcpBridgeTools).mockReturnValueOnce({
+      update_step: vi.fn(),
+      create_pipe: vi.fn(),
+    } as unknown as ReturnType<typeof createMcpBridgeTools>)
+    vi.mocked(experimental_createMCPClient).mockResolvedValueOnce({
+      tools: vi
+        .fn()
+        .mockResolvedValue({ search_docs: vi.fn(), get_page: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ tools }]] = vi.mocked(streamText).mock.calls
+    expect(Object.keys(tools ?? {})).toEqual([
+      'create_pipe',
+      'get_page',
+      'search_docs',
+      'update_step',
+    ])
   })
 })
 
@@ -498,7 +574,7 @@ describe('chat handler continuation', () => {
       messageMetadata({ part: { type: 'finish', finishReason: 'tool-calls' } }),
     ).toEqual({
       traceId: 'trace-123',
-      model: 'mock-model-type',
+      model: 'mock-model',
       finishReason: 'tool-calls',
     })
     expect(
@@ -538,7 +614,10 @@ FIELD: columns
       onFinish?: (event: { text: string }) => Promise<void>
     }) => {
       if (onFinish) {
-        mocks.onFinishPromise = onFinish({ text: columnTableText })
+        mocks.onFinishPromise = onFinish({
+          text: columnTableText,
+          ...mocks.finishUsage,
+        })
       }
       return { toUIMessageStream: vi.fn().mockReturnValue({}) }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
