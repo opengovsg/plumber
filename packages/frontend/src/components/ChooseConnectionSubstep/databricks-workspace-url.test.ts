@@ -7,6 +7,7 @@ const ENV = JSON.stringify({
   catalog: 'main',
 })
 
+// oxfmt-ignore
 describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
   it('uses screenName for the last path segment', () => {
     const screenName = 'user_example_com'
@@ -30,12 +31,14 @@ describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
   })
 
   it('returns null when hostname or catalog is missing', () => {
+    // oxfmt-ignore
     expect(
       databricksWorkspaceUrl( // pragma: allowlist secret
         'user_example_com',
         JSON.stringify({ hostname: 'example.cloud.databricks.com' }),
       ),
     ).toBeNull()
+    // oxfmt-ignore
     expect(
       databricksWorkspaceUrl( // pragma: allowlist secret
         'user_example_com',
@@ -45,12 +48,14 @@ describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
   })
 
   it('returns null when hostname or catalog is not a string', () => {
+    // oxfmt-ignore
     expect(
       databricksWorkspaceUrl( // pragma: allowlist secret
         'user_example_com',
         JSON.stringify({ hostname: 123, catalog: 'main' }),
       ),
     ).toBeNull()
+    // oxfmt-ignore
     expect(
       databricksWorkspaceUrl( // pragma: allowlist secret
         'user_example_com',
