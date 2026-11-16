@@ -4,7 +4,6 @@ import {
   updateActiveObservation,
   updateActiveTrace,
 } from '@langfuse/tracing'
-import { trace } from '@opentelemetry/api'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -419,9 +418,6 @@ const handleChatStream = observe(
                     if (mcpClient) {
                       closeQuietly(mcpClient)
                     }
-
-                    // Manually end the span since we're streaming
-                    trace.getActiveSpan()?.end()
                   }
                 },
                 onError: ({ error }) => {
@@ -439,9 +435,6 @@ const handleChatStream = observe(
 
                   updateActiveObservation({ output: errorMessage })
                   updateActiveTrace({ output: errorMessage })
-
-                  // Manually end the span since we're streaming
-                  trace.getActiveSpan()?.end()
                 },
               }),
           )
@@ -493,11 +486,8 @@ const handleChatStream = observe(
      */
     captureInput: false,
     captureOutput: false,
-    /**
-     * do not automatically end so that we can update the trace and observation
-     * in the onFinish callback
-     */
-    endOnExit: false,
+    // endOnExit stays default: the handler awaits the full response stream, so
+    // the span ends once after it drains, including on pre-stream failures.
   },
 )
 
