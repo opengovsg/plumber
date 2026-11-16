@@ -63,7 +63,13 @@ export default function StepHeader(props: StepHeaderProps) {
 
   return (
     <Flex {...styles.stepHeader}>
-      <Flex alignItems="center" maxW="100%">
+      <Flex
+        alignItems="center"
+        maxW="100%"
+        fontSize="18px"
+        fontWeight={500}
+        color="base.content.strong"
+      >
         {displayPosition && (
           <Text whiteSpace="pre-wrap">{displayPosition}.&nbsp;</Text>
         )}
@@ -75,6 +81,7 @@ export default function StepHeader(props: StepHeaderProps) {
           readOnly={isReadOnlyEditor || isMrfStep}
           placeholder={defaultStepName}
           allowEmpty={true}
+          fontWeight={500}
         />
       </Flex>
 
