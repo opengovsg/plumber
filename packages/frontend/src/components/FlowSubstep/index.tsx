@@ -152,7 +152,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   return (
     <Box position="relative" display="flex" flexDirection="column">
       {argsToDisplay.length > 0 && (
-        <Box flex="1" p={0} pb={6}>
+        <Box flex="1" p={0} pb={10}>
           <Stack w="100%" spacing={8}>
             {argsToDisplay.map((argument) => (
               <InputCreator

@@ -20,7 +20,7 @@ The screenshots come from the Paper design file. They show the M365 Excel "Creat
 | Drawer title position | At the top of the drawer | 20px lower, to line up with the first step card. The content below moves down to match. | `EditorRightDrawer/styles.ts` |
 | "View" link on dropdown fields | Inline after the label, as "(View tile)" | On the label row, flush right, grey, as "View tile". It darkens on hover. | `ControlledAutocomplete/index.tsx` |
 | Space between fields in a step | 28px | 32px | `FlowSubstep/index.tsx` |
-| Space under the last field | 16px | 24px | `FlowSubstep/index.tsx` |
+| Space between the last field and the test bar divider | 16px | 40px | `FlowSubstep/index.tsx` |
 | Test bar vertical padding | 16px | 24px | `FlowStepTestController/styles.ts` |
 
 ## Not changed
