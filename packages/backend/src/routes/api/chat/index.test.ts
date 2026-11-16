@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   // so it stashes the promise here for tests to await before asserting on
   // anything onFinish does asynchronously (Flow/Connection lookups, writes).
   onFinishPromise: Promise.resolve() as Promise<unknown>,
+  observationSpan: { end: vi.fn() },
   finishUsage: {
     steps: [] as unknown[],
     totalUsage: { inputTokens: 0, cachedInputTokens: 0 },
@@ -105,10 +106,18 @@ vi.mock('jsonwebtoken', () => ({
 }))
 
 vi.mock('@langfuse/tracing', () => ({
+  // Mirrors the real observe: the span ends when the handler settles unless endOnExit is false.
   observe: vi.fn(
-    (fn: (...args: unknown[]) => unknown) =>
-      (...args: unknown[]) =>
-        fn(...args),
+    (fn: (...args: unknown[]) => unknown, options?: { endOnExit?: boolean }) =>
+      async (...args: unknown[]) => {
+        try {
+          return await fn(...args)
+        } finally {
+          if (options?.endOnExit !== false) {
+            mocks.observationSpan.end()
+          }
+        }
+      },
   ),
   getActiveTraceId: vi.fn().mockReturnValue('trace-123'),
   updateActiveObservation: vi.fn(),
@@ -137,7 +146,10 @@ import {
 } from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import { getPrompt } from '@/helpers/ai/get-prompt'
+import { getAllLdFlags } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 
@@ -837,36 +849,64 @@ describe('chat handler — observation span lifecycle', () => {
     vi.clearAllMocks()
   })
 
-  // Callbacks run inside the AI SDK's ai.streamText span, which the SDK ends itself.
-  // Ending the active span there ends ai.streamText twice.
-  function mockSpans() {
-    const observationSpan = { end: vi.fn() }
-    const aiSdkSpan = { end: vi.fn() }
-    vi.mocked(trace.getActiveSpan)
-      .mockReset()
-      .mockReturnValueOnce(observationSpan as never)
-      .mockReturnValue(aiSdkSpan as never)
-    return { observationSpan, aiSdkSpan }
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+  function deferred<T = void>() {
+    let resolve!: (value: T) => void
+    let reject!: (reason: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
   }
 
-  async function runHandler() {
+  // The real response stream closes only after onFinish has finished.
+  function mockDrain(drained: Promise<void>) {
+    vi.mocked(pipeWebResponseToExpress).mockImplementationOnce(async () => {
+      await mocks.onFinishPromise
+      await drained
+    })
+  }
+
+  function startHandler() {
     const handler = router.stack[0].route.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
-    await handler(makeReq() as any, makeRes() as any, vi.fn())
+    return handler(makeReq() as any, makeRes() as any, vi.fn()) as Promise<void>
   }
 
-  it('ends only the observation span, once, when streamText finishes', async () => {
-    const { observationSpan, aiSdkSpan } = mockSpans()
+  it('ends the observation span once, only after the response stream drains', async () => {
+    const drain = deferred()
+    mockDrain(drain.promise)
 
-    await runHandler()
-    await mocks.onFinishPromise
+    const handled = startHandler()
+    await flush()
 
-    expect(observationSpan.end).toHaveBeenCalledTimes(1)
-    expect(aiSdkSpan.end).not.toHaveBeenCalled()
+    // onFinish has run, but the stream is still open.
+    expect(mocks.observationSpan.end).not.toHaveBeenCalled()
+
+    drain.resolve()
+    await handled
+
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
+    // Never end the AI SDK's own ai.streamText span from the callbacks.
+    expect(trace.getActiveSpan).not.toHaveBeenCalled()
   })
 
-  it('ends the observation span once when onError and onFinish both fire', async () => {
-    const { observationSpan, aiSdkSpan } = mockSpans()
+  it('waits for onFinish processing after a non-terminal onError', async () => {
+    const flowLookup = deferred<null>()
+    vi.mocked(Flow.query).mockReturnValue({
+      findById: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue(flowLookup.promise),
+      }),
+      // oxlint-disable-next-line typescript/no-explicit-any
+    } as any)
+    vi.mocked(createMcpBridgeTools).mockImplementationOnce(
+      (_user, _traceId, onPipeChange) => {
+        onPipeChange?.('pipe-1')
+        return {} as ReturnType<typeof createMcpBridgeTools>
+      },
+    )
     vi.mocked(streamText).mockImplementationOnce((({
       onFinish,
       onError,
@@ -878,11 +918,38 @@ describe('chat handler — observation span lifecycle', () => {
       mocks.onFinishPromise = onFinish({ text: '', ...mocks.finishUsage })
       return { toUIMessageStream: vi.fn().mockReturnValue({}) }
     }) as unknown as typeof streamText)
+    mockDrain(Promise.resolve())
 
-    await runHandler()
-    await mocks.onFinishPromise
+    const handled = startHandler()
+    await flush()
 
-    expect(observationSpan.end).toHaveBeenCalledTimes(1)
-    expect(aiSdkSpan.end).not.toHaveBeenCalled()
+    // onError has fired, but onFinish is still loading the pipe state.
+    expect(mocks.observationSpan.end).not.toHaveBeenCalled()
+
+    flowLookup.resolve(null)
+    await handled
+
+    expect(mocks.writerWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'data-pipeState' }),
+    )
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends the span once when the handler fails before streamText starts', async () => {
+    vi.mocked(getPrompt).mockRejectedValueOnce(new Error('prompt down'))
+
+    await startHandler()
+
+    expect(streamText).not.toHaveBeenCalled()
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends the span once when the handler rejects before the try block', async () => {
+    vi.mocked(getAllLdFlags).mockRejectedValueOnce(new Error('ld down'))
+
+    await expect(startHandler()).rejects.toThrow('ld down')
+
+    expect(streamText).not.toHaveBeenCalled()
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
   })
 })

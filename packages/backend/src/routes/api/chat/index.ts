@@ -4,7 +4,6 @@ import {
   updateActiveObservation,
   updateActiveTrace,
 } from '@langfuse/tracing'
-import { trace } from '@opentelemetry/api'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -116,17 +115,6 @@ const handleChatStream = observe(
     body: z.infer<typeof chatRequestSchema>,
   ) => {
     const abortController = new AbortController()
-    // The `observe` wrapper span. Callbacks below run inside the AI SDK's
-    // ai.streamText span, so trace.getActiveSpan() there is the wrong span.
-    const observationSpan = trace.getActiveSpan()
-    let isObservationSpanEnded = false
-    const endObservationSpan = () => {
-      if (isObservationSpanEnded) {
-        return
-      }
-      isObservationSpanEnded = true
-      observationSpan?.end()
-    }
     const context = req.context
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
     const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
@@ -430,9 +418,6 @@ const handleChatStream = observe(
                     if (mcpClient) {
                       closeQuietly(mcpClient)
                     }
-
-                    // Manually end the span since we're streaming
-                    endObservationSpan()
                   }
                 },
                 onError: ({ error }) => {
@@ -450,9 +435,6 @@ const handleChatStream = observe(
 
                   updateActiveObservation({ output: errorMessage })
                   updateActiveTrace({ output: errorMessage })
-
-                  // Manually end the span since we're streaming
-                  endObservationSpan()
                 },
               }),
           )
@@ -504,11 +486,8 @@ const handleChatStream = observe(
      */
     captureInput: false,
     captureOutput: false,
-    /**
-     * do not automatically end so that we can update the trace and observation
-     * in the onFinish callback
-     */
-    endOnExit: false,
+    // endOnExit stays default: the handler awaits the full response stream, so
+    // the span ends once after it drains, including on pre-stream failures.
   },
 )
 
