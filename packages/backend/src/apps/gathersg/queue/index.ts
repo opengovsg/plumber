@@ -12,6 +12,10 @@ const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async ({
 }) => {
   const step = await Step.query().findById(stepId).throwIfNotFound()
 
+  if (!step.connectionId) {
+    return undefined
+  }
+
   return {
     id: step.connectionId,
   }
