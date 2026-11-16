@@ -51,7 +51,7 @@ const action: IRawAction = {
     },
   ],
   doesFileProcessing: (step: Step) => {
-    return step.parameters.file && step.parameters.file !== ''
+    return Boolean(step.parameters.file && step.parameters.file !== '')
   },
 
   async run(_) {
