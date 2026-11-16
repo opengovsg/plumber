@@ -39,7 +39,8 @@ export function evaluateConditionGroups(
         throw err
       }
       // Fail-fast, but name the offending group for the user.
-      throw makeConditionGroupError(i + 1, err.message, 'internal')
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      throw makeConditionGroupError(i + 1, errorMessage, 'internal')
     }
   }
   return false

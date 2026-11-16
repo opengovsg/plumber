@@ -93,6 +93,16 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const user = $.user
+    if (!user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     const validatedParameters = schema.safeParse($.step.parameters)
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
@@ -123,7 +133,7 @@ const action: IRawAction = {
       const content = await getImageContent(image[0], $.flow.id)
 
       const { object } = await withAiTelemetryContext(
-        { distinctId: $.user.id, aiSessionId: $.execution.id },
+        { distinctId: user.id, aiSessionId: $.execution.id },
         () =>
           generateObject({
             model: imageModel,
@@ -139,7 +149,7 @@ const action: IRawAction = {
               isEnabled: true,
               functionId: 'pair-action-process-image',
               metadata: {
-                userId: $.user.email,
+                userId: user.email,
                 executionId: $.execution.id,
                 flowId: $.flow.id,
                 stepId: $.step.id,
@@ -158,7 +168,7 @@ const action: IRawAction = {
         flowId: $.flow.id,
         executionId: $.execution.id,
         stepId: $.step.id,
-        userId: $.user.email,
+        userId: user.email,
         s3Id: image[0],
       })
 

@@ -131,9 +131,23 @@ export default function conditionIsTrue(
       result = compareNumbers(field, condition, value, groupNumber)
       break
     case 'contains':
+      if (field === null || value === null) {
+        throw makeConditionGroupError(
+          groupNumber,
+          'Cannot use "contains" condition with a null field or value',
+          'config',
+        )
+      }
       result = field.toString().includes(value.toString())
       break
     case 'begins':
+      if (field === null || value === null) {
+        throw makeConditionGroupError(
+          groupNumber,
+          'Cannot use "begins" condition with a null field or value',
+          'config',
+        )
+      }
       result = field.toString().startsWith(value.toString())
       break
     case 'empty':
