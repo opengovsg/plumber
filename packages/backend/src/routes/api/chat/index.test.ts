@@ -1,5 +1,5 @@
-import type { Request, Response } from 'express'
 import { trace } from '@opentelemetry/api'
+import type { Request, Response } from 'express'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
