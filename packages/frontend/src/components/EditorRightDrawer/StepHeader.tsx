@@ -82,6 +82,7 @@ export default function StepHeader(props: StepHeaderProps) {
           placeholder={defaultStepName}
           allowEmpty={true}
           fontWeight={500}
+          fontSize="18px"
         />
       </Flex>
 

@@ -33,7 +33,6 @@ import {
   NESTED_FLOW_STEP_HEIGHT,
   SELECTED_BORDER_GROWTH,
   SELECTED_BORDER_WIDTH,
-  selectedCardSx,
 } from './styles'
 
 type FlowStepProps = {
@@ -283,7 +282,7 @@ export default function FlowStep(
                 borderColor={
                   shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
                 }
-                borderRadius="xl"
+                borderRadius="lg"
                 borderBottomRadius="none"
                 {...bannerFrameStyles(shouldHighlight, headerWidth)}
               >
@@ -305,7 +304,7 @@ export default function FlowStep(
                 borderColor={
                   shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
                 }
-                borderRadius="xl"
+                borderRadius="lg"
                 borderBottomRadius="none"
                 {...bannerFrameStyles(shouldHighlight, headerWidth)}
                 overflow="hidden"
@@ -335,7 +334,7 @@ export default function FlowStep(
                 borderColor={
                   shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
                 }
-                borderRadius="xl"
+                borderRadius="lg"
                 borderBottomRadius="none"
                 {...bannerFrameStyles(shouldHighlight, headerWidth)}
               >
@@ -363,7 +362,7 @@ export default function FlowStep(
               borderColor={
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
-              borderTopRadius={hasInfoBox ? 'none' : 'xl'}
+              borderTopRadius={hasInfoBox ? 'none' : 'lg'}
               h={cardHeight}
               minH={isApprovalStep && !isNested ? '124px' : undefined}
               w={headerWidth}
@@ -371,7 +370,6 @@ export default function FlowStep(
               {...(!isClickable && { cursor: 'default', _hover: {} })}
               {...containerHeaderStyles}
               {...(isSelectedCard && {
-                sx: selectedCardSx,
                 borderWidth: SELECTED_BORDER_WIDTH,
                 borderTopWidth: hasInfoBox ? 0 : SELECTED_BORDER_WIDTH,
                 mx: `-${SELECTED_BORDER_GROWTH}`,

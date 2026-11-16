@@ -1,4 +1,4 @@
-import { FlexProps, keyframes } from '@chakra-ui/react'
+import { FlexProps } from '@chakra-ui/react'
 
 // Exported so a container that must align with a nested step it owns — an
 // if-then V2 block levelling its drag handle with its header — stays in sync
@@ -10,7 +10,7 @@ export const flowStepStyles = {
     alignItems: 'center',
     bg: 'white',
     borderWidth: '1px',
-    borderRadius: 'xl',
+    borderRadius: 'lg',
     justifyContent: 'center',
     overflow: 'hidden',
     p: 0,
@@ -27,7 +27,7 @@ export const flowStepStyles = {
     bg: 'yellow.50',
     borderWidth: '1px',
     borderBottomWidth: '0px',
-    borderRadius: 'xl',
+    borderRadius: 'lg',
     borderBottomRadius: 'none',
     overflow: 'hidden',
     p: 0,
@@ -72,22 +72,3 @@ export const bannerFrameStyles = (isSelected: boolean, width: string) =>
         w: growBox(width),
       }
     : { borderWidth: '1px', borderBottomWidth: 0, w: width }
-
-// The card settles at a slightly larger size when selected. It eases out, with
-// no overshoot, so the move is quick and then calm.
-const SELECTED_SCALE = 1.08
-const selectPop = keyframes`
-  0% { transform: scale(1); }
-  100% { transform: scale(${SELECTED_SCALE}); }
-`
-
-export const selectedCardSx = {
-  // The card sits above its neighbours while it is scaled up.
-  position: 'relative',
-  zIndex: 1,
-  transform: `scale(${SELECTED_SCALE})`,
-  transformOrigin: 'center',
-  animation: `${selectPop} 0.35s cubic-bezier(0.16, 1, 0.3, 1)`,
-  // Reduced motion keeps the larger card and drops the movement.
-  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
-}
