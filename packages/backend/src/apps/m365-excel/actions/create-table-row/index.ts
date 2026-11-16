@@ -392,9 +392,18 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     if ($.execution.testRun) {
       // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
-      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user.email, $)
     }
 
     // A test run (or a single-job drain off the old queue) is just a batch of
