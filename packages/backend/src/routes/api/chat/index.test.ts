@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express'
+import { trace } from '@opentelemetry/api'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -828,5 +829,60 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         (s: { connectionLabel: string | null }) => s.connectionLabel,
       ),
     ).toEqual(['My Workspace', 'My Workspace'])
+  })
+})
+
+describe('chat handler — observation span lifecycle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Callbacks run inside the AI SDK's ai.streamText span, which the SDK ends itself.
+  // Ending the active span there ends ai.streamText twice.
+  function mockSpans() {
+    const observationSpan = { end: vi.fn() }
+    const aiSdkSpan = { end: vi.fn() }
+    vi.mocked(trace.getActiveSpan)
+      .mockReset()
+      .mockReturnValueOnce(observationSpan as never)
+      .mockReturnValue(aiSdkSpan as never)
+    return { observationSpan, aiSdkSpan }
+  }
+
+  async function runHandler() {
+    const handler = router.stack[0].route.stack[0].handle
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+  }
+
+  it('ends only the observation span, once, when streamText finishes', async () => {
+    const { observationSpan, aiSdkSpan } = mockSpans()
+
+    await runHandler()
+    await mocks.onFinishPromise
+
+    expect(observationSpan.end).toHaveBeenCalledTimes(1)
+    expect(aiSdkSpan.end).not.toHaveBeenCalled()
+  })
+
+  it('ends the observation span once when onError and onFinish both fire', async () => {
+    const { observationSpan, aiSdkSpan } = mockSpans()
+    vi.mocked(streamText).mockImplementationOnce((({
+      onFinish,
+      onError,
+    }: {
+      onFinish: (event: object) => Promise<void>
+      onError: (event: { error: unknown }) => void
+    }) => {
+      onError({ error: new Error('boom') })
+      mocks.onFinishPromise = onFinish({ text: '', ...mocks.finishUsage })
+      return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+    }) as unknown as typeof streamText)
+
+    await runHandler()
+    await mocks.onFinishPromise
+
+    expect(observationSpan.end).toHaveBeenCalledTimes(1)
+    expect(aiSdkSpan.end).not.toHaveBeenCalled()
   })
 })

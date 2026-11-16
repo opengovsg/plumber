@@ -116,6 +116,17 @@ const handleChatStream = observe(
     body: z.infer<typeof chatRequestSchema>,
   ) => {
     const abortController = new AbortController()
+    // The `observe` wrapper span. Callbacks below run inside the AI SDK's
+    // ai.streamText span, so trace.getActiveSpan() there is the wrong span.
+    const observationSpan = trace.getActiveSpan()
+    let isObservationSpanEnded = false
+    const endObservationSpan = () => {
+      if (isObservationSpanEnded) {
+        return
+      }
+      isObservationSpanEnded = true
+      observationSpan?.end()
+    }
     const context = req.context
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
     const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
@@ -421,7 +432,7 @@ const handleChatStream = observe(
                     }
 
                     // Manually end the span since we're streaming
-                    trace.getActiveSpan()?.end()
+                    endObservationSpan()
                   }
                 },
                 onError: ({ error }) => {
@@ -441,7 +452,7 @@ const handleChatStream = observe(
                   updateActiveTrace({ output: errorMessage })
 
                   // Manually end the span since we're streaming
-                  trace.getActiveSpan()?.end()
+                  endObservationSpan()
                 },
               }),
           )
