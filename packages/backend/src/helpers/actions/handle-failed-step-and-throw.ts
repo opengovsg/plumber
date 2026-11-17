@@ -8,7 +8,7 @@ import { type Span } from 'dd-trace'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError, { attachHiddenKindCause } from '@/errors/step'
+import StepError, { keepErrorKindViaCause } from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -172,7 +172,7 @@ export function handleFailedStepAndThrow(
       finalError instanceof UnrecoverableError ||
       (finalError instanceof RetriableError && finalError !== executionError)
     if (isCreatedHere) {
-      attachHiddenKindCause(finalError, params.executionError)
+      keepErrorKindViaCause(finalError, params.executionError)
     }
 
     throw finalError

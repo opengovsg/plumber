@@ -10,7 +10,7 @@ import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 import HttpError from '../http'
 import PartialStepError from '../partial-error'
 import RetriableError from '../retriable-error'
-import StepError, { attachHiddenKindCause, getStepErrorKind } from '../step'
+import StepError, { keepErrorKindViaCause, getStepErrorKind } from '../step'
 import { UserFacingError } from '../user-facing-error'
 
 const HTTP_ERROR = new HttpError({
@@ -151,7 +151,7 @@ describe('getStepErrorKind', () => {
   })
 })
 
-describe('attachHiddenKindCause', () => {
+describe('keepErrorKindViaCause', () => {
   const makeStepError = () =>
     new StepError({
       name: 'n',
@@ -164,7 +164,7 @@ describe('attachHiddenKindCause', () => {
     const stepError = makeStepError()
     const target = new UnrecoverableError('step failed')
 
-    attachHiddenKindCause(target, stepError)
+    keepErrorKindViaCause(target, stepError)
 
     expect(target.cause).toBe(stepError)
     expect(Object.keys(target)).not.toContain('cause')
@@ -180,7 +180,7 @@ describe('attachHiddenKindCause', () => {
     })
     const target = new UnrecoverableError('step failed')
 
-    attachHiddenKindCause(target, retriableError)
+    keepErrorKindViaCause(target, retriableError)
 
     expect(target.cause).toBe(retriableError)
     expect(Object.keys(target)).not.toContain('cause')
@@ -190,7 +190,7 @@ describe('attachHiddenKindCause', () => {
   it('ignores an error that carries no kind', () => {
     const target = new UnrecoverableError('step failed')
 
-    attachHiddenKindCause(target, HTTP_ERROR)
+    keepErrorKindViaCause(target, HTTP_ERROR)
 
     expect(Object.hasOwn(target, 'cause')).toBe(false)
   })
@@ -199,7 +199,7 @@ describe('attachHiddenKindCause', () => {
     const existingCause = new Error('existing')
     const target = new Error('step failed', { cause: existingCause })
 
-    attachHiddenKindCause(target, makeStepError())
+    keepErrorKindViaCause(target, makeStepError())
 
     expect(target.cause).toBe(existingCause)
   })
@@ -225,7 +225,7 @@ describe('attachHiddenKindCause', () => {
       ],
     })
     const target = new UnrecoverableError('step failed')
-    attachHiddenKindCause(target, makeStepError())
+    keepErrorKindViaCause(target, makeStepError())
 
     logger.error('job failed', { err: target })
     await new Promise((resolve) => setImmediate(resolve))

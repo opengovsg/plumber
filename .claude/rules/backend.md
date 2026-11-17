@@ -91,7 +91,7 @@ The backend has three error families. Do not add a new family.
 - The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
 - `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` or `RetriableError` without `kind` and any other error return `internal`.
 - `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) adds `event: 'action-job-failed'`, `willRetry`, `kind` and `appKey` to its per-attempt error log. Monitors read it with `@willRetry:false`, because logs are not sampled.
-- The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError` with `kind`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `attachHiddenKindCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError` with `kind`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `keepErrorKindViaCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
 - A `RetriableError` takes an optional `kind` for its final failure once retries run out. Its `kind` never changes retry decisions, even `config`.
 
 #### Choosing `kind`

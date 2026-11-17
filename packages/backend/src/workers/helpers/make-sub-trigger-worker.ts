@@ -8,7 +8,7 @@ import {
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import HttpError from '@/errors/http'
-import { attachHiddenKindCause } from '@/errors/step'
+import { keepErrorKindViaCause } from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -236,7 +236,7 @@ export function makeSubTriggerWorker(
           }
         }
         const unrecoverableError = new UnrecoverableError(error.message)
-        attachHiddenKindCause(unrecoverableError, error)
+        keepErrorKindViaCause(unrecoverableError, error)
         throw unrecoverableError
       }
     }),

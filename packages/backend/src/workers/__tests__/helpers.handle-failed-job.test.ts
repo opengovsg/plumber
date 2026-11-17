@@ -3,7 +3,7 @@ import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
-import StepError, { attachHiddenKindCause } from '@/errors/step'
+import StepError, { keepErrorKindViaCause } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 
 import { handleFailedJob } from '../helpers/handle-failed-job'
@@ -49,7 +49,7 @@ const JOB = {
 
 function makeFailedJobError(cause?: unknown): UnrecoverableError {
   const err = new UnrecoverableError('step failed')
-  attachHiddenKindCause(err, cause)
+  keepErrorKindViaCause(err, cause)
   return err
 }
 
@@ -173,7 +173,7 @@ describe('handleFailedJob failure log', () => {
       delayInMs: 'default',
       delayType: 'step',
     })
-    attachHiddenKindCause(
+    keepErrorKindViaCause(
       retriableError,
       new StepError({ name: 'n', solution: 's', kind: 'config' }),
     )

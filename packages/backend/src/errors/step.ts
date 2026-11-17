@@ -85,7 +85,7 @@ export function getStepErrorKind(error: unknown): StepErrorKind {
  *
  * IMPORTANT: non-enumerable, so log redaction never walks into the StepError's HTTP cause.
  */
-export function attachHiddenKindCause(target: Error, error: unknown): void {
+export function keepErrorKindViaCause(target: Error, error: unknown): void {
   const carriesKind =
     error instanceof StepError || error instanceof RetriableError
   if (!carriesKind || Object.hasOwn(target, 'cause')) {
