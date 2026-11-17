@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { databricksExploreUrl } from './databricks-explore-url'
+import { databricksExploreUrl } from '../databricks-explore-url'
 
 const ENV = JSON.stringify({
   hostname: 'example.cloud.databricks.com',

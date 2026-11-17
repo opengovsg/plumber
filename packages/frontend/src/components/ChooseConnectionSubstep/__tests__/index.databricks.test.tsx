@@ -8,8 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EditorContext } from '@/contexts/Editor'
 
-import { DATABRICKS_APP_KEY } from '../FlowStepConfigurationModal/constants'
-import ChooseConnectionSubstep from './index'
+import { DATABRICKS_APP_KEY } from '../../FlowStepConfigurationModal/constants'
+import ChooseConnectionSubstep from '../index'
 
 const SCREEN_NAME = 'user_example_com'
 const CONNECTION_ENV = JSON.stringify({
