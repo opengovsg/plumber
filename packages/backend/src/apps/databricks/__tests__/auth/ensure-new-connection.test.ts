@@ -1,12 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const getLdFlagValue = vi.fn()
+const connectionTransaction = vi.fn()
 
 vi.mock('@/helpers/launch-darkly', () => ({
   getLdFlagValue: (...args: unknown[]) => getLdFlagValue(...args),
 }))
 
-import { isDatabricksNewEnabled } from '../../auth/ensure-new-connection'
+vi.mock('@/models/connection', () => ({
+  default: {
+    transaction: (...args: unknown[]) => connectionTransaction(...args),
+  },
+}))
+
+import {
+  ensureDatabricksConnection,
+  isDatabricksNewEnabled,
+} from '../../auth/ensure-new-connection'
 
 const NEW_ENV = {
   DATABRICKS_NEW_SERVER_HOSTNAME: 'new.example',
@@ -19,6 +29,7 @@ const NEW_ENV = {
 afterEach(() => {
   vi.unstubAllEnvs()
   getLdFlagValue.mockReset()
+  connectionTransaction.mockReset()
 })
 
 function stubNewEnv() {
@@ -73,5 +84,34 @@ describe('isDatabricksNewEnabled', () => {
       'owner@example.com',
       false,
     )
+  })
+})
+
+describe('ensureDatabricksConnection', () => {
+  it('reads the gate before opening a transaction', async () => {
+    stubNewEnv()
+    vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', '')
+    const order: string[] = []
+    getLdFlagValue.mockImplementation(async () => {
+      order.push('flag')
+      return false
+    })
+    connectionTransaction.mockImplementation(
+      async (fn: (trx: unknown) => unknown) => {
+        order.push('transaction')
+        return fn({ raw: async (): Promise<void> => undefined })
+      },
+    )
+    const user = {
+      id: 'user-1',
+      email: 'owner@example.com',
+      $relatedQuery: () => ({
+        where: async () => [{ formattedData: { generation: 'legacy' } }],
+      }),
+    }
+
+    await ensureDatabricksConnection(user as never, false)
+
+    expect(order).toEqual(['flag', 'transaction'])
   })
 })

@@ -89,12 +89,13 @@ export async function ensureDatabricksConnection(
   user: User,
   ensureDatabricksNew: boolean,
 ): Promise<boolean> {
+  // LaunchDarkly init can wait without a timeout. That wait must not hold a pooled connection.
+  const gateOn = await isDatabricksNewEnabled(user.email)
   // Two getApp calls can both see zero new rows and both insert one.
   return Connection.transaction(async (trx) => {
     await trx.raw('select pg_advisory_xact_lock(hashtext(?))', [
       `databricks:${user.id}`,
     ])
-    const gateOn = await isDatabricksNewEnabled(user.email)
     const rows = await user
       .$relatedQuery('connections', trx)
       .where({ key: APP_KEY })
