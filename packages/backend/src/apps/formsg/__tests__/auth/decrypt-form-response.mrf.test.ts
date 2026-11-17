@@ -477,6 +477,88 @@ describe('decrypt form response - MRF specific', () => {
       expect($v4.request.body).toEqual($v3.request.body)
       expect($v3.request.body.fields.field1.answer).toBe('hello')
     })
+
+    describe('table column titles', () => {
+      const COL_1_ID = Buffer.from('Col 1').toString('hex')
+      const COL_2_ID = Buffer.from('Col 2').toString('hex')
+
+      function mockTableSchema() {
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            form_fields: [
+              {
+                _id: 'tbl',
+                title: 'Items',
+                fieldType: 'table',
+                columns: [
+                  { title: 'Name (optional', _id: 'col1' },
+                  { title: 'Qty', _id: 'col2' },
+                ],
+              },
+            ],
+          },
+        })
+      }
+
+      it.each([
+        ['an empty', {}, []],
+        [
+          'a filled',
+          { 'row-a': { rowNum: 0, value: { col1: 'Apple', col2: '3' } } },
+          [{ data: { [COL_1_ID]: 'Apple', [COL_2_ID]: '3' } }],
+        ],
+      ])(
+        'gives %s v4 table the schema columns when a title has an unmatched bracket',
+        async (_, answer, rows) => {
+          mockTableSchema()
+          mocks.cryptoV3Decrypt.mockReturnValueOnce({
+            responses: {
+              tbl: {
+                fieldType: 'table',
+                question: 'Items',
+                answer,
+                provenance: V4_PROVENANCE,
+              },
+            },
+            verified: undefined,
+          })
+
+          await decryptFormResponse($)
+
+          const table = $.request.body.fields.tbl
+          expect(table).not.toHaveProperty('tableColumnTitles')
+          expect(JSON.parse(table.answer)).toMatchObject({
+            rows,
+            columns: [
+              { id: COL_1_ID, label: 'Name (optional' },
+              { id: COL_2_ID, label: 'Qty' },
+            ],
+          })
+        },
+      )
+
+      it('keeps parsing the question for a v3 table', async () => {
+        mockTableSchema()
+        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+          responses: {
+            tbl: {
+              fieldType: 'table',
+              answer: [{ col1: 'Apple', col2: '3' }],
+            },
+          },
+          verified: undefined,
+        })
+
+        await decryptFormResponse($)
+
+        expect(
+          JSON.parse($.request.body.fields.tbl.answer).columns,
+        ).toMatchObject([
+          { id: COL_1_ID, label: 'Col 1' },
+          { id: COL_2_ID, label: 'Col 2' },
+        ])
+      })
+    })
   })
 
   describe('return value and request body for MRF submissions', () => {
