@@ -34,7 +34,7 @@ pnpm run setup
 
 This also creates the `plumber-development-archive-bucket` MinIO bucket used below.
 
-The `-local` archive commands run through `scripts/with-op-env.mjs`, so you also need the 1Password desktop app unlocked and an `op-dev.json` holding an `archival` environment id. The [root README](../../README.md) covers that one-time setup.
+The `-local` archive commands run through `scripts/with-human-dev-env.mjs`, so you also need the 1Password desktop app unlocked and an `op-dev.json` holding an `archival` environment id. The [root README](../../README.md) covers that one-time setup.
 
 ### 2. Supply the environment
 

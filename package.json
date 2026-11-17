@@ -9,8 +9,8 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
     "postinstall": "pnpm run gqlc",
-    "setup": "node scripts/with-op-env.mjs --env setup pnpm --filter backend run setup",
-    "dev": "node scripts/with-op-env.mjs --worktree-ports turbo watch dev worker --continue",
+    "setup": "node scripts/with-human-dev-env.mjs --env setup pnpm --filter backend run setup",
+    "dev": "node scripts/with-human-dev-env.mjs --worktree-ports turbo watch dev worker --continue",
     "dev:sample-env": "turbo watch dev worker --continue",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
@@ -29,11 +29,11 @@
     "test:ui": "vitest --ui",
     "migrate": "pnpm --filter backend run db:migrate",
     "teardown": "pnpm --filter backend run teardown",
-    "test:e2e": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e",
-    "test:e2e:ui": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e:ui",
-    "login:e2e": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run login",
-    "login:e2e:local": "node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run login:local",
-    "prompt": "node scripts/with-op-env.mjs node tools/langfuse/prompt.mjs",
+    "test:e2e": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e",
+    "test:e2e:ui": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e:ui",
+    "login:e2e": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run login",
+    "login:e2e:local": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run login:local",
+    "prompt": "node scripts/with-human-dev-env.mjs node tools/langfuse/prompt.mjs",
     "prompts:clone": "bash tools/langfuse/clone-prompts.sh"
   },
   "devDependencies": {

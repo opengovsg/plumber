@@ -12,13 +12,13 @@ import { createClient, DesktopAuth } from '@1password/sdk'
 const CONFIG_FILE = 'op-dev.json'
 const EXAMPLE_FILE = 'op-dev.example.json'
 const USAGE =
-  'usage: node scripts/with-op-env.mjs [--env <name>] [--worktree-ports] <command> [args...]'
+  'usage: node scripts/with-human-dev-env.mjs [--env <name>] [--worktree-ports] <command> [args...]'
 
 const repoRoot = path.join(import.meta.dirname, '..')
 const configPath = path.join(repoRoot, CONFIG_FILE)
 
 function fail(message) {
-  console.error(`with-op-env: ${message}`)
+  console.error(`with-human-dev-env: ${message}`)
   process.exit(1)
 }
 

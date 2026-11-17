@@ -1,7 +1,7 @@
 /**
  * Business rules:
  * 1. In non-dev environments, we will use IAM roles to invoke the model.
- * 2. In local dev, it will pull the API key from the 1pw integration - `with-op-env.mjs`.
+ * 2. In local dev, it will pull the API key from the 1pw integration - `with-human-dev-env.mjs`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
