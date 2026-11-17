@@ -9,7 +9,9 @@ export type ConnectionDropdownOption = {
   env?: string // only used for FormSG / Databricks for now
 }
 
-// FormSG formattedData only updates when the owner re-verifies, so the title parse stays on the client.
+// For FormSG, it will generate a label with the form title and the description with the form id
+// Note: doing this on the frontend instead because of backwards compatibility whereby
+// only re-verifying the connection on the backend will update the connection formattedData (inconsistency)
 export const optionGenerator = (
   connection: Partial<IConnection>,
   appKey: string,
@@ -20,8 +22,10 @@ export const optionGenerator = (
     // old form connections will have env as undefined and be treated as prod
     const env = (connection?.formattedData?.env as string) ?? 'prod'
 
+    // parse the screenName to get the env, formId, and formTitle
     const [envWithFormId, formTitle] = screenName.split(' - ')
     let formId = envWithFormId
+    // only if the env is not prod, we need to parse the env from the screenName
     if (env !== 'prod') {
       const endIndex = envWithFormId.indexOf(']')
       formId = envWithFormId.substring(endIndex + 2) // skip "]"
