@@ -2,13 +2,11 @@
 #
 # NOTE: based on https://github.com/superset-sh/superset/pull/1494.
 #
-# Assign this worktree a port base from a registry shared across Plumber
-# worktrees and print the port base.
-#   bash alloc_worktree_port.sh            -> print the port base (allocating if needed)
-#   bash alloc_worktree_port.sh --release  -> remove this worktree's ($PWD) allocation
+# Prints this worktree's port base, allocating one from a registry shared
+# across Plumber worktrees if needed.
 #
-# Allocating also prunes entries whose worktree directory is gone, because
-# `git worktree remove` never runs --release.
+# Allocating prunes entries whose worktree directory is gone, because git has no
+# hook for `git worktree remove`.
 set -euo pipefail
 
 # Teammates with other projects in the 13000 range can relocate Plumber's by
@@ -51,7 +49,7 @@ acquire_lock() {
   printf '%s\n' "$$" > "$LOCK_DIR/pid" 2>/dev/null || true
 }
 
-release_lock() { rm -rf "$LOCK_DIR" 2>/dev/null || true; }
+unlock() { rm -rf "$LOCK_DIR" 2>/dev/null || true; }
 
 ensure_reg() {
   mkdir -p "$(dirname "$REG")"
@@ -87,24 +85,9 @@ prune_dead() { # best-effort: drop registry entries whose worktree dir is gone
   return 0
 }
 
-if [ "${1:-}" = "--release" ]; then
-  ensure_reg
-  acquire_lock || exit 1
-  trap release_lock EXIT
-  tmp="${REG}.tmp.$$"
-  if awk -F'\t' -v k="$PWD" '$2 != k' "$REG" > "$tmp" && mv "$tmp" "$REG"; then
-    echo "alloc_worktree_port.sh: released allocation for $PWD" >&2
-  else
-    rm -f "$tmp"
-    echo "alloc_worktree_port.sh: failed to release allocation" >&2
-    exit 1
-  fi
-  exit 0
-fi
-
 ensure_reg
 acquire_lock || exit 1
-trap release_lock EXIT
+trap unlock EXIT
 
 # Safe: $PWD always exists, so this worktree is never pruned.
 prune_dead
@@ -119,7 +102,7 @@ if [ -z "$base" ]; then
   printf '%s\t%s\n' "$base" "$PWD" >> "$REG"
 fi
 
-release_lock
+unlock
 trap - EXIT
 
 printf '%s\n' "$base"
