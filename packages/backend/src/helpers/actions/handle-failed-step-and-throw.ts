@@ -5,7 +5,6 @@ import {
   WorkerPro,
 } from '@taskforcesh/bullmq-pro'
 import { type Span } from 'dd-trace'
-import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
@@ -16,7 +15,6 @@ import StepError, {
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
-import { parseRetryAfterToMs } from '../parse-retry-after-to-ms'
 
 /**
  * For queue and group delays, we need to manually check for max attempts ourselves
@@ -83,52 +81,24 @@ function handleRetriableError(
   }
 }
 
-const RETRY_AFTER_LIMIT_MS = 12 * 60 * 60 * 1000 // 12 hours
-const RETRIABLE_ERROR_SUBSTRINGS = ['ETIMEDOUT', 'ECONNRESET']
-const RETRIABLE_STATUS_CODES = [
-  504,
-  429, // Some 429s may not have Retry-After
-]
-
-/**
- * Lets a thrower pick its `kind` knowing whether `handleHttpError` will retry.
- */
-export function isRetriableHttpError(error: HttpError): boolean {
-  const retryAfterMs = parseRetryAfterToMs(
-    error.response?.headers?.['retry-after'],
-  )
-  if (retryAfterMs !== null) {
-    return retryAfterMs <= RETRY_AFTER_LIMIT_MS
-  }
-
-  if (RETRIABLE_STATUS_CODES.includes(error.response?.status)) {
-    return true
-  }
-
-  const errorString = JSON.stringify(get(error, 'details.error', ''))
-  return RETRIABLE_ERROR_SUBSTRINGS.some((substring) =>
-    errorString.includes(substring),
-  )
-}
-
 function handleHttpError(
   executionError: HttpError,
   errorDetails: HandleFailedStepAndThrowParams['errorDetails'],
 ): never {
-  const retryAfterMs = parseRetryAfterToMs(
-    executionError.response?.headers?.['retry-after'],
-  )
-
-  if (isRetriableHttpError(executionError)) {
+  const { retry } = executionError
+  // Without strictNullChecks, only `=== true` narrows `retry` for the branch below.
+  if (retry.retriable === true) {
     throw new RetriableError({
       error: errorDetails,
-      delayInMs: retryAfterMs ?? 'default',
+      delayInMs: retry.delayInMs,
       delayType: 'step',
     })
   }
 
-  if (retryAfterMs !== null) {
-    throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
+  if (retry.retryAfterMs !== undefined) {
+    throw new UnrecoverableError(
+      `Retry-After (${retry.retryAfterMs}ms) is too long!`,
+    )
   }
 
   throw new UnrecoverableError(JSON.stringify(errorDetails))
@@ -166,10 +136,7 @@ export function handleFailedStepAndThrow(
     // failure behind it may clear.
     if (
       getStepErrorKind(params.executionError) === 'config' &&
-      !(
-        executionError instanceof HttpError &&
-        isRetriableHttpError(executionError)
-      )
+      !(executionError instanceof HttpError && executionError.retry.retriable)
     ) {
       throw new UnrecoverableError(JSON.stringify(errorDetails))
     }

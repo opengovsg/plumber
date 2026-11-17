@@ -13,7 +13,7 @@ import RetriableError from '@/errors/retriable-error'
 import StepError, { getStepErrorKind } from '@/errors/step'
 
 import { makeHttpError } from '../../../test/utils/make-http-error'
-import { handleFailedStepAndThrow, isRetriableHttpError } from '../actions'
+import { handleFailedStepAndThrow } from '../actions'
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
 
 const addSpanTags = vi.fn()
@@ -73,13 +73,13 @@ const UNRETRIABLE_CASES: [string, HttpError][] = [
   ['ECONNREFUSED', makeHttpError({ message: 'connect ECONNREFUSED' })],
 ]
 
-describe('isRetriableHttpError', () => {
+describe('HttpError retry', () => {
   it.each(RETRIABLE_CASES)('retries on %s', (_, error) => {
-    expect(isRetriableHttpError(error)).toBe(true)
+    expect(error.retry.retriable).toBe(true)
   })
 
   it.each(UNRETRIABLE_CASES)('does not retry on %s', (_, error) => {
-    expect(isRetriableHttpError(error)).toBe(false)
+    expect(error.retry.retriable).toBe(false)
   })
 })
 
@@ -88,11 +88,11 @@ describe('handleFailedStepAndThrow retry rules', () => {
     addSpanTags.mockClear()
   })
 
-  describe('agrees with isRetriableHttpError', () => {
+  describe('agrees with HttpError retry', () => {
     it.each([...RETRIABLE_CASES, ...UNRETRIABLE_CASES])(
       'for a raw HttpError and every StepError kind on %s',
       (_, httpError) => {
-        const expected = isRetriableHttpError(httpError)
+        const expected = httpError.retry.retriable
           ? RetriableError
           : UnrecoverableError
         const errors = [
