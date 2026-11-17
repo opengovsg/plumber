@@ -43,6 +43,118 @@ describe('http error', () => {
   })
 })
 
+describe('HttpError retry', () => {
+  const TWELVE_HOURS_IN_SECONDS = 12 * 60 * 60
+
+  it('waits for a Retry-After in seconds', () => {
+    const error = makeHttpError({
+      status: 422,
+      headers: { 'retry-after': '15' },
+    })
+
+    expect(error.retry).toEqual({ retriable: true, delayInMs: 15_000 })
+  })
+
+  it('waits for a Retry-After date', () => {
+    const retryAfter = new Date(Date.now() + 60_000).toUTCString()
+    const error = makeHttpError({
+      status: 503,
+      headers: { 'retry-after': retryAfter },
+    })
+
+    expect(error.retry.retriable).toBe(true)
+    expect(error.retry.retriable && error.retry.delayInMs).toBeGreaterThan(0)
+  })
+
+  it('retries a Retry-After of exactly 12 hours', () => {
+    const error = makeHttpError({
+      status: 429,
+      headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS}` },
+    })
+
+    expect(error.retry).toEqual({
+      retriable: true,
+      delayInMs: TWELVE_HOURS_IN_SECONDS * 1000,
+    })
+  })
+
+  it('does not retry a Retry-After over 12 hours, even on a 429', () => {
+    const error = makeHttpError({
+      status: 429,
+      headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS + 1}` },
+    })
+
+    expect(error.retry).toEqual({
+      retriable: false,
+      retryAfterMs: (TWELVE_HOURS_IN_SECONDS + 1) * 1000,
+    })
+  })
+
+  it.each([429, 504])('retries status %i after the default delay', (status) => {
+    expect(makeHttpError({ status }).retry).toEqual({
+      retriable: true,
+      delayInMs: 'default',
+    })
+  })
+
+  it('falls back to the status when Retry-After is invalid', () => {
+    const headers = { 'retry-after': 'soon' }
+
+    expect(makeHttpError({ status: 429, headers }).retry).toEqual({
+      retriable: true,
+      delayInMs: 'default',
+    })
+    expect(makeHttpError({ status: 400, headers }).retry).toEqual({
+      retriable: false,
+    })
+  })
+
+  it.each(['read ECONNRESET', 'connect ETIMEDOUT 10.0.0.1:443'])(
+    'retries the network error message %s',
+    (message) => {
+      expect(makeHttpError({ message }).retry).toEqual({
+        retriable: true,
+        delayInMs: 'default',
+      })
+    },
+  )
+
+  it.each([
+    ['status 400', makeHttpError({ status: 400 })],
+    ['status 503', makeHttpError({ status: 503 })],
+    ['ECONNREFUSED', makeHttpError({ message: 'connect ECONNREFUSED' })],
+    // Matches the message, not the code, so this reset does not retry yet.
+    [
+      'a socket hang up with code ECONNRESET',
+      makeHttpError({ message: 'socket hang up', code: 'ECONNRESET' }),
+    ],
+  ])('does not retry %s', (_, error) => {
+    expect(error.retry).toEqual({ retriable: false })
+  })
+
+  describe('setRetryAfter', () => {
+    it('re-parses retry from the new header', () => {
+      const error = makeHttpError({
+        status: 429,
+        headers: { 'retry-after': '15' },
+      })
+
+      error.setRetryAfter('60')
+
+      expect(error.response.headers['retry-after']).toBe('60')
+      expect(error.retry).toEqual({ retriable: true, delayInMs: 60_000 })
+    })
+
+    it('stops retrying when the new header is over 12 hours', () => {
+      const error = makeHttpError({ status: 429 })
+
+      error.setRetryAfter(`${TWELVE_HOURS_IN_SECONDS + 1}`)
+
+      expect(error.retry.retriable).toBe(false)
+    })
+  })
+})
+
 describe('isNetworkError', () => {
   it.each([
     'ECONNREFUSED',
