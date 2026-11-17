@@ -145,7 +145,7 @@ tmp/
 # claude stuff
 .claude/settings.local.json
 
-docs/
+docs/*
 !docs/adr
 !docs/WINDOWS_DEV.md
 
