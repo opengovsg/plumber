@@ -10,9 +10,7 @@ import { failOnLeakedNodeBuiltins } from './vite-config-utils.ts'
 export default ({ mode }: { mode: string }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd(), '') }
 
-  // Ports are assigned per Superset worktree by .superset/base_port.sh and exported as
-  // DEV_BACKEND_PORT / DEV_FRONTEND_PORT. Fall back to the classic 3000/3001 for a
-  // plain, non-Superset `pnpm run dev`.
+  // `pnpm run dev` assigns ports in linked worktrees. The main checkout keeps 3000/3001.
   const backendPort = process.env.DEV_BACKEND_PORT || '3000'
   const frontendPort = Number(process.env.DEV_FRONTEND_PORT) || 3001
   const backendTarget = `http://localhost:${backendPort}`
@@ -54,8 +52,8 @@ export default ({ mode }: { mode: string }) => {
     server: {
       open: `http://localhost:${frontendPort}`,
       port: frontendPort,
-      // Fail loudly if the assigned port is taken (Superset worktrees). Stay
-      // lenient for plain dev so vite can auto-pick a free port as before.
+      // Fail loudly if an assigned worktree port is taken. Stay lenient for
+      // plain dev so vite can auto-pick a free port as before.
       strictPort: Boolean(process.env.DEV_FRONTEND_PORT),
       proxy: {
         '/graphql': {

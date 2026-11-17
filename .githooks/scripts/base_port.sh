@@ -2,40 +2,30 @@
 #
 # NOTE: based on https://github.com/superset-sh/superset/pull/1494.
 #
-# Assign this worktree a port base from a project-local registry shared across
-# Plumber worktrees and print the port base.
+# Assign this worktree a port base from a registry shared across Plumber
+# worktrees and print the port base.
 #   bash base_port.sh            -> print the port base (allocating if needed)
 #   bash base_port.sh --release  -> remove this worktree's ($PWD) allocation
 #
-# Allocating also prunes entries whose worktree directory is gone, so bases
-# from worktrees deleted outside Superset (which never ran --release) are reused.
-#
-# Only runs under Superset (needs SUPERSET_ROOT_PATH). A plain `pnpm run dev`
-# never calls this and falls back to 3000/3001 in vite.config.ts / package.json.
-# Run it via .superset/run.sh instead.
+# Allocating also prunes entries whose worktree directory is gone, because
+# `git worktree remove` never runs --release.
 set -euo pipefail
 
-# Base port for this project's worktrees. Teammates who run other Superset
-# projects in the 13000 range can relocate Plumber's by exporting this (e.g. via
-# a .superset/config.local.json `run.before`, or their shell profile).
-START="${PLUMBER_SUPERSET_PORT_BASE:-13000}"
+# Teammates with other projects in the 13000 range can relocate Plumber's by
+# exporting this in their shell profile.
+START="${PLUMBER_WORKTREE_PORT_BASE:-13000}"
 STRIDE=10
 LOCK_TIMEOUT=30
 LOCK_STALE=300
 
-# Cursor-created worktrees never set SUPERSET_ROOT_PATH. The git fallback keeps
-# every worktree pointed at the main checkout's single registry.
-ROOT="${SUPERSET_ROOT_PATH:-}"
-if [ -z "$ROOT" ]; then
-  git_dir="$(git rev-parse --git-common-dir 2>/dev/null)" || git_dir=""
-  if [ -z "$git_dir" ]; then
-    echo "base_port.sh: set SUPERSET_ROOT_PATH or run inside the git repo" >&2
-    exit 1
-  fi
-  ROOT="$(cd "$(dirname "$git_dir")" && pwd)"
-fi
-REG="$ROOT/.superset/port-registry"
-LOCK_DIR="$ROOT/.superset/port-registry.lock"
+# The git common dir is shared by every worktree and never committed.
+git_dir="$(git rev-parse --git-common-dir 2>/dev/null)" || {
+  echo "base_port.sh: run inside the git repo" >&2
+  exit 1
+}
+GIT_COMMON="$(cd "$git_dir" && pwd)"
+REG="$GIT_COMMON/plumber-port-registry"
+LOCK_DIR="$GIT_COMMON/plumber-port-registry.lock"
 
 acquire_lock() {
   local waited=0 pid mtime
@@ -90,7 +80,7 @@ prune_dead() { # best-effort: drop registry entries whose worktree dir is gone
     fi
   done < "$REG" > "$tmp" || { rm -f "$tmp"; return 0; }
   if [ "$pruned" -gt 0 ] && mv "$tmp" "$REG"; then
-    echo "base_port.sh: pruned $pruned stale registry entries (worktree deleted outside Superset)" >&2
+    echo "base_port.sh: pruned $pruned stale registry entries" >&2
   else
     rm -f "$tmp"
   fi
@@ -116,8 +106,7 @@ ensure_reg
 acquire_lock || exit 1
 trap release_lock EXIT
 
-# Reclaim bases from worktrees deleted outside Superset (they never ran
-# --release). Safe: $PWD always exists, so this worktree is never pruned.
+# Safe: $PWD always exists, so this worktree is never pruned.
 prune_dead
 
 base="$(lookup_base)"

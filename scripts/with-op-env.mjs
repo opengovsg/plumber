@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
@@ -12,9 +12,10 @@ import { createClient, DesktopAuth } from '@1password/sdk'
 const CONFIG_FILE = 'op-dev.json'
 const EXAMPLE_FILE = 'op-dev.example.json'
 const USAGE =
-  'usage: node scripts/with-op-env.mjs [--env <name>] <command> [args...]'
+  'usage: node scripts/with-op-env.mjs [--env <name>] [--worktree-ports] <command> [args...]'
 
-const configPath = path.join(import.meta.dirname, '..', CONFIG_FILE)
+const repoRoot = path.join(import.meta.dirname, '..')
+const configPath = path.join(repoRoot, CONFIG_FILE)
 
 function fail(message) {
   console.error(`with-op-env: ${message}`)
@@ -42,10 +43,16 @@ function readConfig() {
 
 function parseArgs(argv) {
   let envName = 'dev'
+  let worktreePorts = false
   let index = 0
 
   while (index < argv.length) {
     const arg = argv[index]
+    if (arg === '--worktree-ports') {
+      worktreePorts = true
+      index += 1
+      continue
+    }
     if (arg === '--env') {
       envName = argv[index + 1]
       index += 2
@@ -63,7 +70,43 @@ function parseArgs(argv) {
     fail(`--env needs a name. ${USAGE}`)
   }
 
-  return { envName, command: argv.slice(index) }
+  return { envName, worktreePorts, command: argv.slice(index) }
+}
+
+/**
+ * Gives each linked worktree its own ports, so several worktrees can run the dev server at once.
+ *
+ * IMPORTANT: the main checkout keeps 3000/3001 and never calls bash, so Windows setups are unaffected.
+ */
+function getWorktreePorts() {
+  const gitPath = (flag) =>
+    execFileSync('git', ['rev-parse', '--path-format=absolute', flag], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }).trim()
+
+  try {
+    if (gitPath('--git-dir') === gitPath('--git-common-dir')) {
+      return {}
+    }
+
+    const base = Number(
+      execFileSync(
+        'bash',
+        [path.join(repoRoot, '.githooks', 'scripts', 'base_port.sh')],
+        { cwd: repoRoot, encoding: 'utf8' },
+      ).trim(),
+    )
+    return {
+      PORT: String(base),
+      BASE_URL: `http://localhost:${base}`,
+      WEB_APP_URL: `http://localhost:${base + 1}`,
+      DEV_BACKEND_PORT: String(base),
+      DEV_FRONTEND_PORT: String(base + 1),
+    }
+  } catch (error) {
+    fail(`could not assign worktree ports. ${error.message}`)
+  }
 }
 
 async function createOpClient(accountName) {
@@ -180,16 +223,17 @@ function run(command, env) {
 }
 
 async function main() {
-  const { envName, command } = parseArgs(process.argv.slice(2))
+  const { envName, worktreePorts, command } = parseArgs(process.argv.slice(2))
 
   if (command.length === 0) {
     fail(USAGE)
   }
 
   const variables = await fetchVariables(envName)
+  const ports = worktreePorts ? getWorktreePorts() : {}
 
-  // Shell exports win, because .superset/run.sh sets PORT, BASE_URL and WEB_APP_URL per worktree.
-  run(command, { ...variables, ...process.env })
+  // Shell exports win, so harnesses can still pick their own ports.
+  run(command, { ...variables, ...ports, ...process.env })
 }
 
 main()

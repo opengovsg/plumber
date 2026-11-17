@@ -1,0 +1,15 @@
+#!/bin/sh
+# Copies personal gitignored files from the main checkout into a new worktree.
+# IMPORTANT: always exit 0. A failing hook makes `git worktree add` fail.
+FILES="op-dev.json"
+
+# Only a new checkout has a null previous HEAD. Branch switches pass a real one.
+[ "$1" = "0000000000000000000000000000000000000000" ] || exit 0
+main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+[ "$main" = "$(pwd -P)" ] && exit 0
+
+for f in $FILES; do
+  [ -e "$main/$f" ] && [ ! -e "$f" ] || continue
+  mkdir -p "$(dirname "$f")" && cp -R "$main/$f" "$f"
+done
+exit 0

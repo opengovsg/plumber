@@ -22,6 +22,13 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 
 `pnpm run setup` and `pnpm run dev` each fetch their secrets from 1Password, so both prompt once and both need the app running. There is no `.env` file.
 
+### Worktrees
+
+`pnpm install` sets `core.hooksPath` to `.githooks`. Git then ignores personal hooks in `.git/hooks`. An up-to-date `pnpm install` skips this step, so existing checkouts run `pnpm run prepare` once.
+
+- `.githooks/post-checkout` copies `op-dev.json` from the main checkout into each new worktree. Run `pnpm install` in the new worktree yourself.
+- In a linked worktree, `pnpm run dev` assigns its own ports (from 13000, step 10), so several worktrees can run the dev server at once. The main checkout keeps 3000/3001. Export `PLUMBER_WORKTREE_PORT_BASE` to change the start port.
+
 ### Running DB migrations
 
 The `db` scripts in `backend` handle migration; run these with `pnpm --filter backend db:*`. In general:

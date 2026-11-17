@@ -7,9 +7,10 @@
   },
   "packageManager": "pnpm@12.11.2",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "postinstall": "pnpm run gqlc",
     "setup": "node scripts/with-op-env.mjs --env setup pnpm --filter backend run setup",
-    "dev": "node scripts/with-op-env.mjs turbo watch dev worker --continue",
+    "dev": "node scripts/with-op-env.mjs --worktree-ports turbo watch dev worker --continue",
     "dev:sample-env": "turbo watch dev worker --continue",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
