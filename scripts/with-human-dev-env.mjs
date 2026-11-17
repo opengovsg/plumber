@@ -93,7 +93,7 @@ function getWorktreePorts() {
     const base = Number(
       execFileSync(
         'bash',
-        [path.join(repoRoot, '.githooks', 'scripts', 'base_port.sh')],
+        [path.join(repoRoot, '.githooks', 'scripts', 'alloc_worktree_port.sh')],
         { cwd: repoRoot, encoding: 'utf8' },
       ).trim(),
     )

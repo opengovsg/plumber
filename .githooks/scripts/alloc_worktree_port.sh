@@ -4,8 +4,8 @@
 #
 # Assign this worktree a port base from a registry shared across Plumber
 # worktrees and print the port base.
-#   bash base_port.sh            -> print the port base (allocating if needed)
-#   bash base_port.sh --release  -> remove this worktree's ($PWD) allocation
+#   bash alloc_worktree_port.sh            -> print the port base (allocating if needed)
+#   bash alloc_worktree_port.sh --release  -> remove this worktree's ($PWD) allocation
 #
 # Allocating also prunes entries whose worktree directory is gone, because
 # `git worktree remove` never runs --release.
@@ -20,7 +20,7 @@ LOCK_STALE=300
 
 # The git common dir is shared by every worktree and never committed.
 git_dir="$(git rev-parse --git-common-dir 2>/dev/null)" || {
-  echo "base_port.sh: run inside the git repo" >&2
+  echo "alloc_worktree_port.sh: run inside the git repo" >&2
   exit 1
 }
 GIT_COMMON="$(cd "$git_dir" && pwd)"
@@ -42,7 +42,7 @@ acquire_lock() {
       continue
     fi
     if [ "$waited" -ge "$LOCK_TIMEOUT" ]; then
-      echo "base_port.sh: timed out waiting for lock: $LOCK_DIR" >&2
+      echo "alloc_worktree_port.sh: timed out waiting for lock: $LOCK_DIR" >&2
       return 1
     fi
     sleep 1
@@ -80,7 +80,7 @@ prune_dead() { # best-effort: drop registry entries whose worktree dir is gone
     fi
   done < "$REG" > "$tmp" || { rm -f "$tmp"; return 0; }
   if [ "$pruned" -gt 0 ] && mv "$tmp" "$REG"; then
-    echo "base_port.sh: pruned $pruned stale registry entries" >&2
+    echo "alloc_worktree_port.sh: pruned $pruned stale registry entries" >&2
   else
     rm -f "$tmp"
   fi
@@ -93,10 +93,10 @@ if [ "${1:-}" = "--release" ]; then
   trap release_lock EXIT
   tmp="${REG}.tmp.$$"
   if awk -F'\t' -v k="$PWD" '$2 != k' "$REG" > "$tmp" && mv "$tmp" "$REG"; then
-    echo "base_port.sh: released allocation for $PWD" >&2
+    echo "alloc_worktree_port.sh: released allocation for $PWD" >&2
   else
     rm -f "$tmp"
-    echo "base_port.sh: failed to release allocation" >&2
+    echo "alloc_worktree_port.sh: failed to release allocation" >&2
     exit 1
   fi
   exit 0
