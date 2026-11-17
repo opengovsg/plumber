@@ -10,21 +10,22 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 
 1. Install Docker and make sure it's running
 2. Install code dependencies by running `pnpm install`
-3. Install global dependencies:
+3. Enable the repo's git hooks by running `pnpm run setup:git`
+4. Install global dependencies:
    1. [Codegraph](https://github.com/colbymchenry/codegraph)
-4. Install the [1Password desktop app](https://1password.com/downloads) and sign in
-5. In 1Password, turn on Settings > Developer > Integrate with other apps. Turn on Touch ID (or Windows Hello) under Settings > Security so you can answer the prompt
-6. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your environment ids. The `e2e` id is the shared E2E environment, needed only for E2E tests. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
+5. Install the [1Password desktop app](https://1password.com/downloads) and sign in
+6. In 1Password, turn on Settings > Developer > Integrate with other apps. Turn on Touch ID (or Windows Hello) under Settings > Security so you can answer the prompt
+7. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your environment ids. The `e2e` id is the shared E2E environment, needed only for E2E tests. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
    - `inheritedEnvironments` is optional. List environment ids there to load common team-level env vars before your own. Your own environment's variables override theirs
-7. Setup services `pnpm run setup`
-8. Run `pnpm run migrate` (only for first time setup). When prompted (see [Running DB migrations](#running-db-migrations)), choose "Local dev"
-9. Start the server `pnpm run dev`
+8. Setup services `pnpm run setup`
+9. Run `pnpm run migrate` (only for first time setup). When prompted (see [Running DB migrations](#running-db-migrations)), choose "Local dev"
+10. Start the server `pnpm run dev`
 
 `pnpm run setup` and `pnpm run dev` each fetch their secrets from 1Password, so both prompt once and both need the app running. There is no `.env` file.
 
 ### Worktrees
 
-`pnpm install` sets `core.hooksPath` to `.githooks`. Git then ignores personal hooks in `.git/hooks`. An up-to-date `pnpm install` skips this step, so existing checkouts run `pnpm run prepare` once.
+`pnpm run setup:git` sets `core.hooksPath` to `.githooks` for the main checkout and all its worktrees. Git then ignores personal hooks in `.git/hooks`.
 
 - `.githooks/post-checkout` copies `op-dev.json` from the main checkout into each new worktree. Run `pnpm install` in the new worktree yourself.
 - In a linked worktree, `pnpm run dev` assigns its own ports (from 13000, step 10), so several worktrees can run the dev server at once. The main checkout keeps 3000/3001. Export `PLUMBER_WORKTREE_PORT_BASE` to change the start port.
