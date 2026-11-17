@@ -4,7 +4,9 @@ import { useCallback, useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
+import client from '@/graphql/client'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
 
 import { DATABRICKS_APP_KEY, EXCEL_APP_KEY } from '../constants'
@@ -113,6 +115,7 @@ export default function ChooseAndAddConnection(
           )
           newStepId = createdStep.id
         } else if (step) {
+          const connectionChanged = connectionId !== step.connection?.id
           const updatedStep = await onUpdateStep({
             ...step,
             appKey: selectedApp.key,
@@ -122,6 +125,10 @@ export default function ChooseAndAddConnection(
             },
           })
           newStepId = updatedStep.id
+          // The table list is cached by step id. The connection id is not part of that query.
+          if (connectionChanged) {
+            await client.refetchQueries({ include: [GET_DYNAMIC_DATA] })
+          }
         }
         onClose()
         onDrawerOpen()
