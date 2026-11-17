@@ -107,7 +107,8 @@ export default class HttpError extends BaseError {
         : { retriable: false, retryAfterMs }
     }
 
-    if (RETRIABLE_STATUS_CODES.includes(this.response.status)) {
+    const { status } = this.response
+    if (status !== undefined && RETRIABLE_STATUS_CODES.includes(status)) {
       return { retriable: true, delayInMs: 'default' }
     }
 
