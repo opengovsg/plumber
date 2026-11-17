@@ -3,22 +3,26 @@ import axios from 'axios'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import logger from '@/helpers/logger'
 
+import { type DatabricksGeneration } from '../common/connection-generation'
+import { databricksAuthTokenRedisKey } from './auth-token-redis-key'
 import { resolveDatabricksCredentials } from './resolve-credentials'
 
 const redisClient = createRedisClient(REDIS_DB_INDEX.APP_DATA)
 
-const DATABRICKS_AUTH_TOKEN_REDIS_PREFIX = 'databricks:authToken:'
-
-export async function getDatabricksToken(): Promise<string> {
-  const credentials = resolveDatabricksCredentials('legacy')
-  const redisKey =
-    DATABRICKS_AUTH_TOKEN_REDIS_PREFIX + credentials.serverHostname
+export async function getDatabricksToken(
+  generation: DatabricksGeneration,
+): Promise<string> {
+  const credentials = resolveDatabricksCredentials(generation)
+  const redisKey = databricksAuthTokenRedisKey({
+    clientId: credentials.clientId,
+    serverHostname: credentials.serverHostname,
+  })
   try {
     const cachedToken = await redisClient.get(redisKey)
     if (cachedToken) {
       logger.info('Databricks OAuth token read', {
         event: 'databricks-oauth-token-read',
-        redisKey,
+        generation,
       })
       return cachedToken
     }
@@ -43,7 +47,7 @@ export async function getDatabricksToken(): Promise<string> {
     const accessToken = response.data.access_token
     logger.info('Databricks OAuth token response', {
       event: 'databricks-oauth-token-response',
-      redisKey,
+      generation,
       accessToken: accessToken.slice(0, 10) + '...',
     })
 
@@ -56,8 +60,8 @@ export async function getDatabricksToken(): Promise<string> {
   } catch (e) {
     logger.error('Databricks OAuth token read error', {
       event: 'databricks-oauth-token-read-error',
-      error: e,
-      redisKey,
+      generation,
+      errorMessage: e instanceof Error ? e.message : undefined,
     })
     throw new Error('Failed to get Databricks OAuth token')
   }
