@@ -44,7 +44,7 @@ export function databricksReconnectConnections<T extends ListedConnection>(
   return stored ? [stored] : []
 }
 
-// The dropdown shows both generations when this user owns the stored row.
+// A step on the new connection must not offer the deprecated row again.
 // A transferred pipe stores an id that is absent, so that case still returns one row.
 export function databricksReconnectDropdownConnections<
   T extends ListedConnection,
@@ -57,6 +57,13 @@ export function databricksReconnectDropdownConnections<
     !connections.some((connection) => connection.id === storedConnectionId)
   ) {
     return databricksReconnectConnections(connections, storedConnectionId)
+  }
+
+  const stored = connections.find(
+    (connection) => connection.id === storedConnectionId,
+  )
+  if (stored?.generation === 'new') {
+    return connections.filter((connection) => connection.generation === 'new')
   }
   return connections
 }
