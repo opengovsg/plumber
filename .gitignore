@@ -145,8 +145,10 @@ tmp/
 # claude stuff
 .claude/settings.local.json
 
-docs/plans/
-docs/superpowers/
+docs/
+!docs/adr
+!docs/WINDOWS_DEV.md
+
 .codegraph
 
 # superset worktree port allocation (local / per-machine, never committed)
