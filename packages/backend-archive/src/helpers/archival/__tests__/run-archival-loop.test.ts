@@ -206,6 +206,7 @@ describe('runArchivalLoop', () => {
     ;(archivalConfig as any).archiveDeletedFlowsOnly = false
     ;(archivalConfig as any).archiveTestRuns = false
     ;(archivalConfig as any).archiveBatchSize = 500
+    ;(archivalConfig as any).archiveBatchSleepMs = 0
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -346,6 +347,21 @@ describe('runArchivalLoop', () => {
         )
       expect(batchLogs).toHaveLength(1)
       expect(batchLogs[0][0]).toMatchObject({ cursor: '(448,0)' })
+    })
+
+    it('sleeps between empty windows', async () => {
+      ;(archivalConfig as any).archiveBatchSleepMs = 5
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+      vi.mocked(getExecutionsHeapPages).mockResolvedValue(200)
+      setupDb([[], [], []])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedCtidWindows).toHaveLength(3)
+      expect(
+        setTimeoutSpy.mock.calls.filter(([, ms]) => ms === 5),
+      ).toHaveLength(3)
+      setTimeoutSpy.mockRestore()
     })
 
     it('re-reads the heap size before stopping so pages added mid-run are scanned', async () => {
