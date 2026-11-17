@@ -221,7 +221,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error) =>
         error instanceof StepError &&
         /Failed to process image/.test(error.message) &&
@@ -245,7 +245,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toBeInstanceOf(StepError)
+    await expect(processImageAction.run!($)).rejects.toBeInstanceOf(StepError)
     expect(mocks.logError).toHaveBeenCalledWith('Failed to process image', {
       errorName: 'AI_APICallError',
       errorMessage: 'Output blocked by content filtering policy',
@@ -266,7 +266,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error) =>
         error instanceof StepError &&
         /Failed to process image/.test(error.message) &&
@@ -287,7 +287,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toBe(stepError)
+    await expect(processImageAction.run!($)).rejects.toBe(stepError)
     expect(mocks.generateObject).not.toHaveBeenCalled()
   })
 })

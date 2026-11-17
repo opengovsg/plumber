@@ -40,8 +40,9 @@ function parseValue(
   try {
     return parseDateTime(dateTimeFormat, valueToTransform)
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     throw new StepError({
-      name: `Error with the original value: '${error.message}'`,
+      name: `Error with the original value: '${errorMessage}'`,
       solution:
         'Ensure that you have selected the correct date format for your original value.',
       kind: 'config',

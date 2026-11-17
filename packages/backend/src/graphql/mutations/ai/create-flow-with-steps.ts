@@ -84,8 +84,9 @@ const createFlowWithSteps: NonNullable<
         aiBuilderConfig: {
           ...aiBuilderConfig,
           // Analytics diffs these against the saved steps to see how much users change the proposal.
-          suggested: steps.map((step) => ({
-            position: step.position,
+          // The contiguity check above guarantees step.position === index + 1.
+          suggested: steps.map((step, index) => ({
+            position: index + 1,
             appKey: step.appKey ?? null,
             key: step.key ?? null,
           })),

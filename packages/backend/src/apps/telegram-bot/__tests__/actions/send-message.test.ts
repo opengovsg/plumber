@@ -80,7 +80,9 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run!($)).rejects.toThrow('Empty message text')
+    await expect(sendMessageAction.run!($)).rejects.toThrow(
+      'Empty message text',
+    )
     await expect(sendMessageAction.run!($)).rejects.toMatchObject({
       kind: 'config',
     })

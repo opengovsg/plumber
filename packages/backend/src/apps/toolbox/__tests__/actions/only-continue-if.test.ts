@@ -252,7 +252,7 @@ describe('Only continue if', () => {
     await expect(onlyContinueIfAction.run!($)).rejects.toThrow(
       `Conditional logic block contains an unknown operator: ${invalidCondition}`,
     )
-    await expect(onlyContinueIfAction.run($)).rejects.toMatchObject({
+    await expect(onlyContinueIfAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
     })
   })
@@ -265,7 +265,7 @@ describe('Only continue if', () => {
       text: '04 Nov 2024',
     })
 
-    await expect(onlyContinueIfAction.run($)).rejects.toMatchObject({
+    await expect(onlyContinueIfAction.run!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining(
         'Error in condition group 1: Invalid date used in field for comparison',

@@ -171,7 +171,7 @@ describe('new submission trigger', () => {
 
     it('throws a config StepError when no connection is chosen', async () => {
       await expect(
-        trigger.testRun({ ...$, auth: {} } as unknown as IGlobalVariable, {
+        trigger.testRun!({ ...$, auth: {} } as unknown as IGlobalVariable, {
           preferMock: true,
         }),
       ).rejects.toMatchObject({
@@ -182,7 +182,7 @@ describe('new submission trigger', () => {
 
     it('throws an internal StepError when test run metadata is invalid', async () => {
       await expect(
-        trigger.testRun($, { preferMock: 'yes' } as unknown as {
+        trigger.testRun!($, { preferMock: 'yes' } as unknown as {
           preferMock: boolean
         }),
       ).rejects.toMatchObject({
@@ -401,9 +401,9 @@ describe('new submission trigger', () => {
         mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
         mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        const error = await trigger
-          .testRun!($, { preferMock: true })
-          .catch((e) => e)
+        const error = await trigger.testRun!($, { preferMock: true }).catch(
+          (e) => e,
+        )
 
         expect(error).toMatchObject({
           message: expect.stringContaining('"name":"Error syncing MRF steps"'),
@@ -423,9 +423,9 @@ describe('new submission trigger', () => {
         getLastExecutionStepMock.mockResolvedValue(null)
         mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
-        const error = await trigger
-          .testRun!($, { preferMock: true })
-          .catch((e) => e)
+        const error = await trigger.testRun!($, { preferMock: true }).catch(
+          (e) => e,
+        )
 
         expect(error).toMatchObject({
           message: expect.stringContaining('"name":"Error removing MRF steps"'),

@@ -203,7 +203,7 @@ describe('Delay until action', () => {
         delayUntilTime: INVALID_TIME,
       }
 
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
         message: expect.stringContaining('Incorrect date or time format'),
         kind: 'config',
       })
@@ -215,7 +215,7 @@ describe('Delay until action', () => {
         delayUntilTime: VALID_TIME,
       }
 
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
         message: expect.stringContaining('Incorrect date or time format'),
         kind: 'config',
       })
@@ -229,7 +229,7 @@ describe('Delay until action', () => {
       }
       mocks.getLastExecutionStep.mockResolvedValue(null)
 
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
         message: expect.stringContaining(
           'Delay until timestamp entered is in the past',
         ),
@@ -247,7 +247,7 @@ describe('Delay until action', () => {
       }
       mocks.getLastExecutionStep.mockResolvedValue(null)
 
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
         message: expect.stringContaining(
           'Delay until timestamp entered is in the past',
         ),
@@ -262,7 +262,7 @@ describe('Delay until action', () => {
       }
       mocks.getLastExecutionStep.mockResolvedValue(null)
 
-      await expect(delayUntilAction.run($)).rejects.toMatchObject({
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
         message: expect.stringContaining(
           'Delay until timestamp entered is in the past',
         ),
