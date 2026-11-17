@@ -42,11 +42,6 @@ function sqlRow(email: string, isVerified = true): SqlRow {
     email,
     is_verified: isVerified,
     signup_at: signupAt,
-    first_created_at: signupAt,
-    first_tested_at: null,
-    first_flowed_at: null,
-    last_flowed_at: null,
-    owned_flowed_pipe_count: null,
     last_login_at: null,
     deleted_at: null,
   }

@@ -16,11 +16,6 @@ const dimUserSqlRowSchema = z.object({
   email: z.string(),
   is_verified: z.boolean(),
   signup_at: z.date(),
-  first_created_at: z.date().nullable(),
-  first_tested_at: z.date().nullable(),
-  first_flowed_at: z.date().nullable(),
-  last_flowed_at: z.date().nullable(),
-  owned_flowed_pipe_count: z.number().nullable(),
   last_login_at: z.date().nullable(),
   deleted_at: z.date().nullable(),
 })
@@ -34,29 +29,22 @@ export type DimUserRow = DimUserSqlRow & {
   is_internal: boolean
 }
 
-// The execution columns stay null until execution_daily exists.
+// Only facts about the person. Activity milestones are derived in PostHog views from the fact tables.
 // is_verified: an OTP request creates the user row before the email is proven, and last_login_at
 // only exists from 19 Nov 2024. Creating any pipe, deleted or not, also proves the account.
-// IMPORTANT: a transfer rewrites flows.user_id, so pipe milestones follow the creator, who is
-// the old owner of the pipe's first approved transfer.
+// IMPORTANT: a transfer rewrites flows.user_id, so the creator is the old owner of the pipe's
+// first approved transfer.
 const DIM_USER_SQL = `
   SELECT
     u.id AS user_id,
     u.email,
     (u.last_login_at IS NOT NULL OR f.user_id IS NOT NULL) AS is_verified,
     u.created_at AS signup_at,
-    f.first_created_at,
-    NULL::timestamptz AS first_tested_at,
-    NULL::timestamptz AS first_flowed_at,
-    NULL::timestamptz AS last_flowed_at,
-    NULL::bigint AS owned_flowed_pipe_count,
     u.last_login_at,
     u.deleted_at
   FROM users u
   LEFT JOIN (
-    SELECT
-      coalesce(t.old_owner_id, fl.user_id) AS user_id,
-      min(fl.created_at) AS first_created_at
+    SELECT DISTINCT coalesce(t.old_owner_id, fl.user_id) AS user_id
     FROM flows fl
     LEFT JOIN LATERAL (
       SELECT ft.old_owner_id
@@ -65,7 +53,6 @@ const DIM_USER_SQL = `
       ORDER BY ft.created_at
       LIMIT 1
     ) t ON true
-    GROUP BY 1
   ) f ON f.user_id = u.id
   ORDER BY u.created_at
 `
@@ -134,11 +121,6 @@ export function createDimUserTable(
       is_internal: 'BOOLEAN',
       is_verified: 'BOOLEAN',
       signup_at: 'TIMESTAMP',
-      first_created_at: 'TIMESTAMP',
-      first_tested_at: 'TIMESTAMP',
-      first_flowed_at: 'TIMESTAMP',
-      last_flowed_at: 'TIMESTAMP',
-      owned_flowed_pipe_count: 'INT64',
       last_login_at: 'TIMESTAMP',
       deleted_at: 'TIMESTAMP',
     },
