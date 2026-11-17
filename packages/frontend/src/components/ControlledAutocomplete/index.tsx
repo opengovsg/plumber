@@ -182,30 +182,41 @@ function ControlledAutocomplete(
   return (
     <FormControl isInvalid={isError}>
       {label && (
-        <FormLabel
-          isRequired={required}
-          description={
-            description && (
-              <Markdown linkTarget="_blank">{description}</Markdown>
-            )
-          }
+        // The link sits flush right on the label row.
+        <Flex
+          alignItems="center"
+          justifyContent="space-between"
+          gap={3}
+          mb={clickableLink && fieldValue ? 2 : undefined}
         >
-          {label}
+          <FormLabel
+            isRequired={required}
+            mb={clickableLink && fieldValue ? 0 : undefined}
+            description={
+              description && (
+                <Markdown linkTarget="_blank">{description}</Markdown>
+              )
+            }
+          >
+            {label}
+          </FormLabel>
           {clickableLink && fieldValue && (
             <Link
+              flexShrink={0}
               fontWeight="normal"
+              color="base.content.medium"
+              _hover={{ color: 'base.content.strong' }}
               href={clickableLink.url.replaceAll(
                 '{value}',
                 encodeURIComponent(fieldValue),
               )}
               target="_blank"
-              ml={1}
               isExternal
             >
-              ({clickableLink.label})
+              {clickableLink.label}
             </Link>
           )}
-        </FormLabel>
+        </Flex>
       )}
       {/* Dropdown row option content */}
       <Flex>

@@ -49,3 +49,26 @@ export const flowStepStyles = {
     position: 'relative' as FlexProps['position'],
   },
 }
+
+// A selected step thickens its border from 1px to 1.5px. Growing the box by the
+// extra half pixel on every side keeps the content where it was, so selecting a
+// step never shifts it.
+export const SELECTED_BORDER_WIDTH = '1.5px'
+export const SELECTED_BORDER_GROWTH = '0.5px'
+
+export const growBox = (size: string | undefined): string | undefined =>
+  size
+    ? `calc(${size === 'full' ? '100%' : size} + 2 * ${SELECTED_BORDER_GROWTH})`
+    : undefined
+
+// Banners that sit on top of a selected card carry the same thicker border.
+export const bannerFrameStyles = (isSelected: boolean, width: string) =>
+  isSelected
+    ? {
+        borderWidth: SELECTED_BORDER_WIDTH,
+        borderBottomWidth: 0,
+        mx: `-${SELECTED_BORDER_GROWTH}`,
+        mt: `-${SELECTED_BORDER_GROWTH}`,
+        w: growBox(width),
+      }
+    : { borderWidth: '1px', borderBottomWidth: 0, w: width }

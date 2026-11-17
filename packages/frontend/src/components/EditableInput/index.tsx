@@ -16,6 +16,7 @@ interface EditableInputProps {
   allowEmpty?: boolean
   placeholder?: string
   fontWeight?: number | string
+  fontSize?: string
 }
 
 export default function EditableInput({
@@ -30,6 +31,7 @@ export default function EditableInput({
   placeholder,
   allowEmpty = false,
   fontWeight,
+  fontSize,
 }: EditableInputProps) {
   const isMobile = useIsMobile()
 
@@ -74,6 +76,7 @@ export default function EditableInput({
         maxLength={maxLength}
         variant="flushed"
         fontWeight={fontWeight}
+        fontSize={fontSize}
         value={inputValue}
         onKeyDown={handleKeyDown}
         onChange={(e) => setInputValue(e.target.value)}
@@ -118,6 +121,7 @@ export default function EditableInput({
         maxW={maxWidth}
         width="auto"
         fontWeight={fontWeight}
+        fontSize={fontSize}
       >
         {initialValue}
       </Text>
