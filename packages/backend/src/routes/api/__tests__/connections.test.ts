@@ -3,10 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   listConnectionsService: vi.fn(),
+  listDatabricksConnectionsForNewStep: vi.fn(),
 }))
 
 vi.mock('@/services/mcp/list-connections', () => ({
   listConnectionsService: mocks.listConnectionsService,
+}))
+
+vi.mock('@/apps/databricks/auth/list-for-new-step', () => ({
+  listDatabricksConnectionsForNewStep:
+    mocks.listDatabricksConnectionsForNewStep,
 }))
 
 async function executeGetHandler(
@@ -69,6 +75,28 @@ describe('GET /api/connections', () => {
         { name: 'My FormSG', value: 'conn-1' },
         { name: 'Other FormSG', value: 'conn-2' },
       ],
+    })
+  })
+
+  it('uses the new-step list for databricks and leaves other apps on the shared list', async () => {
+    mockReq.query = { appKey: 'databricks' }
+    mocks.listDatabricksConnectionsForNewStep.mockResolvedValue([
+      {
+        id: 'new-1',
+        appKey: 'databricks',
+        verified: false,
+        label: 'Schema',
+      },
+    ])
+
+    await executeGetHandler(mockReq, mockRes)
+
+    expect(mocks.listDatabricksConnectionsForNewStep).toHaveBeenCalledWith(
+      mockReq.context!.currentUser,
+    )
+    expect(mocks.listConnectionsService).not.toHaveBeenCalled()
+    expect(mockRes.json).toHaveBeenCalledWith({
+      data: [{ name: 'Schema', value: 'new-1' }],
     })
   })
 
