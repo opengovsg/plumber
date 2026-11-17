@@ -7,7 +7,7 @@ import { IGlobalVariable } from '@plumber/types'
 import logger from '@/helpers/logger'
 
 import { constructSchemaName } from '../common/construct-schema-name'
-import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
+import { resolveDatabricksCredentials } from './resolve-credentials'
 import { getDatabricksToken } from './token-persistence'
 
 interface CreateSessionOptions {
@@ -33,8 +33,7 @@ export const createSession = async (
     },
   })
 
-  // oxfmt-ignore
-  const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
+  const credentials = resolveDatabricksCredentials('legacy')
   const token = await getDatabricksToken()
   const connectOptions = {
     authType: 'access-token',
