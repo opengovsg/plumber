@@ -147,6 +147,24 @@ describe('handleFailedStepAndThrow retry rules', () => {
     expect(getStepErrorKind(thrown.cause)).toBe('config')
   })
 
+  it('keeps the config kind when the Retry-After is too long', () => {
+    const error = makeConfigStepError(
+      makeHttpError({
+        status: 429,
+        headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS + 1}` },
+      }),
+    )
+
+    const thrown = runWith(error) as Error
+
+    expect(thrown).toBeInstanceOf(UnrecoverableError)
+    expect(thrown.message).toBe(
+      `Retry-After (${(TWELVE_HOURS_IN_SECONDS + 1) * 1000}ms) is too long!`,
+    )
+    expect(addSpanTags).toHaveBeenCalledWith({ willRetry: 'false' })
+    expect(getStepErrorKind(thrown.cause)).toBe('config')
+  })
+
   it.each<StepErrorKind>(['third-party', 'internal'])(
     'still retries a %s StepError caused by a retriable HTTP error',
     (kind) => {

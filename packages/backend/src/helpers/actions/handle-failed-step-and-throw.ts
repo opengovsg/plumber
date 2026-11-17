@@ -133,11 +133,11 @@ export function handleFailedStepAndThrow(
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
     // Retrying cannot fix the user's configuration, but a transient HTTP
-    // failure behind it may clear.
-    if (
-      getStepErrorKind(params.executionError) === 'config' &&
-      !(executionError instanceof HttpError && executionError.retry.retriable)
-    ) {
+    // failure behind it may clear, so `handleHttpError` decides for those.
+    const isConfigStepError =
+      getStepErrorKind(params.executionError) === 'config'
+    const hasHttpCause = executionError instanceof HttpError
+    if (isConfigStepError && !hasHttpCause) {
       throw new UnrecoverableError(JSON.stringify(errorDetails))
     }
     if (executionError instanceof RetriableError) {
