@@ -7,7 +7,7 @@ import {
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
-import { resolveDatabricksWorkspace } from '../auth/resolve-workspace' // pragma: allowlist secret
+import { resolveDatabricksCredentials } from '../auth/resolve-credentials'
 import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickColumnRes } from '../common/types'
 
@@ -25,8 +25,7 @@ const dynamicData: IDynamicData = {
         },
       }
     }
-    // oxfmt-ignore
-    const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
+    const credentials = resolveDatabricksCredentials('legacy')
     const { session, endSession } = await createSession($)
     try {
       const operation = await session.getColumns({

@@ -22,10 +22,7 @@ function readNewConfiguration() {
   return Object.freeze(parsed.data)
 }
 
-// oxfmt-ignore
-export function resolveDatabricksWorkspace( // pragma: allowlist secret
-  generation: 'legacy' | 'new',
-) {
+export function resolveDatabricksCredentials(generation: 'legacy' | 'new') {
   switch (generation) {
     case 'legacy':
       return databricksConfig
