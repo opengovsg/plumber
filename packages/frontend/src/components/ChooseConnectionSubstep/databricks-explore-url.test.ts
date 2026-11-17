@@ -1,18 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { databricksWorkspaceUrl } from './databricks-workspace-url' // pragma: allowlist secret
+import { databricksExploreUrl } from './databricks-explore-url'
 
 const ENV = JSON.stringify({
   hostname: 'example.cloud.databricks.com',
   catalog: 'main',
 })
 
-// oxfmt-ignore
-describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
+describe('databricksExploreUrl', () => {
   it('uses screenName for the last path segment', () => {
     const screenName = 'user_example_com'
 
-    const url = databricksWorkspaceUrl(screenName, ENV) // pragma: allowlist secret
+    const url = databricksExploreUrl(screenName, ENV)
 
     expect(url).toBe(
       'https://example.cloud.databricks.com/explore/data/main/user_example_com',
@@ -21,26 +20,24 @@ describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
   })
 
   it('returns null when env is empty', () => {
-    expect(databricksWorkspaceUrl('user_example_com', '')).toBeNull() // pragma: allowlist secret
-    expect(databricksWorkspaceUrl('user_example_com', null)).toBeNull() // pragma: allowlist secret
-    expect(databricksWorkspaceUrl('user_example_com', undefined)).toBeNull() // pragma: allowlist secret
+    expect(databricksExploreUrl('user_example_com', '')).toBeNull()
+    expect(databricksExploreUrl('user_example_com', null)).toBeNull()
+    expect(databricksExploreUrl('user_example_com', undefined)).toBeNull()
   })
 
   it('returns null when env is not JSON', () => {
-    expect(databricksWorkspaceUrl('user_example_com', '{')).toBeNull() // pragma: allowlist secret
+    expect(databricksExploreUrl('user_example_com', '{')).toBeNull()
   })
 
   it('returns null when hostname or catalog is missing', () => {
-    // oxfmt-ignore
     expect(
-      databricksWorkspaceUrl( // pragma: allowlist secret
+      databricksExploreUrl(
         'user_example_com',
         JSON.stringify({ hostname: 'example.cloud.databricks.com' }),
       ),
     ).toBeNull()
-    // oxfmt-ignore
     expect(
-      databricksWorkspaceUrl( // pragma: allowlist secret
+      databricksExploreUrl(
         'user_example_com',
         JSON.stringify({ catalog: 'main' }),
       ),
@@ -48,16 +45,14 @@ describe('databricksWorkspaceUrl', () => { // pragma: allowlist secret
   })
 
   it('returns null when hostname or catalog is not a string', () => {
-    // oxfmt-ignore
     expect(
-      databricksWorkspaceUrl( // pragma: allowlist secret
+      databricksExploreUrl(
         'user_example_com',
         JSON.stringify({ hostname: 123, catalog: 'main' }),
       ),
     ).toBeNull()
-    // oxfmt-ignore
     expect(
-      databricksWorkspaceUrl( // pragma: allowlist secret
+      databricksExploreUrl(
         'user_example_com',
         JSON.stringify({
           hostname: 'example.cloud.databricks.com',

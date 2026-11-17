@@ -20,7 +20,7 @@ import {
   DATABRICKS_APP_KEY,
   EXCEL_APP_KEY,
 } from '../FlowStepConfigurationModal/constants'
-import { databricksWorkspaceUrl } from './databricks-workspace-url' // pragma: allowlist secret
+import { databricksExploreUrl } from './databricks-explore-url'
 
 type ChooseConnectionSubstepProps = {
   step: IStep
@@ -164,7 +164,7 @@ function ChooseConnectionSubstep(
         const screenName = connection.formattedData?.screenName
         const exploreUrl =
           typeof screenName === 'string'
-            ? databricksWorkspaceUrl(screenName, connectionOption.env) // pragma: allowlist secret
+            ? databricksExploreUrl(screenName, connectionOption.env)
             : null
         connectionLink = {
           url: exploreUrl ?? '',

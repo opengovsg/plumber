@@ -6,8 +6,7 @@ const databricksEnvSchema = z.object({
   catalog: z.string().min(1),
 })
 
-// oxfmt-ignore
-export function databricksWorkspaceUrl( // pragma: allowlist secret
+export function databricksExploreUrl(
   screenName: string,
   env: string | null | undefined,
 ): string | null {
