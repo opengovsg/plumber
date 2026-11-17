@@ -99,7 +99,7 @@ The thrower chooses `kind`. Never derive it later from messages or status codes.
 
 - `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries, unless its cause is an `HttpError` that `handleHttpError` (`helpers/actions/handle-failed-step-and-throw.ts`) retries.
   - The final failure still logs `kind: config`, because the `StepError` rides as the hidden `cause`.
-  - `HttpError.retry` (`errors/http.ts`) holds the retry decision, parsed once in the constructor. Change `Retry-After` only through `setRetryAfter`.
+  - `HttpError.retryInfo` (`errors/http.ts`) holds the retry decision, parsed once in the constructor. Change `Retry-After` only through `setRetryAfter`.
 - `third-party`: an external service is down or unreachable (e.g. 5xx, network errors, timeouts), or another step caused the failure (see "App-specific cases"). Counts as bad, but apart from Plumber bugs.
 - `internal`: a Plumber bug. Counts as bad.
 

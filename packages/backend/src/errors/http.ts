@@ -19,7 +19,7 @@ type SanitisedAxiosResponse = Omit<
 > & {
   status?: number
   statusText?: string
-  // Readonly because `retry` is parsed from it. Change it with `setRetryAfter`.
+  // Readonly because `retryInfo` is parsed from it. Change it with `setRetryAfter`.
   headers: Readonly<AxiosResponse['headers']>
   config?: Omit<InternalAxiosRequestConfig, 'headers'> & {
     headers?: AxiosRequestHeaders
@@ -33,7 +33,7 @@ const RETRIABLE_STATUS_CODES = [
   429, // Some 429s may not have Retry-After
 ]
 
-export type HttpRetry =
+export type HttpRetryInfo =
   | { retriable: true; delayInMs: number | 'default' }
   | {
       retriable: false
@@ -45,7 +45,7 @@ export default class HttpError extends BaseError {
   response: SanitisedAxiosResponse
   code?: string
   resolvedIp?: string
-  retry: HttpRetry
+  retryInfo: HttpRetryInfo
 
   constructor(error: AxiosError) {
     const computedError =
@@ -82,22 +82,22 @@ export default class HttpError extends BaseError {
       this.response.config.headers = undefined
     }
 
-    this.retry = this.parseRetry()
+    this.retryInfo = this.parseRetryInfo()
   }
 
   /**
    * Lets an app's `requestErrorHandler` change the wait (e.g. Telegram adds a
-   * buffer) without leaving `retry` stale.
+   * buffer) without leaving `retryInfo` stale.
    */
   setRetryAfter(retryAfter: string): void {
     this.response.headers = {
       ...this.response.headers,
       'retry-after': retryAfter,
     }
-    this.retry = this.parseRetry()
+    this.retryInfo = this.parseRetryInfo()
   }
 
-  private parseRetry(): HttpRetry {
+  private parseRetryInfo(): HttpRetryInfo {
     const retryAfterMs = parseRetryAfterToMs(
       this.response.headers['retry-after'],
     )

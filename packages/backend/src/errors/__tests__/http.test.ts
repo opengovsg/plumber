@@ -52,7 +52,7 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': '15' },
     })
 
-    expect(error.retry).toEqual({ retriable: true, delayInMs: 15_000 })
+    expect(error.retryInfo).toEqual({ retriable: true, delayInMs: 15_000 })
   })
 
   it('waits for a Retry-After date', () => {
@@ -62,8 +62,8 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': retryAfter },
     })
 
-    expect(error.retry.retriable).toBe(true)
-    expect(error.retry.retriable && error.retry.delayInMs).toBeGreaterThan(0)
+    expect(error.retryInfo.retriable).toBe(true)
+    expect(error.retryInfo.retriable && error.retryInfo.delayInMs).toBeGreaterThan(0)
   })
 
   it('retries a Retry-After of exactly 12 hours', () => {
@@ -72,7 +72,7 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS}` },
     })
 
-    expect(error.retry).toEqual({
+    expect(error.retryInfo).toEqual({
       retriable: true,
       delayInMs: TWELVE_HOURS_IN_SECONDS * 1000,
     })
@@ -84,14 +84,14 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS + 1}` },
     })
 
-    expect(error.retry).toEqual({
+    expect(error.retryInfo).toEqual({
       retriable: false,
       retryAfterMs: (TWELVE_HOURS_IN_SECONDS + 1) * 1000,
     })
   })
 
   it.each([429, 504])('retries status %i after the default delay', (status) => {
-    expect(makeHttpError({ status }).retry).toEqual({
+    expect(makeHttpError({ status }).retryInfo).toEqual({
       retriable: true,
       delayInMs: 'default',
     })
@@ -100,11 +100,11 @@ describe('HttpError retry', () => {
   it('falls back to the status when Retry-After is invalid', () => {
     const headers = { 'retry-after': 'soon' }
 
-    expect(makeHttpError({ status: 429, headers }).retry).toEqual({
+    expect(makeHttpError({ status: 429, headers }).retryInfo).toEqual({
       retriable: true,
       delayInMs: 'default',
     })
-    expect(makeHttpError({ status: 400, headers }).retry).toEqual({
+    expect(makeHttpError({ status: 400, headers }).retryInfo).toEqual({
       retriable: false,
     })
   })
@@ -112,7 +112,7 @@ describe('HttpError retry', () => {
   it.each(['read ECONNRESET', 'connect ETIMEDOUT 10.0.0.1:443'])(
     'retries the network error message %s',
     (message) => {
-      expect(makeHttpError({ message }).retry).toEqual({
+      expect(makeHttpError({ message }).retryInfo).toEqual({
         retriable: true,
         delayInMs: 'default',
       })
@@ -129,7 +129,7 @@ describe('HttpError retry', () => {
       makeHttpError({ message: 'socket hang up', code: 'ECONNRESET' }),
     ],
   ])('does not retry %s', (_, error) => {
-    expect(error.retry).toEqual({ retriable: false })
+    expect(error.retryInfo).toEqual({ retriable: false })
   })
 
   describe('setRetryAfter', () => {
@@ -142,7 +142,7 @@ describe('HttpError retry', () => {
       error.setRetryAfter('60')
 
       expect(error.response.headers['retry-after']).toBe('60')
-      expect(error.retry).toEqual({ retriable: true, delayInMs: 60_000 })
+      expect(error.retryInfo).toEqual({ retriable: true, delayInMs: 60_000 })
     })
 
     it('stops retrying when the new header is over 12 hours', () => {
@@ -150,7 +150,7 @@ describe('HttpError retry', () => {
 
       error.setRetryAfter(`${TWELVE_HOURS_IN_SECONDS + 1}`)
 
-      expect(error.retry.retriable).toBe(false)
+      expect(error.retryInfo.retriable).toBe(false)
     })
   })
 })

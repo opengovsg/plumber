@@ -85,19 +85,19 @@ function handleHttpError(
   executionError: HttpError,
   errorDetails: HandleFailedStepAndThrowParams['errorDetails'],
 ): never {
-  const { retry } = executionError
-  // Without strictNullChecks, only `=== true` narrows `retry` for the branch below.
-  if (retry.retriable === true) {
+  const { retryInfo } = executionError
+  // Without strictNullChecks, only `=== true` narrows `retryInfo` for the branch below.
+  if (retryInfo.retriable === true) {
     throw new RetriableError({
       error: errorDetails,
-      delayInMs: retry.delayInMs,
+      delayInMs: retryInfo.delayInMs,
       delayType: 'step',
     })
   }
 
-  if (retry.retryAfterMs !== undefined) {
+  if (retryInfo.retryAfterMs !== undefined) {
     throw new UnrecoverableError(
-      `Retry-After (${retry.retryAfterMs}ms) is too long!`,
+      `Retry-After (${retryInfo.retryAfterMs}ms) is too long!`,
     )
   }
 

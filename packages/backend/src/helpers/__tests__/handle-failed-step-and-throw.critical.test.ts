@@ -75,11 +75,11 @@ const UNRETRIABLE_CASES: [string, HttpError][] = [
 
 describe('HttpError retry', () => {
   it.each(RETRIABLE_CASES)('retries on %s', (_, error) => {
-    expect(error.retry.retriable).toBe(true)
+    expect(error.retryInfo.retriable).toBe(true)
   })
 
   it.each(UNRETRIABLE_CASES)('does not retry on %s', (_, error) => {
-    expect(error.retry.retriable).toBe(false)
+    expect(error.retryInfo.retriable).toBe(false)
   })
 })
 
@@ -92,7 +92,7 @@ describe('handleFailedStepAndThrow retry rules', () => {
     it.each([...RETRIABLE_CASES, ...UNRETRIABLE_CASES])(
       'for a raw HttpError and every StepError kind on %s',
       (_, httpError) => {
-        const expected = httpError.retry.retriable
+        const expected = httpError.retryInfo.retriable
           ? RetriableError
           : UnrecoverableError
         const errors = [
