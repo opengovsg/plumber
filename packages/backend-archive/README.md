@@ -22,15 +22,17 @@ test-executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 
 A run archives the oldest executions first, so a run that stops at `ARCHIVE_MAX_RUNTIME_MS` leaves only newer rows behind.
 
-No index on `executions` leads with `created_at`. The loop pages through the heap by `ctid` instead. Postgres appends rows in insertion order, so heap order tracks `created_at`.
+No index on `executions` leads with `created_at`. The loop pages through the heap by `ctid` instead. A row sits where its last write placed it. Most executions finish within minutes of insert, so heap order tracks `created_at`. In prod, `pg_stats.correlation` for `executions.created_at` was 0.947 (Nov 2026).
 
 - Each batch query reads one window of heap pages with a TID range scan. The window shrinks after a full batch and grows after a short one (8 to 4096 pages).
+- An empty window sleeps for `ARCHIVE_BATCH_SLEEP_MS`, like a batch. The unexpired end of the heap returns only empty windows.
 - Each run starts at page 0. It stops at the end of the heap or at the runtime limit.
 - The reader must run Postgres 14 or later. The run fails at startup otherwise, because older versions answer a `ctid` range with a full table scan.
 
 The order is approximate:
 
 - Vacuum frees the space of archived rows, and new executions reuse it. Those rows become eligible a year later and are archived ahead of older rows further down the heap.
+- An update that does not fit on its page moves the row to a newer page. A `delay-until` execution that finishes months after insert is archived at its completion position. Bulk retry only touches executions under 7 days old, so retried rows move by days at most.
 - Deleted-flow executions have no age cutoff. Recent ones are archived in heap order, mixed in with old executions.
 - A rewrite of the table during a run (`VACUUM FULL`, `pg_repack`) moves rows. Rows that move behind the cursor wait for the next run.
 

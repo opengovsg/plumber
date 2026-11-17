@@ -43,7 +43,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   await assertTidRangeScanSupported()
 
   // Walk the heap in ctid order to archive the oldest executions first. No index leads with
-  // created_at, and Postgres stores rows in insertion order until vacuum frees space for reuse.
+  // created_at. Heap order follows each row's last write, which tracks created_at closely
+  // (prod pg_stats correlation 0.947).
   // Offset 0 never holds a row, so `ctid > (page,0)` starts at the top of that page.
   let cursor: Tid = { page: 0, offset: 0 }
   let windowPages = INITIAL_WINDOW_PAGES
@@ -196,6 +197,11 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     }
 
     if (!rows.length) {
+      // The unexpired tail of the heap returns empty windows back to back. Pace them like
+      // batches so the scan does not saturate the reader.
+      if (!signal.aborted && sleepMs > 0) {
+        await sleep(sleepMs)
+      }
       continue
     }
 
