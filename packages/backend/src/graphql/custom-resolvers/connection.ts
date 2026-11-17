@@ -1,3 +1,6 @@
+import { readDatabricksGeneration } from '@/apps/databricks/common/connection-generation'
+import { APP_KEY } from '@/apps/databricks/common/constants'
+import logger from '@/helpers/logger'
 import App from '@/models/app'
 
 import type { Connection, Resolvers } from '../__generated__/types.generated'
@@ -26,7 +29,29 @@ const environment: ConnectionResolver['environment'] = async (parent) => {
   return app.auth?.getConnectionEnvironment?.(parent.formattedData) ?? null
 }
 
+function storedGeneration(formattedData: unknown): string | null {
+  const generation =
+    formattedData &&
+    typeof formattedData === 'object' &&
+    'generation' in formattedData
+      ? formattedData.generation
+      : undefined
+  const parsed = readDatabricksGeneration(generation)
+  if (generation != null && parsed == null) {
+    logger.error('Databricks connection generation is invalid')
+  }
+  return parsed
+}
+
+const generation: ConnectionResolver['generation'] = (parent) => {
+  if (parent.key !== APP_KEY) {
+    return null
+  }
+  return storedGeneration(parent.formattedData)
+}
+
 export default {
   editableLabel,
   environment,
+  generation,
 }
