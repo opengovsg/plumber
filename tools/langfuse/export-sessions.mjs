@@ -96,6 +96,21 @@ function oneOf(flag, value, allowed) {
   return value
 }
 
+const VALUE_FLAGS = [
+  'project',
+  'environment',
+  'range',
+  'from',
+  'to',
+  'format',
+  'userId',
+  'sessionId',
+  'include',
+  'concurrency',
+]
+const BOOLEAN_FLAGS = ['yes']
+
+// Rejects typos, because a dropped filter would silently export more data than intended.
 function parseFlags(argv) {
   const flags = {}
   for (const arg of argv) {
@@ -103,7 +118,22 @@ function parseFlags(argv) {
     if (!match) {
       fail(`Unexpected argument "${arg}". Flags use the form --name=value.`)
     }
-    flags[match[1]] = match[2] ?? true
+    const [, name, value] = match
+    if (BOOLEAN_FLAGS.includes(name)) {
+      if (value !== undefined) {
+        fail(`--${name} does not take a value.`)
+      }
+      flags[name] = true
+    } else if (VALUE_FLAGS.includes(name)) {
+      if (!value?.trim()) {
+        fail(`--${name} needs a value, as in --${name}=<value>.`)
+      }
+      flags[name] = value.trim()
+    } else {
+      fail(
+        `Unknown flag --${name}. Valid flags: ${[...VALUE_FLAGS, ...BOOLEAN_FLAGS].join(', ')}.`,
+      )
+    }
   }
   return flags
 }
@@ -600,6 +630,9 @@ async function listSessions(client, options, onItem) {
  */
 async function fetchInOrder(ids, concurrency, fetchOne, onResult) {
   const pending = new Map()
+  // A slow early item must not let workers race ahead and buffer every later result in memory.
+  const maxAhead = concurrency * 4
+  let waiters = []
   let nextToFetch = 0
   let nextToEmit = 0
   // IMPORTANT: only one drain may run at a time, or writes from two workers interleave.
@@ -616,6 +649,9 @@ async function fetchInOrder(ids, concurrency, fetchOne, onResult) {
         pending.delete(nextToEmit)
         nextToEmit++
         await onResult(result)
+        const woken = waiters
+        waiters = []
+        woken.forEach((wake) => wake())
       }
     } finally {
       draining = false
@@ -624,6 +660,13 @@ async function fetchInOrder(ids, concurrency, fetchOne, onResult) {
 
   async function worker() {
     while (nextToFetch < ids.length) {
+      while (nextToFetch - nextToEmit >= maxAhead) {
+        await new Promise((resolve) => waiters.push(resolve))
+      }
+      // Other workers may have claimed the last item while this one waited.
+      if (nextToFetch >= ids.length) {
+        break
+      }
       const index = nextToFetch++
       pending.set(index, await fetchOne(ids[index]))
       await drain()
@@ -726,11 +769,18 @@ function toCsvCell(value) {
     return ''
   }
   const text = typeof value === 'string' ? value : JSON.stringify(value)
-  return `"${text.replaceAll('"', '""')}"`
+  // Spreadsheets evaluate cells that start with these characters as formulas.
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
+  return `"${safe.replaceAll('"', '""')}"`
 }
 
 function createWriter(path, format, columns) {
-  const stream = createWriteStream(path, 'utf-8')
+  // Exports hold conversation data, so keep them owner-only and never reuse an existing file.
+  const stream = createWriteStream(path, {
+    encoding: 'utf-8',
+    flags: 'wx',
+    mode: 0o600,
+  })
   let count = 0
 
   const write = (chunk) =>
@@ -842,6 +892,25 @@ async function fetchLastTraces(client, sessions, options, onRecord) {
   return { failures, skipped }
 }
 
+async function getSession(client, options) {
+  const session = await client.api.sessions
+    .get(options.sessionId, REQUEST_OPTIONS)
+    .catch((error) => {
+      fail(
+        `Could not load session ${options.sessionId}: ${describeError(error)}`,
+      )
+    })
+  if (
+    session.environment !== undefined &&
+    session.environment !== options.environment
+  ) {
+    fail(
+      `Session ${options.sessionId} is in "${session.environment}", not "${options.environment}". Pass --environment=${session.environment}.`,
+    )
+  }
+  return { id: session.id, createdAt: session.createdAt }
+}
+
 async function main() {
   const options = await resolveOptions(process.argv.slice(2))
   const client = buildLangfuseClient(options.project, process.env, {
@@ -870,7 +939,7 @@ async function main() {
     `Extra fields: ${options.include.length ? options.include.join(', ') : 'none'}`,
   )
 
-  mkdirSync(OUT_DIR, { recursive: true })
+  mkdirSync(OUT_DIR, { recursive: true, mode: 0o700 })
   const outPath = buildOutputPath(options)
   const writer = createWriter(
     outPath,
@@ -897,7 +966,7 @@ async function main() {
 
   await writer.start()
   if (options.sessionId) {
-    sessions.push({ id: options.sessionId, createdAt: null })
+    sessions.push(await getSession(client, options))
   } else {
     await list()
   }
