@@ -45,6 +45,7 @@ describe('action catalog', () => {
     'name',
     'is_trigger',
     'is_active',
+    'resource_parameter',
     'launched_at',
   ] as const
 
@@ -79,21 +80,27 @@ describe('action catalog', () => {
 
   // Analytics cannot import the apps registry, so it reads this file. Launch dates are typed by hand.
   // Removed app-actions stay as inactive, because past steps and executions still name them.
-  it('matches the analytics catalog file', async () => {
+  function readCommitted(): Map<string, CatalogRow> {
     const committed = new Map<string, CatalogRow>()
-    if (fs.existsSync(catalogPath)) {
-      const [, ...lines] = fs
-        .readFileSync(catalogPath, 'utf8')
-        .split('\n')
-        .filter(Boolean)
-      for (const line of lines) {
-        const cells = splitCsvLine(line)
-        const row = Object.fromEntries(
-          header.map((name, i) => [name, cells[i] ?? '']),
-        ) as CatalogRow
-        committed.set(catalogKey(row), row)
-      }
+    if (!fs.existsSync(catalogPath)) {
+      return committed
     }
+    const [, ...lines] = fs
+      .readFileSync(catalogPath, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+    for (const line of lines) {
+      const cells = splitCsvLine(line)
+      const row = Object.fromEntries(
+        header.map((name, i) => [name, cells[i] ?? '']),
+      ) as CatalogRow
+      committed.set(catalogKey(row), row)
+    }
+    return committed
+  }
+
+  it('matches the analytics catalog file', async () => {
+    const committed = readCommitted()
 
     const active: CatalogRow[] = Object.values(exportedApps).flatMap((app) =>
       [
@@ -105,6 +112,8 @@ describe('action catalog', () => {
         name: event.name,
         is_trigger: String(isTrigger),
         is_active: 'true',
+        resource_parameter:
+          committed.get(`${app.key}.${event.key}`)?.resource_parameter ?? '',
         launched_at:
           committed.get(`${app.key}.${event.key}`)?.launched_at ?? '',
       })),
@@ -124,5 +133,34 @@ describe('action catalog', () => {
       `${csv}\n`,
       'action-catalog.csv is stale. Run `pnpm --filter backend exec vitest run src/apps/__tests__/index.test.ts -u` and commit the file.',
     ).toMatchFileSnapshot(catalogPath)
+  })
+  // flow_step reads each step's resource from this argument. A blank cell is an undecided new app-action.
+  it('names a real argument as each active resource parameter', () => {
+    const argumentKeys = new Map(
+      Object.values(exportedApps).flatMap((app) =>
+        [...(app.triggers ?? []), ...(app.actions ?? [])].map((event) => [
+          `${app.key}.${event.key}`,
+          new Set(
+            // The registry holds raw actions, whose fields sit on `arguments`, not `substeps`.
+            ((event as { arguments?: { key: string }[] }).arguments ?? []).map(
+              (argument) => argument.key,
+            ),
+          ),
+        ]),
+      ),
+    )
+    const invalid = [...readCommitted().values()]
+      .filter((row) => row.is_active === 'true')
+      .filter(
+        (row) =>
+          row.resource_parameter !== 'none' &&
+          !argumentKeys.get(catalogKey(row))?.has(row.resource_parameter),
+      )
+      .map((row) => `${catalogKey(row)}: '${row.resource_parameter}'`)
+
+    expect(
+      invalid,
+      'Set resource_parameter in action-catalog.csv to the argument key that names the table, file, channel or other resource the step points at, or to none.',
+    ).toEqual([])
   })
 })
