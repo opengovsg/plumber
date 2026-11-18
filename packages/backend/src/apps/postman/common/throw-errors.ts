@@ -85,9 +85,10 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'ATTACHMENT-SIZE-EXCEEDED'
   }
 
-  // The SES client fetches credentials from STS, so STS errors must retry like SES errors.
+  // Every AWS error response (SES, or STS when fetching credentials) is a ServiceException.
+  // Other errors never got a response from AWS, e.g. network failures and timeouts.
   if (!(error instanceof ServiceException)) {
-    return isSesNetworkError(error) ? 'INTERMITTENT-ERROR' : 'ERROR'
+    return isAwsNetworkError(error) ? 'INTERMITTENT-ERROR' : 'ERROR'
   }
 
   const httpStatus = error.$metadata?.httpStatusCode
@@ -117,7 +118,7 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
 }
 
 // Network failures and timeouts never reach AWS, so the SDK does not wrap them in its exception class.
-function isSesNetworkError(error: unknown): boolean {
+function isAwsNetworkError(error: unknown): boolean {
   if (!(error instanceof Error) || error instanceof ServiceException) {
     return false
   }
