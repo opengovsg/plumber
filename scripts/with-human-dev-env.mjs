@@ -1,5 +1,7 @@
-import { execFileSync, spawn } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { readFileSync, realpathSync, statSync } from 'node:fs'
+import { connect } from 'node:net'
 import path from 'node:path'
 
 /**
@@ -73,40 +75,70 @@ function parseArgs(argv) {
   return { envName, worktreePorts, command: argv.slice(index) }
 }
 
+const WORKTREE_PORT_START =
+  Number(process.env.PLUMBER_WORKTREE_PORT_BASE) || 13000
+const WORKTREE_PORT_STRIDE = 10
+const WORKTREE_PORT_SLOTS = 500
+
+// Connects instead of test-listening, because SO_REUSEADDR lets a test listen succeed on a held port.
+function isPortInUse(port, host) {
+  return new Promise((resolve) => {
+    const socket = connect({ port, host })
+    socket.setTimeout(1000)
+    socket.once('connect', () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once('timeout', () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once('error', () => resolve(false))
+  })
+}
+
+async function isPortPairFree(base) {
+  const checks = [base, base + 1].flatMap((port) =>
+    ['127.0.0.1', '::1'].map((host) => isPortInUse(port, host)),
+  )
+  return !(await Promise.all(checks)).some(Boolean)
+}
+
 /**
  * Gives each linked worktree its own ports, so several worktrees can run the dev server at once.
  *
- * IMPORTANT: the main checkout keeps 3000/3001 and never calls bash, so Windows setups are unaffected.
+ * IMPORTANT: the main checkout keeps 3000/3001.
  */
-function getWorktreePorts() {
-  const gitPath = (flag) =>
-    execFileSync('git', ['rev-parse', '--path-format=absolute', flag], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-    }).trim()
-
-  try {
-    if (gitPath('--git-dir') === gitPath('--git-common-dir')) {
-      return {}
-    }
-
-    const base = Number(
-      execFileSync(
-        'bash',
-        [path.join(repoRoot, '.githooks', 'scripts', 'alloc_worktree_port.sh')],
-        { cwd: repoRoot, encoding: 'utf8' },
-      ).trim(),
-    )
-    return {
-      PORT: String(base),
-      BASE_URL: `http://localhost:${base}`,
-      WEB_APP_URL: `http://localhost:${base + 1}`,
-      DEV_BACKEND_PORT: String(base),
-      DEV_FRONTEND_PORT: String(base + 1),
-    }
-  } catch (error) {
-    fail(`could not assign worktree ports. ${error.message}`)
+async function getWorktreePorts() {
+  // A linked worktree's .git is a file that points at the main checkout.
+  if (
+    !statSync(path.join(repoRoot, '.git'), { throwIfNoEntry: false })?.isFile()
+  ) {
+    return {}
   }
+
+  // Hashing the path keeps a worktree's ports stable across runs.
+  const hash = createHash('sha256')
+    .update(realpathSync(repoRoot))
+    .digest()
+    .readUInt32BE(0)
+
+  for (let offset = 0; offset < WORKTREE_PORT_SLOTS; offset++) {
+    const base =
+      WORKTREE_PORT_START +
+      ((hash + offset) % WORKTREE_PORT_SLOTS) * WORKTREE_PORT_STRIDE
+    if (await isPortPairFree(base)) {
+      return {
+        PORT: String(base),
+        BASE_URL: `http://localhost:${base}`,
+        WEB_APP_URL: `http://localhost:${base + 1}`,
+        DEV_BACKEND_PORT: String(base),
+        DEV_FRONTEND_PORT: String(base + 1),
+      }
+    }
+  }
+
+  fail(`no free worktree ports from ${WORKTREE_PORT_START}.`)
 }
 
 async function createOpClient(accountName) {
@@ -230,7 +262,7 @@ async function main() {
   }
 
   const variables = await fetchVariables(envName)
-  const ports = worktreePorts ? getWorktreePorts() : {}
+  const ports = worktreePorts ? await getWorktreePorts() : {}
 
   // Shell exports win, so harnesses can still pick their own ports.
   run(command, { ...variables, ...ports, ...process.env })
