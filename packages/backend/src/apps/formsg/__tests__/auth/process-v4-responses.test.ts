@@ -115,6 +115,11 @@ describe('processResponsesV4', () => {
       },
       {
         fieldType: 'date',
+        answer: { date: '29/03/2026' },
+        reason: 'unknown_answer_shape',
+      },
+      {
+        fieldType: 'date',
         answer: { value: '2026-03-29' },
         reason: 'unparsable_date',
       },
