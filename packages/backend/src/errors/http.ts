@@ -7,7 +7,11 @@ import type {
 } from 'axios'
 import get from 'lodash.get'
 
-import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
+import {
+  getRetryAfterDelayInMs,
+  parseRetryAfter,
+  type RetryAfter,
+} from '@/helpers/parse-retry-after-to-ms'
 
 import BaseError from './base'
 
@@ -19,7 +23,7 @@ type SanitisedAxiosResponse = Omit<
 > & {
   status?: number
   statusText?: string
-  // Readonly because `retryInfo` is parsed from it. Change it with `setRetryAfter`.
+  // Readonly because `retryAfter` is parsed from it. Change it with `setRetryAfter`.
   headers: Readonly<AxiosResponse['headers']>
   config?: Omit<InternalAxiosRequestConfig, 'headers'> & {
     headers?: AxiosRequestHeaders
@@ -45,7 +49,7 @@ export default class HttpError extends BaseError {
   response: SanitisedAxiosResponse
   code?: string
   resolvedIp?: string
-  retryInfo: HttpRetryInfo
+  private retryAfter: RetryAfter | null
 
   constructor(error: AxiosError) {
     const computedError =
@@ -82,25 +86,28 @@ export default class HttpError extends BaseError {
       this.response.config.headers = undefined
     }
 
-    this.retryInfo = this.parseRetryInfo()
+    this.retryAfter = parseRetryAfter(headers['retry-after'])
   }
 
   /**
    * Lets an app's `requestErrorHandler` change the wait (e.g. Telegram adds a
-   * buffer) without leaving `retryInfo` stale.
+   * buffer) without leaving `retryAfter` stale.
    */
   setRetryAfter(retryAfter: string): void {
     this.response.headers = {
       ...this.response.headers,
       'retry-after': retryAfter,
     }
-    this.retryInfo = this.parseRetryInfo()
+    this.retryAfter = parseRetryAfter(retryAfter)
   }
 
-  private parseRetryInfo(): HttpRetryInfo {
-    const retryAfterMs = parseRetryAfterToMs(
-      this.response.headers['retry-after'],
-    )
+  /**
+   * Call when deciding the retry, so time spent recording the failed step
+   * does not lengthen the wait for a Retry-After date.
+   */
+  getRetryInfo(): HttpRetryInfo {
+    const retryAfterMs =
+      this.retryAfter === null ? null : getRetryAfterDelayInMs(this.retryAfter)
     if (retryAfterMs !== null) {
       return retryAfterMs <= RETRY_AFTER_LIMIT_MS
         ? { retriable: true, delayInMs: retryAfterMs }

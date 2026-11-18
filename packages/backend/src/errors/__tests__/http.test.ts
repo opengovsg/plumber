@@ -1,6 +1,6 @@
 import type { InternalAxiosRequestConfig } from 'axios'
 import { AxiosError, AxiosHeaders } from 'axios'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeHttpError } from '@/../test/utils/make-http-error'
 
@@ -52,20 +52,59 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': '15' },
     })
 
-    expect(error.retryInfo).toEqual({ retriable: true, delayInMs: 15_000 })
+    expect(error.getRetryInfo()).toEqual({ retriable: true, delayInMs: 15_000 })
   })
 
-  it('waits for a Retry-After date', () => {
-    const retryAfter = new Date(Date.now() + 60_000).toUTCString()
-    const error = makeHttpError({
-      status: 503,
-      headers: { 'retry-after': retryAfter },
+  describe('Retry-After date', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('01 June 2024 00:00:00 GMT'))
     })
 
-    expect(error.retryInfo.retriable).toBe(true)
-    expect(
-      error.retryInfo.retriable && error.retryInfo.delayInMs,
-    ).toBeGreaterThan(0)
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('measures the wait from when the retry is decided', () => {
+      const error = makeHttpError({
+        status: 503,
+        headers: { 'retry-after': 'Sat, 01 June 2024 00:01:00 GMT' },
+      })
+
+      vi.advanceTimersByTime(8_000)
+
+      expect(error.getRetryInfo()).toEqual({
+        retriable: true,
+        delayInMs: 52_000,
+      })
+    })
+
+    it('falls back to the status once the date has passed', () => {
+      const error = makeHttpError({
+        status: 400,
+        headers: { 'retry-after': 'Sat, 01 June 2024 00:00:05 GMT' },
+      })
+
+      vi.advanceTimersByTime(8_000)
+
+      expect(error.getRetryInfo()).toEqual({ retriable: false })
+    })
+
+    it('checks the 12 hour limit when the retry is decided', () => {
+      const error = makeHttpError({
+        status: 400,
+        headers: { 'retry-after': 'Sat, 01 June 2024 12:00:05 GMT' },
+      })
+
+      expect(error.getRetryInfo().retriable).toBe(false)
+
+      vi.advanceTimersByTime(8_000)
+
+      expect(error.getRetryInfo()).toEqual({
+        retriable: true,
+        delayInMs: TWELVE_HOURS_IN_SECONDS * 1000 - 3_000,
+      })
+    })
   })
 
   it('retries a Retry-After of exactly 12 hours', () => {
@@ -74,7 +113,7 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS}` },
     })
 
-    expect(error.retryInfo).toEqual({
+    expect(error.getRetryInfo()).toEqual({
       retriable: true,
       delayInMs: TWELVE_HOURS_IN_SECONDS * 1000,
     })
@@ -86,14 +125,14 @@ describe('HttpError retry', () => {
       headers: { 'retry-after': `${TWELVE_HOURS_IN_SECONDS + 1}` },
     })
 
-    expect(error.retryInfo).toEqual({
+    expect(error.getRetryInfo()).toEqual({
       retriable: false,
       retryAfterMs: (TWELVE_HOURS_IN_SECONDS + 1) * 1000,
     })
   })
 
   it.each([429, 504])('retries status %i after the default delay', (status) => {
-    expect(makeHttpError({ status }).retryInfo).toEqual({
+    expect(makeHttpError({ status }).getRetryInfo()).toEqual({
       retriable: true,
       delayInMs: 'default',
     })
@@ -102,11 +141,11 @@ describe('HttpError retry', () => {
   it('falls back to the status when Retry-After is invalid', () => {
     const headers = { 'retry-after': 'soon' }
 
-    expect(makeHttpError({ status: 429, headers }).retryInfo).toEqual({
+    expect(makeHttpError({ status: 429, headers }).getRetryInfo()).toEqual({
       retriable: true,
       delayInMs: 'default',
     })
-    expect(makeHttpError({ status: 400, headers }).retryInfo).toEqual({
+    expect(makeHttpError({ status: 400, headers }).getRetryInfo()).toEqual({
       retriable: false,
     })
   })
@@ -114,7 +153,7 @@ describe('HttpError retry', () => {
   it.each(['read ECONNRESET', 'connect ETIMEDOUT 10.0.0.1:443'])(
     'retries the network error message %s',
     (message) => {
-      expect(makeHttpError({ message }).retryInfo).toEqual({
+      expect(makeHttpError({ message }).getRetryInfo()).toEqual({
         retriable: true,
         delayInMs: 'default',
       })
@@ -131,7 +170,7 @@ describe('HttpError retry', () => {
       makeHttpError({ message: 'socket hang up', code: 'ECONNRESET' }),
     ],
   ])('does not retry %s', (_, error) => {
-    expect(error.retryInfo).toEqual({ retriable: false })
+    expect(error.getRetryInfo()).toEqual({ retriable: false })
   })
 
   describe('setRetryAfter', () => {
@@ -144,7 +183,10 @@ describe('HttpError retry', () => {
       error.setRetryAfter('60')
 
       expect(error.response.headers['retry-after']).toBe('60')
-      expect(error.retryInfo).toEqual({ retriable: true, delayInMs: 60_000 })
+      expect(error.getRetryInfo()).toEqual({
+        retriable: true,
+        delayInMs: 60_000,
+      })
     })
 
     it('stops retrying when the new header is over 12 hours', () => {
@@ -152,7 +194,7 @@ describe('HttpError retry', () => {
 
       error.setRetryAfter(`${TWELVE_HOURS_IN_SECONDS + 1}`)
 
-      expect(error.retryInfo.retriable).toBe(false)
+      expect(error.getRetryInfo().retriable).toBe(false)
     })
   })
 })

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { parseRetryAfterToMs } from '../parse-retry-after-to-ms'
+import {
+  parseRetryAfter,
+  parseRetryAfterToMs,
+} from '../parse-retry-after-to-ms'
 
 describe('parseRetryAfterToMs', () => {
   beforeEach(() => {
@@ -61,4 +64,16 @@ describe('parseRetryAfterToMs', () => {
       expect(parseRetryAfterToMs(input)).toBeNull()
     },
   )
+})
+
+describe('parseRetryAfter', () => {
+  it('keeps a date absolute', () => {
+    expect(parseRetryAfter('Sat, 01 June 2024 01:00:00 GMT')).toEqual({
+      retryAtMs: new Date('01 June 2024 01:00:00 GMT').getTime(),
+    })
+  })
+
+  it('keeps seconds relative', () => {
+    expect(parseRetryAfter('42')).toEqual({ delayInMs: 42_000 })
+  })
 })

@@ -85,7 +85,7 @@ function handleHttpError(
   executionError: HttpError,
   errorDetails: HandleFailedStepAndThrowParams['errorDetails'],
 ): never {
-  const { retryInfo } = executionError
+  const retryInfo = executionError.getRetryInfo()
   // Without strictNullChecks, only `=== true` narrows `retryInfo` for the branch below.
   if (retryInfo.retriable === true) {
     throw new RetriableError({
