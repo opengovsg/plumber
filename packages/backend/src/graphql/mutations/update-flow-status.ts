@@ -1,3 +1,7 @@
+import { NotFoundError } from 'objection'
+
+import Flow from '@/models/flow'
+import { loadAccessibleFlow } from '@/services/access'
 import { updateFlowStatusService } from '@/services/flow/update-flow-status'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -7,14 +11,16 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   params,
   context,
 ) => {
-  const flow = await context.currentUser
-    .withAccessibleFlows({ requiredRole: 'editor' })
-    .findOne({
-      'flows.id': params.input.id,
-    })
-    .withGraphJoined('steps')
-    .orderBy('steps.position', 'asc')
-    .throwIfNotFound()
+  const flow = await loadAccessibleFlow({
+    user: context.currentUser,
+    flowId: params.input.id,
+    role: 'editor',
+    graph: 'steps',
+  })
+
+  if (!flow) {
+    throw new NotFoundError({ modelClass: Flow })
+  }
 
   return updateFlowStatusService({
     flow,

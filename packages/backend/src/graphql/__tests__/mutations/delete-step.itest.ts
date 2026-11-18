@@ -170,6 +170,29 @@ describe('deleteStep mutation', () => {
     expect(steps[0].position).toBe(1)
   })
 
+  it('should delete a step once when its id is submitted more than once', async () => {
+    await deleteStep(
+      null,
+      {
+        input: {
+          ids: [testSteps[1].id, testSteps[1].id, testSteps[1].id],
+          ...defaultFlowInput,
+        },
+      },
+      context,
+    )
+
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+    expect(steps.map((step) => step.id)).toEqual([
+      testSteps[0].id,
+      testSteps[2].id,
+    ])
+    expect(steps.map((step) => step.position)).toEqual([1, 2])
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
+  })
+
   it('should throw error when trying to delete non-contiguous action steps', async () => {
     // Create another step after the third step
     const fourthStep = await generateMockStep(

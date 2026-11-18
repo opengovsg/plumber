@@ -98,12 +98,9 @@ describe('updateFlowStatus', () => {
     patchSpy = vi.fn().mockResolvedValue(undefined)
     fakeFlow.$query.mockReturnValue({ patch: patchSpy })
 
-    // Fake the chained query methods on context.currentUser.$relatedQuery('flows')
     fakeQuery = {
-      findOne: vi.fn().mockReturnThis(),
-      withGraphJoined: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockReturnThis(),
-      throwIfNotFound: vi.fn().mockResolvedValue(fakeFlow),
+      withGraphFetched: vi.fn().mockReturnThis(),
+      findOne: vi.fn().mockResolvedValue(fakeFlow),
     }
 
     context.currentUser.withAccessibleFlows = vi.fn().mockReturnValue(fakeQuery)
@@ -507,7 +504,7 @@ describe('updateFlowStatus', () => {
       realFlow.steps = [{ position: 1 }, { position: 2 }]
       realFlow.getTriggerStep = fakeFlow.getTriggerStep
       realFlow.assertNotUpdatedSince = vi.fn()
-      fakeQuery.throwIfNotFound.mockResolvedValue(realFlow)
+      fakeQuery.findOne.mockResolvedValue(realFlow)
 
       flowQueue.add = vi.fn().mockRejectedValue(new Error('queue down'))
 
@@ -536,7 +533,7 @@ describe('updateFlowStatus', () => {
       realFlow.steps = [{ position: 1 }, { position: 2 }]
       realFlow.getTriggerStep = fakeFlow.getTriggerStep
       realFlow.assertNotUpdatedSince = vi.fn()
-      fakeQuery.throwIfNotFound.mockResolvedValue(realFlow)
+      fakeQuery.findOne.mockResolvedValue(realFlow)
 
       flowQueue.getRepeatableJobs = vi
         .fn()
@@ -608,7 +605,7 @@ describe('updateFlowStatus', () => {
       realFlow.steps = [{ position: 1 }, { position: 2 }]
       realFlow.getTriggerStep = fakeFlow.getTriggerStep
       realFlow.assertNotUpdatedSince = vi.fn()
-      fakeQuery.throwIfNotFound.mockResolvedValue(realFlow)
+      fakeQuery.findOne.mockResolvedValue(realFlow)
     })
 
     afterEach(async () => {
@@ -655,7 +652,7 @@ describe('updateFlowStatus', () => {
       ;(realFlow as any).steps = [{ position: 1 }, { position: 2 }]
       ;(realFlow as any).getTriggerStep = fakeFlow.getTriggerStep
       ;(realFlow as any).assertNotUpdatedSince = vi.fn()
-      fakeQuery.throwIfNotFound.mockResolvedValue(realFlow)
+      fakeQuery.findOne.mockResolvedValue(realFlow)
 
       await updateFlowStatus(
         {},
