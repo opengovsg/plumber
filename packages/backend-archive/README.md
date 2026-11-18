@@ -176,7 +176,18 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ## Exporting analytics tables
 
-The archival task writes the silver analytics tables to S3 each night, before it archives. The export code lives in [`backend-analytics`](../backend-analytics/README.md). This package runs it. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`, except `flow_step`. `flow_step` writes one file per Singapore day at `silver/flow_step/day=YYYY-MM-DD.parquet`, holding only the steps whose `updated_at` falls on that day. PostHog bills each row it imports, so a nightly full copy would bill every step daily. The latest day file already in the folder is the watermark: a missed night is filled on the next run, and an empty folder gets a full copy. A full copy spans `day=YYYY-MM-DD.part-N.parquet` files of 50,000 steps, and the unnumbered file, written last, marks the day done. Every row carries the file's `day`. A step's current state is its row with the latest `day`, then the latest `updated_at`. Known gap: `--full` rewrites a day PostHog may already have imported. A step changed by a direct write then has two rows with the same `day` and `updated_at`, and the view may pick the older one. Direct writes to `steps` are rare, so this is accepted.
+The archival task writes the silver analytics tables to S3 each night, before it archives. The export code lives in [`backend-analytics`](../backend-analytics/README.md). This package runs it. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`, except `flow_step`. `flow_step` writes one file per Singapore day at `silver/flow_step/day=YYYY-MM-DD.parquet`, holding only the steps whose `updated_at` falls on that day. PostHog bills each row it imports, so a nightly full copy would bill every step daily. The latest day file already in the folder is the watermark. An empty folder gets a full copy. A full copy spans `day=YYYY-MM-DD.part-N.parquet` files of 50,000 steps, and the unnumbered file, written last, marks the day done. Every row carries the file's `day`. A step's current state is its row with the latest `day`, then the latest `updated_at`.
+
+A day file holds each changed step as it was at export time, not at the end of that day. So:
+
+- A missed night is caught up on the next run, but only to each step's current state. A step edited on both missed days appears once, on the later day.
+- Edits between exports are not kept anywhere. The mutation log records who edited a step and when, but not what changed.
+- `--full` writes only yesterday and replaces any pending catch-up. The full copy holds every step's current state, so nothing is lost beyond the point above.
+
+Known gaps, accepted because each is rare:
+
+- **Direct writes.** `--full` rewrites a day PostHog may already have imported. A step changed by a direct write then has two rows with the same `day` and `updated_at`, and the view may pick the older one.
+- **Late writes.** The export runs at 01:00 Singapore time and reads the day before. A write stamped before midnight that becomes readable only after the export read it is never exported. That needs a transaction open past 01:00, an hour of Aurora reader lag, or an app clock an hour slow. The step then keeps its earlier state in PostHog, for example still active after a soft delete, until it changes again or `--full` runs.
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
