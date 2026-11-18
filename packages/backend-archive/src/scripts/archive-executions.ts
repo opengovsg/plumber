@@ -14,6 +14,7 @@ process.on('SIGTERM', () => {
 
 // A failed export does not block archival yet. No exported table reads executions.
 async function runAnalyticsExport(): Promise<boolean> {
+  const startedAt = Date.now()
   try {
     await exportSilverTables({
       db: archivalDbReader,
@@ -21,9 +22,18 @@ async function runAnalyticsExport(): Promise<boolean> {
       appEnv: archivalConfig.appEnv,
       bucket: archivalConfig.analyticsBucket,
     })
+    // No deadline yet. Alert on durationMs if exports grow slow enough to delay archival.
+    logger.info({
+      event: 'analytics.export.complete',
+      durationMs: Date.now() - startedAt,
+    })
     return true
   } catch (err) {
-    logger.error({ event: 'analytics.export.error', err })
+    logger.error({
+      event: 'analytics.export.error',
+      durationMs: Date.now() - startedAt,
+      err,
+    })
     return false
   }
 }
