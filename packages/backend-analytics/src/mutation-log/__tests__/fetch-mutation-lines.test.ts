@@ -5,7 +5,11 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import { describe, expect, it, vi } from 'vitest'
 
-import { fetchMutationLines, MAX_QUERY_RESULTS } from '../fetch-mutation-lines'
+import {
+  fetchMutationLines,
+  MAX_QUERY_RESULTS,
+  MUTATION_LOG_QUERY,
+} from '../fetch-mutation-lines'
 
 const START = Date.parse('2026-11-04T16:00:00.000Z')
 const END = Date.parse('2026-11-05T16:00:00.000Z')
@@ -123,5 +127,11 @@ describe('fetchMutationLines', () => {
         sleep: noSleep,
       }),
     ).rejects.toThrow('Logs Insights query ended as Failed')
+  })
+})
+
+describe('MUTATION_LOG_QUERY', () => {
+  it('admits a mutation logged with a leading space', () => {
+    expect(MUTATION_LOG_QUERY).toContain('like /^\\s*mutation/')
   })
 })
