@@ -28,6 +28,7 @@ const catalogSchema = z.array(
     action_key: z.string().min(1),
     name: z.string().min(1),
     is_trigger: z.boolean(),
+    is_active: z.boolean(),
   }),
 )
 
@@ -188,6 +189,7 @@ export function createActionCatalogTable({
       action_key: 'STRING',
       name: 'STRING',
       is_trigger: 'BOOLEAN',
+      is_active: 'BOOLEAN',
       launched_at: 'TIMESTAMP',
       launched_at_source: 'STRING',
       complexity: 'STRING',

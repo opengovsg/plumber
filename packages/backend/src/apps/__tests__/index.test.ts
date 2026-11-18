@@ -35,31 +35,62 @@ describe('get-apps query', () => {
 })
 
 describe('action catalog', () => {
+  const catalogPath = join(
+    __dirname,
+    '../../../../backend-analytics/data/action-catalog.json',
+  )
+
+  type CatalogEntry = {
+    app_key: string
+    action_key: string
+    name: string
+    is_trigger: boolean
+    is_active: boolean
+  }
+
+  const catalogKey = (entry: CatalogEntry) =>
+    `${entry.app_key}.${entry.action_key}`
+
   // Analytics cannot import the apps registry, so it reads this file. Run `vitest -u` to rewrite it.
+  // Removed app-actions stay as inactive, because past steps and executions still name them.
   it('matches the analytics catalog file', async () => {
-    const catalog = Object.values(exportedApps)
-      .flatMap((app) => [
+    const active: CatalogEntry[] = Object.values(exportedApps).flatMap(
+      (app) => [
         ...(app.triggers ?? []).map((trigger) => ({
           app_key: app.key,
           action_key: trigger.key,
           name: trigger.name,
           is_trigger: true,
+          is_active: true,
         })),
         ...(app.actions ?? []).map((action) => ({
           app_key: app.key,
           action_key: action.key,
           name: action.name,
           is_trigger: false,
+          is_active: true,
         })),
-      ])
-      .sort((a, b) =>
-        `${a.app_key}.${a.action_key}`.localeCompare(
-          `${b.app_key}.${b.action_key}`,
-        ),
-      )
+      ],
+    )
+    const activeKeys = new Set(active.map(catalogKey))
+    const committed: CatalogEntry[] = fs.existsSync(catalogPath)
+      ? JSON.parse(fs.readFileSync(catalogPath, 'utf8'))
+      : []
+    const retired = committed
+      .filter((entry) => !activeKeys.has(catalogKey(entry)))
+      .map((entry) => ({
+        app_key: entry.app_key,
+        action_key: entry.action_key,
+        name: entry.name,
+        is_trigger: entry.is_trigger,
+        is_active: false,
+      }))
+    const catalog = [...active, ...retired].sort((a, b) =>
+      catalogKey(a).localeCompare(catalogKey(b)),
+    )
 
     await expect(`${JSON.stringify(catalog, null, 2)}\n`).toMatchFileSnapshot(
-      '../../../../backend-analytics/data/action-catalog.json',
+      catalogPath,
     )
   })
 })
