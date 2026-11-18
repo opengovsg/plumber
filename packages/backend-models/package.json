@@ -1,6 +1,6 @@
 {
   "name": "@plumber/backend-models",
-  "version": "1.103.1",
+  "version": "1.104.0",
   "private": true,
   "description": "Column-only backend models, built for packages outside the backend",
   "main": "dist/exports/models.js",
