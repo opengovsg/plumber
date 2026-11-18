@@ -180,11 +180,12 @@ The archival task runs the analytics export each night, before it archives. Arch
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
-| Flag           | Meaning                                                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `--tables a,b` | Silver tables to write. Default: all. [`backend-analytics`](../backend-analytics/README.md#what-the-export-writes) lists them. |
-| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                           |
-| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                 |
+| Flag           | Meaning                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--tables a,b` | Silver tables to write. Default: all. [`backend-analytics`](../backend-analytics/README.md#what-the-export-writes) lists them.             |
+| `--full`       | Write `flow_step` as a full copy for yesterday. Run it after a migration or script writes `steps` directly, since those skip `updated_at`. |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                       |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                             |
 
 Pass exactly one of `--out` and `--s3`.
 
