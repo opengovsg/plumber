@@ -46,6 +46,12 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 
 ---
 
+## Action catalog
+
+`action_catalog` reads `data/action-catalog.csv`, one row per trigger and action. Add a launch date (`YYYY-MM-DD`, Singapore) or a minutes-saved value by editing that row. A blank cell is unknown. A backend test fails when an app ships a trigger or action without a row.
+
+---
+
 ## Running tests
 
 Run checks and builds through Turbo, as CI does. Turbo builds `@plumber/backend-models` first. The bare package scripts fail with `TS2307` on a clean checkout.
