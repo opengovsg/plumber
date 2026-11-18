@@ -61,6 +61,36 @@ const fields = [
     ],
   },
   {
+    key: 'tileRowData',
+    label: 'Tile row data',
+    type: 'multirow-multicol',
+    required: true,
+    hiddenIf: { fieldKey: 'tableId', op: 'is_empty' },
+    subFields: [{ key: 'columnId', type: 'string', required: true }],
+  },
+  {
+    key: 'conditions',
+    label: 'Conditions',
+    type: 'grouped-multirow',
+    required: true,
+    subFields: [
+      { key: 'field', label: 'Field', type: 'string', required: true },
+      {
+        key: 'condition',
+        label: 'Condition',
+        type: 'dropdown',
+        required: true,
+      },
+      {
+        key: 'text',
+        label: 'Value',
+        type: 'string',
+        required: true,
+        hiddenIf: { fieldKey: 'condition', op: 'equals', fieldValue: 'empty' },
+      },
+    ],
+  },
+  {
     key: 'customHeaders',
     label: 'Custom headers',
     type: 'multirow-multicol',
@@ -238,6 +268,50 @@ describe('findEmptyParameterError', () => {
     ]) {
       expect(findEmptyParameterError(fields, { body })).toBeNull()
     }
+  })
+
+  it('treats a non-string rich-text body as no value', () => {
+    expect(findEmptyParameterError(fields, { body: null })).toMatch(
+      /^Body has no value yet/,
+    )
+  })
+
+  it('checks a field hidden only until a sibling is filled', () => {
+    expect(findEmptyParameterError(fields, { tileRowData: [] })).toMatch(
+      /^Tile row data is empty/,
+    )
+    expect(
+      findEmptyParameterError(fields, {
+        tileRowData: [{ columnId: 'TBD' }],
+      }),
+    ).toMatch(/^Tile row data, row 1: columnId has no value yet/)
+  })
+
+  it('treats a missing required cell in a row as empty', () => {
+    expect(
+      findEmptyParameterError(fields, { letterParams: [{ field: 'Name' }] }),
+    ).toMatch(/^Letter fields, row 1: Value has no value yet/)
+    expect(
+      findEmptyParameterError(fields, { cells: [{ address: 'A1' }] }),
+    ).toBeNull()
+  })
+
+  it('checks each row of each condition group', () => {
+    expect(
+      findEmptyParameterError(fields, {
+        conditions: [
+          { rows: [{ field: 'Status', condition: 'equals', text: 'Open' }] },
+          { rows: [{ field: 'Status', condition: 'equals', text: '' }] },
+        ],
+      }),
+    ).toBe(
+      'Conditions, group 2, row 1: Value has no value yet. Ask the user for it before saving. Nothing was saved.',
+    )
+    expect(
+      findEmptyParameterError(fields, {
+        conditions: [{ rows: [{ field: 'Status', condition: 'empty' }] }],
+      }),
+    ).toBeNull()
   })
 
   it('falls back to the key when a field has no label', () => {

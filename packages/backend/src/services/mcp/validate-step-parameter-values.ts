@@ -46,7 +46,10 @@ function hasNoValue(value: unknown): boolean {
 // The editor stores an empty body as markup such as "<p></p>". An image
 // alone is still a body.
 function isEmptyRichText(value: unknown): boolean {
-  if (typeof value !== 'string' || /<img\b/i.test(value)) {
+  if (typeof value !== 'string') {
+    return true
+  }
+  if (/<img\b/i.test(value)) {
     return false
   }
   // Only checks for visible text. The result is never stored or rendered.
@@ -57,9 +60,13 @@ function isEmptyRichText(value: unknown): boolean {
   return isBlankString(text)
 }
 
-// Mirrors the editor's isFieldHidden. A hidden field is never asked for, such
-// as a Tiles filter value when the operator is "Is empty".
-function isFieldHidden(field: IField, siblings: Record<string, unknown>) {
+// Mirrors the editor's isFieldHidden, so a Tiles filter value with operator
+// "Is empty" is skipped. IMPORTANT: a field hidden until a sibling is filled
+// (op is_empty) is still checked, because its value is saved and used later.
+function isFieldNotApplicable(
+  field: IField,
+  siblings: Record<string, unknown>,
+): boolean {
   const condition = field.hiddenIf
   if (!condition) {
     return false
@@ -71,12 +78,8 @@ function isFieldHidden(field: IField, siblings: Record<string, unknown>) {
       return get(siblings, condition.fieldKey) === condition.fieldValue
     case 'not_equals':
       return get(siblings, condition.fieldKey) !== condition.fieldValue
-    case 'is_empty': {
-      const sibling = get(siblings, condition.fieldKey)
-      return typeof sibling === 'string'
-        ? !sibling
-        : sibling === null || sibling === undefined
-    }
+    case 'is_empty':
+      return false
     case 'in':
       return condition.fieldValues.includes(get(siblings, condition.fieldKey))
     case 'not_in':
@@ -99,19 +102,43 @@ function isEmptyCollection(value: unknown): boolean {
   )
 }
 
+function findRowError(
+  subFields: IField[],
+  rows: unknown,
+  label: string,
+): string | null {
+  if (!Array.isArray(rows)) {
+    return null
+  }
+  for (const [index, row] of rows.entries()) {
+    const rowError = isRow(row)
+      ? findEmptyParameterError(subFields, row, {}, { requireAllFields: true })
+      : null
+    if (rowError) {
+      return `${label}, row ${index + 1}: ${rowError}`
+    }
+  }
+  return null
+}
+
 /**
  * Finds the first incoming parameter the model should have asked about
- * instead of saving. Only keys present in `parameters` are checked, because
- * the model saves a step across several calls.
+ * instead of saving. Top-level keys absent from `parameters` are skipped,
+ * because the model saves a step across several calls. A row has no partial
+ * save, so a missing required cell in a row counts as empty.
  */
 export function findEmptyParameterError(
   fields: IField[],
   parameters: Record<string, unknown>,
   savedParameters: Record<string, unknown> = {},
+  { requireAllFields = false }: { requireAllFields?: boolean } = {},
 ): string | null {
   const siblings = { ...savedParameters, ...parameters }
   for (const field of fields) {
-    if (!(field.key in parameters) || isFieldHidden(field, siblings)) {
+    if (
+      (!requireAllFields && !(field.key in parameters)) ||
+      isFieldNotApplicable(field, siblings)
+    ) {
       continue
     }
     const value = parameters[field.key]
@@ -143,16 +170,24 @@ export function findEmptyParameterError(
       return `${label} has no value yet. Ask the user for it before saving. Nothing was saved.`
     }
 
-    if (
-      (field.type === 'multirow-multicol' || field.type === 'multirow') &&
-      Array.isArray(value)
-    ) {
-      for (const [index, row] of value.entries()) {
-        const rowError = isRow(row)
-          ? findEmptyParameterError(field.subFields, row)
+    if (field.type === 'multirow-multicol' || field.type === 'multirow') {
+      const rowError = findRowError(field.subFields, value, label)
+      if (rowError) {
+        return rowError
+      }
+    }
+
+    if (field.type === 'grouped-multirow' && Array.isArray(value)) {
+      for (const [index, group] of value.entries()) {
+        const groupError = isRow(group)
+          ? findRowError(
+              field.subFields,
+              group.rows,
+              `${label}, group ${index + 1}`,
+            )
           : null
-        if (rowError) {
-          return `${label}, row ${index + 1}: ${rowError}`
+        if (groupError) {
+          return groupError
         }
       }
     }

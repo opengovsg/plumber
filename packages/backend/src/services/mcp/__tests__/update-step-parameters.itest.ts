@@ -1089,6 +1089,20 @@ describe('empty value guard', () => {
     ).rejects.toThrow(/is empty\. Collect the column values/)
   })
 
+  it('rejects an empty rowData array before a Tiles table is chosen', async () => {
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId,
+        stepId: tilesStepId,
+        parameters: { rowData: [] },
+      }),
+    ).rejects.toThrow(/is empty\. Collect the column values/)
+
+    const step = await Step.query().findById(tilesStepId)
+    expect(step?.parameters?.rowData).toBeUndefined()
+  })
+
   it('rejects a call with no values and no connection', async () => {
     await expect(
       updateStepParametersService({
