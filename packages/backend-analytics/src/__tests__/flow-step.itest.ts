@@ -82,6 +82,17 @@ describe('flow_step against the migrated schema', () => {
     expect(rows[1].deleted_at).not.toBeNull()
   })
 
+  it('reads the resource from the argument the catalog names', async () => {
+    const window = sgtDayWindow('2026-11-10')
+    const [unmapped] = await collect(fetchFlowStepPages(db, window, 50, {}))
+    const [renamed] = await collect(
+      fetchFlowStepPages(db, window, 50, { 'tiles.createTileRow': 'rowData' }),
+    )
+
+    expect(unmapped.map((row) => row.resource_id)).toEqual([null, null, null])
+    expect(renamed.map((row) => row.resource_id)).toEqual([null, null, null])
+  })
+
   it('pages a full copy by pipe, then step, without gaps', async () => {
     const pages = await collect(fetchFlowStepPages(db, null, 2))
 
