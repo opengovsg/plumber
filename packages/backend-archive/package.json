@@ -3,8 +3,9 @@
   "version": "1.106.0",
   "private": true,
   "scripts": {
-    "prebuild": "rimraf ./dist",
+    "prebuild": "rimraf ./dist && pnpm run build:deps",
     "build": "tsc && tsc-alias",
+    "build:deps": "pnpm --filter \"backend-archive^...\" run build",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "test:unit": "vitest --config ./vitest.config.ts",
     "lint": "oxlint .",
@@ -12,12 +13,12 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
-    "archive:backfill": "pnpm --filter backend-analytics run build && ts-node --swc src/scripts/archive-executions.ts",
-    "archive:backfill-local": "pnpm --filter backend-analytics run build && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
+    "archive:backfill": "pnpm run build:deps && ts-node --swc src/scripts/archive-executions.ts",
+    "archive:backfill-local": "pnpm run build:deps && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
     "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
     "archive:rehydrate-local": "node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts",
-    "analytics:export": "pnpm --filter backend-analytics run build && ts-node --swc src/scripts/export-analytics.ts",
-    "analytics:export-local": "pnpm --filter backend-analytics run build && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/export-analytics.ts"
+    "analytics:export": "pnpm run build:deps && ts-node --swc src/scripts/export-analytics.ts",
+    "analytics:export-local": "pnpm run build:deps && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/export-analytics.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
