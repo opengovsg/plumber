@@ -5,6 +5,7 @@ import type User from '@/models/user'
 import {
   buildEstablishedConnectionReminder,
   extractCandidateFormConnection,
+  measurePartBytes,
   resolveEstablishedFormConnection,
   stripReasoningParts,
 } from './helpers'
@@ -21,6 +22,26 @@ vi.mock('@/services/mcp/list-connections', () => ({
 function userMessage(text: string): ChatRequest['messages'][number] {
   return { role: 'user', parts: [{ type: 'text', text }] }
 }
+
+describe('measurePartBytes', () => {
+  it('sums part JSON bytes, grouping tool and data parts', () => {
+    type Part = ChatRequest['messages'][number]['parts'][number]
+    const text: Part = { type: 'text', text: 'hi' }
+    const tool: Part = { type: 'tool-get_flow', output: { a: 1 } }
+    const data: Part = {
+      type: 'data-tileSetup',
+      data: { question: 'q', name: null, columns: ['c'] },
+    }
+    const size = (part: object) => JSON.stringify(part).length
+
+    expect(
+      measurePartBytes([
+        { role: 'user', parts: [text] },
+        { role: 'assistant', parts: [tool, data, text] },
+      ]),
+    ).toEqual({ text: 2 * size(text), tool: size(tool), data: size(data) })
+  })
+})
 
 describe('stripReasoningParts', () => {
   it('removes reasoning parts and keeps all other parts', () => {

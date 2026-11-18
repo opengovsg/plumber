@@ -4,6 +4,7 @@ import {
   updateActiveObservation,
   updateActiveTrace,
 } from '@langfuse/tracing'
+import type { IRequest } from '@plumber/types'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -60,6 +61,7 @@ import {
   sumCacheWriteInputTokens,
 } from './cache-breakpoints'
 import {
+  measurePartBytes,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
   stripReasoningParts,
@@ -178,6 +180,8 @@ const handleChatStream = observe(
         userId: context.currentUser.email,
         model: model.modelId,
         disabledMcpServers,
+        requestBytes: (req as IRequest).rawBody?.length,
+        partBytes: measurePartBytes(rawMessages),
       })
 
       // Re-derived fresh every turn from the raw message text and verified

@@ -24,6 +24,28 @@ export function serializeMessagesForLangfuse(
 }
 
 /**
+ * Sums the JSON size of message parts by part kind, grouping `tool-*` and `data-*` parts.
+ *
+ * Shows which parts fill a chat request as it nears the request body size limit.
+ */
+export function measurePartBytes(
+  messages: ChatRequest['messages'],
+): Record<string, number> {
+  const bytes: Record<string, number> = {}
+  for (const message of messages) {
+    for (const part of message.parts) {
+      const kind = part.type.startsWith('tool-')
+        ? 'tool'
+        : part.type.startsWith('data-')
+          ? 'data'
+          : part.type
+      bytes[kind] = (bytes[kind] ?? 0) + Buffer.byteLength(JSON.stringify(part))
+    }
+  }
+  return bytes
+}
+
+/**
  * Removes echoed reasoning parts from client messages.
  *
  * Anthropic binds each thinking signature to the tools list and prompt of the
