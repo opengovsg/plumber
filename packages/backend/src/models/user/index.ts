@@ -11,16 +11,17 @@ import {
 
 import { getAllowedCollaboratorRoles } from '@/helpers/check-user-permission'
 
-import Base from './base'
-import Connection from './connection'
-import Execution from './execution'
-import Flow from './flow'
-import FlowConnections from './flow-connections'
-import FlowTransfer from './flow-transfers'
-import ExtendedQueryBuilder from './query-builder'
-import Step from './step'
-import TableCollaborator from './table-collaborators'
-import TableMetadata from './table-metadata'
+import Base from '../base'
+import Connection from '../connection'
+import Execution from '../execution'
+import Flow from '../flow'
+import FlowConnections from '../flow-connections'
+import FlowTransfer from '../flow-transfers'
+import ExtendedQueryBuilder from '../query-builder'
+import Step from '../step'
+import TableCollaborator from '../table-collaborators'
+import TableMetadata from '../table-metadata'
+import BaseUser from './base'
 
 const ROLE_STMT = `
   CASE
@@ -29,9 +30,7 @@ const ROLE_STMT = `
   END as role
 `
 
-class User extends Base {
-  id!: string
-  email!: string
+class User extends BaseUser {
   otpHash?: string | null
   otpAttempts!: number
   otpSentAt?: Date | null
@@ -42,23 +41,10 @@ class User extends Base {
   tables?: TableMetadata[]
   sentFlowTransfers?: FlowTransfer[]
   receivedFlowTransfers?: FlowTransfer[]
-  lastLoginAt?: Date
 
   // for typescript support when creating TableCollaborator row in insertGraph
   role?: ITableCollabRole
   lastAccessedAt?: string
-
-  static tableName = 'users'
-
-  static jsonSchema = {
-    type: 'object',
-    required: ['email'],
-
-    properties: {
-      id: { type: 'string', format: 'uuid' },
-      email: { type: 'string', format: 'email', minLength: 1, maxLength: 255 },
-    },
-  }
 
   static relationMappings = () => ({
     /**
