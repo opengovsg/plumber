@@ -117,7 +117,7 @@ There are two kinds of skills, distinguished by whether they are listed in the s
 - **Upstream skills** — listed in `skills-lock.json`, installed via `skills add <repo> --skill <name> --agent claude-code -y`. Do **not** edit their files (`SKILL.md`, etc.); upstream updates may be merged later and would clobber local changes. Per-repo overrides to their behavior go in the "Skill overrides" section below (or in the relevant `rules/*.md` for package-scoped ones).
 - **Plumber-specific skills** — anything in `.claude/skills/` that is **not** in `skills-lock.json`. These are authored in-repo and are freely editable. Create one with `skills init <name>` from the directory whose `.claude/skills/` should host it (repo root for cross-cutting skills, package root for package-scoped ones).
 
-In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat). `setup-feature-metrics`: set up a feature's rollout, success metrics, dashboard and alerts in PostHog after the author approves a plan.
+In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat). `setup-feature-metrics`: set up a feature's rollout, success metrics, dashboard and alerts in PostHog after the author approves a plan. `write-dogfooding-doc`: write a Notion dogfooding doc from a set of changes, with personas and a scenario plan the developer approves.
 
 ### Skill overrides
 
