@@ -1,6 +1,8 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 import { DateTime } from 'luxon'
 
+import StepError from '@/errors/step'
+
 import {
   TIME_OF_DAY_DESCRIPTION,
   TIME_OF_DAY_OPTIONS,
@@ -22,7 +24,6 @@ const trigger: IRawTrigger = {
       type: 'dropdown' as const,
       description: 'What day of the month should this workflow start?',
       required: true,
-      value: null,
       variables: false,
       showOptionValue: false,
       options: [
@@ -158,7 +159,6 @@ const trigger: IRawTrigger = {
       type: 'dropdown' as const,
       description: TIME_OF_DAY_DESCRIPTION,
       required: true,
-      value: null,
       variables: false,
       showOptionValue: false,
       options: TIME_OF_DAY_OPTIONS,
@@ -176,6 +176,14 @@ const trigger: IRawTrigger = {
   },
 
   async run($) {
+    if (!this.getInterval) {
+      throw new StepError({
+        name: 'Trigger is missing getInterval',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
     const nextCronDateTime = getNextCronDateTime(
       this.getInterval($.step.parameters),
     )
