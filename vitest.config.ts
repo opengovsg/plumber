@@ -13,7 +13,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       include: [
-        'packages/{backend,backend-archive,frontend}/src/**/*.{ts,tsx}',
+        'packages/{backend,backend-archive,backend-analytics,frontend}/src/**/*.{ts,tsx}',
       ],
       exclude: [
         '**/*.test.{ts,tsx}',
@@ -26,8 +26,9 @@ export default defineConfig({
       'packages/frontend/vite.config.ts',
       ...backendUnitProjects,
       'packages/backend-archive/vitest.config.ts',
+      'packages/backend-analytics/vitest.config.ts',
       ...integrationProjects,
-      'packages/backend-archive/vitest.config.integration.ts',
+      'packages/backend-analytics/vitest.config.integration.ts',
     ],
   },
 })

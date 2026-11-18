@@ -1,12 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import type { S3Client } from '@aws-sdk/client-s3'
+import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 
-import logger from '@/helpers/archival/logger'
-import { putArchiveObject } from '@/helpers/archival/s3-client'
-
+import logger from './logger'
 import {
   buildSilverKey,
   encodeSilverTable,
@@ -28,14 +26,16 @@ export const EXPORT_APP_ENVS: ReadonlySet<string> = new Set(['prod', 'staging'])
 export type SilverSink = (key: string, body: Buffer) => Promise<void>
 
 export function s3Sink(s3Client: S3Client, bucket: string): SilverSink {
-  return (key, body) =>
-    putArchiveObject({
-      s3Client,
-      bucket,
-      key,
-      body,
-      contentType: 'application/vnd.apache.parquet',
-    })
+  return async (key, body) => {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: 'application/vnd.apache.parquet',
+      }),
+    )
+  }
 }
 
 export function localDirSink(dir: string): SilverSink {
