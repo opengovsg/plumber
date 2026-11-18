@@ -3,6 +3,7 @@ import type { TransactionOrKnex } from 'objection'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
+import { captureServerEvent, type ServerEvent } from '@/helpers/server-events'
 import Connection from '@/models/connection'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -11,6 +12,10 @@ import FlowConnections from '@/models/flow-connections'
 import FlowTransfer from '@/models/flow-transfers'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
+import {
+  buildFlowCollaboratorEvent,
+  classifyCollaboratorUpsert,
+} from '@/services/flow/flow-collaborator-event'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -109,7 +114,8 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
      * - Add the new owner as an editor in the table (if not already an editor)
      * - Update the flow id to the new owner
      */
-    return await FlowTransfer.transaction(async (trx) => {
+    const collaboratorEvents: ServerEvent[] = []
+    const result = await FlowTransfer.transaction(async (trx) => {
       /**
        * Claimed up front so a concurrent approval blocks on this row and bails
        * out before redoing the work below.
@@ -305,6 +311,22 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
         })
         .withSoftDeleted()
 
+      const oldOwnerChange = classifyCollaboratorUpsert(
+        existingCollaborator,
+        'editor',
+      )
+      if (oldOwnerChange) {
+        collaboratorEvents.push(
+          buildFlowCollaboratorEvent({
+            actorUserId: context.currentUser.id,
+            flowId: flow.id,
+            collaboratorUserId: flow.userId,
+            change: oldOwnerChange,
+            source: 'transfer',
+          }),
+        )
+      }
+
       if (!existingCollaborator) {
         await FlowCollaborator.query(trx).insert({
           flowId: flow.id,
@@ -327,6 +349,18 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       })
 
       if (isNewOwnerCollaborator) {
+        collaboratorEvents.push(
+          buildFlowCollaboratorEvent({
+            actorUserId: context.currentUser.id,
+            flowId: flow.id,
+            collaboratorUserId: context.currentUser.id,
+            change: {
+              type: 'removed',
+              previousRole: isNewOwnerCollaborator.role,
+            },
+            source: 'transfer',
+          }),
+        )
         await FlowCollaborator.deleteCollaborator({
           userId: context.currentUser.id,
           flowId: flow.id,
@@ -348,6 +382,10 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
 
       return approvedTransfer
     })
+
+    // After the commit, so a rolled-back transfer sends nothing.
+    collaboratorEvents.forEach(captureServerEvent)
+    return result
   }
 
 export default updateFlowTransferStatus

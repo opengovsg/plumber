@@ -6,8 +6,14 @@ import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
+import { captureServerEvent } from '@/helpers/server-events'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
+import {
+  buildFlowCollaboratorEvent,
+  classifyCollaboratorUpsert,
+  type FlowCollaboratorChange,
+} from '@/services/flow/flow-collaborator-event'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -27,6 +33,9 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
     if (context.currentUser.email === validatedEmail) {
       throw new BadUserInputError('Cannot change own role')
     }
+
+    let change: FlowCollaboratorChange | null = null
+    let collaboratorUserId: string | undefined
 
     try {
       /**
@@ -101,6 +110,9 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
           })
           .withSoftDeleted()
 
+        change = classifyCollaboratorUpsert(existingCollaborator, role)
+        collaboratorUserId = collaboratorUser.id
+
         if (existingCollaborator) {
           await existingCollaborator
             .$query(trx)
@@ -150,6 +162,19 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
         error,
       })
       throw new Error(error.message ?? 'Error upserting flow collaborator')
+    }
+
+    // After the commit, so a rolled-back change sends nothing.
+    if (change && collaboratorUserId) {
+      captureServerEvent(
+        buildFlowCollaboratorEvent({
+          actorUserId: context.currentUser.id,
+          flowId,
+          collaboratorUserId,
+          change,
+          source: 'app',
+        }),
+      )
     }
 
     return true
