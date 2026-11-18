@@ -40,7 +40,7 @@ IMPORTANT: Analytics labels app-actions from [packages/backend-analytics/data/ac
 pnpm --filter backend exec vitest run src/apps/__tests__/index.test.ts -u
 ```
 
-The command keeps the hand-entered `launched_at` dates. Leave a new row's date blank for the product team to fill.
+The command keeps the hand-entered columns. Then fill the new row's `resource_parameter` with the argument key that names the resource the step points at (a table, file or channel, e.g. `tableId`), or `none`. Leave `launched_at` blank for the product team to fill.
 
 ## Flow execution pipeline
 

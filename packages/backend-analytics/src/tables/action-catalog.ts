@@ -20,6 +20,7 @@ const HEADER = [
   'name',
   'is_trigger',
   'is_active',
+  'resource_parameter',
   'launched_at',
 ]
 
@@ -31,6 +32,11 @@ const csvRowSchema = z.object({
   name: z.string().min(1),
   is_trigger: flag,
   is_active: flag,
+  // An argument key, or none. The backend apps test checks each key against the registry.
+  resource_parameter: z
+    .string()
+    .min(1)
+    .transform((value) => (value === 'none' ? null : value)),
   launched_at: z.string().transform((value, ctx) => {
     if (!value) {
       return null
@@ -73,6 +79,25 @@ export function parseActionCatalog(text: string): ActionCatalogRow[] {
   })
 }
 
+export function readActionCatalog(): ActionCatalogRow[] {
+  return parseActionCatalog(readFileSync(ACTION_CATALOG_PATH, 'utf8'))
+}
+
+/**
+ * Maps `app_key.action_key` to the argument that names the step's resource.
+ */
+export function resourceParameters(
+  rows: ActionCatalogRow[],
+): Record<string, string> {
+  return Object.fromEntries(
+    rows.flatMap((row): [string, string][] =>
+      row.resource_parameter
+        ? [[`${row.app_key}.${row.action_key}`, row.resource_parameter]]
+        : [],
+    ),
+  )
+}
+
 export function createActionCatalogTable(
   readCatalog: () => string = () => readFileSync(ACTION_CATALOG_PATH, 'utf8'),
 ): SilverTable<ActionCatalogRow> {
@@ -84,6 +109,7 @@ export function createActionCatalogTable(
       name: 'STRING',
       is_trigger: 'BOOLEAN',
       is_active: 'BOOLEAN',
+      resource_parameter: 'STRING',
       launched_at: 'TIMESTAMP',
       complexity: 'STRING',
     },
