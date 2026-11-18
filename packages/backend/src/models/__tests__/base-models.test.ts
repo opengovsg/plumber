@@ -7,7 +7,12 @@ import BaseFlow from '@/models/flow/base'
 import BaseStep from '@/models/step/base'
 import BaseUser from '@/models/user/base'
 
-const ALLOWED_STATICS = ['tableName', 'jsonSchema', 'relationMappings']
+const ALLOWED_STATICS = [
+  'tableName',
+  'idColumn',
+  'jsonSchema',
+  'relationMappings',
+]
 
 // Behavior on a base model would silently differ from the full model's hooks and overrides.
 describe.each([

@@ -9,8 +9,9 @@
     "data"
   ],
   "scripts": {
-    "prebuild": "rimraf ./dist",
+    "prebuild": "rimraf ./dist && pnpm run build:deps",
     "build": "tsc -p tsconfig.build.json",
+    "build:deps": "pnpm --filter \"backend-analytics^...\" run build",
     "test:unit": "vitest --config ./vitest.config.ts",
     "test:integration": "vitest run --config ./vitest.config.integration.ts",
     "lint": "oxlint .",
