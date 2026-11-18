@@ -39,6 +39,12 @@ describe('planChangeFiles', () => {
     ],
     ['an up-to-date folder', [key('2026-11-10')], false, []],
     [
+      'a temp file left by an interrupted local write',
+      [`${key('2026-11-10')}.tmp`],
+      false,
+      [{ day: '2026-11-10', full: true }],
+    ],
+    [
       'a copy that failed part-way',
       ['silver/flow_step/day=2026-11-10.part-1.parquet'],
       false,

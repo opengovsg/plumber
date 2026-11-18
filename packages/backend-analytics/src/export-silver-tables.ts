@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
@@ -64,7 +64,10 @@ export function localDirSink(dir: string): SilverSink {
   return async (key, body) => {
     const filePath = path.join(dir, key)
     await mkdir(path.dirname(filePath), { recursive: true })
-    await writeFile(filePath, body)
+    // A day's completion file is the watermark, so a half-written file must never carry its name.
+    const tempPath = `${filePath}.tmp`
+    await writeFile(tempPath, body)
+    await rename(tempPath, filePath)
   }
 }
 

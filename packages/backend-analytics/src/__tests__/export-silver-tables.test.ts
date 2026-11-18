@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -112,6 +112,9 @@ describe('writeSilverTables to a local folder', () => {
         path.join(dir, 'silver/test_table/current.parquet'),
       )
       expect(body.subarray(0, 4).toString()).toBe('PAR1')
+      expect(await readdir(path.join(dir, 'silver/test_table'))).toEqual([
+        'current.parquet',
+      ])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
