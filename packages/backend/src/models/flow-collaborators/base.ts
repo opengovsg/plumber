@@ -12,6 +12,11 @@ class BaseFlowCollaborator extends Base {
 
   static tableName = 'flow_collaborators'
 
+  // Acts as a composite primary key
+  static get idColumn() {
+    return ['user_id', 'flow_id']
+  }
+
   static jsonSchema = {
     type: 'object',
     properties: {

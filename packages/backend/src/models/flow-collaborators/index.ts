@@ -20,11 +20,6 @@ class FlowCollaborator extends BaseFlowCollaborator {
   // Email is guaranteed to be available when user relation is loaded
   email!: string
 
-  // Acts as a composite primary key
-  static get idColumn() {
-    return ['user_id', 'flow_id']
-  }
-
   static relationMappings = () => ({
     user: {
       relation: Base.BelongsToOneRelation,
