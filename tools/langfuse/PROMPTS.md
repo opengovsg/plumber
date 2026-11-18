@@ -30,7 +30,7 @@ Set `PLUMBER_PROMPTS_REPO` to clone from another URL, such as an SSH remote.
 
 In local dev (`APP_ENV=development`), the backend serves the highest-numbered `vN.md` in `tools/langfuse/prompts/<project>/<name>/`. That is your draft while you edit one. Edits apply without a restart.
 
-- No version files: the backend logs a warning and fetches from Langfuse.
+- No version files: the backend logs a warning once per prompt and fetches from Langfuse.
 - `AI_BUILDER_PROMPT_SOURCE=langfuse`: the backend ignores local files.
 - Deployed environments never read local files. The `ai-builder` LaunchDarkly flag selects the Langfuse version.
 

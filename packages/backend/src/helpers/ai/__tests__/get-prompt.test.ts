@@ -72,24 +72,43 @@ describe('getPrompt', () => {
   })
 
   it.each([
-    ['the folder is missing', () => mocks.readdir.mockRejectedValue(enoent())],
+    [
+      'the folder is missing',
+      'missing-folder',
+      () => mocks.readdir.mockRejectedValue(enoent()),
+    ],
     [
       'the folder has no text versions',
+      'chat-only',
       () => mocks.readdir.mockResolvedValue(['v3.json', 'v3.meta.json']),
     ],
-  ])('warns and falls back to Langfuse when %s', async (_, arrange) => {
-    arrange()
+  ])(
+    'warns and falls back to Langfuse when %s',
+    async (_, promptName, arrange) => {
+      arrange()
 
-    const prompt = await getPrompt('chat', 'aiBuilder', 'production')
+      const prompt = await getPrompt(promptName, 'aiBuilder', 'production')
 
-    expect(prompt).toBe(langfusePrompt)
-    expect(mocks.promptGet).toHaveBeenCalledWith('chat', {
-      label: 'production',
-    })
-    expect(mocks.warn).toHaveBeenCalledWith(
-      expect.stringContaining('pnpm run prompts:clone'),
-      expect.anything(),
-    )
+      expect(prompt).toBe(langfusePrompt)
+      expect(mocks.promptGet).toHaveBeenCalledWith(promptName, {
+        label: 'production',
+      })
+      expect(mocks.warn).toHaveBeenCalledWith(
+        expect.stringContaining('pnpm run prompts:clone'),
+        expect.anything(),
+      )
+    },
+  )
+
+  it('warns once per prompt, not on every request', async () => {
+    mocks.readdir.mockRejectedValue(enoent())
+
+    await getPrompt('warn-once', 'aiBuilder')
+    await getPrompt('warn-once', 'aiBuilder')
+    await getPrompt('warn-once', 'pairAction')
+
+    expect(mocks.warn).toHaveBeenCalledTimes(2)
+    expect(mocks.promptGet).toHaveBeenCalledTimes(3)
   })
 
   it('rethrows read errors other than a missing folder', async () => {

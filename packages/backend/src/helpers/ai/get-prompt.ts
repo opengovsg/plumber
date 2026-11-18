@@ -63,6 +63,9 @@ async function findNewestVersion(promptDir: string): Promise<number | null> {
 /**
  * Serves the newest version file, which is the dev's draft while they edit one.
  */
+// Devs who never cloned the prompts repo would otherwise see this warning on every request.
+const warnedMissingPrompts = new Set<string>()
+
 async function getLocalPrompt(
   promptName: string,
   project: LangfuseProject,
@@ -74,6 +77,11 @@ async function getLocalPrompt(
 
   const version = await findNewestVersion(promptDir)
   if (version === null) {
+    const key = `${project}/${promptName}`
+    if (warnedMissingPrompts.has(key)) {
+      return null
+    }
+    warnedMissingPrompts.add(key)
     logger.warn(
       `No local prompt versions in ${promptDir}. Falling back to Langfuse. Run "pnpm run prompts:clone" to read prompts from the prompts repo.`,
       { promptName, project },
