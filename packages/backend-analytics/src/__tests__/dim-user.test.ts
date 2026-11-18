@@ -1,12 +1,11 @@
 import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import logger from '@/helpers/archival/logger'
-
 import { buildAgencyMapping } from '../agency/agency-mapping'
+import logger from '../logger'
 import { createDimUserTable, type DimUserRow } from '../tables/dim-user'
 
-vi.mock('@/helpers/archival/logger')
+vi.mock('../logger')
 
 const mapping = buildAgencyMapping(
   [

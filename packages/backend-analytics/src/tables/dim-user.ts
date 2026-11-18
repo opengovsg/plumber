@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import logger from '@/helpers/archival/logger'
-
 import {
   type AgencyMapping,
   emailDomain,
@@ -9,6 +7,7 @@ import {
   resolveAgency,
   UNCLASSIFIED,
 } from '../agency/agency-mapping'
+import logger from '../logger'
 import type { SilverTable } from '../silver-table'
 
 const dimUserSqlRowSchema = z.object({
