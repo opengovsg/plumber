@@ -62,6 +62,7 @@ function AiBuilderContent() {
     cancelStream,
     resetChat,
     hasReachedLimit,
+    hasExceededSizeLimit,
     canRetryLastTurn,
     retryLastTurn,
     hasHitStepLimit,
@@ -392,6 +393,7 @@ function AiBuilderContent() {
               cancelStream={cancelStream}
               resetChat={resetChat}
               hasReachedLimit={hasReachedLimit}
+              hasExceededSizeLimit={hasExceededSizeLimit}
               onRetryLastTurn={canRetryLastTurn ? retryLastTurn : undefined}
               hasHitStepLimit={hasHitStepLimit}
               onAddConnection={flowId ? handleAddConnection : undefined}
