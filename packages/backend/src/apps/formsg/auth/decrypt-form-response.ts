@@ -16,6 +16,7 @@ import type { FormsgPayloadWorkflowContent } from '../common/types'
 import { NricFilter } from '../triggers/new-submission/index'
 import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 import { computeSubmissionTime } from './helpers/compute-submission-time'
+import { logUnsupportedPayload } from './helpers/log-unsupported-payload'
 import { processResponsesV3 } from './helpers/process-v3-responses'
 import {
   type MappedFormField,
@@ -25,6 +26,7 @@ import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
+const KNOWN_VERIFIED_KEYS = new Set(['uinFin', 'sgidUinFin', 'cpUen', 'cpUid'])
 // V4 and MRF payloads suffix verified keys with the step, e.g. "cpUen (Step 1)".
 // Brackets break the variable regex, so we map them back to the legacy keys.
 const VERIFIED_KEY_STEP_SUFFIX = / \(Step \d+\)$/
@@ -349,6 +351,12 @@ export async function decryptFormResponse(
         // TODO: FormSG only collects login data on Step 1 today. Revisit if
         // FormSG adds logins on later steps, since step keys would collide.
         const baseKey = key.replace(VERIFIED_KEY_STEP_SUFFIX, '')
+        if (!KNOWN_VERIFIED_KEYS.has(baseKey)) {
+          logUnsupportedPayload('unknown_verified_key', {
+            formId: data.formId,
+            key,
+          })
+        }
         let value = submission.verified[key]
 
         // @deprecated: filterNrics not supported new pipes

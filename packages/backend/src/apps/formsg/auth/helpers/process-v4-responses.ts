@@ -25,6 +25,7 @@ import {
 } from '../../common/myinfo-child-subfields'
 import { type FormSchemaField, mrfWorkflowDataSchema } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
+import { logUnsupportedPayload } from './log-unsupported-payload'
 
 // decryptFormResponse removes tableColumnTitles before storing the field.
 export type MappedFormField = FormField & { tableColumnTitles?: string[] }
@@ -263,6 +264,26 @@ function withOmittedFields(
   return Object.fromEntries(ordered)
 }
 
+function logIfNoScalarValue(
+  formId: string,
+  fieldId: string,
+  response: FieldResponseV4,
+  { allowNumber }: { allowNumber: boolean },
+): void {
+  const rawValue = (response.answer as Partial<StringAnswerV4> | undefined)
+    ?.value
+  const isScalar =
+    typeof rawValue === 'string' ||
+    (allowNumber && typeof rawValue === 'number')
+  if (!isScalar) {
+    logUnsupportedPayload('unknown_answer_shape', {
+      formId,
+      fieldId,
+      fieldType: response.fieldType,
+    })
+  }
+}
+
 export async function processResponsesV4(
   $: IGlobalVariable,
   formId: string,
@@ -428,6 +449,7 @@ export async function processResponsesV4(
     if (value.fieldType === 'date') {
       // Currently, v4 responses return the date as DD/MM/YYYY (e.g. 29/03/2026)
       // We need to convert it to the standard FormSG date format (e.g. 29 Mar 2026)
+      logIfNoScalarValue(formId, key, value, { allowNumber: false })
       const originalDateString = (value.answer as StringAnswerV4).value
       // Formatting an empty date string yields Invalid DateTime.
       if (!originalDateString) {
@@ -440,6 +462,13 @@ export async function processResponsesV4(
         continue
       }
       const originalDate = DateTime.fromFormat(originalDateString, 'dd/MM/yyyy')
+      if (!originalDate.isValid) {
+        logUnsupportedPayload('unparsable_date', {
+          formId,
+          fieldId: key,
+          fieldType: value.fieldType,
+        })
+      }
       const convertedDateString = originalDate.toPlumberFormat('dd MMM yyyy')
       mappedResponses.push({
         _id: key,
@@ -483,6 +512,7 @@ export async function processResponsesV4(
     }
     // catch-all: generic string answers ({ value }) and any future field
     // types, e.g. yes_no, textfield, dropdown, nric
+    logIfNoScalarValue(formId, key, value, { allowNumber: true })
     mappedResponses.push({
       _id: key,
       fieldType: value.fieldType,
