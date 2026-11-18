@@ -1,8 +1,19 @@
 /**
- * Pins the trigger output that saved pipes reference for a v4 submission.
+ * Business rule:
+ * "we shouldn't migrate or modify the paths - users should not have to change
+ * their config for payload changes. payload changes should be backward
+ * compatible."
  *
- * IMPORTANT: a snapshot diff that renames, removes or reorders keys breaks
- * live pipes. Update the snapshot only for an intended contract change.
+ * Saved pipes reference this output by text path, e.g. `fields.<id>.answer`.
+ * The snapshot pins every key, property, array position and value format.
+ *
+ * When this test fails:
+ * 1. Fix the code so every existing path resolves to the same value.
+ * 2. Update the snapshot (`vitest -u`) only for an intended change. List the
+ *    changed keys in the PR.
+ *
+ * IMPORTANT: adding a key is backward compatible. Changing or removing an
+ * existing one is not. Confirm with the user before such a snapshot update.
  */
 import { IGlobalVariable, IRequest } from '@plumber/types'
 import { describe, expect, it, vi } from 'vitest'
