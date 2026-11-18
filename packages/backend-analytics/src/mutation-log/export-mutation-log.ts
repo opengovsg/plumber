@@ -13,6 +13,7 @@ import {
   encodeParquet,
   type ParquetColumns,
 } from '../silver-table'
+import { readActionCatalog, resourceParameters } from '../tables/action-catalog'
 import { fetchMutationLines } from './fetch-mutation-lines'
 import {
   type MutationLogLine,
@@ -30,6 +31,9 @@ export const MUTATION_LOG_COLUMNS: ParquetColumns<MutationLogRow> = {
   step_id: 'STRING',
   table_id: 'STRING',
   connection_id: 'STRING',
+  app_key: 'STRING',
+  action_key: 'STRING',
+  resource_id: 'STRING',
   http_status: 'INT64',
 }
 
@@ -101,18 +105,20 @@ interface WriteMutationLogDaysParams {
   fetchDayLines: FetchDayLines
   sink: SilverSink
   days: string[]
+  parameterByAction?: Record<string, string>
 }
 
 export async function writeMutationLogDays({
   fetchDayLines,
   sink,
   days,
+  parameterByAction = resourceParameters(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
   for (const day of days) {
     const lines = await fetchDayLines(sgtDayWindow(day))
     const rows = sortForFlowSearch(
       lines
-        .map(toMutationLogRow)
+        .map((line) => toMutationLogRow(line, parameterByAction))
         .filter((row): row is MutationLogRow => row !== null),
     )
     const key = buildBronzeDayKey(MUTATION_LOG_TABLE, day)

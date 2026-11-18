@@ -107,6 +107,9 @@ describe('writeMutationLogDays', () => {
         step_id: null,
         table_id: null,
         connection_id: null,
+        app_key: null,
+        action_key: null,
+        resource_id: null,
         http_status: 200n,
       },
     ])
@@ -129,6 +132,9 @@ function row(flowId: string | null, ms: number): MutationLogRow {
     step_id: null,
     table_id: null,
     connection_id: null,
+    app_key: null,
+    action_key: null,
+    resource_id: null,
     http_status: 200,
   }
 }

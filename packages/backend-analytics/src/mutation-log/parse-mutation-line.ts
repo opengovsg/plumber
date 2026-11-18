@@ -1,4 +1,5 @@
 import type { SilverRow } from '../silver-table'
+import { toResourceId } from '../tables/flow-step'
 
 export interface MutationLogLine {
   timestamp: string
@@ -16,6 +17,9 @@ export type MutationLogRow = SilverRow & {
   step_id: string | null
   table_id: string | null
   connection_id: string | null
+  app_key: string | null
+  action_key: string | null
+  resource_id: string | null
   http_status: number | null
 }
 
@@ -140,6 +144,33 @@ export function extractIds(
   }
 }
 
+/**
+ * Reads the app-action and resource an updateStep call set, so step history survives later edits.
+ *
+ * Other parameters can hold user content, so only the catalog's resource argument is read.
+ */
+export function extractStepChoice(
+  rootField: string | null,
+  variables: Record<string, unknown> | null,
+  parameterByAction: Record<string, string>,
+): Pick<MutationLogRow, 'app_key' | 'action_key' | 'resource_id'> {
+  const input = isRecord(variables?.input) ? variables.input : {}
+  if (rootField !== 'updateStep') {
+    return { app_key: null, action_key: null, resource_id: null }
+  }
+  const appKey = asId(input.appKey)
+  const actionKey = asId(input.key)
+  const parameter =
+    appKey && actionKey ? parameterByAction[`${appKey}.${actionKey}`] : null
+  const value =
+    parameter && isRecord(input.parameters) ? input.parameters[parameter] : null
+  return {
+    app_key: appKey,
+    action_key: actionKey,
+    resource_id: toResourceId(appKey, typeof value === 'string' ? value : null),
+  }
+}
+
 // Logs Insights returns @timestamp as `YYYY-MM-DD HH:mm:ss.SSS` in UTC.
 export function parseInsightsTimestamp(timestamp: string): Date | null {
   const date = new Date(`${timestamp.trim().replace(' ', 'T')}Z`)
@@ -152,19 +183,24 @@ function parseStatus(status: string | null): number | null {
 }
 
 /**
- * Keeps the operation and the ids only. No other variable leaves the log.
+ * Keeps the operation, the ids and an updateStep's app-action and resource. No other variable leaves the log.
  */
-export function toMutationLogRow(line: MutationLogLine): MutationLogRow | null {
+export function toMutationLogRow(
+  line: MutationLogLine,
+  parameterByAction: Record<string, string>,
+): MutationLogRow | null {
   const ts = parseInsightsTimestamp(line.timestamp)
   if (!ts) {
     return null
   }
   const operation = parseRootField(line.query)
+  const variables = parseVariables(line.variables)
   return {
     ts,
     user_id: line.userId && line.userId !== '-' ? line.userId : null,
     operation,
-    ...extractIds(operation, parseVariables(line.variables)),
+    ...extractIds(operation, variables),
+    ...extractStepChoice(operation, variables, parameterByAction),
     http_status: parseStatus(line.status),
   }
 }
