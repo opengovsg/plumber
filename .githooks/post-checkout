@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sets up a new worktree with personal gitignored files from the main checkout, dependencies and a code index.
-# IMPORTANT: always exit 0. A failing hook makes `git worktree add` fail.
+# IMPORTANT: a non-zero exit makes `git worktree add` exit non-zero, though git keeps the worktree.
 FILES="op-dev.json"
 
 # Only a new checkout has a null previous HEAD. Branch switches pass a real one.
@@ -12,6 +12,16 @@ for f in $FILES; do
   [ -e "$main/$f" ] && [ ! -e "$f" ] || continue
   mkdir -p "$(dirname "$f")" && cp -R "$main/$f" "$f"
 done
+
+# Native modules build against the running Node, so install only on the repo's version.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use >/dev/null
+want=$(tr -d '[:space:]' < .nvmrc)
+have=$(node -v 2>/dev/null)
+if [ "${have#v}" != "${want#v}" ]; then
+  echo "post-checkout: needs Node $want from .nvmrc, found ${have:-none}. Run \`nvm install\`, then \`pnpm install\` and \`codegraph init\` in the worktree." >&2
+  exit 1
+fi
 
 # GUI tools that create worktrees may lack these on PATH, so warn instead of failing.
 run() {
