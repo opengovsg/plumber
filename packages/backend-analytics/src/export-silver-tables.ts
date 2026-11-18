@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { mkdir, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -65,7 +66,7 @@ export function localDirSink(dir: string): SilverSink {
     const filePath = path.join(dir, key)
     await mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 })
     // A half-written file must never carry its final name. Mode 0600 because dim_user holds emails.
-    const tempPath = `${filePath}.tmp`
+    const tempPath = `${filePath}.${randomUUID()}.tmp`
     await writeFile(tempPath, body, { mode: 0o600 })
     await rename(tempPath, filePath)
   }

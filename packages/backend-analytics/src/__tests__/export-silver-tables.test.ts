@@ -141,6 +141,27 @@ describe('writeSilverTables to a local folder', () => {
   })
 })
 
+describe('localDirSink', () => {
+  it('publishes one complete file when two writers share a key', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    try {
+      const sink = localDirSink(dir)
+      const first = Buffer.alloc(4_000_000, 'a')
+      const second = Buffer.alloc(4_000_000, 'b')
+      await Promise.all([
+        sink('k/day.parquet', first),
+        sink('k/day.parquet', second),
+      ])
+
+      const body = await readFile(path.join(dir, 'k/day.parquet'))
+      expect([first, second].some((written) => written.equals(body))).toBe(true)
+      expect(await readdir(path.join(dir, 'k'))).toEqual(['day.parquet'])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('selectSilverTables', () => {
   it('splits the named tables into rebuilt and change tables', () => {
     const { tables, changeTables } = selectSilverTables([
