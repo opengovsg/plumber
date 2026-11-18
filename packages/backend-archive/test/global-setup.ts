@@ -50,6 +50,10 @@ export default async (project: TestProject) => {
       const { up } = await import(join(directory, file))
       await up(client)
     }
+  } catch (err) {
+    // Vitest only registers the teardown this function returns, so a failed migration must stop Postgres itself.
+    await stopContainers()
+    throw err
   } finally {
     await client.destroy()
   }
