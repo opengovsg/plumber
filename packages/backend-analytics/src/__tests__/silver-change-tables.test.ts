@@ -40,7 +40,7 @@ describe('planChangeFiles', () => {
     ['an up-to-date folder', [key('2026-11-10')], false, []],
     [
       'a temp file left by an interrupted local write',
-      [`${key('2026-11-10')}.tmp`],
+      [`${key('2026-11-10')}.0b6f1c2e.tmp`],
       false,
       [{ day: '2026-11-10', full: true }],
     ],
