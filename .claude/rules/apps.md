@@ -14,4 +14,4 @@ IMPORTANT: Analytics labels app-actions from [packages/backend-analytics/data/ac
 pnpm --filter backend exec vitest run src/apps/__tests__/index.test.ts -u
 ```
 
-The command keeps the hand-entered columns. Then fill the new row's `resource_parameter` with the argument key that names the resource the step points at (a table, file or channel, e.g. `tableId`), or `none`. Leave `launched_at` blank for the product team to fill.
+The command keeps the hand-entered columns. Then fill the new row's `resource_parameter` with the argument key that names the resource the step points at (a table, file or channel, e.g. `tableId`), or `none`. Leave `launched_at` blank for the product team to fill. If you change an existing row's `resource_parameter`, say in the PR that `flow_step` needs a `--full` export after deploy.
