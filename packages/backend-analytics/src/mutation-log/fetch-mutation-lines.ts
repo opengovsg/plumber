@@ -20,7 +20,7 @@ const QUERY_TIMEOUT_MS = 15 * 60 * 1_000
 // lone object that has no `message` key.
 export const MUTATION_LOG_QUERY = [
   'fields @timestamp, `message.graphql-query` as query, `message.graphql-variables` as variables, `message.user-id` as userId, `message.status` as status',
-  '| filter `message.graphql-query` like /^mutation/',
+  '| filter `message.graphql-query` like /^\\s*mutation/',
   '| sort @timestamp asc',
   `| limit ${MAX_QUERY_RESULTS}`,
 ].join('\n')

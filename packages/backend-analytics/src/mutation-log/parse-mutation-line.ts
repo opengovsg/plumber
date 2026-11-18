@@ -145,7 +145,9 @@ export function extractIds(
 }
 
 /**
- * Reads the app-action and resource an updateStep call set, so step history survives later edits.
+ * Reads the app-action and resource an updateStep call requested, so step history survives later edits.
+ *
+ * IMPORTANT: GraphQL reports a rejected call with HTTP 200, so these are attempted changes. flow_step holds saved state.
  *
  * Other parameters can hold user content, so only the catalog's resource argument is read.
  */

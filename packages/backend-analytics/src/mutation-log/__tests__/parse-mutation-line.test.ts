@@ -17,6 +17,8 @@ describe('parseRootField', () => {
       'updateFlow',
     ],
     ['mutation { logout }', 'logout'],
+    // The request log keeps one space from leading whitespace.
+    [' mutation { logout }', 'logout'],
     [
       'mutation Rename($input: UpdateFlowInput!) { renamed: updateFlow(input: $input) { id } }',
       'updateFlow',
