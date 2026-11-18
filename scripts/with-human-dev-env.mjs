@@ -78,7 +78,8 @@ function parseArgs(argv) {
 const WORKTREE_PORT_START =
   Number(process.env.PLUMBER_WORKTREE_PORT_BASE) || 13000
 const WORKTREE_PORT_STRIDE = 10
-const WORKTREE_PORT_SLOTS = 500
+// Ends at 29990/29991 for the default start, below Kubernetes' 30000-32767 service port range.
+const WORKTREE_PORT_SLOTS = 1700
 
 // Connects instead of test-listening, because SO_REUSEADDR lets a test listen succeed on a held port.
 function isPortInUse(port, host) {
