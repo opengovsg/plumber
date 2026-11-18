@@ -87,8 +87,9 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
 
   // Every AWS error response (SES, or STS when fetching credentials) is a ServiceException.
   // Other errors never got a response from AWS, e.g. network failures and timeouts.
+  // The AWS SDK already retries network errors, so they are not INTERMITTENT-ERROR.
   if (!(error instanceof ServiceException)) {
-    return isAwsNetworkError(error) ? 'INTERMITTENT-ERROR' : 'ERROR'
+    return 'ERROR'
   }
 
   const httpStatus = error.$metadata?.httpStatusCode
@@ -129,7 +130,7 @@ function isAwsNetworkError(error: unknown): boolean {
 // Postman 4xx and SES service errors reaching the catch-all stem from Plumber's API key or SES setup.
 function getCatchAllKind(error: unknown): StepErrorKind {
   if (!(error instanceof HttpError)) {
-    return 'internal'
+    return isAwsNetworkError(error) ? 'third-party' : 'internal'
   }
   const status = error.response?.status
   if (status === undefined) {

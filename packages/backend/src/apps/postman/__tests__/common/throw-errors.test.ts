@@ -189,6 +189,22 @@ describe('throwPostmanStepError', () => {
         'a DNS failure with no status',
         makeHttpError({ code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND' }),
       ],
+      [
+        'an SES DNS failure',
+        makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
+      ],
+      [
+        'an SES refused connection',
+        makeNamedError('Error', 'connect ECONNREFUSED', 'ECONNREFUSED'),
+      ],
+      [
+        'an SES reset connection',
+        makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
+      ],
+      [
+        'an SES socket timeout without a code',
+        makeNamedError('TimeoutError', 'the request socket timed out'),
+      ],
     ])('tags %s as third-party and keeps the cause', (_label, error) => {
       const thrown = catchThrown({ status: 'ERROR', error: error as HttpError })
 
@@ -273,10 +289,6 @@ describe('throwPostmanStepError', () => {
         $metadata: { httpStatusCode: 500 },
       }),
     ],
-    [
-      'an SES TimeoutError',
-      makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
-    ],
   ])(
     'retries INTERMITTENT-ERROR from %s with a third-party kind',
     (_label, error) => {
@@ -336,18 +348,6 @@ describe('getSesErrorStatus', () => {
   })
 
   it.each([
-    [
-      'a TimeoutError',
-      makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
-    ],
-    [
-      'a DNS failure',
-      makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
-    ],
-    [
-      'a refused connection',
-      makeNamedError('Error', 'connect ECONNREFUSED', 'ECONNREFUSED'),
-    ],
     [
       'an SES 500',
       new InternalServiceErrorException({
@@ -426,6 +426,39 @@ describe('getSesErrorStatus', () => {
       Object.assign(makeMessageRejected('read ECONNRESET'), {
         code: 'ECONNRESET',
       }),
+    ],
+    [
+      'a DNS failure',
+      makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
+    ],
+    [
+      'a temporary DNS failure',
+      makeNamedError('Error', 'getaddrinfo EAI_AGAIN', 'EAI_AGAIN'),
+    ],
+    [
+      'a refused connection',
+      makeNamedError('Error', 'connect ECONNREFUSED', 'ECONNREFUSED'),
+    ],
+    [
+      'an unreachable host',
+      makeNamedError('Error', 'connect EHOSTUNREACH', 'EHOSTUNREACH'),
+    ],
+    [
+      'an unreachable network',
+      makeNamedError('Error', 'connect ENETUNREACH', 'ENETUNREACH'),
+    ],
+    [
+      'a reset connection',
+      makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
+    ],
+    ['a broken pipe', makeNamedError('TimeoutError', 'write EPIPE', 'EPIPE')],
+    [
+      'a timed out connection',
+      makeNamedError('TimeoutError', 'connect ETIMEDOUT', 'ETIMEDOUT'),
+    ],
+    [
+      'a socket timeout without a code',
+      makeNamedError('TimeoutError', 'the request socket timed out'),
     ],
     ['an unknown error without a code', new Error('SES error')],
     ['a non-Error', 'boom'],
