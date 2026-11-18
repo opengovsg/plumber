@@ -79,7 +79,8 @@ export interface ChangeFilePlan {
 /**
  * Picks the day files to write, using the files already written as the watermark.
  *
- * A missed night is filled on the next run. With no file yet, a full copy becomes the first file.
+ * A missed night is caught up on the next run, to each step's current state only. With no file yet,
+ * or with `full`, a full copy of yesterday becomes the latest file and replaces any pending catch-up.
  */
 export function planChangeFiles(
   existingKeys: string[],
