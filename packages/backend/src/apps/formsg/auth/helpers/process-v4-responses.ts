@@ -268,10 +268,14 @@ function logIfNoScalarValue(
   formId: string,
   fieldId: string,
   response: FieldResponseV4,
+  { allowNumber }: { allowNumber: boolean },
 ): void {
   const rawValue = (response.answer as Partial<StringAnswerV4> | undefined)
     ?.value
-  if (typeof rawValue !== 'string' && typeof rawValue !== 'number') {
+  const isScalar =
+    typeof rawValue === 'string' ||
+    (allowNumber && typeof rawValue === 'number')
+  if (!isScalar) {
     logUnsupportedPayload('unknown_answer_shape', {
       formId,
       fieldId,
@@ -445,7 +449,7 @@ export async function processResponsesV4(
     if (value.fieldType === 'date') {
       // Currently, v4 responses return the date as DD/MM/YYYY (e.g. 29/03/2026)
       // We need to convert it to the standard FormSG date format (e.g. 29 Mar 2026)
-      logIfNoScalarValue(formId, key, value)
+      logIfNoScalarValue(formId, key, value, { allowNumber: false })
       const originalDateString = (value.answer as StringAnswerV4).value
       // Formatting an empty date string yields Invalid DateTime.
       if (!originalDateString) {
@@ -508,7 +512,7 @@ export async function processResponsesV4(
     }
     // catch-all: generic string answers ({ value }) and any future field
     // types, e.g. yes_no, textfield, dropdown, nric
-    logIfNoScalarValue(formId, key, value)
+    logIfNoScalarValue(formId, key, value, { allowNumber: true })
     mappedResponses.push({
       _id: key,
       fieldType: value.fieldType,
