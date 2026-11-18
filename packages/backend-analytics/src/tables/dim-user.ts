@@ -10,7 +10,7 @@ import {
 } from '../agency/agency-mapping'
 import logger from '../logger'
 import type { SilverTable } from '../silver-table'
-import { flowCreatorSql } from './flow-creator'
+import { firstApprovedTransferJoin, flowCreatorSql } from './flow-creator'
 
 const dimUserSqlRowSchema = z.object({
   user_id: z.string(),
@@ -36,6 +36,7 @@ export type DimUserRow = DimUserSqlRow & {
 const VERIFIED_CREATORS_SQL = `
   SELECT DISTINCT ${flowCreatorSql('fl')} AS user_id
   FROM flows fl
+  ${firstApprovedTransferJoin('fl')}
 `
 
 type UserWithVerification = BaseUser & { isVerified: boolean }

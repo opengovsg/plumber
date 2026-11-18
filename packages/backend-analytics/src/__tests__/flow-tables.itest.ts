@@ -75,12 +75,22 @@ describe('pipe tables against the migrated schema', () => {
       new_owner_id: NEW_OWNER,
       status: 'approved',
     })
-    await db('flow_collaborators').insert({
-      flow_id: COPY_FLOW,
-      user_id: EDITOR,
-      role: 'editor',
-      updated_by: NEW_OWNER,
-    })
+    await db('flow_collaborators').insert([
+      {
+        flow_id: COPY_FLOW,
+        user_id: EDITOR,
+        role: 'editor',
+        updated_by: NEW_OWNER,
+      },
+      // Approving a transfer to a collaborator soft-deletes their collaborator row.
+      {
+        flow_id: COPY_FLOW,
+        user_id: NEW_OWNER,
+        role: 'editor',
+        updated_by: NEW_OWNER,
+        deleted_at: new Date('2026-11-11T00:00:00.000Z'),
+      },
+    ])
   })
 
   afterAll(async () => {
@@ -103,6 +113,16 @@ describe('pipe tables against the migrated schema', () => {
     })
     expect(byId.get(MANUAL_FLOW)?.creation_path).toBe('manual')
     expect(byId.get(OLD_FLOW)?.creation_path).toBeNull()
+  })
+
+  it('flow_access keeps one row for an owner who was a collaborator', async () => {
+    const rows = await flowAccessTable.fetchRows(db)
+
+    expect(
+      rows.filter(
+        (row) => row.flow_id === COPY_FLOW && row.user_id === NEW_OWNER,
+      ),
+    ).toEqual([expect.objectContaining({ role: 'owner' })])
   })
 
   it('flow_access ends collaborator access when the pipe is deleted', async () => {

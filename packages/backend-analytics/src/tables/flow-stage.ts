@@ -2,7 +2,7 @@ import { BaseFlow } from '@plumber/backend-models'
 import { z } from 'zod'
 
 import type { SilverTable } from '../silver-table'
-import { flowCreatorSql } from './flow-creator'
+import { FIRST_APPROVED_TRANSFER, flowCreatorSql } from './flow-creator'
 
 // Duplicates made before PLU-1033 shipped in v1.101.0 on 3 Nov 2026 carry no marker.
 // A pipe from before this time with no marker could be manual or a copy, so its path stays null.
@@ -102,6 +102,11 @@ export const flowStageTable: SilverTable<FlowStageRow> = {
         db.raw(
           "flows.config -> 'aiBuilderConfig' ->> 'traceId' AS ai_trace_id",
         ),
+      )
+      .leftJoin(
+        db.raw(FIRST_APPROVED_TRANSFER),
+        'first_transfer.flow_id',
+        'flows.id',
       )
       .orderBy(['flows.created_at', 'flows.id'])
       .castTo<FlowWithStage[]>()
