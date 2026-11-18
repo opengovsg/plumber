@@ -394,14 +394,18 @@ export async function decryptFormResponse(
     // A sub-trigger's fields belong to its MRF step, not the trigger step.
     const isTriggerSubmission =
       !workflowContent || workflowContent.workflowStep === 0
-    if ($.flow.isActive && v4SchemaContext && isTriggerSubmission) {
-      await reportUnresolvedVariables($, data.formId, data.submissionId, {
-        fields: parsedData,
-        schema: v4SchemaContext,
-        rawVerifiedKeys: Object.keys(submission.verified ?? {}),
-        verifiedSubmitterInfo,
-      })
-    }
+    const schemaContext = v4SchemaContext
+    const rawVerifiedKeys = Object.keys(submission.verified ?? {})
+    const onTriggerAccepted =
+      schemaContext && isTriggerSubmission
+        ? () =>
+            reportUnresolvedVariables($, data.formId, data.submissionId, {
+              fields: parsedData,
+              schema: schemaContext,
+              rawVerifiedKeys,
+              verifiedSubmitterInfo,
+            })
+        : undefined
 
     if (Object.keys(verifiedSubmitterInfo).length > 0) {
       $.request.body.verifiedSubmitterInfo = verifiedSubmitterInfo
@@ -424,7 +428,7 @@ export async function decryptFormResponse(
      * This means it's the first mrf step and is a new submission
      */
     if (!workflowContent) {
-      return { verified: true, internalId }
+      return { verified: true, internalId, onTriggerAccepted }
     }
 
     $.request.body.workflowContent = workflowContent
@@ -433,6 +437,7 @@ export async function decryptFormResponse(
       verified: true,
       internalId,
       isSubtrigger: workflowContent.workflowStep > 0,
+      onTriggerAccepted,
       subtriggerData: {
         type: 'mrf',
         mrfStepId: workflowContent.workflow[workflowContent.workflowStep]?._id,

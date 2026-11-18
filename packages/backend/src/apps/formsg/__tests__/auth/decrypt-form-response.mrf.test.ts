@@ -378,7 +378,10 @@ describe('decrypt form response - MRF specific', () => {
 
       const result = await decryptFormResponse($)
 
-      expect(result).toEqual({ verified: true, internalId: 'submissionId' })
+      expect(result).toMatchObject({
+        verified: true,
+        internalId: 'submissionId',
+      })
 
       const fields = $.request.body.fields
       expect(Object.keys(fields)).toHaveLength(54)
@@ -568,30 +571,20 @@ describe('decrypt form response - MRF specific', () => {
 
   describe('unresolved variable report', () => {
     it.each([
-      {
-        name: 'a live single-respondent submission',
-        step: null,
-        active: true,
-        reports: true,
-      },
-      { name: 'the first MRF step', step: 0, active: true, reports: true },
-      { name: 'a later MRF step', step: 1, active: true, reports: false },
-      {
-        name: 'a pipe that is not live',
-        step: null,
-        active: false,
-        reports: false,
-      },
-    ])('reports for $name: $reports', async ({ step, active, reports }) => {
+      { name: 'a single-respondent submission', step: null, reports: true },
+      { name: 'the first MRF step', step: 0, reports: true },
+      { name: 'a later MRF step', step: 1, reports: false },
+    ])('defers the report for $name: $reports', async ({ step, reports }) => {
       if (step !== null) {
         $.request.body.data.workflowContent = makeWorkflowContent(step)
       }
-      $.flow.isActive = active
       mocks.fetchFormSchema.mockResolvedValueOnce(makeExampleV4FormSchema())
       mocks.cryptoV3Decrypt.mockReturnValueOnce(exampleV4Submission)
 
-      await decryptFormResponse($)
+      const { onTriggerAccepted } = await decryptFormResponse($)
 
+      expect(mocks.reportUnresolvedVariables).not.toHaveBeenCalled()
+      await onTriggerAccepted?.()
       expect(mocks.reportUnresolvedVariables).toHaveBeenCalledTimes(
         reports ? 1 : 0,
       )
@@ -603,9 +596,9 @@ describe('decrypt form response - MRF specific', () => {
         verified: undefined,
       })
 
-      await decryptFormResponse($)
+      const { onTriggerAccepted } = await decryptFormResponse($)
 
-      expect(mocks.reportUnresolvedVariables).not.toHaveBeenCalled()
+      expect(onTriggerAccepted).toBeUndefined()
     })
   })
 

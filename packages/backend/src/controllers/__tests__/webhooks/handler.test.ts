@@ -60,6 +60,9 @@ vi.mock('@/models/flow', () => ({
     })),
   },
 }))
+vi.mock('@/helpers/global-variable', () => ({
+  default: vi.fn(async () => ({})),
+}))
 vi.mock('@/services/trigger', () => ({
   processTrigger: mocks.processTrigger,
 }))
@@ -253,6 +256,46 @@ describe('webhook handler', () => {
       expect(mocks.processTrigger).toHaveBeenCalledOnce()
       expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
       expect(mocks.response.sendStatus).toHaveReturnedWith(200)
+    })
+  })
+
+  describe('onTriggerAccepted', () => {
+    it.each([
+      { name: 'a new live run', active: true, shouldExecute: true, runs: true },
+      { name: 'a test run', active: false, shouldExecute: true, runs: false },
+      {
+        name: 'a repeat delivery',
+        active: true,
+        shouldExecute: false,
+        runs: false,
+      },
+    ])('runs for $name: $runs', async ({ active, shouldExecute, runs }) => {
+      const onTriggerAccepted = vi.fn()
+      mocks.flow.active = active
+      mocks.flow.config = {}
+      mocks.rateLimiterRedis.consume.mockReset()
+      mocks.flow.getTriggerStep.mockReturnValueOnce({
+        ...mocks.flow.getTriggerStep(),
+        $relatedQuery: vi.fn(),
+        getApp: vi.fn(() => ({
+          key: 'formsg',
+          auth: {
+            verifyWebhook: vi.fn(async () => ({
+              verified: true,
+              internalId: 'submission-id',
+              onTriggerAccepted,
+            })),
+          },
+        })),
+      } as never)
+      mocks.processTrigger.mockResolvedValueOnce({
+        executionId: 'execution-id',
+        shouldExecute,
+      })
+
+      await webhookHandler(request, mocks.response)
+
+      expect(onTriggerAccepted).toHaveBeenCalledTimes(runs ? 1 : 0)
     })
   })
 
