@@ -216,6 +216,8 @@ The archival task also extracts yesterday's GraphQL mutations from the server re
 
 The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night. A finished run logs `analytics.mutation_log.complete` with `durationMs`. A failed run logs `analytics.mutation_log.error` with `durationMs`, and `timedOut: true` when the 30 minutes ran out.
 
+The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. It holds one row per pipe, user and operation that day, with `edits`, `first_edit_at` and `last_edit_at`. Join it with `flow_access` to see whether the owner, an editor or a viewer made each change. It counts mutations only, so viewing a pipe leaves no row. Rows without a pipe, a user or an operation are left out.
+
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 
 | Flag                 | Meaning                                                                                                                                                                                                                                                             |
