@@ -10,7 +10,15 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 // IMPORTANT: packages/backend/src/helpers/ai/get-prompt.ts reads from this folder.
@@ -25,6 +33,13 @@ const VALUE_FLAGS = ['project']
 
 // IMPORTANT: get-prompt.ts matches the same pattern to find the newest version.
 const VERSION_FILE = /^v(\d+)\.(md|json)$/
+
+/**
+ * Only version files count as pushed content, so stray files like .DS_Store never block a push.
+ */
+export function isVersionFile(path) {
+  return /^v\d+\.(md|json|meta\.json)$/.test(basename(path))
+}
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -190,8 +205,11 @@ export function takeNextVersion(taken) {
   return next
 }
 
+/**
+ * Needs both ends, because a Markdown heading can be underlined with "=======".
+ */
 export function hasConflictMarkers(text) {
-  return /^(<{7}|={7}|>{7})( |$)/m.test(text)
+  return /^<{7}( |$)/m.test(text) && /^>{7}( |$)/m.test(text)
 }
 
 /**
@@ -231,6 +249,7 @@ export function threeWayMerge({ ours, base, theirs, labels }) {
 export function getPushBlocker({
   draft,
   draftText,
+  basedOn,
   langfuseLatest,
   mainLatest,
   changedPushedFiles,
@@ -252,11 +271,16 @@ export function getPushBlocker({
   if (draft.type !== 'text') {
     return 'Only text prompts can be pushed.'
   }
-  if (hasConflictMarkers(draftText)) {
-    return 'The draft has merge conflict markers. Resolve them, test, then push again.'
-  }
   if (draft.version !== mainLatest + 1) {
     return `v${draft.version} is not the next version. main is at v${mainLatest}. Retry with --renumber.`
+  }
+  if (basedOn !== undefined && basedOn !== draft.version - 1) {
+    return `Your draft is based on v${basedOn}, but v${
+      draft.version - 1
+    } landed since. Run push with --renumber to merge it in.`
+  }
+  if (hasConflictMarkers(draftText)) {
+    return 'The draft has merge conflict markers. Resolve them, test, then push again.'
   }
   return null
 }
@@ -309,7 +333,7 @@ export function mainRef(root = PROMPTS_DIR) {
     return git(args, root)
   } catch {
     throw new Error(
-      'The prompts repo has no default branch yet. Push its first commit, then retry.',
+      'The prompts repo has no commits on main. Push a first commit, such as a README, then retry.',
     )
   }
 }
@@ -353,6 +377,10 @@ export function readAtRef(ref, path, root = PROMPTS_DIR) {
   return gitRaw(['show', `${ref}:${relative(root, path)}`], root)
 }
 
+function gitResult(args, cwd) {
+  return spawnSync('git', args, { cwd, encoding: 'utf-8' })
+}
+
 /**
  * Fast-forwards the clone so a push lands on top of main.
  */
@@ -362,8 +390,11 @@ export function fastForwardToMain(main, hint, root = PROMPTS_DIR) {
       `Your clone has commits that are not on ${main}. Push or drop those commits first.`,
     )
   }
-  if (!gitSucceeds(['merge', '--ff-only', '--quiet', main], root)) {
-    throw new Error(`Could not fast-forward to ${main}. ${hint}`)
+  const result = gitResult(['merge', '--ff-only', '--quiet', main], root)
+  if (result.status !== 0) {
+    throw new Error(
+      `Could not fast-forward to ${main}. ${hint}\n${result.stderr.trim()}`,
+    )
   }
 }
 
@@ -374,17 +405,22 @@ export function commitAndPush({ main, paths, message }, root = PROMPTS_DIR) {
   const branch = main.replace(/^origin\//, '')
   git(['add', '--', ...paths], root)
   git(['commit', '--quiet', '-m', message, '--', ...paths], root)
-  if (
-    !gitSucceeds(
-      ['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`],
-      root,
-    )
-  ) {
-    // IMPORTANT: unstage too. Staged files block the next fast-forward.
-    git(['reset', '--quiet', 'HEAD~1', '--', ...paths], root)
-    git(['reset', '--quiet', '--soft', 'HEAD~1'], root)
+  const result = gitResult(
+    ['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`],
+    root,
+  )
+  if (result.status === 0) {
+    return
+  }
+  // IMPORTANT: unstage too. Staged files block the next fast-forward.
+  git(['reset', '--quiet', 'HEAD~1', '--', ...paths], root)
+  git(['reset', '--quiet', '--soft', 'HEAD~1'], root)
+  if (/\[rejected\]|non-fast-forward|fetch first/.test(result.stderr)) {
     throw new Error(
       `Someone pushed to ${main} first. Nothing was created in Langfuse. Run the command again.`,
     )
   }
+  throw new Error(
+    `git push failed. Nothing was created in Langfuse.\n${result.stderr.trim()}`,
+  )
 }

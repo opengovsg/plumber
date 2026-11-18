@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import {
   mkdirSync,
   mkdtempSync,
+  chmodSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -21,6 +22,7 @@ import {
   formatMeta,
   getPushBlocker,
   hasConflictMarkers,
+  isVersionFile,
   listPrompts,
   listVersions,
   listVersionsAtRef,
@@ -181,6 +183,10 @@ test('merges the version that landed first into a draft', () => {
   assert.equal(clash.conflicts, 1)
   assert.equal(hasConflictMarkers(clash.text), true)
   assert.equal(hasConflictMarkers('a <<<<<<< b'), false)
+  assert.equal(hasConflictMarkers('Example\n=======\ntext'), false)
+  assert.equal(isVersionFile('/p/v12.md'), true)
+  assert.equal(isVersionFile('/p/v12.meta.json'), true)
+  assert.equal(isVersionFile('/p/.DS_Store'), false)
 })
 
 const ready = {
@@ -205,9 +211,14 @@ test('allows only a draft that is the next version on both sides', () => {
   assert.match(getPushBlocker({ ...ready, langfuseLatest: 3 }), /prompt sync/)
   assert.match(getPushBlocker({ ...ready, langfuseLatest: 1 }), /--resume/)
   assert.match(
-    getPushBlocker({ ...ready, draftText: '<<<<<<< draft\nx' }),
+    getPushBlocker({
+      ...ready,
+      draftText: '<<<<<<< a\nx\n=======\ny\n>>>>>>> b',
+    }),
     /conflict/,
   )
+  assert.equal(getPushBlocker({ ...ready, basedOn: 2 }), null)
+  assert.match(getPushBlocker({ ...ready, basedOn: 1 }), /--renumber to merge/)
   assert.match(
     getPushBlocker({ ...ready, draft: { version: 5, type: 'text' } }),
     /--renumber/,
@@ -291,5 +302,26 @@ test('a rejected push leaves the draft unstaged so a renumber can land', () => {
     run(repo, 'fetch', 'origin')
     assert.deepEqual(listVersionsAtRef('origin/main', chat, repo), [1, 2, 3, 4])
     assert.equal(readAtRef('origin/main', join(chat, 'v4.md'), repo), 'mine\n')
+  })
+})
+
+test("reports git's own error when a push fails for a reason other than a race", () => {
+  withPromptsRepo((repo, origin) => {
+    const hook = join(origin, 'hooks/pre-receive')
+    writeFileSync(hook, '#!/bin/sh\necho "main is protected" >&2\nexit 1\n')
+    chmodSync(hook, 0o755)
+    run(repo, 'config', 'user.email', 'dev@example.com')
+    run(repo, 'config', 'user.name', 'Dev')
+    const draft = join(repo, 'aiBuilder/chat/v3.md')
+    writeFileSync(draft, 'mine\n')
+    assert.throws(
+      () =>
+        commitAndPush(
+          { main: 'origin/main', message: 'v3', paths: [draft] },
+          repo,
+        ),
+      /git push failed[\s\S]*main is protected/,
+    )
+    assert.deepEqual(changedFiles(join(repo, 'aiBuilder/chat'), repo), [draft])
   })
 })
