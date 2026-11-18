@@ -15,12 +15,14 @@ const CATALOG = parseActionCatalog(
       action_key: 'createTileRow',
       name: 'Create row',
       is_trigger: false,
+      is_active: true,
     },
     {
       app_key: 'formsg',
       action_key: 'newSubmission',
       name: 'New form response',
       is_trigger: true,
+      is_active: true,
     },
   ]),
 )
