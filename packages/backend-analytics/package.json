@@ -28,11 +28,13 @@
     "@plumber/backend-models": "workspace:*",
     "hyparquet-writer": "0.16.12",
     "knex": "catalog:",
+    "luxon": "catalog:",
     "winston": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@opengovsg/testcontainers": "0.2.0",
+    "@types/luxon": "^2.4.0",
     "@types/node": "22.18.0",
     "hyparquet": "1.31.4",
     "pg": "catalog:",
