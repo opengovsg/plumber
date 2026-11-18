@@ -108,6 +108,8 @@ describe('extractIds', () => {
   })
 })
 
+const PARAMETERS = { 'tiles.createTileRow': 'tableId' }
+
 describe('toMutationLogRow', () => {
   const line = {
     timestamp: '2026-11-05 03:12:45.123',
@@ -121,7 +123,7 @@ describe('toMutationLogRow', () => {
   }
 
   it('keeps the operation and the ids, and no other variable', () => {
-    expect(toMutationLogRow(line)).toEqual({
+    expect(toMutationLogRow(line, PARAMETERS)).toEqual({
       ts: new Date('2026-11-05T03:12:45.123Z'),
       user_id: 'user-1',
       operation: 'updateFlowStatus',
@@ -129,21 +131,80 @@ describe('toMutationLogRow', () => {
       step_id: null,
       table_id: null,
       connection_id: null,
+      app_key: null,
+      action_key: null,
+      resource_id: null,
       http_status: 200,
     })
   })
 
+  it('keeps the app-action and resource an updateStep set, and no other parameter', () => {
+    const updateStep = {
+      ...line,
+      query:
+        'mutation UpdateStep($input: UpdateStepInput!) { updateStep(input: $input) { id } }',
+      variables: logged({
+        input: {
+          id: 's1',
+          appKey: 'tiles',
+          key: 'createTileRow',
+          parameters: { tableId: 'table-1', rowData: 'Secret client list' },
+        },
+      }),
+    }
+
+    expect(toMutationLogRow(updateStep, PARAMETERS)).toMatchObject({
+      operation: 'updateStep',
+      step_id: 's1',
+      app_key: 'tiles',
+      action_key: 'createTileRow',
+      resource_id: 'table-1',
+    })
+    expect(
+      JSON.stringify(toMutationLogRow(updateStep, PARAMETERS)),
+    ).not.toContain('Secret')
+  })
+
+  it('leaves the resource empty when it is templated or the action has none', () => {
+    const updateStep = (appKey: string, key: string, parameters: object) => ({
+      ...line,
+      query:
+        'mutation UpdateStep($input: UpdateStepInput!) { updateStep(input: $input) { id } }',
+      variables: logged({ input: { id: 's1', appKey, key, parameters } }),
+    })
+
+    expect(
+      toMutationLogRow(
+        updateStep('tiles', 'createTileRow', { tableId: '{{step.a.id}}' }),
+        PARAMETERS,
+      )?.resource_id,
+    ).toBeNull()
+    expect(
+      toMutationLogRow(
+        updateStep('slack', 'findMessage', { channel: 'C1' }),
+        PARAMETERS,
+      )?.resource_id,
+    ).toBeNull()
+  })
+
   it('treats the anonymous user marker as no user', () => {
-    expect(toMutationLogRow({ ...line, userId: '-' })?.user_id).toBeNull()
+    expect(
+      toMutationLogRow({ ...line, userId: '-' }, PARAMETERS)?.user_id,
+    ).toBeNull()
   })
 
   it('keeps a row whose variables were redacted', () => {
-    const row = toMutationLogRow({ ...line, variables: '[redacted]' })
+    const row = toMutationLogRow(
+      { ...line, variables: '[redacted]' },
+      PARAMETERS,
+    )
     expect(row?.operation).toBe('updateFlowStatus')
     expect(row?.flow_id).toBeNull()
   })
 
   it('drops a line without a readable timestamp', () => {
-    expect(toMutationLogRow({ ...line, timestamp: 'not a time' })).toBeNull()
+    expect(
+      toMutationLogRow({ ...line, timestamp: 'not a time' }, PARAMETERS),
+    ).toBeNull()
   })
 })
