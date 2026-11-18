@@ -29,7 +29,7 @@ const createStep: MutationResolvers['createStep'] = async (
    * appKey and key are optional, we allow creating of empty step for if-then branches
    */
   if (input.appKey && input.key) {
-    const lookup = lookupStepDefinition(input.appKey, input.key)
+    const lookup = lookupStepDefinition(input.appKey, input.key, 'action')
 
     if (lookup.kind === 'unknown') {
       logger.error({

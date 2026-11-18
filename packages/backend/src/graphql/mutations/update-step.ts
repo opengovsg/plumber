@@ -22,16 +22,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
 ) => {
   const { input } = params
 
-  const lookup = lookupStepDefinition(input.appKey, input.key)
-  if (lookup.kind === 'unknown') {
-    logger.error({
-      event: 'updateStep: no such trigger or action',
-      appKey: input.appKey,
-      key: input.key,
-    })
-    throw new BadUserInputError('No such trigger or action')
-  }
-
   const step = await Step.transaction(async (trx) => {
     // IMPORTANT: loadAccessibleStep skips flow scoping when flowId is falsy.
     if (!input.flow?.id) {
@@ -48,6 +38,16 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
     if (!step) {
       throw new BadUserInputError('Step not found')
+    }
+
+    const lookup = lookupStepDefinition(input.appKey, input.key, step.type)
+    if (lookup.kind === 'unknown') {
+      logger.error({
+        event: 'updateStep: no such trigger or action',
+        appKey: input.appKey,
+        key: input.key,
+      })
+      throw new BadUserInputError('No such trigger or action')
     }
 
     step.flow.assertNotUpdatedSince(
