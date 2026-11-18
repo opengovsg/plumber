@@ -12,6 +12,7 @@
     "**/dist",
     "**/coverage",
     "**/graphql/__generated__",
-    "**/assets/**/*.json"
+    "**/assets/**/*.json",
+    "**/__snapshots__"
   ]
 }

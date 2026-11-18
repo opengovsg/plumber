@@ -121,7 +121,7 @@ describe('FormSG v4 trigger output contract', () => {
 
     expect(result).toEqual({ verified: true, internalId: 'submissionId' })
     await expect(JSON.stringify($.request.body, null, 2)).toMatchFileSnapshot(
-      './__snapshots__/decrypt-form-response.contract.v4.snap',
+      './__snapshots__/decrypt-form-response.contract.v4.json',
     )
   })
 })
