@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { captureFlowEvent } from '@/helpers/flow-events'
 
 import {
-  buildFlowCollaboratorEvent,
+  captureCollaboratorChange,
   classifyCollaboratorUpsert,
 } from '../flow-collaborator-event'
+
+vi.mock('@/helpers/flow-events', () => ({ captureFlowEvent: vi.fn() }))
 
 describe('classifyCollaboratorUpsert', () => {
   it('adds a user with no collaborator row', () => {
@@ -35,59 +39,71 @@ describe('classifyCollaboratorUpsert', () => {
   })
 })
 
-describe('buildFlowCollaboratorEvent', () => {
+describe('captureCollaboratorChange', () => {
   const ids = {
     actorUserId: 'owner-1',
     flowId: 'flow-1',
     collaboratorUserId: 'user-2',
   }
 
-  it('builds an added event for the acting user', () => {
-    expect(
-      buildFlowCollaboratorEvent({
-        ...ids,
-        change: { type: 'added', role: 'editor' },
-        source: 'app',
-      }),
-    ).toEqual({
-      distinctId: 'owner-1',
+  beforeEach(() => {
+    vi.mocked(captureFlowEvent).mockClear()
+  })
+
+  it('sends an added event with the new role', () => {
+    captureCollaboratorChange({
+      ...ids,
+      change: { type: 'added', role: 'editor' },
+      source: 'app',
+    })
+
+    expect(captureFlowEvent).toHaveBeenCalledWith({
+      actorUserId: 'owner-1',
+      flowId: 'flow-1',
+      trx: undefined,
       event: 'flow_collaborator_added',
       properties: {
-        flow_id: 'flow-1',
         collaborator_user_id: 'user-2',
-        source: 'app',
         role: 'editor',
+        source: 'app',
       },
     })
   })
 
   it('carries both roles on a role change', () => {
-    expect(
-      buildFlowCollaboratorEvent({
-        ...ids,
-        change: {
-          type: 'role_changed',
-          role: 'viewer',
-          previousRole: 'editor',
-        },
-        source: 'app',
-      }),
-    ).toMatchObject({
-      event: 'flow_collaborator_role_changed',
-      properties: { role: 'viewer', previous_role: 'editor' },
+    captureCollaboratorChange({
+      ...ids,
+      change: { type: 'role_changed', role: 'viewer', previousRole: 'editor' },
+      source: 'app',
     })
+
+    expect(captureFlowEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'flow_collaborator_role_changed',
+        properties: expect.objectContaining({
+          role: 'viewer',
+          previous_role: 'editor',
+        }),
+      }),
+    )
   })
 
   it('carries the lost role on a removal', () => {
-    expect(
-      buildFlowCollaboratorEvent({
-        ...ids,
-        change: { type: 'removed', previousRole: 'viewer' },
-        source: 'left',
-      }),
-    ).toMatchObject({
-      event: 'flow_collaborator_removed',
-      properties: { previous_role: 'viewer', source: 'left' },
+    captureCollaboratorChange({
+      ...ids,
+      change: { type: 'removed', previousRole: 'viewer' },
+      source: 'left',
     })
+
+    expect(captureFlowEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'flow_collaborator_removed',
+        properties: {
+          collaborator_user_id: 'user-2',
+          previous_role: 'viewer',
+          source: 'left',
+        },
+      }),
+    )
   })
 })

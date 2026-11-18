@@ -1,13 +1,10 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { validateAndParseEmail } from '@/helpers/email-validator'
+import type { FlowCollaboratorSource } from '@/helpers/flow-events'
 import logger from '@/helpers/logger'
-import { captureServerEvent } from '@/helpers/server-events'
 import FlowCollaborator from '@/models/flow-collaborators'
 import User from '@/models/user'
-import {
-  buildFlowCollaboratorEvent,
-  type FlowCollaboratorSource,
-} from '@/services/flow/flow-collaborator-event'
+import { captureCollaboratorChange } from '@/services/flow/flow-collaborator-event'
 
 import { MutationResolvers } from '../__generated__/types.generated'
 
@@ -18,15 +15,13 @@ function captureRemoval(
   source: FlowCollaboratorSource,
 ): void {
   for (const collaborator of removed) {
-    captureServerEvent(
-      buildFlowCollaboratorEvent({
-        actorUserId,
-        flowId,
-        collaboratorUserId: collaborator.userId,
-        change: { type: 'removed', previousRole: collaborator.role },
-        source,
-      }),
-    )
+    captureCollaboratorChange({
+      actorUserId,
+      flowId,
+      collaboratorUserId: collaborator.userId,
+      change: { type: 'removed', previousRole: collaborator.role },
+      source,
+    })
   }
 }
 

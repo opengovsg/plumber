@@ -1,6 +1,10 @@
 import type { IFlowCollabRole } from '@plumber/types'
+import type { Transaction } from 'objection'
 
-import type { ServerEvent } from '@/helpers/server-events'
+import {
+  captureFlowEvent,
+  type FlowCollaboratorSource,
+} from '@/helpers/flow-events'
 
 export type FlowCollaboratorChange =
   | { type: 'added'; role: IFlowCollabRole }
@@ -10,9 +14,6 @@ export type FlowCollaboratorChange =
       previousRole: IFlowCollabRole
     }
   | { type: 'removed'; previousRole: IFlowCollabRole }
-
-// `left` is a collaborator removing themself. A transfer makes the old owner an editor and drops the new owner's collaborator row.
-export type FlowCollaboratorSource = 'app' | 'left' | 'transfer'
 
 interface ExistingCollaborator {
   role: IFlowCollabRole
@@ -37,53 +38,62 @@ export function classifyCollaboratorUpsert(
   return { type: 'role_changed', role, previousRole: existing.role }
 }
 
-interface FlowCollaboratorEventInput {
+interface CollaboratorChangeInput {
   actorUserId: string
   flowId: string
   collaboratorUserId: string
   change: FlowCollaboratorChange
   source: FlowCollaboratorSource
+  trx?: Transaction
 }
 
 /**
- * Builds the event for a collaborator change that has committed.
+ * Sends the event for a collaborator change.
  *
  * flow_collaborators overwrites a row on a role change or re-add, so these events are the only history.
  */
-export function buildFlowCollaboratorEvent({
+export function captureCollaboratorChange({
   actorUserId,
   flowId,
   collaboratorUserId,
   change,
   source,
-}: FlowCollaboratorEventInput): ServerEvent {
-  const base = {
-    flow_id: flowId,
-    collaborator_user_id: collaboratorUserId,
-    source,
-  }
+  trx,
+}: CollaboratorChangeInput): void {
+  const common = { actorUserId, flowId, trx }
   switch (change.type) {
     case 'added':
-      return {
-        distinctId: actorUserId,
+      captureFlowEvent({
+        ...common,
         event: 'flow_collaborator_added',
-        properties: { ...base, role: change.role },
-      }
+        properties: {
+          collaborator_user_id: collaboratorUserId,
+          role: change.role,
+          source,
+        },
+      })
+      return
     case 'role_changed':
-      return {
-        distinctId: actorUserId,
+      captureFlowEvent({
+        ...common,
         event: 'flow_collaborator_role_changed',
         properties: {
-          ...base,
+          collaborator_user_id: collaboratorUserId,
           role: change.role,
           previous_role: change.previousRole,
+          source,
         },
-      }
+      })
+      return
     case 'removed':
-      return {
-        distinctId: actorUserId,
+      captureFlowEvent({
+        ...common,
         event: 'flow_collaborator_removed',
-        properties: { ...base, previous_role: change.previousRole },
-      }
+        properties: {
+          collaborator_user_id: collaboratorUserId,
+          previous_role: change.previousRole,
+          source,
+        },
+      })
   }
 }
