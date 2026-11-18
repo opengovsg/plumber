@@ -124,7 +124,7 @@ describe('the committed mapping files', () => {
 
   it('map a listed key domain to its own agency', () => {
     for (const canonical of committed.agencies.keys()) {
-      expect(committed.domains.get(canonical) ?? canonical).toBe(canonical)
+      expect(committed.domains.get(canonical)).toBe(canonical)
     }
   })
 })
