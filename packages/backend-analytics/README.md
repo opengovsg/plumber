@@ -30,9 +30,9 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 
 ## Action catalog
 
-`action_catalog` reads `data/action-catalog.csv`, one row per trigger and action. Add a launch date (`YYYY-MM-DD`, Singapore) or a minutes-saved value by editing that row. A blank cell is unknown. A backend test fails when an app ships a trigger or action without a row.
+`action_catalog` reads `data/action-catalog.json`, one row per trigger and action. The backend apps test generates it from the apps registry. After adding or renaming a trigger or action, run `pnpm exec vitest run src/apps/__tests__/index.test.ts -u` from `packages/backend` and commit the file. In CI, a stale file fails that test.
 
----
+`launched_at` is the first time a step used the trigger or action in a pipe created by a non-internal user. Deleted steps and pipes count. To set a date by hand, add a row to `data/action-launch-dates.csv` (`YYYY-MM-DD`, Singapore). A manual date wins, and `launched_at_source` says which one applied.
 
 ---
 
