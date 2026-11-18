@@ -20,6 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
     "dotenv": "catalog:",
+    "hyparquet-writer": "0.16.12",
     "knex": "catalog:",
     "luxon": "catalog:",
     "p-limit": "catalog:",
@@ -32,6 +33,7 @@
     "@types/luxon": "^2.4.0",
     "@types/node": "22.18.0",
     "@types/pg": "^8.6.1",
+    "hyparquet": "1.31.4",
     "nodemon": "^3.1.14",
     "rimraf": "^4.4.1",
     "ts-node": "catalog:",
