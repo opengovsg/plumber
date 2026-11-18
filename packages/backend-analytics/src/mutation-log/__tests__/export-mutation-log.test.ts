@@ -10,6 +10,7 @@ import { localDirSink } from '../../export-silver-tables'
 import {
   exportMutationLog,
   MUTATION_LOG_ROW_GROUP_SIZE,
+  planMutationLogDays,
   previousSgtDay,
   sgtDaysBetween,
   sgtDayWindow,
@@ -229,5 +230,36 @@ describe('exportMutationLog', () => {
         days: ['2026-11-05'],
       }),
     ).rejects.toThrow('ANALYTICS_REQUEST_LOG_GROUP')
+  })
+})
+
+describe('planMutationLogDays', () => {
+  const key = (day: string) => `bronze/mutation_log/day=${day}/current.parquet`
+
+  it.each([
+    ['an empty folder', [], ['2026-11-10'], []],
+    ['an up-to-date folder', [key('2026-11-10')], [], []],
+    [
+      'a failed night',
+      [key('2026-11-07'), key('2026-11-08')],
+      ['2026-11-09', '2026-11-10'],
+      [],
+    ],
+    [
+      'a gap longer than the catch-up limit',
+      [key('2026-11-01')],
+      [
+        '2026-11-04',
+        '2026-11-05',
+        '2026-11-06',
+        '2026-11-07',
+        '2026-11-08',
+        '2026-11-09',
+        '2026-11-10',
+      ],
+      ['2026-11-02', '2026-11-03'],
+    ],
+  ])('plans %s', (_case, keys, days, skipped) => {
+    expect(planMutationLogDays(keys, '2026-11-10')).toEqual({ days, skipped })
   })
 })

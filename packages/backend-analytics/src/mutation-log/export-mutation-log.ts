@@ -8,7 +8,9 @@ import {
   type SilverSink,
 } from '../export-silver-tables'
 import logger from '../logger'
+import { s3KeyLister } from '../silver-change-tables'
 import {
+  BRONZE_PREFIX,
   buildBronzeDayKey,
   encodeParquet,
   type ParquetColumns,
@@ -89,6 +91,35 @@ export function sgtDaysBetween(from: string, to: string): string[] {
   return days
 }
 
+// Each day costs one Logs Insights scan and runs before archival, so a long outage is left to a manual backfill.
+export const MAX_CATCH_UP_DAYS = 7
+
+const BRONZE_DAY_KEY = /\/day=(\d{4}-\d{2}-\d{2})\/current\.parquet$/
+
+/**
+ * Picks the days to extract: every day after the latest file already written, through yesterday.
+ *
+ * A night that failed is retried on the next run instead of staying missing.
+ */
+export function planMutationLogDays(
+  existingKeys: string[],
+  yesterday: string,
+): { days: string[]; skipped: string[] } {
+  const lastDay = existingKeys
+    .map((key) => BRONZE_DAY_KEY.exec(key)?.[1])
+    .filter((day): day is string => day !== undefined)
+    .sort()
+    .at(-1)
+  if (!lastDay || lastDay >= yesterday) {
+    return { days: lastDay ? [] : [yesterday], skipped: [] }
+  }
+  const pending = sgtDaysBetween(lastDay, yesterday).slice(1)
+  return {
+    days: pending.slice(-MAX_CATCH_UP_DAYS),
+    skipped: pending.slice(0, -MAX_CATCH_UP_DAYS),
+  }
+}
+
 export type FetchDayLines = (window: {
   startMs: number
   endMs: number
@@ -147,7 +178,8 @@ interface ExportMutationLogParams {
   appEnv: string
   bucket: string | undefined
   logGroup: string | undefined
-  days: string[]
+  // `through` catches up every missing day up to that day, from the files already written.
+  days: string[] | { through: string }
 }
 
 export async function exportMutationLog({
@@ -167,9 +199,27 @@ export async function exportMutationLog({
       `ANALYTICS_BUCKET and ANALYTICS_REQUEST_LOG_GROUP must be set in ${appEnv}`,
     )
   }
+  let dayList: string[]
+  if (Array.isArray(days)) {
+    dayList = days
+  } else {
+    const existingKeys = await s3KeyLister(
+      s3Client,
+      bucket,
+    )(`${BRONZE_PREFIX}${MUTATION_LOG_TABLE}/`)
+    const plan = planMutationLogDays(existingKeys, days.through)
+    if (plan.skipped.length > 0) {
+      logger.warn({
+        event: 'analytics.mutation_log.catch_up_capped',
+        firstSkipped: plan.skipped[0],
+        lastSkipped: plan.skipped.at(-1),
+      })
+    }
+    dayList = plan.days
+  }
   await writeMutationLogDays({
     fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
     sink: s3Sink(s3Client, bucket),
-    days,
+    days: dayList,
   })
 }
