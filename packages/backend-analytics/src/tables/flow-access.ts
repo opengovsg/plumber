@@ -28,8 +28,16 @@ export function toOwnerAccessRow(flow: BaseFlow): unknown {
   }
 }
 
+function earlierOf(a: string | null, b: string | null): string | null {
+  if (a === null || b === null) {
+    return a ?? b
+  }
+  return new Date(a).getTime() <= new Date(b).getTime() ? a : b
+}
+
 // Removing a collaborator sets deleted_at and keeps the row, so past access stays countable.
 // Deleting a pipe leaves its collaborator rows untouched, so their access ends with the pipe.
+// IMPORTANT: a removal racing the pipe deletion can stamp the collaborator row after the pipe.
 export function toCollaboratorAccessRow(
   collaborator: CollaboratorOnFlow,
 ): unknown {
@@ -38,7 +46,7 @@ export function toCollaboratorAccessRow(
     flow_id: collaborator.flowId,
     role: collaborator.role,
     created_at: collaborator.createdAt,
-    deleted_at: collaborator.deletedAt ?? collaborator.flowDeletedAt,
+    deleted_at: earlierOf(collaborator.deletedAt, collaborator.flowDeletedAt),
   }
 }
 

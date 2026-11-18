@@ -9,6 +9,7 @@ import { connectTestDb } from './helpers/test-db'
 const CREATOR = '00000000-0000-0000-0000-00000000000a'
 const NEW_OWNER = '00000000-0000-0000-0000-00000000000b'
 const EDITOR = '00000000-0000-0000-0000-00000000000c'
+const VIEWER = '00000000-0000-0000-0000-00000000000d'
 const AI_FLOW = '00000000-0000-0000-0000-0000000000f1'
 const COPY_FLOW = '00000000-0000-0000-0000-0000000000f2'
 const MANUAL_FLOW = '00000000-0000-0000-0000-0000000000f3'
@@ -27,6 +28,7 @@ describe('pipe tables against the migrated schema', () => {
       { id: CREATOR, email: 'creator@tech.gov.sg' },
       { id: NEW_OWNER, email: 'new-owner@tech.gov.sg' },
       { id: EDITOR, email: 'editor@tech.gov.sg' },
+      { id: VIEWER, email: 'viewer@tech.gov.sg' },
     ])
     const after = new Date('2026-11-10T00:00:00.000Z')
     await db('flows').insert([
@@ -90,6 +92,14 @@ describe('pipe tables against the migrated schema', () => {
         updated_by: NEW_OWNER,
         deleted_at: new Date('2026-11-11T00:00:00.000Z'),
       },
+      // A removal that passed its check before the pipe was deleted, then committed after.
+      {
+        flow_id: COPY_FLOW,
+        user_id: VIEWER,
+        role: 'viewer',
+        updated_by: NEW_OWNER,
+        deleted_at: new Date('2026-11-13T00:00:00.000Z'),
+      },
     ])
   })
 
@@ -135,6 +145,11 @@ describe('pipe tables against the migrated schema', () => {
         expect.objectContaining({
           user_id: EDITOR,
           role: 'editor',
+          deleted_at: COPY_DELETED_AT,
+        }),
+        expect.objectContaining({
+          user_id: VIEWER,
+          role: 'viewer',
           deleted_at: COPY_DELETED_AT,
         }),
       ]),
