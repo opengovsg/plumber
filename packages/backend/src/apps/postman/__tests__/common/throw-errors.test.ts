@@ -202,6 +202,10 @@ describe('throwPostmanStepError', () => {
         makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
       ],
       [
+        'an SES socket hang up',
+        makeNamedError('TimeoutError', 'socket hang up', 'ECONNRESET'),
+      ],
+      [
         'an SES socket timeout without a code',
         makeNamedError('TimeoutError', 'the request socket timed out'),
       ],

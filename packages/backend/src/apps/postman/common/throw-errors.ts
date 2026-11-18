@@ -275,9 +275,9 @@ export function throwPostmanStepError({
       })
     case 'ERROR':
     default:
-      // socket hang up is a Cloudflare/Postman-specific issue; only retry
-      // if the error came from the Postman path (not SES).
-      if (errorMessage === 'socket hang up') {
+      // Only Postman's Cloudflare resets retry. SES may accept an email before
+      // resetting, so a retry could send it twice.
+      if (httpError && errorMessage === 'socket hang up') {
         throw new RetriableError({
           error: `Retrying ${errorMessage}`,
           delayInMs: 'default',
