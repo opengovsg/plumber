@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copies personal gitignored files from the main checkout into a new worktree.
+# Sets up a new worktree with personal gitignored files from the main checkout, dependencies and a code index.
 # IMPORTANT: always exit 0. A failing hook makes `git worktree add` fail.
 FILES="op-dev.json"
 
@@ -12,4 +12,15 @@ for f in $FILES; do
   [ -e "$main/$f" ] && [ ! -e "$f" ] || continue
   mkdir -p "$(dirname "$f")" && cp -R "$main/$f" "$f"
 done
+
+# GUI tools that create worktrees may lack these on PATH, so warn instead of failing.
+run() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "post-checkout: $1 not found. Run \`$*\` in the worktree yourself." >&2
+  elif ! "$@"; then
+    echo "post-checkout: \`$*\` failed. Run it in the worktree yourself." >&2
+  fi
+}
+run pnpm install
+run codegraph init
 exit 0
