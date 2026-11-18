@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import type { SgtDayWindow } from '../sgt-day'
 import type { SilverChangeTable } from '../silver-change-tables'
+import { readActionCatalog, resourceParameters } from './action-catalog'
 
 // One page per file. A full copy of 705k steps peaked at 1.2 GB in one file, against the task's 2 GB.
 export const FLOW_STEP_PAGE_SIZE = 50_000
@@ -85,17 +86,7 @@ const FLOW_STEP_SQL = `
       s.config -> 'aiBuilderConfig' @> '[{"tool": "update_step_parameters"}]',
       false
     ) AS updated_by_ai,
-    CASE
-      WHEN s.app_key = 'tiles' THEN s.parameters ->> 'tableId'
-      WHEN s.app_key = 'm365-excel' THEN s.parameters ->> 'fileId'
-      WHEN s.app_key = 'lettersg' THEN s.parameters ->> 'templateId'
-      WHEN s.app_key = 'databricks' THEN s.parameters ->> 'tableName'
-      WHEN s.app_key = 'slack' THEN s.parameters ->> 'channel'
-      WHEN s.app_key = 'telegram-bot' THEN s.parameters ->> 'chatId'
-      WHEN s.app_key = 'custom-api' THEN s.parameters ->> 'url'
-      WHEN s.app_key = 'gathersg' AND s.key = 'createCase'
-        THEN s.parameters ->> 'caseType'
-    END AS resource_value
+    s.parameters ->> (?::jsonb ->> (s.app_key || '.' || s.key)) AS resource_value
   FROM steps s
   WHERE s.flow_id IS NOT NULL
     AND (s.flow_id, s.id) > (?::uuid, ?::uuid)
@@ -105,16 +96,22 @@ const FLOW_STEP_SQL = `
   LIMIT ?
 `
 
+// The action catalog names which argument holds each app-action's resource.
 export async function* fetchFlowStepPages(
   db: Knex,
   window: SgtDayWindow | null,
   pageSize = FLOW_STEP_PAGE_SIZE,
+  parameterByAction: Record<string, string> = resourceParameters(
+    readActionCatalog(),
+  ),
 ): AsyncGenerator<FlowStepRow[]> {
+  const parameterJson = JSON.stringify(parameterByAction)
   const start = window?.start ?? null
   const end = window?.end ?? null
   let after = { flowId: FIRST_UUID, stepId: FIRST_UUID }
   for (;;) {
     const result = await db.raw(FLOW_STEP_SQL, [
+      parameterJson,
       after.flowId,
       after.stepId,
       start,

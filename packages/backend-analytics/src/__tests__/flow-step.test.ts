@@ -72,6 +72,6 @@ describe('fetchFlowStepPages', () => {
       [['s3', 'table-s3']],
     ])
     // The second page starts after the last pipe and step of the first.
-    expect(raw.mock.calls[1][1].slice(0, 2)).toEqual(['flow-b', 's2'])
+    expect(raw.mock.calls[1][1].slice(1, 3)).toEqual(['flow-b', 's2'])
   })
 })
