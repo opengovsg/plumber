@@ -108,7 +108,10 @@ const action: IRawAction = {
       })
     }
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
 
     // Check that filters are valid
     try {
@@ -136,7 +139,7 @@ const action: IRawAction = {
     }
     // Retrieve the manual scan limit override, converting it to a number.
     // If the conversion results in NaN, we set scanLimit to undefined.
-    const scanLimitRaw = +step.config?.adminOverride?.tileScanLimit
+    const scanLimitRaw = +(step.config?.adminOverride?.tileScanLimit ?? NaN)
     const scanLimit = isNaN(scanLimitRaw) ? undefined : scanLimitRaw
 
     const tableOperations = getTableOperations(table.db)

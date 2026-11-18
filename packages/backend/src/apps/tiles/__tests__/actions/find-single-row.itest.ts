@@ -184,6 +184,17 @@ describe.each([['ddb'], ['pg']])(
       })
     })
 
+    it('should throw a config error if the found row is deleted before it is read', async () => {
+      vi.spyOn(
+        databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
+        'getRawRowById',
+      ).mockResolvedValueOnce(null)
+      await expect(findSingleRowAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Row not found"'),
+        kind: 'config',
+      })
+    })
+
     it.runIf(databaseType === 'ddb')(
       'should skip a filter with no operator if another filter uses its column',
       async () => {

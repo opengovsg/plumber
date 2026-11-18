@@ -3,7 +3,7 @@ import { IJSONObject } from '@plumber/types'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import { TableRowOutput } from '@/models/tiles/types'
 
-export interface FindSingleRowOutput extends IJSONObject {
+export interface FindSingleRowOutput {
   rowsFound: number
   rowId?: string
   row?: Record<string, string | number>
@@ -15,7 +15,7 @@ export type TileColumnMetadata = {
   value: string
 }
 
-export interface FindMultipleRowsOutput extends IJSONObject {
+export interface FindMultipleRowsOutput {
   rowsFound: number
   data?: {
     rows: TableRowOutput[]
@@ -29,7 +29,7 @@ export interface CreateRowOutput extends IJSONObject {
   row: Record<string, string | number>
 }
 
-export interface UpdateRowOutput extends IJSONObject {
+export interface UpdateRowOutput {
   rowId?: string
   row?: Record<string, string | number>
   updated: boolean
