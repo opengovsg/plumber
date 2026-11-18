@@ -146,9 +146,10 @@ const createRowAction: IRawAction = {
         testRun: $.execution?.testRun,
         error: e,
       })
+      const errorMessage = e instanceof Error ? e.message : String(e)
       throw new StepError({
         name: 'Failed to create row',
-        solution: e.message,
+        solution: errorMessage,
         kind: 'third-party',
       })
     } finally {

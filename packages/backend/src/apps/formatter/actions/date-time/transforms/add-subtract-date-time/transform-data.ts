@@ -106,8 +106,9 @@ export const transformData: TransformSpec['transformData'] = async (
       throw error
     }
 
+    const errorMessage = error instanceof Error ? error.message : String(error)
     throw new StepError({
-      name: `Error processing dates: '${error.message}'`,
+      name: `Error processing dates: '${errorMessage}'`,
       solution:
         'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
       kind: 'internal',

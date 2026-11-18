@@ -74,8 +74,10 @@ export const spec = {
         throw error
       }
 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       throw new StepError({
-        name: `Error with the original value: '${error.message}'`,
+        name: `Error with the original value: '${errorMessage}'`,
         solution:
           'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
         kind: 'internal',

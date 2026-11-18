@@ -111,7 +111,10 @@ function handleHttpError(
   }
 
   // Handle retriable status codes
-  if (RETRIABLE_STATUS_CODES.includes(executionError.response?.status)) {
+  if (
+    executionError.response?.status !== undefined &&
+    RETRIABLE_STATUS_CODES.includes(executionError.response.status)
+  ) {
     throw new RetriableError({
       error: errorDetails,
       delayInMs: 'default',
