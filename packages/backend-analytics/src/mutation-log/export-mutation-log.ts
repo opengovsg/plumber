@@ -21,11 +21,17 @@ import logger from '../logger'
 import { s3KeyLister } from '../silver-change-tables'
 import {
   buildBronzeDayKey,
+  buildSilverDayKey,
   encodeParquet,
   type ParquetColumns,
 } from '../silver-table'
 import { readActionCatalog, resourceParameters } from '../tables/action-catalog'
 import { fetchMutationLines } from './fetch-mutation-lines'
+import {
+  FLOW_EDIT_DAILY_COLUMNS,
+  FLOW_EDIT_DAILY_TABLE,
+  summarizeFlowEdits,
+} from './flow-edit-daily'
 import {
   type MutationLogLine,
   type MutationLogRow,
@@ -219,15 +225,24 @@ export async function writeMutationLogDays({
         ).length,
       })
 
-      await markDayComplete({
-        sink,
-        job: MUTATION_LOG_TABLE,
-        completion: { day, version: MUTATION_LOG_VERSION, full: false },
-        source,
-        outputs: [key],
-      })
-    },
-  )
+    const edits = summarizeFlowEdits(day, rows)
+    const editsKey = buildSilverDayKey(FLOW_EDIT_DAILY_TABLE, day)
+    await sink(editsKey, encodeParquet(FLOW_EDIT_DAILY_COLUMNS, edits))
+    logger.info({
+      event: 'analytics.flow_edit_daily.day.written',
+      day,
+      key: editsKey,
+      rows: edits.length,
+    })
+
+    await markDayComplete({
+      sink,
+      job: MUTATION_LOG_TABLE,
+      completion: { day, version: MUTATION_LOG_VERSION, full: false },
+      source,
+      outputs: [key, editsKey],
+    })
+  }
 }
 
 interface ExportMutationLogParams {

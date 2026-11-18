@@ -152,6 +152,25 @@ describe('writeMutationLogDays', () => {
         http_status: 200n,
       },
     ])
+
+    const edits = await parquetReadObjects({
+      file: toArrayBuffer(
+        await readFile(
+          path.join(dir, 'silver/flow_edit_daily/day=2026-11-05.parquet'),
+        ),
+      ),
+    })
+    expect(edits).toEqual([
+      {
+        day: new Date('2026-11-04T16:00:00.000Z'),
+        flow_id: 'f1',
+        user_id: 'user-1',
+        operation: 'updateFlow',
+        edits: 1n,
+        first_edit_at: new Date('2026-11-04T16:00:01.000Z'),
+        last_edit_at: new Date('2026-11-04T16:00:01.000Z'),
+      },
+    ])
   })
 
   it('marks a day done only after its file is written', async () => {
