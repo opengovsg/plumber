@@ -37,60 +37,92 @@ describe('get-apps query', () => {
 describe('action catalog', () => {
   const catalogPath = join(
     __dirname,
-    '../../../../backend-analytics/data/action-catalog.json',
+    '../../../../backend-analytics/data/action-catalog.csv',
   )
+  const header = [
+    'app_key',
+    'action_key',
+    'name',
+    'is_trigger',
+    'is_active',
+    'launched_at',
+  ] as const
 
-  type CatalogEntry = {
-    app_key: string
-    action_key: string
-    name: string
-    is_trigger: boolean
-    is_active: boolean
+  type CatalogRow = Record<(typeof header)[number], string>
+
+  // Splits one line of RFC 4180 CSV. Names may hold commas and quotes, but never newlines.
+  function splitCsvLine(line: string): string[] {
+    const cells: string[] = []
+    let cell = ''
+    let quoted = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (quoted && ch === '"' && line[i + 1] === '"') {
+        cell += '"'
+        i++
+      } else if (ch === '"') {
+        quoted = !quoted
+      } else if (ch === ',' && !quoted) {
+        cells.push(cell)
+        cell = ''
+      } else {
+        cell += ch
+      }
+    }
+    return [...cells, cell]
   }
 
-  const catalogKey = (entry: CatalogEntry) =>
-    `${entry.app_key}.${entry.action_key}`
+  const toCsvCell = (value: string) =>
+    /[",]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value
 
-  // Analytics cannot import the apps registry, so it reads this file. Run `vitest -u` to rewrite it.
+  const catalogKey = (row: CatalogRow) => `${row.app_key}.${row.action_key}`
+
+  // Analytics cannot import the apps registry, so it reads this file. Launch dates are typed by hand.
   // Removed app-actions stay as inactive, because past steps and executions still name them.
   it('matches the analytics catalog file', async () => {
-    const active: CatalogEntry[] = Object.values(exportedApps).flatMap(
-      (app) => [
-        ...(app.triggers ?? []).map((trigger) => ({
-          app_key: app.key,
-          action_key: trigger.key,
-          name: trigger.name,
-          is_trigger: true,
-          is_active: true,
-        })),
-        ...(app.actions ?? []).map((action) => ({
-          app_key: app.key,
-          action_key: action.key,
-          name: action.name,
-          is_trigger: false,
-          is_active: true,
-        })),
-      ],
+    const committed = new Map<string, CatalogRow>()
+    if (fs.existsSync(catalogPath)) {
+      const [, ...lines] = fs
+        .readFileSync(catalogPath, 'utf8')
+        .split('\n')
+        .filter(Boolean)
+      for (const line of lines) {
+        const cells = splitCsvLine(line)
+        const row = Object.fromEntries(
+          header.map((name, i) => [name, cells[i] ?? '']),
+        ) as CatalogRow
+        committed.set(catalogKey(row), row)
+      }
+    }
+
+    const active: CatalogRow[] = Object.values(exportedApps).flatMap((app) =>
+      [
+        ...(app.triggers ?? []).map((event) => ({ event, isTrigger: true })),
+        ...(app.actions ?? []).map((event) => ({ event, isTrigger: false })),
+      ].map(({ event, isTrigger }) => ({
+        app_key: app.key,
+        action_key: event.key,
+        name: event.name,
+        is_trigger: String(isTrigger),
+        is_active: 'true',
+        launched_at:
+          committed.get(`${app.key}.${event.key}`)?.launched_at ?? '',
+      })),
     )
     const activeKeys = new Set(active.map(catalogKey))
-    const committed: CatalogEntry[] = fs.existsSync(catalogPath)
-      ? JSON.parse(fs.readFileSync(catalogPath, 'utf8'))
-      : []
-    const retired = committed
-      .filter((entry) => !activeKeys.has(catalogKey(entry)))
-      .map((entry) => ({
-        app_key: entry.app_key,
-        action_key: entry.action_key,
-        name: entry.name,
-        is_trigger: entry.is_trigger,
-        is_active: false,
-      }))
-    const catalog = [...active, ...retired].sort((a, b) =>
+    const retired = [...committed.values()]
+      .filter((row) => !activeKeys.has(catalogKey(row)))
+      .map((row) => ({ ...row, is_active: 'false' }))
+    const rows = [...active, ...retired].sort((a, b) =>
       catalogKey(a).localeCompare(catalogKey(b)),
     )
+    const csv = [header, ...rows.map((row) => header.map((name) => row[name]))]
+      .map((cells) => cells.map(toCsvCell).join(','))
+      .join('\n')
 
-    await expect(`${JSON.stringify(catalog, null, 2)}\n`).toMatchFileSnapshot(
-      catalogPath,
-    )
+    await expect(
+      `${csv}\n`,
+      'action-catalog.csv is stale. Run `pnpm --filter backend exec vitest run src/apps/__tests__/index.test.ts -u` and commit the file.',
+    ).toMatchFileSnapshot(catalogPath)
   })
 })
