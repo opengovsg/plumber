@@ -37,6 +37,7 @@ import {
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
 import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
+import { promptTelemetryMetadata } from '@/helpers/ai/prompt-telemetry'
 import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
@@ -283,8 +284,7 @@ const handleChatStream = observe(
                     environment: appConfig.appEnv,
                     promptName: chatPromptName,
                     promptVersion: version,
-                    promptSource: prompt.isFallback ? 'local' : 'langfuse',
-                    langfusePrompt: prompt.toJSON(),
+                    ...promptTelemetryMetadata(prompt),
                     tags: [
                       'ai-builder',
                       'stream',

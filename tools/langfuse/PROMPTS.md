@@ -33,6 +33,7 @@ In local dev (`APP_ENV=development`), the backend serves the highest-numbered `v
 - No version files: the backend logs a warning once per prompt and fetches from Langfuse.
 - `AI_BUILDER_PROMPT_SOURCE=langfuse`: the backend ignores local files.
 - Deployed environments never read local files. The `ai-builder` LaunchDarkly flag selects the Langfuse version.
+- Traces from a local prompt carry `promptSource: local` and never link to a Langfuse prompt version.
 
 ## Commands
 

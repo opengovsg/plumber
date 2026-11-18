@@ -94,7 +94,7 @@ async function getLocalPrompt(
     'utf-8',
   )
 
-  // isFallback stops Langfuse from linking traces to a real prompt version.
+  // isFallback marks the prompt as local. promptTelemetryMetadata uses it to skip prompt linking.
   return new TextPromptClient(
     {
       name: promptName,
