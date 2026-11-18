@@ -939,6 +939,9 @@ async function main() {
     `Extra fields: ${options.include.length ? options.include.join(', ') : 'none'}`,
   )
 
+  // Resolves before the export file opens, so a bad --sessionId leaves no file behind.
+  const sessions = options.sessionId ? [await getSession(client, options)] : []
+
   mkdirSync(OUT_DIR, { recursive: true, mode: 0o700 })
   const outPath = buildOutputPath(options)
   const writer = createWriter(
@@ -946,7 +949,6 @@ async function main() {
     options.format,
     fields.map(([name]) => name),
   )
-  const sessions = []
   let listingError
 
   // A listing failure keeps what was already listed, so a long export is not lost.
@@ -964,20 +966,26 @@ async function main() {
     }
   }
 
-  await writer.start()
-  if (options.sessionId) {
-    sessions.push(await getSession(client, options))
-  } else {
-    await list()
+  let saved, failures, skipped
+  try {
+    await writer.start()
+    if (!options.sessionId) {
+      await list()
+    }
+    ;({ failures, skipped } = await fetchLastTraces(
+      client,
+      sessions,
+      options,
+      ({ session, trace, traceCount }) =>
+        writer.add(toRecord(trace, fields, { baseUrl, session, traceCount })),
+    ))
+    saved = await writer.end()
+  } catch (error) {
+    // An unexpected error leaves invalid JSON, so drop the file instead of keeping a broken export.
+    await writer.end().catch(() => {})
+    rmSync(outPath, { force: true })
+    throw error
   }
-  const { failures, skipped } = await fetchLastTraces(
-    client,
-    sessions,
-    options,
-    ({ session, trace, traceCount }) =>
-      writer.add(toRecord(trace, fields, { baseUrl, session, traceCount })),
-  )
-  const saved = await writer.end()
 
   if (saved === 0 && failures.length === 0) {
     rmSync(outPath)
