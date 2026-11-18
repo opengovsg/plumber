@@ -1,0 +1,26 @@
+{
+  "name": "@plumber/backend-models",
+  "version": "1.103.1",
+  "private": true,
+  "description": "Column-only backend models, built for packages outside the backend",
+  "main": "dist/exports/models.js",
+  "types": "dist/exports/models.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prebuild": "rimraf ./dist",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "@plumber/types": "workspace:*",
+    "ajv-formats": "2.1.1",
+    "knex": "catalog:",
+    "objection": "3.1.5"
+  },
+  "devDependencies": {
+    "rimraf": "^4.4.1",
+    "typescript": "catalog:"
+  }
+}

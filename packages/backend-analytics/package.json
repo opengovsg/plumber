@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
+    "@plumber/backend-models": "workspace:*",
     "hyparquet-writer": "0.16.12",
     "knex": "catalog:",
     "winston": "catalog:",

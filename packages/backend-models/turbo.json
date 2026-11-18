@@ -1,0 +1,20 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/backend/src/exports/**",
+        "$TURBO_ROOT$/packages/backend/src/models/**"
+      ]
+    },
+    "typecheck": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/backend/src/exports/**",
+        "$TURBO_ROOT$/packages/backend/src/models/**"
+      ]
+    }
+  }
+}

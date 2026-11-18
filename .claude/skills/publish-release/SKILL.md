@@ -19,8 +19,9 @@ Ship Plumber to production by publishing a GitHub release from a version tag.
 - Releases ship from `develop-v2` (the trunk). There is no release PR. Nothing
   merges into `production`.
 - The version bump is exactly one commit on `develop-v2`, named `vX.Y.Z`. It
-  bumps the root `package.json` and the five app packages (`backend`,
-  `frontend`, `backend-archive`, `backend-analytics`, `types`) to that same version. `tools/*`
+  bumps the root `package.json` and the six app packages (`backend`,
+  `frontend`, `backend-archive`, `backend-analytics`, `backend-models`,
+  `types`) to that same version. `tools/*`
   stay on their own versions. `pnpm-lock.yaml` does not store the app
   version, so it is not part of this commit.
 - That commit is tagged `vX.Y.Z`. Both the commit and the tag are pushed to
@@ -38,10 +39,11 @@ Ship Plumber to production by publishing a GitHub release from a version tag.
    without `--draft`. Never run `gh release edit --draft=false`.
 2. **Push only `develop-v2` and the `vX.Y.Z` tag.** Never force-push. Never push
    any other branch.
-3. **One clean bump commit.** The commit must touch exactly these six files:
+3. **One clean bump commit.** The commit must touch exactly these seven files:
    the root `package.json`, `packages/backend/package.json`,
    `packages/frontend/package.json`, `packages/backend-archive/package.json`,
-   `packages/backend-analytics/package.json` and `packages/types/package.json`. Its message is `vX.Y.Z` (with the `v`
+   `packages/backend-analytics/package.json`,
+   `packages/backend-models/package.json` and `packages/types/package.json`. Its message is `vX.Y.Z` (with the `v`
    prefix). Each file's version field must be that same version. Do not leave
    a workspace bump uncommitted. See the gotcha below.
 4. **Never `git reset --hard`** (a deny rule blocks it anyway). Back a bump out
@@ -97,7 +99,7 @@ recommended option first and append " (Recommended)" to its label.
 
 ### 4. Bump, commit, tag
 
-Replace only the `version` field in the six manifests. **You** create the
+Replace only the `version` field in the seven manifests. **You** create the
 commit and tag. Do not use `npm version` or `pnpm version` (see gotcha).
 Replace `<bump>` with the chosen `patch`/`minor`/`major`:
 
@@ -111,6 +113,7 @@ const files = [
   'packages/frontend/package.json',
   'packages/backend-archive/package.json',
   'packages/backend-analytics/package.json',
+  'packages/backend-models/package.json',
   'packages/types/package.json',
 ]
 const bump = process.env.BUMP
@@ -137,14 +140,14 @@ for (const file of files) {
 process.stdout.write(next)
 EOF
 )
-git add package.json packages/backend/package.json packages/frontend/package.json packages/backend-archive/package.json packages/backend-analytics/package.json packages/types/package.json
+git add package.json packages/backend/package.json packages/frontend/package.json packages/backend-archive/package.json packages/backend-analytics/package.json packages/backend-models/package.json packages/types/package.json
 git commit -m "v$NEW"
 git tag "v$NEW"
 ```
 
 The server reads `packages/backend/package.json` at startup. If that file stays
 on the old version, production still reports the old version. The script aborts
-when any of the six files has already drifted from the root version.
+when any of the seven files has already drifted from the root version.
 
 ### 5. Verify
 
@@ -153,13 +156,13 @@ git show --stat HEAD
 git tag --points-at HEAD    # expect: vX.Y.Z
 git status --porcelain      # expect: empty
 node -p "
-const files = ['package.json','packages/backend/package.json','packages/frontend/package.json','packages/backend-archive/package.json','packages/backend-analytics/package.json','packages/types/package.json']
+const files = ['package.json','packages/backend/package.json','packages/frontend/package.json','packages/backend-archive/package.json','packages/backend-analytics/package.json','packages/backend-models/package.json','packages/types/package.json']
 files.map(f => require('./'+f).version).join(' ')
 "
 ```
 
-`git show --stat` must list only those six `package.json` files, and the
-message must be `vX.Y.Z`. The `node -p` line must print the new version six
+`git show --stat` must list only those seven `package.json` files, and the
+message must be `vX.Y.Z`. The `node -p` line must print the new version seven
 times. `tools/*/package.json` and `pnpm-lock.yaml` must be absent from the
 commit.
 
@@ -223,7 +226,7 @@ reporting the old version from `packages/backend/package.json`.
 rewrites each `package.json`, which can reorder dependency keys. The release
 commit would then contain more than the version field.
 
-Step 4 replaces the `version` string in the six manifests and commits
+Step 4 replaces the `version` string in the seven manifests and commits
 those files by hand. The diff is the version field only, and the tag contains
 the version the server actually reads.
 

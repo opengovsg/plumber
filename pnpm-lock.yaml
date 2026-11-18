@@ -608,6 +608,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
         version: 3.1027.0
+      '@plumber/backend-models':
+        specifier: workspace:*
+        version: link:../backend-models
       hyparquet-writer:
         specifier: 0.16.12
         version: 0.16.12
@@ -706,6 +709,28 @@ importers:
       vitest:
         specifier: ^4.1.11
         version: 4.1.12(@opentelemetry/api@1.9.0)(@types/node@22.18.0)(@vitest/coverage-v8@4.1.12)(@vitest/ui@4.1.12)(jsdom@26.1.0(supports-color@8.1.1))(vite@8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0))
+
+  packages/backend-models:
+    dependencies:
+      '@plumber/types':
+        specifier: workspace:*
+        version: link:../types
+      ajv-formats:
+        specifier: 2.1.1
+        version: 2.1.1
+      knex:
+        specifier: 'catalog:'
+        version: 2.4.2(pg@8.16.3)(supports-color@8.1.1)
+      objection:
+        specifier: 3.1.5
+        version: 3.1.5(knex@2.4.2(pg@8.16.3)(supports-color@8.1.1))
+    devDependencies:
+      rimraf:
+        specifier: ^4.4.1
+        version: 4.4.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
 
   packages/e2e:
     devDependencies:
@@ -19864,6 +19889,13 @@ snapshots:
       ajv-formats: 2.1.1
       db-errors: 0.2.3
       knex: 2.4.2(pg@8.16.3)(supports-color@5.5.0)
+
+  objection@3.1.5(knex@2.4.2(pg@8.16.3)(supports-color@8.1.1)):
+    dependencies:
+      ajv: 8.20.0
+      ajv-formats: 2.1.1
+      db-errors: 0.2.3
+      knex: 2.4.2(pg@8.16.3)(supports-color@8.1.1)
 
   obliterator@1.6.1: {}
 
