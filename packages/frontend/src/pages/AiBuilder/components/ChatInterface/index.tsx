@@ -12,7 +12,10 @@ import {
   PLACEHOLDER_MESSAGE,
 } from '@/pages/AiBuilder/constants'
 import { buildSupportFormUrl } from '@/pages/AiBuilder/helpers'
-import { createNewChatDraft } from '@/pages/AiBuilder/new-chat'
+import {
+  createNewChatDraft,
+  createNewChatDraftKeepingPipe,
+} from '@/pages/AiBuilder/new-chat'
 
 import MessageLimitBanner from './MessageLimitBanner'
 import PromptInput from './PromptInput'
@@ -69,6 +72,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   const {
     chatId,
     chatInput,
+    flowName,
+    output,
+    parameterLabelsByStepId,
     isMobile,
     isDrawerOpen,
     setIsDrawerOpen,
@@ -108,7 +114,13 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     // createNewChatDraft() always mints its own fresh chatId, so the new chat starts
     // its own Langfuse session and never carries the old id forward.
     const lastMessage = messages[messages.length - 1]
-    const newState = createNewChatDraft(lastMessage?.text)
+    const newState = hasExceededSizeLimit
+      ? createNewChatDraftKeepingPipe({
+          flowName,
+          output,
+          parameterLabelsByStepId,
+        })
+      : createNewChatDraft(lastMessage?.text)
 
     // Synchronously update persisted state so the next render sees empty messages
     // immediately (avoids a stale intermediate render with old messages)
@@ -123,6 +135,10 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     setChatState,
     navigate,
     messages,
+    hasExceededSizeLimit,
+    flowName,
+    output,
+    parameterLabelsByStepId,
   ])
 
   const handleOpenPreview = useCallback(() => {

@@ -266,7 +266,10 @@ export function useChatStream(options: UseChatStreamOptions) {
               .join('\n')
             pipeContextMsgs.push({
               id: 'pipe-context-resync',
-              role: 'assistant' as const,
+              // IMPORTANT: Bedrock rejects a conversation that starts with an assistant message, as a new chat would.
+              role: initialMessagesRef.current?.length
+                ? ('assistant' as const)
+                : ('user' as const),
               parts: [
                 {
                   type: 'text' as const,
@@ -612,6 +615,8 @@ export function useChatStream(options: UseChatStreamOptions) {
     setIsReady(false)
     setIsLastTurnAborted(false)
     setHasExceededSizeLimit(false)
+    // A new chat that keeps the pipe needs its step ids resent.
+    hasSentPipeContextRef.current = false
   }, [setMessages])
 
   // Wrapper for sendMessage that matches the expected signature

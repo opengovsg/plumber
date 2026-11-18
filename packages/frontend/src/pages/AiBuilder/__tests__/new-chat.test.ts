@@ -2,7 +2,12 @@ import { webcrypto } from 'node:crypto'
 
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { createNewChatDraft, extractContinuationPrompt } from '../new-chat'
+import {
+  CONTINUE_PIPE_PROMPT,
+  createNewChatDraft,
+  createNewChatDraftKeepingPipe,
+  extractContinuationPrompt,
+} from '../new-chat'
 
 // The test environment doesn't expose `crypto` as a global (no jsdom/browser
 // shim). Wire it up from Node's built-in webcrypto so the tests can run.
@@ -53,5 +58,30 @@ describe('createNewChatDraft', () => {
     const draft = createNewChatDraft()
     expect(draft.chatInput).toBe('')
     expect(draft.chatMessages).toEqual([])
+  })
+})
+
+describe('createNewChatDraftKeepingPipe', () => {
+  it('keeps the pipe and starts a fresh chat', () => {
+    const output = { pipeId: 'pipe-1', steps: [] }
+    const draft = createNewChatDraftKeepingPipe({ flowName: 'My pipe', output })
+
+    expect(draft).toMatchObject({
+      flowName: 'My pipe',
+      output,
+      chatInput: CONTINUE_PIPE_PROMPT,
+      chatMessages: [],
+    })
+    expect(draft.chatId).toMatch(UUID_REGEX)
+  })
+
+  it('returns the default draft when no pipe exists yet', () => {
+    const draft = createNewChatDraftKeepingPipe({
+      flowName: 'Build with AI',
+      output: { trigger: '' },
+    })
+
+    expect(draft.chatInput).toBe('')
+    expect(draft.output.pipeId).toBeUndefined()
   })
 })
