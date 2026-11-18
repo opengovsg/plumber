@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "get-prompt": "node ../../scripts/with-op-env.mjs node get-prompt.mjs",
-    "export-sessions": "node ../../scripts/with-op-env.mjs node export-sessions.mjs"
+    "export-sessions": "node ../../scripts/with-op-env.mjs node export-sessions.mjs",
+    "test": "node --test 'test/**/*.test.mjs'"
   },
   "author": "",
   "license": "ISC",

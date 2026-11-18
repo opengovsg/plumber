@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
  *   pnpm run get-prompt chat-summary --project=aiBuilder --label=latest
  *   pnpm run get-prompt chat --version=154
  */
-import { buildLangfuseClient } from './client.mjs'
+import { buildLangfuseClient } from './lib/langfuse/client.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
