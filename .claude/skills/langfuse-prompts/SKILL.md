@@ -33,7 +33,7 @@ The workflow and commands live in [tools/langfuse/PROMPTS.md](../../../tools/lan
 
 ## Reconcile a renumbered draft
 
-`push --renumber` and `sync` move a draft when another version took its number. They merge that version into the draft and stop. Whenever one of them reports a move, offer this help without being asked.
+`push --renumber` and `sync` move a draft when another version took its number. They merge that version into the draft and stop. `sync` also moves `main`'s text into a new draft when Langfuse holds different text under the same number. Whenever one of them reports a move, offer this help without being asked.
 
 1. **Explain what landed.** Read the draft's `meta.json` for `basedOn`. Diff `v<basedOn>.md` against the version that landed first. Summarise what the other developer changed and why, using its `meta.json` commit message.
 2. **Clean merge.** Show the merged draft's changes against the version that landed first. Confirm both developers' intents survive.
