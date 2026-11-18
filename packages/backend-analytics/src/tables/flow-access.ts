@@ -60,29 +60,37 @@ export const flowAccessTable: SilverTable<FlowAccessRow> = {
   },
   // flow_collaborators holds editors and viewers only. The owner comes from flows.user_id.
   fetchRows: async (db) => {
-    const [flows, collaborators] = await Promise.all([
-      BaseFlow.query(db)
-        .withSoftDeleted()
-        .whereNotNull('user_id')
-        .select('id', 'user_id', 'created_at', 'deleted_at'),
-      BaseFlowCollaborator.query(db)
-        .withSoftDeleted()
-        .join('flows', 'flows.id', 'flow_collaborators.flow_id')
-        .select(
-          'flow_collaborators.user_id',
-          'flow_collaborators.flow_id',
-          'flow_collaborators.role',
-          'flow_collaborators.created_at',
-          'flow_collaborators.deleted_at',
-          'flows.deleted_at as flow_deleted_at',
-        )
-        .castTo<CollaboratorOnFlow[]>(),
-    ])
+    // One snapshot, so a transfer committing between the two reads cannot show its pipe half-moved.
+    const { flows, collaborators } = await db.transaction(
+      async (trx) => ({
+        flows: await BaseFlow.query(trx)
+          .withSoftDeleted()
+          .whereNotNull('user_id')
+          .select('id', 'user_id', 'created_at', 'deleted_at'),
+        collaborators: await BaseFlowCollaborator.query(trx)
+          .withSoftDeleted()
+          .join('flows', 'flows.id', 'flow_collaborators.flow_id')
+          .select(
+            'flow_collaborators.user_id',
+            'flow_collaborators.flow_id',
+            'flow_collaborators.role',
+            'flow_collaborators.created_at',
+            'flow_collaborators.deleted_at',
+            'flows.deleted_at as flow_deleted_at',
+          )
+          .castTo<CollaboratorOnFlow[]>(),
+      }),
+      { isolationLevel: 'repeatable read' },
+    )
+    // A transfer to a collaborator soft-deletes their collaborator row. The owner row stands for them.
+    const ownerByFlow = new Map(flows.map((flow) => [flow.id, flow.userId]))
     const rows = z
       .array(flowAccessRowSchema)
       .parse([
         ...flows.map(toOwnerAccessRow),
-        ...collaborators.map(toCollaboratorAccessRow),
+        ...collaborators
+          .filter((row) => ownerByFlow.get(row.flowId) !== row.userId)
+          .map(toCollaboratorAccessRow),
       ])
     return rows.sort(byFlowThenCreated)
   },
