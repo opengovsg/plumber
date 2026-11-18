@@ -28,7 +28,7 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 `pnpm run setup:git` sets `core.hooksPath` to `.githooks` for the main checkout and all its worktrees. Git then ignores personal hooks in `.git/hooks`.
 
 - `.githooks/post-checkout` copies `op-dev.json` from the main checkout into each new worktree. Run `pnpm install` in the new worktree yourself.
-- In a linked worktree, the first `pnpm run dev` assigns free ports from 13000 upward, so several worktrees can run the dev server at once. The worktree keeps those ports until `git worktree remove` deletes it. The main checkout keeps 3000/3001.
+- In a linked worktree, `pnpm run dev` uses its own ports from 13000 upward, so several worktrees can run the dev server at once. The worktree keeps those ports until `git worktree remove` deletes it. The main checkout keeps 3000/3001.
 - Export `PLUMBER_WORKTREE_PORT_BASE` to change the start port for new worktrees. Port assignment briefly listens on the port below it as a lock.
 
 ### Running DB migrations

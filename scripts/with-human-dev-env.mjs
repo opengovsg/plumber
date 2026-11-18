@@ -14,7 +14,7 @@ import { createClient, DesktopAuth } from '@1password/sdk'
 const CONFIG_FILE = 'op-dev.json'
 const EXAMPLE_FILE = 'op-dev.example.json'
 const USAGE =
-  'usage: node scripts/with-human-dev-env.mjs [--env <name>] [--worktree-ports] <command> [args...]'
+  'usage: node scripts/with-human-dev-env.mjs [--env <name>] <command> [args...]'
 
 const repoRoot = path.join(import.meta.dirname, '..')
 const configPath = path.join(repoRoot, CONFIG_FILE)
@@ -45,16 +45,10 @@ function readConfig() {
 
 function parseArgs(argv) {
   let envName = 'dev'
-  let worktreePorts = false
   let index = 0
 
   while (index < argv.length) {
     const arg = argv[index]
-    if (arg === '--worktree-ports') {
-      worktreePorts = true
-      index += 1
-      continue
-    }
     if (arg === '--env') {
       envName = argv[index + 1]
       index += 2
@@ -72,7 +66,7 @@ function parseArgs(argv) {
     fail(`--env needs a name. ${USAGE}`)
   }
 
-  return { envName, worktreePorts, command: argv.slice(index) }
+  return { envName, command: argv.slice(index) }
 }
 
 const WORKTREE_PORT_START =
@@ -318,14 +312,14 @@ function run(command, env) {
 }
 
 async function main() {
-  const { envName, worktreePorts, command } = parseArgs(process.argv.slice(2))
+  const { envName, command } = parseArgs(process.argv.slice(2))
 
   if (command.length === 0) {
     fail(USAGE)
   }
 
   const variables = await fetchVariables(envName)
-  const ports = worktreePorts ? await getWorktreePorts() : {}
+  const ports = await getWorktreePorts()
 
   // Shell exports win, so harnesses can still pick their own ports.
   run(command, { ...variables, ...ports, ...process.env })

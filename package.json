@@ -10,7 +10,7 @@
     "postinstall": "pnpm run gqlc",
     "setup": "node scripts/with-human-dev-env.mjs --env setup pnpm --filter backend run setup",
     "setup:git": "git config --local core.hooksPath .githooks",
-    "dev": "node scripts/with-human-dev-env.mjs --worktree-ports turbo watch dev worker --continue",
+    "dev": "node scripts/with-human-dev-env.mjs turbo watch dev worker --continue",
     "dev:sample-env": "turbo watch dev worker --continue",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
