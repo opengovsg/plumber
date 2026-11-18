@@ -16,18 +16,17 @@ import type { FormsgPayloadWorkflowContent } from '../common/types'
 import { NricFilter } from '../triggers/new-submission/index'
 import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 import { computeSubmissionTime } from './helpers/compute-submission-time'
+import { logUnsupportedPayload } from './helpers/log-unsupported-payload'
 import { processResponsesV3 } from './helpers/process-v3-responses'
 import {
-  type FormSchemaContext,
-  loadFormSchemaContext,
   type MappedFormField,
   processResponsesV4,
 } from './helpers/process-v4-responses'
-import { reportUnresolvedVariables } from './helpers/report-unresolved-variables'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
+const KNOWN_VERIFIED_KEYS = new Set(['uinFin', 'sgidUinFin', 'cpUen', 'cpUid'])
 // V4 and MRF payloads suffix verified keys with the step, e.g. "cpUen (Step 1)".
 // Brackets break the variable regex, so we map them back to the legacy keys.
 const VERIFIED_KEY_STEP_SUFFIX = / \(Step \d+\)$/
@@ -142,8 +141,6 @@ export async function decryptFormResponse(
       })
     | null = null
   let attachments: DecryptedAttachments | null = null
-  // Only v4 restores omitted answers, so only v4 can classify a missing one.
-  let v4SchemaContext: FormSchemaContext | null = null
 
   if (version >= 3) {
     const decryptedSubmission = formSgSdk.cryptoV3.decrypt(formSecretKey, data)
@@ -155,19 +152,10 @@ export async function decryptFormResponse(
     }
 
     const rawResponses = decryptedSubmission.responses
-    let mappedResponses: MappedFormField[]
-    if (isFieldResponsesV4(rawResponses)) {
-      v4SchemaContext = await loadFormSchemaContext($, data.formId)
-      mappedResponses = await processResponsesV4(
-        $,
-        data.formId,
-        rawResponses,
-        v4SchemaContext,
-      )
-    } else {
-      // NOTE: V3 will be deprecated soon (tm)
-      mappedResponses = await processResponsesV3($, data.formId, rawResponses)
-    }
+    const mappedResponses = isFieldResponsesV4(rawResponses)
+      ? await processResponsesV4($, data.formId, rawResponses)
+      : // NOTE: V3 will be deprecated soon (tm)
+        await processResponsesV3($, data.formId, rawResponses)
 
     submission = {
       responses: mappedResponses,
@@ -363,6 +351,12 @@ export async function decryptFormResponse(
         // TODO: FormSG only collects login data on Step 1 today. Revisit if
         // FormSG adds logins on later steps, since step keys would collide.
         const baseKey = key.replace(VERIFIED_KEY_STEP_SUFFIX, '')
+        if (!KNOWN_VERIFIED_KEYS.has(baseKey)) {
+          logUnsupportedPayload('unknown_verified_key', {
+            formId: data.formId,
+            key,
+          })
+        }
         let value = submission.verified[key]
 
         // @deprecated: filterNrics not supported new pipes
@@ -391,22 +385,6 @@ export async function decryptFormResponse(
       formId: data.formId, // this is used to check if a new form is connected to the formsg step
     }
 
-    // A sub-trigger's fields belong to its MRF step, not the trigger step.
-    const isTriggerSubmission =
-      !workflowContent || workflowContent.workflowStep === 0
-    const schemaContext = v4SchemaContext
-    const rawVerifiedKeys = Object.keys(submission.verified ?? {})
-    const onTriggerAccepted =
-      schemaContext && isTriggerSubmission
-        ? () =>
-            reportUnresolvedVariables($, data.formId, data.submissionId, {
-              fields: parsedData,
-              schema: schemaContext,
-              rawVerifiedKeys,
-              verifiedSubmitterInfo,
-            })
-        : undefined
-
     if (Object.keys(verifiedSubmitterInfo).length > 0) {
       $.request.body.verifiedSubmitterInfo = verifiedSubmitterInfo
     }
@@ -428,7 +406,7 @@ export async function decryptFormResponse(
      * This means it's the first mrf step and is a new submission
      */
     if (!workflowContent) {
-      return { verified: true, internalId, onTriggerAccepted }
+      return { verified: true, internalId }
     }
 
     $.request.body.workflowContent = workflowContent
@@ -437,7 +415,6 @@ export async function decryptFormResponse(
       verified: true,
       internalId,
       isSubtrigger: workflowContent.workflowStep > 0,
-      onTriggerAccepted,
       subtriggerData: {
         type: 'mrf',
         mrfStepId: workflowContent.workflow[workflowContent.workflowStep]?._id,

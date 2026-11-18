@@ -34,7 +34,6 @@ const mocks = vi.hoisted(() => {
     storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
     fetchFormSchema: vi.fn(() => null),
     decryptFormAttachmentsV3OrV4: vi.fn(() => ({})),
-    reportUnresolvedVariables: vi.fn(),
   }
 })
 
@@ -60,10 +59,6 @@ vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
 
 vi.mock('../../auth/decrypt-form-attachments-v3-or-v4', () => ({
   decryptFormAttachmentsV3OrV4: mocks.decryptFormAttachmentsV3OrV4,
-}))
-
-vi.mock('../../auth/helpers/report-unresolved-variables', () => ({
-  reportUnresolvedVariables: mocks.reportUnresolvedVariables,
 }))
 
 const MOCK_WORKFLOW: FormsgPayloadWorkflowContent['workflow'] = [
@@ -378,10 +373,7 @@ describe('decrypt form response - MRF specific', () => {
 
       const result = await decryptFormResponse($)
 
-      expect(result).toMatchObject({
-        verified: true,
-        internalId: 'submissionId',
-      })
+      expect(result).toEqual({ verified: true, internalId: 'submissionId' })
 
       const fields = $.request.body.fields
       expect(Object.keys(fields)).toHaveLength(54)
@@ -569,39 +561,6 @@ describe('decrypt form response - MRF specific', () => {
     })
   })
 
-  describe('unresolved variable report', () => {
-    it.each([
-      { name: 'a single-respondent submission', step: null, reports: true },
-      { name: 'the first MRF step', step: 0, reports: true },
-      { name: 'a later MRF step', step: 1, reports: false },
-    ])('defers the report for $name: $reports', async ({ step, reports }) => {
-      if (step !== null) {
-        $.request.body.data.workflowContent = makeWorkflowContent(step)
-      }
-      mocks.fetchFormSchema.mockResolvedValueOnce(makeExampleV4FormSchema())
-      mocks.cryptoV3Decrypt.mockReturnValueOnce(exampleV4Submission)
-
-      const { onTriggerAccepted } = await decryptFormResponse($)
-
-      expect(mocks.reportUnresolvedVariables).not.toHaveBeenCalled()
-      await onTriggerAccepted?.()
-      expect(mocks.reportUnresolvedVariables).toHaveBeenCalledTimes(
-        reports ? 1 : 0,
-      )
-    })
-
-    it('skips v3 payloads, which do not restore omitted answers', async () => {
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
-        responses: {},
-        verified: undefined,
-      })
-
-      const { onTriggerAccepted } = await decryptFormResponse($)
-
-      expect(onTriggerAccepted).toBeUndefined()
-    })
-  })
-
   describe('return value and request body for MRF submissions', () => {
     it('should return isSubtrigger: false and set workflowContent when workflowStep is 0', async () => {
       const workflowContent = makeWorkflowContent(0)
@@ -670,6 +629,28 @@ describe('decrypt form response - MRF specific', () => {
   })
 
   describe('verifiedSubmitterInfo for MRF submissions', () => {
+    it.each([
+      { key: 'myInfoUinFin (Step 1)', logged: true },
+      { key: 'cpUen (Step 1)', logged: false },
+    ])('logs unknown verified key $key: $logged', async ({ key, logged }) => {
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { [key]: 'S1234567A' },
+      })
+
+      await decryptFormResponse($)
+
+      const warning = {
+        event: 'formsg-unsupported-payload',
+        reason: 'unknown_verified_key',
+        formId: 'formId123',
+        key,
+      }
+      expect(mocks.consoleWarn.mock.calls.map(([, meta]) => meta)).toEqual(
+        logged ? [warning] : [],
+      )
+    })
+
     it('should map "uinFin (Step 1)" to uinFin and sgidUinFin', async () => {
       $.request.body.data.workflowContent = makeWorkflowContent(1)
       mocks.cryptoV3Decrypt.mockReturnValueOnce({

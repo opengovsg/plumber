@@ -1013,11 +1013,6 @@ interface IBaseAuth {
     internalId: string | null
     isSubtrigger?: boolean
     subtriggerData?: SubtriggerData
-    /**
-     * Runs only when the delivery starts a new live pipe run.
-     * Keeps repeat deliveries and test runs out of the work.
-     */
-    onTriggerAccepted?: () => Promise<void>
   }>
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]

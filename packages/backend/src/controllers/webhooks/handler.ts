@@ -133,7 +133,6 @@ export default async (request: IRequest, response: Response) => {
    * This is the workflow data which is currently mrf workflow content only
    */
   let subtriggerData: SubtriggerData | undefined
-  let onTriggerAccepted: (() => Promise<void>) | undefined
 
   if (triggerApp.auth?.verifyWebhook) {
     const $ = await globalVariable({
@@ -155,7 +154,6 @@ export default async (request: IRequest, response: Response) => {
     internalId = verifyResult.internalId
     isSubtrigger = verifyResult.isSubtrigger ?? false
     subtriggerData = verifyResult.subtriggerData
-    onTriggerAccepted = verifyResult.onTriggerAccepted
   }
 
   // in case trigger type is 'webhook'
@@ -264,8 +262,6 @@ export default async (request: IRequest, response: Response) => {
     jobData,
     jobOptions: DEFAULT_JOB_OPTIONS,
   })
-
-  await onTriggerAccepted?.()
 
   return sendWebhookResponse(response, customWebhookResponse)
 }

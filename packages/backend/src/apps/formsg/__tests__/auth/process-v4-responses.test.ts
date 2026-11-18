@@ -107,19 +107,48 @@ describe('processResponsesV4', () => {
       ])
     })
 
-    it('leaves answer unset for a catch-all field with no value', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
-        makeFormSchema([{ _id: 'new1', title: 'New', fieldType: 'yes_no' }]),
-      )
+    it.each([
+      {
+        fieldType: 'yes_no',
+        answer: { choice: 'Yes' },
+        reason: 'unknown_answer_shape',
+      },
+      {
+        fieldType: 'date',
+        answer: { value: '2026-03-29' },
+        reason: 'unparsable_date',
+      },
+      { fieldType: 'yes_no', answer: { value: 'Yes' }, reason: null },
+    ])(
+      'logs an unsupported $fieldType answer: $reason',
+      async ({ fieldType, answer, reason }) => {
+        mocks.loggerWarn.mockClear()
+        mocks.fetchFormSchema.mockResolvedValueOnce(
+          makeFormSchema([{ _id: 'f1', title: 'Q', fieldType }]),
+        )
 
-      const result = await processResponsesV4($, 'formId', {
-        new1: v4Response('yes_no', { choice: 'Yes' } as never),
-      })
+        await processResponsesV4($, 'formId', {
+          f1: v4Response(fieldType as FieldType, answer),
+        })
 
-      expect(result).toEqual([
-        { _id: 'new1', fieldType: 'yes_no', question: 'New' },
-      ])
-    })
+        const logged = mocks.loggerWarn.mock.calls.filter(
+          ([, meta]) => meta?.event === 'formsg-unsupported-payload',
+        )
+        expect(logged.map(([, meta]) => meta)).toEqual(
+          reason
+            ? [
+                {
+                  event: 'formsg-unsupported-payload',
+                  reason,
+                  formId: 'formId',
+                  fieldId: 'f1',
+                  fieldType,
+                },
+              ]
+            : [],
+        )
+      },
+    )
 
     it('maps checkbox fields with answerArray from answer.value', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(

@@ -25,6 +25,7 @@ import {
 } from '../../common/myinfo-child-subfields'
 import { type FormSchemaField, mrfWorkflowDataSchema } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
+import { logUnsupportedPayload } from './log-unsupported-payload'
 
 // decryptFormResponse removes tableColumnTitles before storing the field.
 export type MappedFormField = FormField & { tableColumnTitles?: string[] }
@@ -144,7 +145,7 @@ function flattenChildrenAnswer(
 }
 
 // v4 never sends these. They have no answer to restore.
-export const NON_ANSWER_FIELD_TYPES = new Set(['statement', 'image', 'section'])
+const NON_ANSWER_FIELD_TYPES = new Set(['statement', 'image', 'section'])
 
 const EMPTY_ANSWERS: Partial<Record<FieldType, AnswerV4>> = {
   checkbox: { value: [] },
@@ -263,67 +264,42 @@ function withOmittedFields(
   return Object.fromEntries(ordered)
 }
 
-export type FormSchemaContext = {
-  fields: FormSchemaField[]
-  /**
-   * Fields an MRF delivery has reached. Null means every schema field.
-   */
-  restorableIds: Set<string> | null
-}
-
-/**
- * @returns null if the schema cannot be fetched.
- */
-export async function loadFormSchemaContext(
+export async function processResponsesV4(
   $: IGlobalVariable,
   formId: string,
-): Promise<FormSchemaContext | null> {
+  responses: FieldResponsesV4,
+): Promise<MappedFormField[]> {
+  const formSchemaFields: Record<string, FormSchemaField> = {}
+  let schemaFieldList: FormSchemaField[] = []
+  let restorableIds: Set<string> | null = null
   try {
     const formSchema = await fetchFormSchema($, formId)
-    if (!formSchema?.form?.form_fields) {
-      return null
+    if (formSchema?.form?.form_fields) {
+      schemaFieldList = formSchema.form.form_fields
+      const schemaWorkflow = formSchema.form.workflow ?? []
+      // No workflow means the form is single-respondent, even in that mode.
+      const configuredMrf =
+        formSchema.form.responseMode === 'multirespondent' &&
+        schemaWorkflow.length > 0
+      if (configuredMrf) {
+        const submissionWorkflow = readSubmissionWorkflow($, formId)
+        restorableIds = submissionWorkflow
+          ? fieldIdsThroughStep(
+              submissionWorkflow.workflow,
+              submissionWorkflow.workflowStep,
+            )
+          : new Set()
+      }
+      for (const field of schemaFieldList) {
+        formSchemaFields[field._id] = field
+      }
     }
-    const schemaWorkflow = formSchema.form.workflow ?? []
-    // No workflow means the form is single-respondent, even in that mode.
-    const configuredMrf =
-      formSchema.form.responseMode === 'multirespondent' &&
-      schemaWorkflow.length > 0
-    let restorableIds: Set<string> | null = null
-    if (configuredMrf) {
-      const submissionWorkflow = readSubmissionWorkflow($, formId)
-      restorableIds = submissionWorkflow
-        ? fieldIdsThroughStep(
-            submissionWorkflow.workflow,
-            submissionWorkflow.workflowStep,
-          )
-        : new Set()
-    }
-    return { fields: formSchema.form.form_fields, restorableIds }
   } catch (e) {
     logger.error('Unable to fetch form schema', {
       event: 'formsg-unable-to-fetch-form-schema',
       formId,
       error: e,
     })
-    return null
-  }
-}
-
-export async function processResponsesV4(
-  $: IGlobalVariable,
-  formId: string,
-  responses: FieldResponsesV4,
-  schemaContext?: FormSchemaContext | null,
-): Promise<MappedFormField[]> {
-  const context =
-    schemaContext === undefined
-      ? await loadFormSchemaContext($, formId)
-      : schemaContext
-  const schemaFieldList = context?.fields ?? []
-  const restorableIds = context?.restorableIds ?? null
-  const formSchemaFields: Record<string, FormSchemaField> = {}
-  for (const field of schemaFieldList) {
-    formSchemaFields[field._id] = field
   }
   const mappedResponses: MappedFormField[] = []
   let questionNumber = 0
@@ -465,6 +441,13 @@ export async function processResponsesV4(
         continue
       }
       const originalDate = DateTime.fromFormat(originalDateString, 'dd/MM/yyyy')
+      if (!originalDate.isValid) {
+        logUnsupportedPayload('unparsable_date', {
+          formId,
+          fieldId: key,
+          fieldType: value.fieldType,
+        })
+      }
       const convertedDateString = originalDate.toPlumberFormat('dd MMM yyyy')
       mappedResponses.push({
         _id: key,
@@ -508,15 +491,20 @@ export async function processResponsesV4(
     }
     // catch-all: generic string answers ({ value }) and any future field
     // types, e.g. yes_no, textfield, dropdown, nric
-    // Leaves answer unset for an unknown shape, so the unresolved variable
-    // report can tell it apart from a typed "undefined".
     const rawValue = (value.answer as Partial<StringAnswerV4> | undefined)
       ?.value
+    if (typeof rawValue !== 'string' && typeof rawValue !== 'number') {
+      logUnsupportedPayload('unknown_answer_shape', {
+        formId,
+        fieldId: key,
+        fieldType: value.fieldType,
+      })
+    }
     mappedResponses.push({
       _id: key,
       fieldType: value.fieldType,
       question,
-      ...(rawValue !== undefined && { answer: String(rawValue) }),
+      answer: String((value.answer as StringAnswerV4).value),
     })
     continue
   }
