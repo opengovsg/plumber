@@ -35,26 +35,31 @@ describe('get-apps query', () => {
 })
 
 describe('action catalog', () => {
-  // Analytics names app-actions from this file. The first two columns never hold a comma.
-  it('lists every trigger and action', () => {
-    const catalogPath = join(
-      __dirname,
-      '../../../../backend-analytics/data/action-catalog.csv',
-    )
-    const listed = new Set(
-      fs
-        .readFileSync(catalogPath, 'utf8')
-        .trim()
-        .split('\n')
-        .slice(1)
-        .map((line) => line.split(',').slice(0, 2).join('.')),
-    )
-    const registered = Object.values(exportedApps).flatMap((app) =>
-      [...(app.triggers ?? []), ...(app.actions ?? [])].map(
-        (event) => `${app.key}.${event.key}`,
-      ),
-    )
+  // Analytics cannot import the apps registry, so it reads this file. Run `vitest -u` to rewrite it.
+  it('matches the analytics catalog file', async () => {
+    const catalog = Object.values(exportedApps)
+      .flatMap((app) => [
+        ...(app.triggers ?? []).map((trigger) => ({
+          app_key: app.key,
+          action_key: trigger.key,
+          name: trigger.name,
+          is_trigger: true,
+        })),
+        ...(app.actions ?? []).map((action) => ({
+          app_key: app.key,
+          action_key: action.key,
+          name: action.name,
+          is_trigger: false,
+        })),
+      ])
+      .sort((a, b) =>
+        `${a.app_key}.${a.action_key}`.localeCompare(
+          `${b.app_key}.${b.action_key}`,
+        ),
+      )
 
-    expect(registered.filter((key) => !listed.has(key))).toEqual([])
+    await expect(`${JSON.stringify(catalog, null, 2)}\n`).toMatchFileSnapshot(
+      '../../../../backend-analytics/data/action-catalog.json',
+    )
   })
 })
