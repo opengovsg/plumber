@@ -180,11 +180,11 @@ The archival task writes the silver analytics tables to S3 each night, before it
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
-| Flag           | Meaning                                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`.                                      |
-| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                           |
-| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. |
+| Flag           | Meaning                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`, `flow_stage`, `flow_access`, `flow_ai_suggestion`. |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                         |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.               |
 
 Pass exactly one of `--out` and `--s3`.
 

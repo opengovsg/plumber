@@ -10,6 +10,7 @@ import {
 } from '../agency/agency-mapping'
 import logger from '../logger'
 import type { SilverTable } from '../silver-table'
+import { flowCreatorSql } from './flow-creator'
 
 const dimUserSqlRowSchema = z.object({
   user_id: z.string(),
@@ -32,18 +33,9 @@ export type DimUserRow = DimUserSqlRow & {
 // Only facts about the person. Activity milestones are derived in PostHog views from the fact tables.
 // is_verified: an OTP request creates the user row before the email is proven, and last_login_at
 // only exists from 19 Nov 2024. Creating any pipe, deleted or not, also proves the account.
-// IMPORTANT: a transfer rewrites flows.user_id, so the creator is the old owner of the pipe's
-// first approved transfer.
 const VERIFIED_CREATORS_SQL = `
-  SELECT DISTINCT coalesce(t.old_owner_id, fl.user_id) AS user_id
+  SELECT DISTINCT ${flowCreatorSql('fl')} AS user_id
   FROM flows fl
-  LEFT JOIN LATERAL (
-    SELECT ft.old_owner_id
-    FROM flow_transfers ft
-    WHERE ft.flow_id = fl.id AND ft.status = 'approved'
-    ORDER BY ft.created_at
-    LIMIT 1
-  ) t ON true
 `
 
 type UserWithVerification = BaseUser & { isVerified: boolean }
