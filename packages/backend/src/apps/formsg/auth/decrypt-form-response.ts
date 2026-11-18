@@ -18,9 +18,12 @@ import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v
 import { computeSubmissionTime } from './helpers/compute-submission-time'
 import { processResponsesV3 } from './helpers/process-v3-responses'
 import {
+  type FormSchemaContext,
+  loadFormSchemaContext,
   type MappedFormField,
   processResponsesV4,
 } from './helpers/process-v4-responses'
+import { reportUnresolvedVariables } from './helpers/report-unresolved-variables'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
@@ -139,6 +142,8 @@ export async function decryptFormResponse(
       })
     | null = null
   let attachments: DecryptedAttachments | null = null
+  // Only v4 restores omitted answers, so only v4 can classify a missing one.
+  let v4SchemaContext: FormSchemaContext | null = null
 
   if (version >= 3) {
     const decryptedSubmission = formSgSdk.cryptoV3.decrypt(formSecretKey, data)
@@ -150,10 +155,19 @@ export async function decryptFormResponse(
     }
 
     const rawResponses = decryptedSubmission.responses
-    const mappedResponses = isFieldResponsesV4(rawResponses)
-      ? await processResponsesV4($, data.formId, rawResponses)
-      : // NOTE: V3 will be deprecated soon (tm)
-        await processResponsesV3($, data.formId, rawResponses)
+    let mappedResponses: MappedFormField[]
+    if (isFieldResponsesV4(rawResponses)) {
+      v4SchemaContext = await loadFormSchemaContext($, data.formId)
+      mappedResponses = await processResponsesV4(
+        $,
+        data.formId,
+        rawResponses,
+        v4SchemaContext,
+      )
+    } else {
+      // NOTE: V3 will be deprecated soon (tm)
+      mappedResponses = await processResponsesV3($, data.formId, rawResponses)
+    }
 
     submission = {
       responses: mappedResponses,
@@ -375,6 +389,18 @@ export async function decryptFormResponse(
       // submission time is computed based on whether it's an MRF or SRF form
       submissionTime: computeSubmissionTime(data),
       formId: data.formId, // this is used to check if a new form is connected to the formsg step
+    }
+
+    // A sub-trigger's fields belong to its MRF step, not the trigger step.
+    const isTriggerSubmission =
+      !workflowContent || workflowContent.workflowStep === 0
+    if ($.flow.isActive && v4SchemaContext && isTriggerSubmission) {
+      await reportUnresolvedVariables($, data.formId, {
+        fields: parsedData,
+        schema: v4SchemaContext,
+        rawVerifiedKeys: Object.keys(submission.verified ?? {}),
+        verifiedSubmitterInfo,
+      })
     }
 
     if (Object.keys(verifiedSubmitterInfo).length > 0) {

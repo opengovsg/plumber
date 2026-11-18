@@ -144,7 +144,7 @@ function flattenChildrenAnswer(
 }
 
 // v4 never sends these. They have no answer to restore.
-const NON_ANSWER_FIELD_TYPES = new Set(['statement', 'image', 'section'])
+export const NON_ANSWER_FIELD_TYPES = new Set(['statement', 'image', 'section'])
 
 const EMPTY_ANSWERS: Partial<Record<FieldType, AnswerV4>> = {
   checkbox: { value: [] },
@@ -263,42 +263,67 @@ function withOmittedFields(
   return Object.fromEntries(ordered)
 }
 
-export async function processResponsesV4(
+export type FormSchemaContext = {
+  fields: FormSchemaField[]
+  /**
+   * Fields an MRF delivery has reached. Null means every schema field.
+   */
+  restorableIds: Set<string> | null
+}
+
+/**
+ * @returns null if the schema cannot be fetched.
+ */
+export async function loadFormSchemaContext(
   $: IGlobalVariable,
   formId: string,
-  responses: FieldResponsesV4,
-): Promise<MappedFormField[]> {
-  const formSchemaFields: Record<string, FormSchemaField> = {}
-  let schemaFieldList: FormSchemaField[] = []
-  let restorableIds: Set<string> | null = null
+): Promise<FormSchemaContext | null> {
   try {
     const formSchema = await fetchFormSchema($, formId)
-    if (formSchema?.form?.form_fields) {
-      schemaFieldList = formSchema.form.form_fields
-      const schemaWorkflow = formSchema.form.workflow ?? []
-      // No workflow means the form is single-respondent, even in that mode.
-      const configuredMrf =
-        formSchema.form.responseMode === 'multirespondent' &&
-        schemaWorkflow.length > 0
-      if (configuredMrf) {
-        const submissionWorkflow = readSubmissionWorkflow($, formId)
-        restorableIds = submissionWorkflow
-          ? fieldIdsThroughStep(
-              submissionWorkflow.workflow,
-              submissionWorkflow.workflowStep,
-            )
-          : new Set()
-      }
-      for (const field of schemaFieldList) {
-        formSchemaFields[field._id] = field
-      }
+    if (!formSchema?.form?.form_fields) {
+      return null
     }
+    const schemaWorkflow = formSchema.form.workflow ?? []
+    // No workflow means the form is single-respondent, even in that mode.
+    const configuredMrf =
+      formSchema.form.responseMode === 'multirespondent' &&
+      schemaWorkflow.length > 0
+    let restorableIds: Set<string> | null = null
+    if (configuredMrf) {
+      const submissionWorkflow = readSubmissionWorkflow($, formId)
+      restorableIds = submissionWorkflow
+        ? fieldIdsThroughStep(
+            submissionWorkflow.workflow,
+            submissionWorkflow.workflowStep,
+          )
+        : new Set()
+    }
+    return { fields: formSchema.form.form_fields, restorableIds }
   } catch (e) {
     logger.error('Unable to fetch form schema', {
       event: 'formsg-unable-to-fetch-form-schema',
       formId,
       error: e,
     })
+    return null
+  }
+}
+
+export async function processResponsesV4(
+  $: IGlobalVariable,
+  formId: string,
+  responses: FieldResponsesV4,
+  schemaContext?: FormSchemaContext | null,
+): Promise<MappedFormField[]> {
+  const context =
+    schemaContext === undefined
+      ? await loadFormSchemaContext($, formId)
+      : schemaContext
+  const schemaFieldList = context?.fields ?? []
+  const restorableIds = context?.restorableIds ?? null
+  const formSchemaFields: Record<string, FormSchemaField> = {}
+  for (const field of schemaFieldList) {
+    formSchemaFields[field._id] = field
   }
   const mappedResponses: MappedFormField[] = []
   let questionNumber = 0

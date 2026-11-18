@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => {
     storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
     fetchFormSchema: vi.fn(() => null),
     decryptFormAttachmentsV3OrV4: vi.fn(() => ({})),
+    reportUnresolvedVariables: vi.fn(),
   }
 })
 
@@ -59,6 +60,10 @@ vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
 
 vi.mock('../../auth/decrypt-form-attachments-v3-or-v4', () => ({
   decryptFormAttachmentsV3OrV4: mocks.decryptFormAttachmentsV3OrV4,
+}))
+
+vi.mock('../../auth/helpers/report-unresolved-variables', () => ({
+  reportUnresolvedVariables: mocks.reportUnresolvedVariables,
 }))
 
 const MOCK_WORKFLOW: FormsgPayloadWorkflowContent['workflow'] = [
@@ -558,6 +563,49 @@ describe('decrypt form response - MRF specific', () => {
           { id: COL_2_ID, label: 'Col 2' },
         ])
       })
+    })
+  })
+
+  describe('unresolved variable report', () => {
+    it.each([
+      {
+        name: 'a live single-respondent submission',
+        step: null,
+        active: true,
+        reports: true,
+      },
+      { name: 'the first MRF step', step: 0, active: true, reports: true },
+      { name: 'a later MRF step', step: 1, active: true, reports: false },
+      {
+        name: 'a pipe that is not live',
+        step: null,
+        active: false,
+        reports: false,
+      },
+    ])('reports for $name: $reports', async ({ step, active, reports }) => {
+      if (step !== null) {
+        $.request.body.data.workflowContent = makeWorkflowContent(step)
+      }
+      $.flow.isActive = active
+      mocks.fetchFormSchema.mockResolvedValueOnce(makeExampleV4FormSchema())
+      mocks.cryptoV3Decrypt.mockReturnValueOnce(exampleV4Submission)
+
+      await decryptFormResponse($)
+
+      expect(mocks.reportUnresolvedVariables).toHaveBeenCalledTimes(
+        reports ? 1 : 0,
+      )
+    })
+
+    it('skips v3 payloads, which do not restore omitted answers', async () => {
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: undefined,
+      })
+
+      await decryptFormResponse($)
+
+      expect(mocks.reportUnresolvedVariables).not.toHaveBeenCalled()
     })
   })
 
