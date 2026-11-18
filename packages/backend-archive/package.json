@@ -7,6 +7,7 @@
     "build": "tsc && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "test:unit": "vitest --config ./vitest.config.ts",
+    "test:integration": "vitest --config ./vitest.config.integration.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "format": "oxfmt --check .",
@@ -29,6 +30,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@opengovsg/testcontainers": "0.2.0",
     "@swc/core": "^1.13.5",
     "@types/luxon": "^2.4.0",
     "@types/node": "22.18.0",
@@ -36,6 +38,7 @@
     "hyparquet": "1.31.4",
     "nodemon": "^3.1.14",
     "rimraf": "^4.4.1",
+    "testcontainers": "11.14.0",
     "ts-node": "catalog:",
     "tsconfig-paths": "^4.2.0",
     "typescript": "catalog:",
