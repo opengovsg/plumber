@@ -119,6 +119,8 @@ There are two kinds of skills, distinguished by whether they are listed in the s
 
 In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat). `setup-feature-metrics`: set up a feature's rollout, success metrics, dashboard and alerts in PostHog after the author approves a plan. `write-dogfooding-doc`: write a Notion dogfooding doc from a set of changes, with personas and a scenario plan the developer approves.
 
+In-repo skill `langfuse-prompts`: draft, test and push AI Builder prompt versions through the private `plumber-prompts` repo. See [tools/langfuse/PROMPTS.md](tools/langfuse/PROMPTS.md).
+
 ### Skill overrides
 
 - **caveman**: default to `lite` mode (overrides the skill's own default of `full`).
