@@ -395,7 +395,7 @@ export async function decryptFormResponse(
     const isTriggerSubmission =
       !workflowContent || workflowContent.workflowStep === 0
     if ($.flow.isActive && v4SchemaContext && isTriggerSubmission) {
-      await reportUnresolvedVariables($, data.formId, {
+      await reportUnresolvedVariables($, data.formId, data.submissionId, {
         fields: parsedData,
         schema: v4SchemaContext,
         rawVerifiedKeys: Object.keys(submission.verified ?? {}),

@@ -1,4 +1,5 @@
 import type { IGlobalVariable } from '@plumber/types'
+import get from 'lodash.get'
 
 import logger from '@/helpers/logger'
 import { incrementMetric } from '@/helpers/metrics'
@@ -47,22 +48,25 @@ function referencedPaths(triggerStepId: string, parameters: string[]) {
 
 function classifyField(
   fieldKey: string,
-  property: string | undefined,
+  propertyPath: string[],
   input: ClassifyInput,
 ): UnresolvedVariableCause | null {
   const field = input.fields[fieldKey]
   if (field) {
-    if (!property) {
+    if (propertyPath.length === 0 || get(field, propertyPath) !== undefined) {
       return null
     }
-    const value = field[property]
-    return value === undefined || value === 'undefined'
-      ? 'unsupported_payload'
-      : null
+    // A table has as many rows as the respondent filled.
+    const isTableCell = field.fieldType === 'table' && propertyPath.length > 1
+    return isTableCell ? null : 'unsupported_payload'
   }
 
   const [prefix, parentId] = fieldKey.split('_')
   const isChildSubfield = prefix === CHILDREN_KEY_PREFIX && !!parentId
+  if (isChildSubfield && input.fields[parentId]) {
+    // The parent key appears only when its children answer failed to parse.
+    return 'unsupported_payload'
+  }
   const schemaField = input.schema.fields.find(
     (f) => f._id === (isChildSubfield ? parentId : fieldKey),
   )
@@ -103,10 +107,10 @@ export function classifyUnresolvedVariables(
 ): UnresolvedVariable[] {
   const unresolved: UnresolvedVariable[] = []
   for (const path of referencedPaths(input.triggerStepId, input.parameters)) {
-    const [root, key, property] = path.split('.')
+    const [root, key, ...propertyPath] = path.split('.')
     let cause: UnresolvedVariableCause | null = null
     if (root === 'fields' && key) {
-      cause = classifyField(key, property, input)
+      cause = classifyField(key, propertyPath, input)
     } else if (root === 'verifiedSubmitterInfo' && key) {
       cause = classifyVerifiedKey(key, input)
     }
@@ -126,6 +130,7 @@ export function classifyUnresolvedVariables(
 export async function reportUnresolvedVariables(
   $: IGlobalVariable,
   formId: string,
+  submissionId: string,
   input: Omit<ClassifyInput, 'parameters' | 'triggerStepId' | 'nricFilter'>,
 ): Promise<void> {
   try {
@@ -145,6 +150,8 @@ export async function reportUnresolvedVariables(
         cause,
         path,
         formId,
+        // Lets a monitor count submissions once when FormSG redelivers one.
+        submissionId,
         flowId: $.flow.id,
         stepId: $.step.id,
       })

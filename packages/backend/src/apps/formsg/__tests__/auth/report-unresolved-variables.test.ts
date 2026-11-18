@@ -17,6 +17,8 @@ function classify(
     parameters: [JSON.stringify({ body: references.join(' ') })],
     fields: {
       text: { fieldType: 'textfield', question: 'Name', answer: 'Tan' },
+      addr: { fieldType: 'address', answerArray: ['1', 'Rd', '', '123456'] },
+      tbl: { fieldType: 'table', answerArray: [['a', 'b']] },
     },
     schema: {
       fields: [
@@ -63,14 +65,24 @@ describe('classifyUnresolvedVariables', () => {
       path: 'fields.later.answer',
       cause: null,
     },
+    {
+      name: 'a missing address part',
+      path: 'fields.addr.answerArray.4',
+      cause: 'unsupported_payload',
+    },
+    {
+      name: 'a table row the respondent did not fill',
+      path: 'fields.tbl.answerArray.1.0',
+      cause: null,
+    },
   ])('$name: $cause', ({ path, cause }) => {
     expect(classify([ref(path)])).toEqual(cause ? [cause] : [])
   })
 
-  it('flags an answer stringified to "undefined"', () => {
+  it('flags a child subfield when its children answer failed to parse', () => {
     expect(
-      classify([ref('fields.text.answer')], {
-        fields: { text: { answer: 'undefined' } },
+      classify([ref('fields.childrenbirthrecords_kids_childname_0.answer')], {
+        fields: { kids: { fieldType: 'children', answer: '' } },
       }),
     ).toEqual(['unsupported_payload'])
   })

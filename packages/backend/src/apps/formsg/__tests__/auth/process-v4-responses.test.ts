@@ -107,6 +107,20 @@ describe('processResponsesV4', () => {
       ])
     })
 
+    it('leaves answer unset for a catch-all field with no value', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'new1', title: 'New', fieldType: 'yes_no' }]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        new1: v4Response('yes_no', { choice: 'Yes' } as never),
+      })
+
+      expect(result).toEqual([
+        { _id: 'new1', fieldType: 'yes_no', question: 'New' },
+      ])
+    })
+
     it('maps checkbox fields with answerArray from answer.value', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([

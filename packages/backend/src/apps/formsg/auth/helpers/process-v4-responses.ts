@@ -508,11 +508,15 @@ export async function processResponsesV4(
     }
     // catch-all: generic string answers ({ value }) and any future field
     // types, e.g. yes_no, textfield, dropdown, nric
+    // Leaves answer unset for an unknown shape, so the unresolved variable
+    // report can tell it apart from a typed "undefined".
+    const rawValue = (value.answer as Partial<StringAnswerV4> | undefined)
+      ?.value
     mappedResponses.push({
       _id: key,
       fieldType: value.fieldType,
       question,
-      answer: String((value.answer as StringAnswerV4).value),
+      ...(rawValue !== undefined && { answer: String(rawValue) }),
     })
     continue
   }
