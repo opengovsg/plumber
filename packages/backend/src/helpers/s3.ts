@@ -157,7 +157,7 @@ export const SES_BLOCKED_EXTENSIONS = [
 export const MAX_FILE_SIZE = 1024 * 1024 * 20 // 20MB
 
 function throwAttachmentError(
-  errorType: string,
+  errorType: string | undefined,
   metadata: Record<string, string>,
 ): never {
   switch (errorType) {
@@ -179,6 +179,13 @@ function throwAttachmentError(
         solution: 'Please try again in a few minutes.',
         kind: 'internal',
       })
+    case MALWARE_SCAN_STATUS.FAILED:
+      throw new StepError({
+        name: `Attachment malware scan failed`,
+        solution: 'Please try again in a few minutes.',
+        kind: 'third-party',
+      })
+    // A missing scan tag lands here. It usually means GuardDuty has not scanned the file yet.
     default:
       throw new StepError({
         name: `Attachment malware scan failed`,
@@ -429,11 +436,7 @@ export async function getObjectFromS3Id(
           idData.objectKey,
         )
         if (!isValid) {
-          // No scan-status tag found is treated the same as a failed scan.
-          throwAttachmentError(
-            scanStatus ?? MALWARE_SCAN_STATUS.FAILED,
-            metadata,
-          )
+          throwAttachmentError(scanStatus, metadata)
         }
       }
     }

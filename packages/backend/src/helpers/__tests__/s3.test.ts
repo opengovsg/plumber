@@ -169,7 +169,7 @@ describe('s3', () => {
       [MALWARE_SCAN_STATUS.THREATS_FOUND, 'config'],
       [MALWARE_SCAN_STATUS.UNSUPPORTED, 'config'],
       [MALWARE_SCAN_STATUS.ACCESS_DENIED, 'internal'],
-      [MALWARE_SCAN_STATUS.FAILED, 'internal'],
+      [MALWARE_SCAN_STATUS.FAILED, 'third-party'],
       [undefined, 'internal'],
     ])('throws scan status %s as a %s StepError', async (status, kind) => {
       mocks.s3Client.send.mockResolvedValueOnce({
@@ -181,6 +181,23 @@ describe('s3', () => {
           flowId: 'flow-id',
         }),
       ).rejects.toMatchObject({ kind })
+    })
+
+    it('throws an internal scan failed StepError when the scan tag is missing', async () => {
+      mocks.s3Client.send.mockResolvedValueOnce({
+        TagSet: [{ Key: 'AttachmentType', Value: 'manual' }],
+      })
+
+      await expect(
+        getObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
+          flowId: 'flow-id',
+        }),
+      ).rejects.toMatchObject({
+        kind: 'internal',
+        message: expect.stringContaining(
+          '"name":"Attachment malware scan failed"',
+        ),
+      })
     })
 
     it('throws an internal StepError while the scan is pending', async () => {
