@@ -63,7 +63,9 @@ describe('HttpError retry', () => {
     })
 
     expect(error.retryInfo.retriable).toBe(true)
-    expect(error.retryInfo.retriable && error.retryInfo.delayInMs).toBeGreaterThan(0)
+    expect(
+      error.retryInfo.retriable && error.retryInfo.delayInMs,
+    ).toBeGreaterThan(0)
   })
 
   it('retries a Retry-After of exactly 12 hours', () => {
