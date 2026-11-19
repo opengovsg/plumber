@@ -249,3 +249,35 @@ export async function runWithCoverage(
     }
   }
 }
+
+/**
+ * Writes each planned day, so one failing day does not hold back later ones.
+ *
+ * A failed day stays unmarked for the next run. The run still fails, so the export alert fires.
+ */
+export async function writeEachDay<Item>(
+  job: string,
+  items: Item[],
+  dayOf: (item: Item) => string,
+  write: (item: Item) => Promise<void>,
+): Promise<void> {
+  const failed: string[] = []
+  for (const item of items) {
+    try {
+      await write(item)
+    } catch (err) {
+      failed.push(dayOf(item))
+      logger.error({
+        event: 'analytics.export.day.error',
+        job,
+        day: dayOf(item),
+        err,
+      })
+    }
+  }
+  if (failed.length > 0) {
+    throw new Error(
+      `${job}: ${failed.length} day(s) failed: ${failed.join(', ')}`,
+    )
+  }
+}

@@ -9,6 +9,7 @@ import {
   planDays,
   readJobState,
   runWithCoverage,
+  writeEachDay,
 } from '../day-completion'
 import logger from '../logger'
 
@@ -240,5 +241,34 @@ describe('runWithCoverage', () => {
       event: 'analytics.export.coverage.unavailable',
       job: 'mutation_log',
     })
+  })
+})
+
+describe('writeEachDay', () => {
+  it('writes later days after one fails, then fails the run', async () => {
+    const written: string[] = []
+
+    await expect(
+      writeEachDay(
+        'mutation_log',
+        ['2026-11-08', '2026-11-09', '2026-11-10'],
+        (day) => day,
+        async (day) => {
+          if (day === '2026-11-08') {
+            throw new Error('Logs Insights query timed out')
+          }
+          written.push(day)
+        },
+      ),
+    ).rejects.toThrow('mutation_log: 1 day(s) failed: 2026-11-08')
+
+    expect(written).toEqual(['2026-11-09', '2026-11-10'])
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.export.day.error',
+        job: 'mutation_log',
+        day: '2026-11-08',
+      }),
+    )
   })
 })
