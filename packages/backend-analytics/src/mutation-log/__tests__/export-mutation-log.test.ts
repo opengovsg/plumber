@@ -68,7 +68,8 @@ const noFlows = async () => new Map<string, string>()
 describe('writeMutationLogDays', () => {
   it("fills a deleted step's pipe from its step id", async () => {
     dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
-    const resolveFlowIds = vi.fn(async () => new Map([['s1', 'f1']]))
+    const STEP = 'aaaaaaaa-0000-4000-8000-000000000001'
+    const resolveFlowIds = vi.fn(async () => new Map([[STEP, 'f1']]))
 
     await writeMutationLogDays({
       // The editor's DeleteStepButton payload, which has no pipe id.
@@ -77,8 +78,7 @@ describe('writeMutationLogDays', () => {
           timestamp: '2026-11-04 16:00:01.000',
           query:
             'mutation DeleteStep($input: DeleteStepInput!) { deleteStep(input: $input) { id } }',
-          variables:
-            "{'input':{'ids':['s1'],'flow':{'updatedAt':'2026-11-04T15:59:00.000Z'}}}",
+          variables: `{'input':{'ids':['${STEP.toUpperCase()}'],'flow':{'updatedAt':'2026-11-04T15:59:00.000Z'}}}`,
           userId: 'user-1',
           status: '200',
         },
@@ -88,14 +88,15 @@ describe('writeMutationLogDays', () => {
       days: ['2026-11-05'],
     })
 
-    expect(resolveFlowIds).toHaveBeenCalledWith(['s1'])
+    // An uppercase id is looked up in Postgres's lowercase form and logged as sent.
+    expect(resolveFlowIds).toHaveBeenCalledWith([STEP])
     const file = await readFile(
       path.join(dir, 'bronze/mutation_log/day=2026-11-05/current.parquet'),
     )
     expect(await parquetReadObjects({ file: toArrayBuffer(file) })).toEqual([
       expect.objectContaining({
         operation: 'deleteStep',
-        step_id: 's1',
+        step_id: STEP.toUpperCase(),
         flow_id: 'f1',
       }),
     ])
