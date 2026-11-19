@@ -17,6 +17,7 @@ import { getStepVersion } from '@/helpers/get-step-version'
 import Flow from '@/models/flow'
 import { getTableOperations } from '@/models/tiles/factory'
 import User from '@/models/user'
+import { createTileInTransaction } from '@/services/tiles/create-tile'
 
 import logger from './logger'
 
@@ -180,36 +181,26 @@ export async function createFlowFromTemplate(
       const { name, columns, rowData } = tileTemplateData
 
       try {
-        // Takes the format of { name: colName, position: index }
         const columnsToInsert = columns.map((column, index) => ({
           name: column,
           position: index,
         }))
 
-        // Inside trx so a failed Postgres table creation rolls back the metadata.
-        const table = await user.$relatedQuery('tables', trx).insertGraph({
+        const table = await createTileInTransaction(trx, {
+          user,
           name,
-          role: 'owner',
-          db: 'pg',
           columns: columnsToInsert,
         })
 
         tableId = table.id
 
-        // obtain a map of column name to the column id for easy replacement
         for (const tableColumn of table.columns) {
           columnNameToIdMap[tableColumn.name] = tableColumn.id
         }
 
-        // replace column names with column ids for each row data and create table rows
         const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
 
-        const tableOperations = getTableOperations('pg')
-        await tableOperations.createTable(
-          tableId,
-          table.columns.map((column) => column.id),
-        )
-        await tableOperations.createTableRows({
+        await getTableOperations('pg').createTableRows({
           tableId,
           dataArray: newRowData,
         })
