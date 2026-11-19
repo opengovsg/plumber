@@ -16,6 +16,10 @@ function parseDay(day: string): DateTime {
   return start
 }
 
+export function isSgtDay(day: string): boolean {
+  return DateTime.fromFormat(day, DAY_FORMAT, { zone: ZONE }).isValid
+}
+
 export function sgtDayWindow(day: string): SgtDayWindow {
   const start = parseDay(day)
   return {

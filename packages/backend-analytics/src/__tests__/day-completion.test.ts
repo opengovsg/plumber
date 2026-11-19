@@ -4,8 +4,10 @@ import {
   checkCoverage,
   completionKey,
   type DayCompletion,
+  type JobState,
   parseCompletionKey,
   planDays,
+  readJobState,
   runWithCoverage,
 } from '../day-completion'
 import logger from '../logger'
@@ -22,6 +24,10 @@ const fullCopy = (day: string): DayCompletion => ({
   version: 1,
   full: true,
 })
+const state = (
+  completions: DayCompletion[],
+  startDay: string | null = null,
+): JobState => ({ completions, startDay })
 
 describe('completion keys', () => {
   it('round-trips the day, version and full flag', () => {
@@ -31,6 +37,21 @@ describe('completion keys', () => {
     expect(key).toBe('bronze/_completion/flow_step/day=2026-11-05.v3.full.json')
     expect(parseCompletionKey(key)).toEqual(completion)
     expect(parseCompletionKey(`${key}.0b6f1c2e.tmp`)).toBeNull()
+  })
+
+  it('ignores a key with an impossible date', () => {
+    expect(
+      parseCompletionKey('bronze/_completion/flow_step/day=2026-11-31.v1.json'),
+    ).toBeNull()
+  })
+
+  it('reads the start marker beside the completion files', () => {
+    expect(
+      readJobState([
+        'bronze/_completion/mutation_log/start=2026-11-08.json',
+        'bronze/_completion/mutation_log/day=2026-11-09.v1.json',
+      ]),
+    ).toEqual({ completions: [done('2026-11-09')], startDay: '2026-11-08' })
   })
 })
 
@@ -83,7 +104,16 @@ describe('planDays', () => {
       false,
     ],
   ])('plans %s', (_case, completions, days, first) => {
-    expect(planDays(completions, '2026-11-10', 1)).toEqual({ days, first })
+    expect(planDays(state(completions), '2026-11-10', 1)).toEqual({
+      days,
+      first,
+    })
+  })
+
+  it('still plans a first day whose run failed', () => {
+    expect(
+      planDays(state([done('2026-11-10')], '2026-11-09'), '2026-11-10', 1),
+    ).toEqual({ days: ['2026-11-09'], first: false })
   })
 })
 
@@ -91,7 +121,7 @@ describe('checkCoverage', () => {
   it('reports missing and stale days from the first completion', () => {
     expect(
       checkCoverage(
-        [done('2026-11-06'), done('2026-11-08', 0), done('2026-11-10')],
+        state([done('2026-11-06'), done('2026-11-08', 0), done('2026-11-10')]),
         '2026-11-10',
         1,
       ),
@@ -100,12 +130,15 @@ describe('checkCoverage', () => {
 
   it('looks back 30 days at most, and never before a full copy', () => {
     expect(
-      checkCoverage([done('2026-09-01'), done('2026-11-10')], '2026-11-10', 1)
-        .missing,
+      checkCoverage(
+        state([done('2026-09-01'), done('2026-11-10')]),
+        '2026-11-10',
+        1,
+      ).missing,
     ).toHaveLength(29)
     expect(
       checkCoverage(
-        [done('2026-11-01'), fullCopy('2026-11-09')],
+        state([done('2026-11-01'), fullCopy('2026-11-09')]),
         '2026-11-10',
         1,
       ),
@@ -113,14 +146,23 @@ describe('checkCoverage', () => {
   })
 
   it('reports a full copy from an older version as stale', () => {
-    expect(checkCoverage([fullCopy('2026-11-10')], '2026-11-10', 2)).toEqual({
+    expect(
+      checkCoverage(state([fullCopy('2026-11-10')]), '2026-11-10', 2),
+    ).toEqual({
       missing: [],
       stale: ['2026-11-10'],
     })
   })
 
-  it('reports nothing before the first completion', () => {
-    expect(checkCoverage([], '2026-11-10', 1)).toEqual({
+  it('reports a first day whose run failed', () => {
+    expect(
+      checkCoverage(state([done('2026-11-10')], '2026-11-09'), '2026-11-10', 1)
+        .missing,
+    ).toEqual(['2026-11-09'])
+  })
+
+  it('reports nothing before the job first ran', () => {
+    expect(checkCoverage(state([]), '2026-11-10', 1)).toEqual({
       missing: [],
       stale: [],
     })
@@ -137,25 +179,27 @@ describe('runWithCoverage', () => {
           (entry as { event?: string }).event === 'analytics.export.coverage',
       )
 
+  const options = (listKeys: (prefix: string) => Promise<string[]>) => ({
+    job: 'mutation_log',
+    yesterday: '2026-11-10',
+    version: 1,
+    listKeys,
+    sink: vi.fn(async () => {}),
+  })
+
   it('logs coverage and keeps the error when the export fails', async () => {
     vi.mocked(logger.info).mockClear()
-    const listCompletions = vi
+    const listKeys = vi
       .fn()
-      .mockResolvedValueOnce([done('2026-11-01')])
+      .mockResolvedValueOnce([
+        'bronze/_completion/mutation_log/day=2026-11-01.v1.json',
+      ])
       .mockRejectedValueOnce(new Error('listing failed'))
 
     await expect(
-      runWithCoverage(
-        {
-          job: 'mutation_log',
-          yesterday: '2026-11-10',
-          version: 1,
-          listCompletions,
-        },
-        async () => {
-          throw new Error('Logs Insights query failed')
-        },
-      ),
+      runWithCoverage(options(listKeys), async () => {
+        throw new Error('Logs Insights query failed')
+      }),
     ).rejects.toThrow('Logs Insights query failed')
 
     expect(coverageLog()).toEqual(
@@ -166,5 +210,35 @@ describe('runWithCoverage', () => {
         lastMissing: '2026-11-10',
       }),
     )
+  })
+
+  it('marks the first run before it starts, so a failed first day is still owed', async () => {
+    const opts = options(async () => [])
+
+    await expect(
+      runWithCoverage(opts, async (current) => {
+        expect(current.startDay).toBe('2026-11-10')
+        throw new Error('first run failed')
+      }),
+    ).rejects.toThrow('first run failed')
+
+    expect(opts.sink).toHaveBeenCalledWith(
+      'bronze/_completion/mutation_log/start=2026-11-10.json',
+      expect.any(Buffer),
+    )
+  })
+
+  it('reports unavailable coverage and keeps the error when listing fails', async () => {
+    vi.mocked(logger.error).mockClear()
+    const listKeys = vi.fn().mockRejectedValue(new Error('listing failed'))
+
+    await expect(
+      runWithCoverage(options(listKeys), async () => {}),
+    ).rejects.toThrow('listing failed')
+
+    expect(logger.error).toHaveBeenCalledWith({
+      event: 'analytics.export.coverage.unavailable',
+      job: 'mutation_log',
+    })
   })
 })
