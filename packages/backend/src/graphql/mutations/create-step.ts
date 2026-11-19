@@ -122,25 +122,35 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
     }
 
     // Opportunistically pins any other legacy if-then block.
-    // IMPORTANT: must run before fixupEndStepOnCreateStep. Its rule 2
-    // (tail-extend) only recognizes a block as extendable once it's explicit
-    // V2, so pinning first lets a still-legacy tail-added block see its own
-    // fresh pin and extend, instead of staying unmarked and being skipped.
-    const preInsertSteps = (
-      await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
-    ).filter((flowStep) => flowStep.id !== step.id)
-    await upgradeIfThenV1Blocks(trx, flow, preInsertSteps)
-
+    const upgradeLegacyBlocks = async () => {
+      const preInsertSteps = (
+        await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
+      ).filter((flowStep) => flowStep.id !== step.id)
+      await upgradeIfThenV1Blocks(trx, flow, preInsertSteps)
+    }
     // IMPORTANT: throws (and rolls back the whole creation) on any marker
     // violation.
-    await fixupEndStepOnCreateStep({
-      trx,
-      flow,
-      previousBlockId: input.previousBlockId,
-      previousStep,
-      newStep: step,
-      wantsSelfEndStep,
-    })
+    const fixupEndStep = () =>
+      fixupEndStepOnCreateStep({
+        trx,
+        flow,
+        previousBlockId: input.previousBlockId,
+        previousStep,
+        newStep: step,
+        wantsSelfEndStep,
+      })
+
+    // Rule 1 (add after a block) pins its own block. Upgrading first could
+    // delete a blank previousStep and pin the block to the new step instead.
+    // Rule 2 (tail-extend) only extends an explicit V2 block, so it needs the
+    // upgrade first.
+    if (input.previousBlockId != null) {
+      await fixupEndStep()
+      await upgradeLegacyBlocks()
+    } else {
+      await upgradeLegacyBlocks()
+      await fixupEndStep()
+    }
 
     // NOTE: add flow connection to the flow_connections table
     // only add by default if the user is the owner of the flow

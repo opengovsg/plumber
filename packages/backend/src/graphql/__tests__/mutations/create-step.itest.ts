@@ -731,9 +731,7 @@ describe('createStep endStepId write rules', () => {
     expect((newStep as any).config.endStepId).toBeUndefined()
   })
 
-  // IMPORTANT: known bug. The upgrade pass pins this block to the new step
-  // first, so the add-after-block check rejects the create.
-  it.fails('rule 1: deletes a leftover V1 blank placeholder before pinning a block reached via add-after-block', async () => {
+  it('rule 1: deletes a leftover V1 blank placeholder before pinning a block reached via add-after-block', async () => {
     const [, ifThenA, blankChild] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
       { key: 'ifThen', appKey: 'toolbox', type: 'action' },
