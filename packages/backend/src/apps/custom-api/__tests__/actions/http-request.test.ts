@@ -6,10 +6,13 @@ import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
 import app from '../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import makeRequestAction from '../../actions/http-request'
 import {
   CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
+  INVALID_PROTOCOL_ERROR,
+  INVALID_URL_ERROR,
   RECURSIVE_WEBHOOK_ERROR,
 } from '../../common/constants'
 
@@ -73,6 +76,16 @@ describe('make http request', () => {
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
+
+  async function runAndCatch(): Promise<StepError> {
+    const error = await makeRequestAction.run($).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(StepError)
+    return error as StepError
+  }
+
+  function getName(error: StepError): string {
+    return JSON.parse(error.message).name
+  }
 
   it('invokes the webhook as configured', async () => {
     $.step.parameters.method = 'POST'
@@ -414,7 +427,7 @@ describe('make http request', () => {
     },
   )
 
-  it('should throw step error if request times out', async () => {
+  it('should throw a config step error if request times out', async () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = 'http://test.local/endpoint'
     const testTimeout = 1000
@@ -425,24 +438,113 @@ describe('make http request', () => {
         },
       },
     })
+    const timeoutError = makeHttpError({
+      message: `timeout of ${testTimeout}ms exceeded`,
+      code: 'ECONNABORTED',
+    })
+    mocks.httpRequest.mockRejectedValueOnce(timeoutError)
 
-    // Simulate a long-running request by delaying the response
-    mocks.httpRequest.mockImplementationOnce(
-      () =>
-        new Promise((_, reject) => {
-          const timeoutError = new Error(
-            `HTTP request exceeded timeout of ${testTimeout / 1000}s`,
-          )
-          setTimeout(() => {
-            reject(timeoutError)
-          }, 2000) // 2 seconds delay
-        }),
-    )
+    const error = await runAndCatch()
 
-    await expect(makeRequestAction.run($)).rejects.toThrow(
+    expect(getName(error)).toBe(
       `HTTP request exceeded timeout of ${testTimeout / 1000}s`,
     )
-  }, 5000)
+    expect(error).toMatchObject({ kind: 'config', cause: timeoutError })
+  })
+
+  describe('step error kind', () => {
+    it('marks static secrets in Custom Headers as config on check step', async () => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+      $.step.parameters.customHeaders = [{ key: 'X-API-Key', value: 'abc123' }]
+
+      await expect(makeRequestAction.testRun?.($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('marks invalid JSON data as config', async () => {
+      $.step.parameters.method = 'POST'
+      $.step.parameters.data = '{"abc": 123'
+      $.step.parameters.url = 'http://test.local/endpoint'
+
+      await expect(makeRequestAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('marks duplicate custom header keys as config', async () => {
+      $.step.parameters.customHeaders = [
+        { key: 'test', value: 'value1' },
+        { key: 'test', value: 'value2' },
+      ]
+
+      await expect(makeRequestAction.run($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('marks a URL pointing at Plumber as config', async () => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'https://plumber.gov.sg'
+      mocks.httpRequest.mockRejectedValueOnce(
+        makeHttpError({ message: RECURSIVE_WEBHOOK_ERROR }),
+      )
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe(RECURSIVE_WEBHOOK_ERROR)
+      expect(error.kind).toBe('config')
+    })
+
+    it.each([
+      DISALLOWED_IP_RESOLVED_ERROR,
+      INVALID_URL_ERROR,
+      INVALID_PROTOCOL_ERROR,
+    ])('marks blocked or invalid URL "%s" as config', async (message) => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://1.2.3.4'
+      mocks.httpRequest.mockRejectedValueOnce(makeHttpError({ message }))
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe(message)
+      expect(error.kind).toBe('config')
+    })
+
+    it('marks a redirect without a Location header as config', async () => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+      mocks.httpRequest.mockResolvedValueOnce({ status: 302, headers: {} })
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe('Status code: No location header ')
+      expect(error.kind).toBe('config')
+    })
+
+    it('marks a non-HttpError as internal', async () => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+      mocks.httpRequest.mockRejectedValueOnce(new TypeError('boom'))
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe('Status code: boom ')
+      expect(error.kind).toBe('internal')
+    })
+
+    it('marks a missing response as internal', async () => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+      mocks.httpRequest.mockResolvedValueOnce(undefined)
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe('Status code: No response returned ')
+      expect(error.kind).toBe('internal')
+    })
+  })
 
   describe('tests that data is valid JSON', () => {
     // NOTE: caters for existing users that are sending strings in the data field
