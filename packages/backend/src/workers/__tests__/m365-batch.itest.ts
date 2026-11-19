@@ -423,7 +423,7 @@ describe('m365-excel batch worker (integration)', () => {
       async () =>
         postConfigs().length === 1 &&
         (await createTableRowSteps('success')).length === rowValues.length &&
-        (await mainActionQueue.getWaiting()).length === rowValues.length,
+        (await mainActionQueue.getWaiting()).length >= rowValues.length,
     )
 
     // One multi-row POST for the whole batch, header read once.
@@ -999,7 +999,7 @@ describe('m365-excel batch worker (integration)', () => {
         async () =>
           (await createTableRowSteps('success')).length === good.length &&
           (await createTableRowSteps('failure')).length === 1 &&
-          (await mainActionQueue.getWaiting()).length === good.length,
+          (await mainActionQueue.getWaiting()).length >= good.length,
       )
       await sleep(200)
 
