@@ -235,13 +235,13 @@ Each row records a request, not its outcome. GraphQL returns resolver errors wit
 
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 
-| Flag                 | Meaning                                                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `--from YYYY-MM-DD`  | First Singapore day.                                                                                           |
-| `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                              |
-| `--log-group <name>` | Server log group. Default: `ANALYTICS_REQUEST_LOG_GROUP`.                                                      |
-| `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                           |
-| `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. |
+| Flag                 | Meaning                                                                                                                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--from YYYY-MM-DD`  | First Singapore day.                                                                                                                                                                                                                                                                  |
+| `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                                                                                                                                                                                                     |
+| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`.                                                                                                                                                                                                          |
+| `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                                                                                                                  |
+| `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. Finished days only, since the nightly run treats the latest day file as complete. Reads `ANALYTICS_REQUEST_LOG_GROUP`, so the source matches the bucket's environment. |
 
 The query reads AWS credentials from the default chain. To try one day against production from your own machine:
 
