@@ -1,0 +1,36 @@
+#!/bin/sh
+# Sets up a new worktree with personal gitignored files from the main checkout, dependencies and a code index.
+# IMPORTANT: a non-zero exit makes `git worktree add` exit non-zero, though git keeps the worktree.
+FILES="op-dev.json"
+
+# Only a new checkout has a null previous HEAD. Branch switches pass a real one.
+[ "$1" = "0000000000000000000000000000000000000000" ] || exit 0
+main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+[ "$main" = "$(pwd -P)" ] && exit 0
+
+for f in $FILES; do
+  [ -e "$main/$f" ] && [ ! -e "$f" ] || continue
+  mkdir -p "$(dirname "$f")" && cp -R "$main/$f" "$f"
+done
+
+# Native modules build against the running Node, so install only on the repo's version.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use >/dev/null
+want=$(tr -d '[:space:]' < .nvmrc)
+have=$(node -v 2>/dev/null)
+if [ "${have#v}" != "${want#v}" ]; then
+  echo "post-checkout: needs Node $want from .nvmrc, found ${have:-none}. Run \`nvm install\`, then \`pnpm install\` and \`codegraph init\` in the worktree." >&2
+  exit 1
+fi
+
+# GUI tools that create worktrees may lack these on PATH, so warn instead of failing.
+run() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "post-checkout: $1 not found. Run \`$*\` in the worktree yourself." >&2
+  elif ! "$@"; then
+    echo "post-checkout: \`$*\` failed. Run it in the worktree yourself." >&2
+  fi
+}
+run pnpm install
+run codegraph init
+exit 0
