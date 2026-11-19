@@ -1,0 +1,249 @@
+import type { SilverRow } from '../silver-table'
+import { toResourceId } from '../tables/flow-step'
+
+export interface MutationLogLine {
+  timestamp: string
+  query: string | null
+  variables: string | null
+  userId: string | null
+  status: string | null
+}
+
+export type MutationLogRow = SilverRow & {
+  ts: Date
+  user_id: string | null
+  operation: string | null
+  flow_id: string | null
+  step_id: string | null
+  table_id: string | null
+  connection_id: string | null
+  app_key: string | null
+  action_key: string | null
+  resource_id: string | null
+  http_status: number | null
+}
+
+type Entity = 'flow' | 'step' | 'connection' | 'table'
+
+// A bare input.id names the entity the mutation acts on.
+const INPUT_ID_ENTITY: Record<string, Entity> = {
+  updateFlow: 'flow',
+  updateFlowStatus: 'flow',
+  updateFlowConfig: 'flow',
+  deleteFlow: 'flow',
+  duplicateFlow: 'flow',
+  updateStep: 'step',
+  generateAuthUrl: 'connection',
+  updateConnection: 'connection',
+  replaceConnectionCredentials: 'connection',
+  resetConnection: 'connection',
+  verifyConnection: 'connection',
+  deleteConnection: 'connection',
+  updateTable: 'table',
+  deleteTable: 'table',
+}
+
+const MAX_ID_LENGTH = 64
+
+/**
+ * Returns the first root field, e.g. `updateFlow`.
+ *
+ * The client picks the operation name freely, so the field is the reliable label.
+ */
+export function parseRootField(query: string | null): string | null {
+  if (!query) {
+    return null
+  }
+  const match = /^\s*mutation\b[^{]*\{\s*(?:\w+\s*:\s*)?(\w+)/.exec(query)
+  return match?.[1] ?? null
+}
+
+/**
+ * Restores the JSON that morgan logged with every `"` turned into `'`.
+ *
+ * IMPORTANT: a `'` is a string delimiter only next to JSON structure, because
+ * JSON.stringify writes no spaces. Any other `'` is an apostrophe inside a value.
+ */
+export function restoreLoggedJson(logged: string): string {
+  let out = ''
+  for (let i = 0; i < logged.length; i++) {
+    const ch = logged[i]
+    if (ch === '\\') {
+      const next = logged[i + 1] ?? ''
+      out += next === "'" ? '\\"' : `\\${next}`
+      i++
+      continue
+    }
+    if (ch !== "'") {
+      out += ch
+      continue
+    }
+    const prev = logged[i - 1]
+    const next = logged[i + 1]
+    const isDelimiter =
+      (prev !== undefined && '{[,:'.includes(prev)) ||
+      (next !== undefined && ',}]:'.includes(next))
+    out += isDelimiter ? '"' : "'"
+  }
+  return out
+}
+
+export function parseVariables(
+  logged: string | null,
+): Record<string, unknown> | null {
+  if (!logged || logged === '-' || logged === '[redacted]') {
+    return null
+  }
+  try {
+    const parsed: unknown = JSON.parse(restoreLoggedJson(logged))
+    return isRecord(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const KEY = '[A-Za-z0-9_-]{1,64}'
+
+function matchAll(logged: string, pattern: string): string[] {
+  return [...logged.matchAll(new RegExp(pattern, 'g'))].map((match) => match[1])
+}
+
+/**
+ * Pulls the ids out of variables that restoreLoggedJson cannot parse, such as an apostrophe before a comma.
+ *
+ * Each pattern is anchored to where the editor puts that field, so a value inside `parameters` cannot match.
+ * A field whose place cannot be established stays out.
+ */
+export function recoverVariables(
+  logged: string | null,
+): Record<string, unknown> | null {
+  if (!logged || logged === '-' || logged === '[redacted]') {
+    return null
+  }
+  const capture = (pattern: string) => matchAll(logged, pattern).at(-1)
+  const nested = (id: string | undefined) => (id ? { id } : undefined)
+  // `id` and `key` open the input. `connection`, `flow`, `config` and `appKey` follow `parameters`, in that order.
+  const input = Object.fromEntries(
+    Object.entries({
+      id: capture(`^\\{'input':\\{'id':'(${UUID})'`),
+      key: capture(`^\\{'input':\\{'id':'${UUID}','key':'(${KEY})'`),
+      connection: nested(
+        capture(`'connection':\\{'id':'(${UUID})'\\},'flow':\\{'id':'`),
+      ),
+      flow: nested(
+        capture(
+          `'flow':\\{'id':'(${UUID})'(?:,'updatedAt':'[^']*')?\\},'config':\\{`,
+        ),
+      ),
+      appKey: capture(`'appKey':'(${KEY})'\\}\\}$`),
+    }).filter(([, value]) => value !== undefined),
+  )
+  return { input }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function asId(value: unknown): string | null {
+  return typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= MAX_ID_LENGTH
+    ? value
+    : null
+}
+
+function nestedId(value: unknown): string | null {
+  return isRecord(value) ? asId(value.id) : null
+}
+
+export function extractIds(
+  rootField: string | null,
+  variables: Record<string, unknown> | null,
+): Pick<MutationLogRow, 'flow_id' | 'step_id' | 'table_id' | 'connection_id'> {
+  const input = isRecord(variables?.input) ? variables.input : {}
+  const entity = rootField ? INPUT_ID_ENTITY[rootField] : undefined
+  const inputId = (target: Entity) =>
+    entity === target ? asId(input.id) : null
+  const firstOf = (value: unknown) =>
+    Array.isArray(value) ? asId(value[0]) : null
+
+  return {
+    flow_id: asId(input.flowId) ?? nestedId(input.flow) ?? inputId('flow'),
+    step_id:
+      asId(input.stepId) ??
+      (rootField === 'deleteStep' ? firstOf(input.ids) : null) ??
+      inputId('step'),
+    table_id:
+      asId(input.tableId) ?? asId(variables?.tableId) ?? inputId('table'),
+    connection_id:
+      asId(input.connectionId) ??
+      nestedId(input.connection) ??
+      inputId('connection'),
+  }
+}
+
+/**
+ * Reads the app-action and resource an updateStep call requested, so step history survives later edits.
+ *
+ * IMPORTANT: GraphQL reports a rejected call with HTTP 200, so these are attempted changes. flow_step holds saved state.
+ *
+ * Other parameters can hold user content, so only the catalog's resource argument is read.
+ */
+export function extractStepChoice(
+  rootField: string | null,
+  variables: Record<string, unknown> | null,
+  parameterByAction: Record<string, string>,
+): Pick<MutationLogRow, 'app_key' | 'action_key' | 'resource_id'> {
+  const input = isRecord(variables?.input) ? variables.input : {}
+  if (rootField !== 'updateStep') {
+    return { app_key: null, action_key: null, resource_id: null }
+  }
+  const appKey = asId(input.appKey)
+  const actionKey = asId(input.key)
+  const parameter =
+    appKey && actionKey ? parameterByAction[`${appKey}.${actionKey}`] : null
+  const value =
+    parameter && isRecord(input.parameters) ? input.parameters[parameter] : null
+  return {
+    app_key: appKey,
+    action_key: actionKey,
+    resource_id: toResourceId(appKey, typeof value === 'string' ? value : null),
+  }
+}
+
+// Logs Insights returns @timestamp as `YYYY-MM-DD HH:mm:ss.SSS` in UTC.
+export function parseInsightsTimestamp(timestamp: string): Date | null {
+  const date = new Date(`${timestamp.trim().replace(' ', 'T')}Z`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function parseStatus(status: string | null): number | null {
+  const value = Number(status)
+  return Number.isInteger(value) && value > 0 ? value : null
+}
+
+/**
+ * Keeps the operation, the ids and an updateStep's app-action and resource. No other variable leaves the log.
+ */
+export function toMutationLogRow(
+  line: MutationLogLine,
+  parameterByAction: Record<string, string>,
+): MutationLogRow | null {
+  const ts = parseInsightsTimestamp(line.timestamp)
+  if (!ts) {
+    return null
+  }
+  const operation = parseRootField(line.query)
+  const variables =
+    parseVariables(line.variables) ?? recoverVariables(line.variables)
+  return {
+    ts,
+    user_id: line.userId && line.userId !== '-' ? line.userId : null,
+    operation,
+    ...extractIds(operation, variables),
+    ...extractStepChoice(operation, variables, parameterByAction),
+    http_status: parseStatus(line.status),
+  }
+}
