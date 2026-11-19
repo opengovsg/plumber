@@ -283,6 +283,14 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 pnpm --filter backend-archive run test:unit
 ```
 
+The integration tests run each analytics export query against Postgres 18, migrated with `packages/backend`'s migrations. They need Docker running.
+
+```bash
+pnpm --filter backend-archive run test:integration
+```
+
+A migration that renames or drops a column an export reads fails these tests in CI. Add an `*.itest.ts` for every new export table.
+
 ---
 
 ## Production deployment
