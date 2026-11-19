@@ -88,6 +88,9 @@ const TARGET_STEP_TOOLS = new Set([
  *
  * The usage log redacts parameter values, so the row has no resource.
  */
+// Postgres returns UUIDs in lowercase, so ids match the silver tables and group as one pipe.
+const lowerId = (id: string | undefined) => (id ? id.toLowerCase() : null)
+
 export function toMcpToolRow(
   call: McpToolCall,
   userIdByEmail: Map<string, string>,
@@ -98,10 +101,11 @@ export function toMcpToolRow(
     ts,
     user_id: userEmail ? (userIdByEmail.get(userEmail) ?? null) : null,
     operation: `mcp:${tool}`,
-    flow_id: args.pipe_id ?? null,
-    step_id: TARGET_STEP_TOOLS.has(tool) ? (args.step_id ?? null) : null,
+    // register_connection finds its pipe through the step and never checks pipe_id, so the step lookup fills it.
+    flow_id: tool === 'register_connection' ? null : lowerId(args.pipe_id),
+    step_id: TARGET_STEP_TOOLS.has(tool) ? lowerId(args.step_id) : null,
     table_id: null,
-    connection_id: args.connection_id ?? null,
+    connection_id: lowerId(args.connection_id),
     app_key: isCreateStep ? (args.app_key ?? null) : null,
     action_key: isCreateStep ? (args.action_key ?? null) : null,
     resource_id: null,
