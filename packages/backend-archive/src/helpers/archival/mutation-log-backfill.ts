@@ -8,7 +8,7 @@ interface BackfillOptions {
 /**
  * Guards a manual mutation log backfill that writes to the analytics bucket.
  *
- * IMPORTANT: the nightly run treats the latest day file as complete, so S3 takes finished days only.
+ * IMPORTANT: a completion file marks a day done, so S3 takes finished days only.
  * The source log group stays paired with the bucket's environment.
  */
 export function checkMutationLogBackfill({
