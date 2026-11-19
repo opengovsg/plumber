@@ -7,6 +7,7 @@ import updateFlowTransferStatus from '@/graphql/mutations/update-flow-transfer-s
 import upsertFlowCollaborator from '@/graphql/mutations/upsert-flow-collaborator'
 import { captureServerEvent } from '@/helpers/server-events'
 import Flow from '@/models/flow'
+import FlowCollaborator from '@/models/flow-collaborators'
 import FlowTransfer from '@/models/flow-transfers'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -25,6 +26,20 @@ function sentEvents() {
     event: event.event,
     ...event.properties,
   }))
+}
+
+// Waits until another connection is blocked on a row lock, so the test commits only after the mutation reaches it.
+async function waitForLockWait(): Promise<void> {
+  for (let i = 0; i < 100; i++) {
+    const { rows } = await Flow.knex().raw(
+      "select count(*)::int as n from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock'",
+    )
+    if (rows[0].n > 0) {
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  throw new Error('No query waited on the lock')
 }
 
 describe('flow collaborator events', () => {
@@ -166,6 +181,64 @@ describe('flow collaborator events', () => {
         previous_role: 'editor',
       },
     ])
+  })
+
+  it('sends added when a removal commits while a same-role save runs', async () => {
+    await upsert('viewer')
+    capture.mockClear()
+
+    const removal = await Flow.knex().transaction()
+    await FlowCollaborator.query(removal)
+      .patch({ deletedAt: new Date().toISOString() })
+      .where({ flow_id: flow.id, user_id: collaborator.id })
+    const save = upsert('viewer')
+    await waitForLockWait()
+    await removal.commit()
+    await save
+
+    expect(sentEvents()).toEqual([
+      {
+        event: 'flow_collaborator_added',
+        flow_id: flow.id,
+        collaborator_user_id: collaborator.id,
+        source: 'app',
+        role: 'viewer',
+      },
+    ])
+  })
+
+  it('sends the role a transfer removed when an edit commits during the transfer', async () => {
+    await upsert('viewer')
+    const transfer = await FlowTransfer.query().insert({
+      id: randomUUID(),
+      flowId: flow.id,
+      oldOwnerId: context.currentUser.id,
+      newOwnerId: collaborator.id,
+      status: 'pending',
+    })
+    capture.mockClear()
+
+    const edit = await Flow.knex().transaction()
+    await FlowCollaborator.query(edit)
+      .patch({ role: 'editor' })
+      .where({ flow_id: flow.id, user_id: collaborator.id })
+    context.currentUser = collaborator
+    const approval = updateFlowTransferStatus(
+      null,
+      { input: { id: transfer.id, status: 'approved' } },
+      context,
+    )
+    await waitForLockWait()
+    await edit.commit()
+    await approval
+
+    expect(sentEvents()).toContainEqual({
+      event: 'flow_collaborator_removed',
+      flow_id: flow.id,
+      collaborator_user_id: collaborator.id,
+      source: 'transfer',
+      previous_role: 'editor',
+    })
   })
 
   it('sends nothing when the change rolls back', async () => {

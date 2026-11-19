@@ -98,12 +98,14 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
           throw new BadUserInputError('Error creating user')
         }
 
+        // Locked so a removal cannot commit between this read and the patch, which would restore the row without an event.
         const existingCollaborator = await FlowCollaborator.query(trx)
           .findOne({
             flow_id: flowId,
             user_id: collaboratorUser.id,
           })
           .withSoftDeleted()
+          .forUpdate()
 
         const change = classifyCollaboratorUpsert(existingCollaborator, role)
         if (change) {

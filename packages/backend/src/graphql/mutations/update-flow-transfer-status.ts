@@ -302,12 +302,14 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       // - check if the current owner was once a collaborator
       // - update the role if they were a collaborator
       // - otherwise, create a new record
+      // Locked so the event matches the row this transaction patches.
       const existingCollaborator = await FlowCollaborator.query(trx)
         .findOne({
           flow_id: flow.id,
           user_id: flow.userId,
         })
         .withSoftDeleted()
+        .forUpdate()
 
       const oldOwnerChange = classifyCollaboratorUpsert(
         existingCollaborator,
@@ -346,22 +348,22 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       })
 
       if (isNewOwnerCollaborator) {
-        captureCollaboratorChange({
-          actorUserId: context.currentUser.id,
-          flowId: flow.id,
-          collaboratorUserId: context.currentUser.id,
-          change: {
-            type: 'removed',
-            previousRole: isNewOwnerCollaborator.role,
-          },
-          source: 'transfer',
-          trx,
-        })
-        await FlowCollaborator.deleteCollaborator({
+        // The deleted row holds the role at removal, even if an edit committed after the read above.
+        const removed = await FlowCollaborator.deleteCollaborator({
           userId: context.currentUser.id,
           flowId: flow.id,
           trx,
         })
+        for (const collaborator of removed) {
+          captureCollaboratorChange({
+            actorUserId: context.currentUser.id,
+            flowId: flow.id,
+            collaboratorUserId: context.currentUser.id,
+            change: { type: 'removed', previousRole: collaborator.role },
+            source: 'transfer',
+            trx,
+          })
+        }
       }
 
       // make the current owner a collaborator in the flow
