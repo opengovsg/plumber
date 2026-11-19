@@ -99,27 +99,39 @@ export const MAX_CATCH_UP_DAYS = 7
 const BRONZE_DAY_KEY = /\/day=(\d{4}-\d{2}-\d{2})\/current\.parquet$/
 
 /**
- * Picks the days to extract: every day after the latest file already written, through yesterday.
+ * Picks the days to extract: every missing day in the last MAX_CATCH_UP_DAYS, through yesterday.
  *
- * A night that failed is retried on the next run instead of staying missing.
+ * Checking the whole window, not just days after the latest file, keeps a targeted backfill from hiding earlier gaps.
  */
 export function planMutationLogDays(
   existingKeys: string[],
   yesterday: string,
 ): { days: string[]; skipped: string[] } {
-  const lastDay = existingKeys
-    .map((key) => BRONZE_DAY_KEY.exec(key)?.[1])
-    .filter((day): day is string => day !== undefined)
-    .sort()
-    .at(-1)
-  if (!lastDay || lastDay >= yesterday) {
-    return { days: lastDay ? [] : [yesterday], skipped: [] }
+  const written = new Set(
+    existingKeys
+      .map((key) => BRONZE_DAY_KEY.exec(key)?.[1])
+      .filter((day): day is string => day !== undefined),
+  )
+  if (written.size === 0) {
+    return { days: [yesterday], skipped: [] }
   }
-  const pending = sgtDaysBetween(lastDay, yesterday).slice(1)
-  return {
-    days: pending.slice(-MAX_CATCH_UP_DAYS),
-    skipped: pending.slice(0, -MAX_CATCH_UP_DAYS),
-  }
+  const sorted = [...written].sort()
+  const firstDay = sorted[0]
+  const lastDay = sorted[sorted.length - 1]
+  const windowStart = DateTime.fromFormat(yesterday, DAY_FORMAT, { zone: ZONE })
+    .minus({ days: MAX_CATCH_UP_DAYS - 1 })
+    .toFormat(DAY_FORMAT)
+  // Days before the first file are history, which a manual backfill fills.
+  const from = firstDay > windowStart ? firstDay : windowStart
+  const days =
+    from > yesterday
+      ? []
+      : sgtDaysBetween(from, yesterday).filter((day) => !written.has(day))
+  const skipped =
+    lastDay < windowStart
+      ? sgtDaysBetween(lastDay, windowStart).slice(1, -1)
+      : []
+  return { days, skipped }
 }
 
 export type FetchDayLines = (window: {
