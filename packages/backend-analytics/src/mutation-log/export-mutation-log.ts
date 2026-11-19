@@ -151,8 +151,13 @@ export function logsInsightsFetcher(
 // Maps step ids to their pipe ids. The editor's deleteStep sends step ids without the pipe.
 export type ResolveFlowIds = (stepIds: string[]) => Promise<Map<string, string>>
 
+// The log keeps rejected mutations, so a step id may be any short string. A non-UUID would fail the whole query.
+const STEP_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export function dbFlowIdResolver(db: Knex): ResolveFlowIds {
-  return async (stepIds) => {
+  return async (candidateIds) => {
+    const stepIds = candidateIds.filter((id) => STEP_ID.test(id))
     if (stepIds.length === 0) {
       return new Map()
     }
@@ -221,9 +226,9 @@ export async function writeMutationLogDays({
       rows: rows.length,
       rowsWithoutOperation: rows.filter((row) => !row.operation).length,
       rowsWithoutUser: rows.filter((row) => !row.user_id).length,
-      rowsWithFlowFromStep: parsedRows.filter(
-        (row) => !row.flow_id && row.step_id,
-      ).length,
+      rowsWithFlowFromStep:
+        rows.filter((row) => row.flow_id).length -
+        parsedRows.filter((row) => row.flow_id).length,
       // Ids for these came from recoverVariables. Their step resource is unknown.
       rowsWithUnreadableVariables: lines.filter(
         (line) =>
