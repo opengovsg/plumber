@@ -34,13 +34,24 @@ describe('databricksReconnectConnections', () => {
 })
 
 describe('databricksReconnectDropdownConnections', () => {
-  it('lists the legacy row and the new row when the stored id is present', () => {
+  it('lists the legacy row and the new row while the step is still on the legacy row', () => {
     expect(
       databricksReconnectDropdownConnections([legacy, created], 'legacy-id'),
     ).toEqual([legacy, created])
+  })
+
+  it('omits the legacy row once the step is on the new row', () => {
+    const missingGeneration = { id: 'old-id' }
+
     expect(
       databricksReconnectDropdownConnections([legacy, created], 'new-id'),
-    ).toEqual([legacy, created])
+    ).toEqual([created])
+    expect(
+      databricksReconnectDropdownConnections(
+        [missingGeneration, created],
+        'new-id',
+      ),
+    ).toEqual([created])
   })
 
   it('returns one row when the stored id is absent', () => {
