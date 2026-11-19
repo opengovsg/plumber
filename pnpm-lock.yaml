@@ -666,6 +666,9 @@ importers:
 
   packages/backend-archive:
     dependencies:
+      '@aws-sdk/client-cloudwatch-logs':
+        specifier: 'catalog:'
+        version: 3.1027.0
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
         version: 3.1027.0

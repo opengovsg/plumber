@@ -210,6 +210,32 @@ Delete the folder after the upload:
 rm -rf "$OUT"
 ```
 
+## Extracting the mutation log
+
+The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It runs a CloudWatch Logs Insights query on `ANALYTICS_REQUEST_LOG_GROUP` and writes one Parquet file per Singapore day to `bronze/mutation_log/day=YYYY-MM-DD/current.parquet`. A rerun of a day overwrites that day's file. The latest day file is the watermark: each night writes every missing day after it, through yesterday, so a failed night is retried. It catches up at most 7 days and logs `analytics.mutation_log.catch_up_capped` for older gaps, which need `analytics:mutation-log --from --to`. It writes only when `APP_ENV` is `prod` or `staging`.
+
+Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `connection_id`, `app_key`, `action_key`, `resource_id` and `http_status`. `operation` is the mutation's root field, such as `updateFlow`. `app_key`, `action_key` and `resource_id` are set for `updateStep` only, from the call's `appKey`, `key` and the parameter the action catalog names in `resource_parameter`. A templated resource is null. No other variable is kept, since step parameters can hold user content.
+
+Each row records a request, not its outcome. GraphQL returns resolver errors with HTTP 200, so a rejected `updateStep` looks like a saved one. Treat `app_key`, `action_key` and `resource_id` as attempted changes, and read saved state from `flow_step`. A mutation whose root selection is a fragment spread gets no `operation`. Plumber's frontend never sends one. Morgan logs variables with every `"` turned into `'`, so an apostrophe directly before `,` `:` `}` or `]` makes them unparseable. The ids are then recovered from their fixed place in the editor's `updateStep` input, other ids and `resource_id` stay null, and the day's `rowsWithUnreadableVariables` counts those rows. Lines logged before the request log carried a user id have no `user_id`.
+
+`analytics:mutation-log` runs the same code for a range of days, for example to extract history:
+
+| Flag                 | Meaning                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `--from YYYY-MM-DD`  | First Singapore day.                                                                                           |
+| `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                              |
+| `--log-group <name>` | Server log group. Default: `ANALYTICS_REQUEST_LOG_GROUP`.                                                      |
+| `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                           |
+| `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. |
+
+The query reads AWS credentials from the default chain. To try one day against production from your own machine:
+
+```bash
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out ./mutation-log-out
+```
+
+Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.
+
 ---
 
 ## Counting archived steps by app and action
@@ -312,6 +338,8 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 | `ARCHIVE_MAX_RUNTIME_MS`           | **yes**        | —                        | Wall-clock limit for a single run (ms). Set to `0` to disable.                                                                               |
 | `ARCHIVE_DELETED_FLOWS_ONLY`       | no             | `false`                  | Restrict archival to executions belonging to soft-deleted flows.                                                                             |
 | `ARCHIVE_TEST_RUNS`                | no             | `false`                  | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
+| `ANALYTICS_BUCKET`                 | yes (prod)     | —                        | S3 bucket for the analytics `bronze/` and `silver/` files.                                                                                   |
+| `ANALYTICS_REQUEST_LOG_GROUP`      | yes (prod)     | —                        | Server log group the mutation log is extracted from.                                                                                         |
 
 ---
 
