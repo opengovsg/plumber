@@ -294,7 +294,7 @@ describe('createStepService', () => {
         previousStepId: email.id,
       })
       expect(newIfThen.config.endStepId).toBe(newIfThen.id)
-      expect(newIfThen.parameters).toEqual({ depth: 0 })
+      expect(newIfThen.parameters).toEqual({})
 
       const telegram = await createStepService({
         user,

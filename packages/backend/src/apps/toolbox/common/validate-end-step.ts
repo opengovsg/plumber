@@ -163,7 +163,7 @@ function checkEndStepWrite({
     }
   }
 
-  // Nesting is never legitimate (depth === 0), so no two ranges may overlap.
+  // Nesting is never legitimate, so no two ranges may overlap.
   for (const other of flowSteps) {
     if (other.id === ifThenStepId || !isIfThenV2(other)) {
       continue

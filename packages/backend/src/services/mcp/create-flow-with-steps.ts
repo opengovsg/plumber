@@ -328,7 +328,7 @@ export async function createFlowWithStepsService({
       stepsToInsert.map((step) => {
         let defaults: Record<string, unknown> = {}
         if (isIfThenInput(step)) {
-          defaults = { branchName: `Branch ${++ifThenCount}`, depth: 0 }
+          defaults = { branchName: `Branch ${++ifThenCount}` }
         }
         return {
           version: getStepVersion(step.appKey, step.key ?? undefined),

@@ -23,7 +23,7 @@ export interface ConditionalExecutionRecord {
 
 /**
  * The if-then V2 block whose range `(ifThen, endStep]` contains `step`, or null
- * if none does. Blocks are depth-0 and pairwise disjoint, so at most one match
+ * if none does. Blocks are pairwise disjoint, so at most one match
  * is possible.
  */
 export function findEnclosingIfThenV2Block(

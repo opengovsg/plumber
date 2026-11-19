@@ -28,7 +28,7 @@ const mocks = vi.hoisted(() => ({
       id: 'step2',
       appKey: 'toolbox',
       key: 'ifThen',
-      parameters: { depth: '1' },
+      parameters: {},
       position: 2,
     },
     {
@@ -41,7 +41,7 @@ const mocks = vi.hoisted(() => ({
       id: 'step4',
       appKey: 'toolbox',
       key: 'ifThen',
-      parameters: { depth: '1' },
+      parameters: {},
       position: 4,
     },
     {
@@ -118,7 +118,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
         id: 'step2',
         appKey: 'toolbox',
         key: 'ifThen',
-        parameters: { depth: '1' },
+        parameters: {},
         position: 2,
       },
       {
@@ -131,7 +131,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
         id: 'step4',
         appKey: 'toolbox',
         key: 'ifThen',
-        parameters: { depth: '1' },
+        parameters: {},
         position: 3,
       },
       {
@@ -144,7 +144,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
         id: 'step6',
         appKey: 'toolbox',
         key: 'ifThen',
-        parameters: { depth: '1' },
+        parameters: {},
         position: 4,
       },
       {
@@ -182,7 +182,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
           id: 'step2',
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { depth: '1' },
+          parameters: {},
           position: 2,
         },
         {
@@ -202,7 +202,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
           id: 'step5',
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { depth: '1' },
+          parameters: {},
           position: 5,
         },
         {
@@ -246,7 +246,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
           id: 'step3',
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { depth: '1' },
+          parameters: {},
           position: 3,
         },
         {
@@ -259,7 +259,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
           id: 'step5',
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { depth: '1' },
+          parameters: {},
           position: 5,
         },
         {
@@ -297,7 +297,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
         id: 'step2',
         appKey: 'toolbox',
         key: 'ifThen',
-        parameters: { depth: '1' },
+        parameters: {},
         config: step2Config,
         position: 2,
       },
@@ -312,7 +312,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
         id: 'step4',
         appKey: 'toolbox',
         key: 'ifThen',
-        parameters: { depth: '1' },
+        parameters: {},
         config: step4Config,
         position: 4,
       },
@@ -621,7 +621,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 3,
           config: { ...rejection, endStepId: 'blk-last' },
-          parameters: { depth: 0 },
+          parameters: {},
         },
         endStep,
       ])
@@ -666,7 +666,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 3,
           config: { ...rejection, endStepId: 'blk-last' },
-          parameters: { depth: 0 },
+          parameters: {},
         },
         endStep,
         {
@@ -699,7 +699,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 2,
           config: {},
-          parameters: { depth: 0 },
+          parameters: {},
         },
         {
           id: 'a',
@@ -714,7 +714,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 4,
           config: {},
-          parameters: { depth: 0 },
+          parameters: {},
         },
         {
           id: 'c',
@@ -823,7 +823,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 2,
           config: {},
-          parameters: { depth: 0 },
+          parameters: {},
         },
         {
           id: 'a',
@@ -846,7 +846,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 5,
           config: {},
-          parameters: { depth: 0 },
+          parameters: {},
         },
         {
           id: 'c',
@@ -1018,7 +1018,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           key: 'ifThen',
           position: 2,
           config: { ...rejection, endStepId: 'blk-last' },
-          parameters: { depth: 0 },
+          parameters: {},
         },
         {
           id: 'oci',
