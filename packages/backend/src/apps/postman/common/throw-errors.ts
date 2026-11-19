@@ -85,7 +85,9 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'ATTACHMENT-SIZE-EXCEEDED'
   }
 
-  // The SES client fetches credentials from STS, so STS errors must retry like SES errors.
+  // Every AWS error response (SES, or STS when fetching credentials) is a ServiceException.
+  // Other errors never got a response from AWS, e.g. network failures and timeouts.
+  // The AWS SDK already retries network errors, so they are not INTERMITTENT-ERROR.
   if (!(error instanceof ServiceException)) {
     return 'ERROR'
   }
@@ -101,7 +103,7 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'RATE-LIMITED'
   }
 
-  // Server errors — 500+ are transient, worth retrying
+  // Server errors are transient, worth retrying.
   if (httpStatus !== undefined && httpStatus >= 500) {
     return 'INTERMITTENT-ERROR'
   }
@@ -117,7 +119,7 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
 }
 
 // Network failures and timeouts never reach AWS, so the SDK does not wrap them in its exception class.
-function isSesNetworkError(error: unknown): boolean {
+function isAwsNetworkError(error: unknown): boolean {
   if (!(error instanceof Error) || error instanceof ServiceException) {
     return false
   }
@@ -128,7 +130,7 @@ function isSesNetworkError(error: unknown): boolean {
 // Postman 4xx and SES service errors reaching the catch-all stem from Plumber's API key or SES setup.
 function getCatchAllKind(error: unknown): StepErrorKind {
   if (!(error instanceof HttpError)) {
-    return isSesNetworkError(error) ? 'third-party' : 'internal'
+    return isAwsNetworkError(error) ? 'third-party' : 'internal'
   }
   const status = error.response?.status
   if (status === undefined) {
@@ -269,12 +271,13 @@ export function throwPostmanStepError({
         error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'third-party',
       })
     case 'ERROR':
     default:
-      // socket hang up is a Cloudflare/Postman-specific issue; only retry
-      // if the error came from the Postman path (not SES).
-      if (errorMessage === 'socket hang up') {
+      // Only Postman's Cloudflare resets retry. SES may accept an email before
+      // resetting, so a retry could send it twice.
+      if (httpError && errorMessage === 'socket hang up') {
         throw new RetriableError({
           error: `Retrying ${errorMessage}`,
           delayInMs: 'default',

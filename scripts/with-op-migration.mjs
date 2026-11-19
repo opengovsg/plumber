@@ -7,7 +7,7 @@ import { createInterface } from 'node:readline/promises'
  * Runs a knex command with variables from a 1Password Environment injected.
  *
  * VERY HIGH RISK: this can point knex at a real database, including production.
- * Unlike with-op-env.mjs, it never accepts a shortcut for picking the
+ * Unlike with-human-dev-env.mjs, it never accepts a shortcut for picking the
  * environment. It always prompts for a menu choice, so the target database
  * is never chosen by a script or a stale flag.
  * See README.md for the one-time setup.
@@ -42,7 +42,7 @@ function readAccountName() {
   } catch {
     fail(
       `no ${CONFIG_FILE} at ${configPath}.\n` +
-        'Follow the 1Password setup steps in README.md first (with-op-env.mjs uses the same file).',
+        'Follow the 1Password setup steps in README.md first (with-human-dev-env.mjs uses the same file).',
     )
   }
 

@@ -11,22 +11,38 @@
 export function parseRetryAfterToMs(
   rawHeaderValue: string | null | undefined,
 ): number | null {
+  const retryAfter = parseRetryAfter(rawHeaderValue)
+  return retryAfter === null ? null : getRetryAfterDelayInMs(retryAfter)
+}
+
+// A date stays absolute, so its delay can be measured later.
+export type RetryAfter = { delayInMs: number } | { retryAtMs: number }
+
+export function parseRetryAfter(
+  rawHeaderValue: string | null | undefined,
+): RetryAfter | null {
   if (!rawHeaderValue) {
     return null
   }
 
   // Try parsing as seconds.
-  let retryAfter = Number(rawHeaderValue)
-  if (!isNaN(retryAfter)) {
-    return retryAfter >= 0 ? retryAfter * 1000 : null
+  const retryAfterSeconds = Number(rawHeaderValue)
+  if (!isNaN(retryAfterSeconds)) {
+    return retryAfterSeconds >= 0
+      ? { delayInMs: retryAfterSeconds * 1000 }
+      : null
   }
 
   // Try parsing as date.
-  retryAfter = new Date(rawHeaderValue).getTime()
-  if (isNaN(retryAfter)) {
-    return null
+  const retryAtMs = new Date(rawHeaderValue).getTime()
+  return isNaN(retryAtMs) ? null : { retryAtMs }
+}
+
+export function getRetryAfterDelayInMs(retryAfter: RetryAfter): number | null {
+  if ('delayInMs' in retryAfter) {
+    return retryAfter.delayInMs
   }
 
-  retryAfter = retryAfter - Date.now()
-  return retryAfter >= 0 ? retryAfter : null
+  const delayInMs = retryAfter.retryAtMs - Date.now()
+  return delayInMs >= 0 ? delayInMs : null
 }

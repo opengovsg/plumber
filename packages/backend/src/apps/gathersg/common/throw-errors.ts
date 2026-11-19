@@ -1,6 +1,6 @@
 import type { StepErrorKind } from '@plumber/types'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError } from '@/errors/http'
 import StepError from '@/errors/step'
 
 import { GatherSGError } from './types'
@@ -22,8 +22,7 @@ function getCatchAllKind(
     return 'config'
   }
   if (status === undefined) {
-    // A request that never left Plumber (e.g. a beforeRequest throw) has no network error code.
-    return error.code ? 'third-party' : 'internal'
+    return isNetworkError(error) ? 'third-party' : 'internal'
   }
   if (status >= 500) {
     return 'third-party'

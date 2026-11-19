@@ -28,6 +28,7 @@ const handle5xxErrors: ThrowingHandler = (_, error): never => {
     error: `Retrying HTTP ${status} from Postman SMS`,
     delayType: 'step',
     delayInMs: 'default',
+    kind: 'third-party',
   })
 }
 
@@ -61,6 +62,7 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
           // the throughput that the campaign supports, so we throw step error here instead of group
           delayType: 'step',
           delayInMs: 'default',
+          kind: 'third-party',
         })
       }
 

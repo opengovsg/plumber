@@ -1,0 +1,6 @@
+{
+  "exclude_directories": ["__tests__", "__mocks__", "packages/e2e"],
+  "exclude_filenames": ["*.test.ts", "*.test.tsx", "*.itest.ts", "*.spec.ts"],
+  "output_limit": 25,
+  "score_cap": 70
+}

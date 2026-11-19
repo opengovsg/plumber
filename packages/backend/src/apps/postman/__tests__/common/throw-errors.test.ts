@@ -190,12 +190,24 @@ describe('throwPostmanStepError', () => {
         makeHttpError({ code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND' }),
       ],
       [
-        'an SES TimeoutError',
+        'an SES DNS failure',
+        makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
+      ],
+      [
+        'an SES refused connection',
+        makeNamedError('Error', 'connect ECONNREFUSED', 'ECONNREFUSED'),
+      ],
+      [
+        'an SES reset connection',
         makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
       ],
       [
-        'an SES DNS failure',
-        makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
+        'an SES socket hang up',
+        makeNamedError('TimeoutError', 'socket hang up', 'ECONNRESET'),
+      ],
+      [
+        'an SES socket timeout without a code',
+        makeNamedError('TimeoutError', 'the request socket timed out'),
       ],
     ])('tags %s as third-party and keeps the cause', (_label, error) => {
       const thrown = catchThrown({ status: 'ERROR', error: error as HttpError })
@@ -273,14 +285,38 @@ describe('throwPostmanStepError', () => {
   })
 
   it.each([
+    ['a Postman 502', makeHttpError({ status: 502 })],
+    [
+      'an SES 500',
+      new InternalServiceErrorException({
+        message: 'SES error',
+        $metadata: { httpStatusCode: 500 },
+      }),
+    ],
+  ])(
+    'retries INTERMITTENT-ERROR from %s with a third-party kind',
+    (_label, error) => {
+      const thrown = catchThrown({
+        status: 'INTERMITTENT-ERROR',
+        error: error as HttpError,
+      })
+
+      expect(thrown).toBeInstanceOf(RetriableError)
+      expect(thrown).toMatchObject({ delayType: 'step', kind: 'third-party' })
+    },
+  )
+
+  it.each([
     ['RATE-LIMITED' as const, makeHttpError({ status: 429 })],
-    ['INTERMITTENT-ERROR' as const, makeHttpError({ status: 502 })],
     [
       'ERROR' as const,
       makeHttpError({ code: 'ECONNRESET', message: 'socket hang up' }),
     ],
-  ])('keeps %s as a RetriableError', (status, error) => {
-    expect(catchThrown({ status, error })).toBeInstanceOf(RetriableError)
+  ])('keeps %s as a RetriableError without kind', (status, error) => {
+    const thrown = catchThrown({ status, error })
+
+    expect(thrown).toBeInstanceOf(RetriableError)
+    expect((thrown as RetriableError).kind).toBeUndefined()
   })
 })
 
@@ -315,12 +351,15 @@ describe('getSesErrorStatus', () => {
     expect(getSesErrorStatus(error)).toBe('RATE-LIMITED')
   })
 
-  it('returns INTERMITTENT-ERROR for an SES 500', () => {
-    const error = new InternalServiceErrorException({
-      message: 'Internal failure',
-      $metadata: { httpStatusCode: 500 },
-    })
-
+  it.each([
+    [
+      'an SES 500',
+      new InternalServiceErrorException({
+        message: 'Internal failure',
+        $metadata: { httpStatusCode: 500 },
+      }),
+    ],
+  ])('returns INTERMITTENT-ERROR for %s', (_label, error) => {
     expect(getSesErrorStatus(error)).toBe('INTERMITTENT-ERROR')
   })
 
@@ -386,6 +425,46 @@ describe('getSesErrorStatus', () => {
         $metadata: { httpStatusCode: 429 },
       }),
     ],
+    [
+      'an SES reply with a network code',
+      Object.assign(makeMessageRejected('read ECONNRESET'), {
+        code: 'ECONNRESET',
+      }),
+    ],
+    [
+      'a DNS failure',
+      makeNamedError('Error', 'getaddrinfo ENOTFOUND', 'ENOTFOUND'),
+    ],
+    [
+      'a temporary DNS failure',
+      makeNamedError('Error', 'getaddrinfo EAI_AGAIN', 'EAI_AGAIN'),
+    ],
+    [
+      'a refused connection',
+      makeNamedError('Error', 'connect ECONNREFUSED', 'ECONNREFUSED'),
+    ],
+    [
+      'an unreachable host',
+      makeNamedError('Error', 'connect EHOSTUNREACH', 'EHOSTUNREACH'),
+    ],
+    [
+      'an unreachable network',
+      makeNamedError('Error', 'connect ENETUNREACH', 'ENETUNREACH'),
+    ],
+    [
+      'a reset connection',
+      makeNamedError('TimeoutError', 'read ECONNRESET', 'ECONNRESET'),
+    ],
+    ['a broken pipe', makeNamedError('TimeoutError', 'write EPIPE', 'EPIPE')],
+    [
+      'a timed out connection',
+      makeNamedError('TimeoutError', 'connect ETIMEDOUT', 'ETIMEDOUT'),
+    ],
+    [
+      'a socket timeout without a code',
+      makeNamedError('TimeoutError', 'the request socket timed out'),
+    ],
+    ['an unknown error without a code', new Error('SES error')],
     ['a non-Error', 'boom'],
   ])('returns ERROR for %s', (_label, error) => {
     expect(getSesErrorStatus(error)).toBe('ERROR')

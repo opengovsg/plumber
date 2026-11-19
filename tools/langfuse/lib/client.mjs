@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT_MS = 30_000
 /**
  * The one Langfuse client for every script in tools/langfuse.
  * Same credential path as packages/backend/src/helpers/langfuse.ts.
- * Secrets are injected by scripts/with-op-env.mjs, not read from a .env file.
+ * Secrets are injected by scripts/with-human-dev-env.mjs, not read from a .env file.
  */
 export function buildLangfuseClient(
   project,

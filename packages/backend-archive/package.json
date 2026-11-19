@@ -1,6 +1,6 @@
 {
   "name": "backend-archive",
-  "version": "1.104.0",
+  "version": "1.106.0",
   "private": true,
   "scripts": {
     "prebuild": "rimraf ./dist",
@@ -13,9 +13,9 @@
     "format:fix": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
     "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
+    "archive:backfill-local": "node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
     "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
-    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:rehydrate-local": "node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
