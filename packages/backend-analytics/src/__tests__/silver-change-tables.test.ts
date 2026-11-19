@@ -171,7 +171,9 @@ describe('writeSilverChangeTables', () => {
         yesterday: '2026-11-08',
       })
 
-    await expect(write()).rejects.toThrow('connection lost')
+    await expect(write()).rejects.toThrow(
+      'flow_step: 1 day(s) failed: 2026-11-08',
+    )
     expect(await listKeys('bronze/_completion/flow_step/')).toEqual([
       'bronze/_completion/flow_step/start=2026-11-08.json',
     ])

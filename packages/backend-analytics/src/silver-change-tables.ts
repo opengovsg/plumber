@@ -11,6 +11,7 @@ import {
   markDayComplete,
   planDays,
   runWithCoverage,
+  writeEachDay,
 } from './day-completion'
 import type { SilverSink } from './export-silver-tables'
 import logger from './logger'
@@ -208,10 +209,12 @@ export async function writeSilverChangeTables({
         sink,
       },
       async (state) => {
-        const files = planChangeFiles(state, yesterday, full, table.version)
-        for (const file of files) {
-          await writeChangeDay({ db, sink, table, file, source })
-        }
+        await writeEachDay(
+          table.name,
+          planChangeFiles(state, yesterday, full, table.version),
+          (file) => file.day,
+          (file) => writeChangeDay({ db, sink, table, file, source }),
+        )
       },
     )
   }
