@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -48,6 +48,7 @@ describe('exportSilverTables', () => {
         appEnv,
         bucket: 'analytics-bucket',
         tables: [testTable],
+        changeTables: [],
       })
 
       expect(testTable.fetchRows).not.toHaveBeenCalled()
@@ -66,6 +67,7 @@ describe('exportSilverTables', () => {
         appEnv,
         bucket: 'analytics-bucket',
         tables: [testTable],
+        changeTables: [],
       })
 
       expect(s3.send).toHaveBeenCalledTimes(1)
@@ -89,6 +91,7 @@ describe('exportSilverTables', () => {
         appEnv: 'prod',
         bucket: undefined,
         tables: [testTable],
+        changeTables: [],
       }),
     ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
     expect(s3.send).not.toHaveBeenCalled()
@@ -109,6 +112,30 @@ describe('writeSilverTables to a local folder', () => {
         path.join(dir, 'silver/test_table/current.parquet'),
       )
       expect(body.subarray(0, 4).toString()).toBe('PAR1')
+      expect(await readdir(path.join(dir, 'silver/test_table'))).toEqual([
+        'current.parquet',
+      ])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('localDirSink', () => {
+  it('publishes one complete file when two writers share a key', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    try {
+      const sink = localDirSink(dir)
+      const first = Buffer.alloc(4_000_000, 'a')
+      const second = Buffer.alloc(4_000_000, 'b')
+      await Promise.all([
+        sink('k/day.parquet', first),
+        sink('k/day.parquet', second),
+      ])
+
+      const body = await readFile(path.join(dir, 'k/day.parquet'))
+      expect([first, second].some((written) => written.equals(body))).toBe(true)
+      expect(await readdir(path.join(dir, 'k'))).toEqual(['day.parquet'])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -116,10 +143,15 @@ describe('writeSilverTables to a local folder', () => {
 })
 
 describe('selectSilverTables', () => {
-  it('returns the named tables', () => {
-    expect(
-      selectSilverTables(['dim_user', 'flow_transfer']).map((t) => t.name),
-    ).toEqual(['flow_transfer', 'dim_user'])
+  it('splits the named tables into rebuilt and change tables', () => {
+    const { tables, changeTables } = selectSilverTables([
+      'flow_step',
+      'dim_user',
+      'flow_transfer',
+    ])
+
+    expect(tables.map((t) => t.name)).toEqual(['flow_transfer', 'dim_user'])
+    expect(changeTables.map((t) => t.name)).toEqual(['flow_step'])
   })
 
   it('rejects an unknown table name', () => {
