@@ -52,9 +52,17 @@ describe('summarizeFlowEdits', () => {
     ])
   })
 
-  it('leaves out rows that cannot say who changed which pipe', () => {
+  it('leaves out rows that cannot say who changed which pipe, and mutations that do not change it', () => {
     expect(
       summarizeFlowEdits('2026-11-05', [
+        mutation({
+          ts: '2026-11-05T01:00:00.000Z',
+          operation: 'duplicateFlow',
+        }),
+        mutation({
+          ts: '2026-11-05T01:00:00.000Z',
+          operation: 'bulkRetryExecutions',
+        }),
         mutation({ ts: '2026-11-05T01:00:00.000Z', flow_id: null }),
         mutation({ ts: '2026-11-05T01:00:00.000Z', user_id: null }),
         mutation({ ts: '2026-11-05T01:00:00.000Z', operation: null }),
