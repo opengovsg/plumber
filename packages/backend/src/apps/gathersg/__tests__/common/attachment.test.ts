@@ -6,6 +6,11 @@ import { processAttachments } from '../../common/attachment'
 
 const mocks = vi.hoisted(() => ({
   putObject: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.logError, warn: vi.fn(), info: vi.fn() },
 }))
 
 vi.mock('@/helpers/s3', async (importOriginal) => {
@@ -78,7 +83,6 @@ describe('processAttachments', () => {
   })
 
   it.each([
-    ['a 404', { status: 404 }],
     ['a 504', { status: 504, data: '<html>Gateway Timeout</html>' }],
     ['a network error', { code: 'ETIMEDOUT', message: 'timeout' }],
   ])('tags %s download as third-party', async (_label, options) => {
@@ -90,6 +94,33 @@ describe('processAttachments', () => {
     ).rejects.toMatchObject({ kind: 'third-party', cause: error })
   })
 
+  it.each([
+    ['a 400', { status: 400 }],
+    ['a 404', { status: 404 }],
+  ])(
+    'tags %s download as internal and keeps the cause',
+    async (_label, options) => {
+      const error = makeHttpError(options)
+      httpGet.mockRejectedValueOnce(error)
+
+      await expect(
+        processAttachments($, MOCK_CASE_UUID, MOCK_ATTACHMENTS),
+      ).rejects.toMatchObject({ kind: 'internal', cause: error })
+    },
+  )
+
+  it.each([
+    ['an axios request error', { code: 'ERR_CANCELED', message: 'canceled' }],
+    ['a beforeRequest failure', { message: 'Missing API key' }],
+  ])('tags %s with no response as internal', async (_label, options) => {
+    const error = makeHttpError(options)
+    httpGet.mockRejectedValueOnce(error)
+
+    await expect(
+      processAttachments($, MOCK_CASE_UUID, MOCK_ATTACHMENTS),
+    ).rejects.toMatchObject({ kind: 'internal', cause: error })
+  })
+
   it('tags an S3 upload failure as internal', async () => {
     mocks.putObject.mockRejectedValueOnce(new Error('S3 down'))
 
@@ -99,15 +130,25 @@ describe('processAttachments', () => {
       kind: 'internal',
       message: expect.stringContaining('Failed to process attachment'),
     })
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to process attachment'),
+      {
+        event: 'gathersg-process-attachment-failed',
+        errorName: 'Error',
+        errorMessage: 'S3 down',
+        caseUuid: MOCK_CASE_UUID,
+        attachmentUuid: expect.any(String),
+      },
+    )
   })
 
-  it('tags a malformed attachments payload as third-party', async () => {
+  it('tags a malformed attachments payload as internal', async () => {
     await expect(
       processAttachments($, MOCK_CASE_UUID, {
         'attach-uuid-1': { name: '' },
       }),
     ).rejects.toMatchObject({
-      kind: 'third-party',
+      kind: 'internal',
       message: expect.stringContaining('Invalid attachments'),
     })
   })

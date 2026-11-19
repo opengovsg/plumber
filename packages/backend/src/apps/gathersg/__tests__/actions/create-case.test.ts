@@ -1,5 +1,7 @@
 import type { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import app from '../../..'
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
@@ -80,11 +82,11 @@ describe('create case', () => {
     })
   })
 
-  it('tags an unexpected create response as third-party', async () => {
+  it('tags an unexpected create response as internal', async () => {
     httpPost.mockResolvedValueOnce({ data: { data: { uuid: 'case-uuid-1' } } })
 
     await expect(createCaseAction.run($)).rejects.toMatchObject({
-      kind: 'third-party',
+      kind: 'internal',
       message: expect.stringContaining('"name":"data:'),
     })
   })
@@ -116,6 +118,21 @@ describe('create case', () => {
 
     await expect(createCaseAction.run($)).rejects.toMatchObject({
       kind: 'third-party',
+    })
+  })
+
+  it('logs only the error name and message when the request fails', async () => {
+    const logError = vi.spyOn(logger, 'error').mockReturnValue(logger)
+    onTestFinished(() => logError.mockRestore())
+    httpPost.mockRejectedValueOnce(makeHttpError({ status: 504 }))
+
+    await expect(createCaseAction.run($)).rejects.toThrow()
+
+    expect(logError).toHaveBeenCalledWith('Failed to create case on GatherSG', {
+      event: 'gathersg-create-case-failed',
+      errorName: 'HttpError',
+      errorMessage: expect.any(String),
+      stepId: 'step-id-123',
     })
   })
 
