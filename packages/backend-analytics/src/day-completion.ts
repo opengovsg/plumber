@@ -1,6 +1,6 @@
 import type { SilverSink } from './export-silver-tables'
 import logger from './logger'
-import { addSgtDays, sgtDaysAfter } from './sgt-day'
+import { addSgtDays, isSgtDay, sgtDaysAfter } from './sgt-day'
 import { BRONZE_PREFIX } from './silver-table'
 
 // Under bronze because the archival role can write only bronze/ and silver/, and PostHog reads only silver/.
@@ -18,6 +18,12 @@ export interface DayCompletion {
   full: boolean
 }
 
+export interface JobState {
+  completions: DayCompletion[]
+  // The day the job first ran, so a first run that fails is still owed.
+  startDay: string | null
+}
+
 // The version and full flag sit in the key, so planning needs one listing and no reads.
 export function completionKey(
   job: string,
@@ -26,18 +32,37 @@ export function completionKey(
   return `${COMPLETION_PREFIX}${job}/day=${day}.v${version}${full ? '.full' : ''}.json`
 }
 
+export function startKey(job: string, day: string): string {
+  return `${COMPLETION_PREFIX}${job}/start=${day}.json`
+}
+
 export function completionPrefix(job: string): string {
   return `${COMPLETION_PREFIX}${job}/`
 }
 
 const COMPLETION_KEY = /\/day=(\d{4}-\d{2}-\d{2})\.v(\d+)(\.full)?\.json$/
+const START_KEY = /\/start=(\d{4}-\d{2}-\d{2})\.json$/
 
+// A key with an impossible date is ignored, so it cannot break planning.
 export function parseCompletionKey(key: string): DayCompletion | null {
   const match = COMPLETION_KEY.exec(key)
-  if (!match) {
+  if (!match || !isSgtDay(match[1])) {
     return null
   }
   return { day: match[1], version: Number(match[2]), full: Boolean(match[3]) }
+}
+
+export function readJobState(keys: string[]): JobState {
+  const startDays = keys
+    .map((key) => START_KEY.exec(key)?.[1])
+    .filter((day): day is string => day !== undefined && isSgtDay(day))
+    .sort()
+  return {
+    completions: keys
+      .map(parseCompletionKey)
+      .filter((completion): completion is DayCompletion => completion !== null),
+    startDay: startDays[0] ?? null,
+  }
 }
 
 function daysFrom(from: string, through: string): string[] {
@@ -60,12 +85,13 @@ export function latestFullCopy(
     .at(-1)
 }
 
-function dayStatus(completions: DayCompletion[]): DayStatus {
+function dayStatus({ completions, startDay }: JobState): DayStatus {
   const bestVersion = new Map<string, number>()
   for (const { day, version } of completions) {
     bestVersion.set(day, Math.max(version, bestVersion.get(day) ?? 0))
   }
-  const earliest = [...bestVersion.keys()].sort()[0] ?? null
+  const earliest =
+    [...bestVersion.keys(), ...(startDay ? [startDay] : [])].sort()[0] ?? null
   const lastFull = latestFullCopy(completions)
   const afterFull = lastFull ? addSgtDays(lastFull.day, 1) : null
   return {
@@ -79,16 +105,17 @@ function dayStatus(completions: DayCompletion[]): DayStatus {
 /**
  * Picks the days in the last MAX_CATCH_UP_DAYS, through yesterday, that have no completion file at the current version.
  *
- * With no completion file yet, only yesterday is planned, so a first run never rewrites history.
+ * With no start marker or completion file yet, only yesterday is planned, so a first run never rewrites history.
  */
 export function planDays(
-  completions: DayCompletion[],
+  state: JobState,
   yesterday: string,
   version: number,
 ): { days: string[]; first: boolean } {
-  const { firstExpected, bestVersion } = dayStatus(completions)
+  const { firstExpected, bestVersion } = dayStatus(state)
+  const first = state.completions.length === 0
   if (!firstExpected) {
-    return { days: [yesterday], first: true }
+    return { days: [yesterday], first }
   }
   const windowStart = addSgtDays(yesterday, -(MAX_CATCH_UP_DAYS - 1))
   const from = firstExpected > windowStart ? firstExpected : windowStart
@@ -96,7 +123,7 @@ export function planDays(
     days: daysFrom(from, yesterday).filter(
       (day) => (bestVersion.get(day) ?? 0) < version,
     ),
-    first: false,
+    first,
   }
 }
 
@@ -106,11 +133,11 @@ export function planDays(
  * A full copy from an older version counts as stale until a new one is written.
  */
 export function checkCoverage(
-  completions: DayCompletion[],
+  state: JobState,
   yesterday: string,
   version: number,
 ): { missing: string[]; stale: string[] } {
-  const { firstExpected, bestVersion, lastFull } = dayStatus(completions)
+  const { firstExpected, bestVersion, lastFull } = dayStatus(state)
   if (!firstExpected) {
     return { missing: [], stale: [] }
   }
@@ -161,19 +188,13 @@ export async function markDayComplete({
   await sink(completionKey(job, completion), body)
 }
 
-export function readCompletions(keys: string[]): DayCompletion[] {
-  return keys
-    .map(parseCompletionKey)
-    .filter((completion): completion is DayCompletion => completion !== null)
-}
-
 function logCoverage(
   job: string,
-  completions: DayCompletion[],
+  state: JobState,
   yesterday: string,
   version: number,
 ): void {
-  const { missing, stale } = checkCoverage(completions, yesterday, version)
+  const { missing, stale } = checkCoverage(state, yesterday, version)
   logger.info({
     event: 'analytics.export.coverage',
     job,
@@ -194,21 +215,37 @@ export async function runWithCoverage(
     job,
     yesterday,
     version,
-    listCompletions,
+    listKeys,
+    sink,
   }: {
     job: string
     yesterday: string
     version: number
-    listCompletions: () => Promise<DayCompletion[]>
+    listKeys: (prefix: string) => Promise<string[]>
+    sink: SilverSink
   },
-  run: (completions: DayCompletion[]) => Promise<void>,
+  run: (state: JobState) => Promise<void>,
 ): Promise<void> {
-  const before = await listCompletions()
+  const readState = async () =>
+    readJobState(await listKeys(completionPrefix(job)))
+  let before: JobState | null = null
   try {
+    before = await readState()
+    if (!before.startDay && before.completions.length === 0) {
+      await sink(
+        startKey(job, yesterday),
+        Buffer.from(JSON.stringify({ job, startDay: yesterday })),
+      )
+      before = { ...before, startDay: yesterday }
+    }
     await run(before)
   } finally {
     // A failed listing must not replace the export's own error.
-    const after = await listCompletions().catch(() => before)
-    logCoverage(job, after, yesterday, version)
+    const after = await readState().catch(() => before)
+    if (after) {
+      logCoverage(job, after, yesterday, version)
+    } else {
+      logger.error({ event: 'analytics.export.coverage.unavailable', job })
+    }
   }
 }
