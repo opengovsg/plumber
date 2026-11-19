@@ -77,6 +77,39 @@ describe('toMcpToolRow', () => {
     })
   })
 
+  it('lowercases the pipe, step and connection ids', () => {
+    expect(
+      toRow(
+        callLine('update_step_parameters', {
+          pipe_id: 'AAAAAAAA-0000-4000-8000-000000000001',
+          step_id: 'BBBBBBBB-0000-4000-8000-000000000002',
+          connection_id: 'CCCCCCCC-0000-4000-8000-000000000003',
+        }),
+      ),
+    ).toMatchObject({
+      flow_id: 'aaaaaaaa-0000-4000-8000-000000000001',
+      step_id: 'bbbbbbbb-0000-4000-8000-000000000002',
+      connection_id: 'cccccccc-0000-4000-8000-000000000003',
+    })
+  })
+
+  it('leaves register_connection to find its pipe through the step', () => {
+    expect(
+      toRow(
+        callLine('register_connection', {
+          pipe_id: 'stale-pipe',
+          step_id: 's1',
+          connection_id: 'c1',
+        }),
+      ),
+    ).toMatchObject({
+      operation: 'mcp:register_connection',
+      flow_id: null,
+      step_id: 's1',
+      connection_id: 'c1',
+    })
+  })
+
   it('leaves the user empty when the email has no account', () => {
     const call = parseMcpToolLine(
       callLine('delete_step', { pipe_id: 'f1', step_id: 's1' }),

@@ -34,6 +34,11 @@ describe('summarizeFlowEdits', () => {
         user_id: 'user-3',
         operation: 'mcp:update_step_parameters',
       }),
+      mutation({
+        ts: '2026-11-05T02:45:00.000Z',
+        user_id: 'user-4',
+        operation: 'mcp:register_connection',
+      }),
     ])
 
     expect(rows).toEqual([
@@ -57,6 +62,11 @@ describe('summarizeFlowEdits', () => {
       expect.objectContaining({
         user_id: 'user-3',
         operation: 'mcp:update_step_parameters',
+        edits: 1,
+      }),
+      expect.objectContaining({
+        user_id: 'user-4',
+        operation: 'mcp:register_connection',
         edits: 1,
       }),
     ])

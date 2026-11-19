@@ -39,6 +39,7 @@ export const FLOW_EDIT_OPERATIONS: ReadonlySet<string> = new Set([
   'mcp:update_step_parameters',
   'mcp:delete_step',
   'mcp:unpublish_pipe',
+  'mcp:register_connection',
 ])
 
 /**
