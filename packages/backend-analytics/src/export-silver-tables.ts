@@ -40,7 +40,9 @@ export function s3Sink(s3Client: S3Client, bucket: string): SilverSink {
         Bucket: bucket,
         Key: key,
         Body: body,
-        ContentType: 'application/vnd.apache.parquet',
+        ContentType: key.endsWith('.json')
+          ? 'application/json'
+          : 'application/vnd.apache.parquet',
       }),
     )
   }

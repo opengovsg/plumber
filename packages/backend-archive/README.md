@@ -209,6 +209,17 @@ rm -rf "$OUT"
 
 ---
 
+## Tracking finished days
+
+An export written as one file set per Singapore day marks each finished day with a completion file. The code lives in `backend-analytics/src/day-completion.ts`.
+
+- The file sits at `bronze/_completion/<job>/day=YYYY-MM-DD.v<version>.json`. A full copy adds `.full` before `.json`. It sits under `bronze/` because the archival role writes only `bronze/` and `silver/`, and PostHog reads only `silver/`.
+- It is written after all of the day's files, so a failed run leaves the day unmarked. Its body lists those files and whether the nightly run or a manual command wrote it.
+- Each night redoes every day in the last 7, through yesterday, with no completion file at the job's current version.
+- Days before the first completion file are history. A full copy covers every earlier day.
+- With no completion file yet, the nightly run writes only yesterday. The first night after release never rewrites history.
+- Each run logs `analytics.export.coverage` per job, even when the export fails: `missingDays` in the last 30 days, `firstMissing`, `lastMissing` and `staleDays`. `staleDays` includes a full copy from an older version. A Datadog monitor alerts when `missingDays` is above zero.
+
 ## Counting archived steps by app and action
 
 Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bucket. The `stepCounts` field breaks down the number of archived steps by SGT date → `appKey` → `actionKey` for that run.
