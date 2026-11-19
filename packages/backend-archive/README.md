@@ -209,6 +209,7 @@ An export written as one file set per Singapore day marks each finished day with
 - The file sits at `bronze/_completion/<job>/day=YYYY-MM-DD.v<version>.json`. A full copy adds `.full` before `.json`. It sits under `bronze/` because the archival role writes only `bronze/` and `silver/`, and PostHog reads only `silver/`.
 - It is written after all of the day's files, so a failed run leaves the day unmarked. Its body lists those files and whether the nightly run or a manual command wrote it.
 - Each night redoes every day in the last 7, through yesterday, with no completion file at the job's current version.
+- A day that fails does not hold back later days. It stays unmarked for the next run, logs `analytics.export.day.error`, and the run still fails.
 - The first run writes `bronze/_completion/<job>/start=YYYY-MM-DD.json` before it starts. Days before that marker and the first completion file are history, so the first night after release never rewrites history. A first run that fails is still owed. A full copy covers every earlier day.
 - Each run logs `analytics.export.coverage` per job, even when the export fails: `missingDays` in the last 30 days, `firstMissing`, `lastMissing` and `staleDays`. `staleDays` includes a full copy from an older version. A Datadog monitor alerts when `missingDays` is above zero. When the completion files cannot be listed, the run logs `analytics.export.coverage.unavailable` instead.
 
