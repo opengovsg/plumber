@@ -34,9 +34,14 @@ describe('dbFlowIdResolver against the migrated schema', () => {
     await db.destroy()
   })
 
-  it('maps step ids to pipe ids, deleted steps included', async () => {
+  it('maps step ids to pipe ids, deleted steps included, skipping malformed ids', async () => {
     expect(
-      await dbFlowIdResolver(db)([LIVE_STEP, DELETED_STEP, UNKNOWN_STEP]),
+      await dbFlowIdResolver(db)([
+        LIVE_STEP,
+        DELETED_STEP,
+        UNKNOWN_STEP,
+        'not-a-uuid',
+      ]),
     ).toEqual(
       new Map([
         [LIVE_STEP, FLOW],
@@ -45,7 +50,9 @@ describe('dbFlowIdResolver against the migrated schema', () => {
     )
   })
 
-  it('skips the query for no step ids', async () => {
-    expect(await dbFlowIdResolver({} as never)([])).toEqual(new Map())
+  it('skips the query when no id is a UUID', async () => {
+    expect(await dbFlowIdResolver({} as never)(['', 'not-a-uuid'])).toEqual(
+      new Map(),
+    )
   })
 })
