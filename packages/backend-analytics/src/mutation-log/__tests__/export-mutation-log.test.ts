@@ -31,6 +31,7 @@ afterEach(async () => {
   }
 })
 
+const noUsers = async () => new Map<string, string>()
 const noFlows = async () => new Map<string, string>()
 const state = readJobState([])
 
@@ -41,17 +42,21 @@ describe('writeMutationLogDays', () => {
     const resolveFlowIds = vi.fn(async () => new Map([[STEP, 'f1']]))
 
     await writeMutationLogDays({
-      // The editor's DeleteStepButton payload, which has no pipe id.
-      fetchDayLines: async () => [
-        {
-          timestamp: '2026-11-04 16:00:01.000',
-          query:
-            'mutation DeleteStep($input: DeleteStepInput!) { deleteStep(input: $input) { id } }',
-          variables: `{'input':{'ids':['${STEP.toUpperCase()}'],'flow':{'updatedAt':'2026-11-04T15:59:00.000Z'}}}`,
-          userId: 'user-1',
-          status: '200',
-        },
-      ],
+      fetchDayLines: async () => ({
+        // The editor's DeleteStepButton payload, which has no pipe id.
+        mutationLines: [
+          {
+            timestamp: '2026-11-04 16:00:01.000',
+            query:
+              'mutation DeleteStep($input: DeleteStepInput!) { deleteStep(input: $input) { id } }',
+            variables: `{'input':{'ids':['${STEP.toUpperCase()}'],'flow':{'updatedAt':'2026-11-04T15:59:00.000Z'}}}`,
+            userId: 'user-1',
+            status: '200',
+          },
+        ],
+        mcpToolLines: [],
+      }),
+      resolveUserIds: noUsers,
       resolveFlowIds,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
@@ -72,27 +77,75 @@ describe('writeMutationLogDays', () => {
     ])
   })
 
+  it('writes AI builder edits beside the GraphQL mutations', async () => {
+    dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
+    const event = JSON.stringify({
+      level: 'http',
+      message: {
+        event: 'mcp-tool',
+        source: 'plumber',
+        tool: 'delete_step',
+        userId: 'Officer@Agency.gov.sg',
+        status: 'success',
+        args: { pipe_id: 'f1', step_id: 's1' },
+      },
+    })
+    const resolveUserIds = vi.fn(
+      async () => new Map([['officer@agency.gov.sg', 'user-1']]),
+    )
+
+    await writeMutationLogDays({
+      fetchDayLines: async () => ({
+        mutationLines: [],
+        mcpToolLines: [{ timestamp: '2026-11-04 16:00:02.000', event }],
+      }),
+      resolveUserIds,
+      state,
+      resolveFlowIds: noFlows,
+      sink: localDirSink(dir),
+      days: ['2026-11-05'],
+    })
+
+    const file = await readFile(
+      path.join(dir, 'bronze/mutation_log/day=2026-11-05/current.parquet'),
+    )
+    expect(await parquetReadObjects({ file: toArrayBuffer(file) })).toEqual([
+      expect.objectContaining({
+        operation: 'mcp:delete_step',
+        flow_id: 'f1',
+        step_id: 's1',
+        user_id: 'user-1',
+        http_status: 200n,
+      }),
+    ])
+    expect(resolveUserIds).toHaveBeenCalledWith(['officer@agency.gov.sg'])
+  })
+
   it('writes one file per day with the logged mutations', async () => {
     dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
-    const fetchDayLines = vi.fn(async () => [
-      {
-        timestamp: '2026-11-04 16:00:01.000',
-        query: 'mutation U($input: X!) { updateFlow(input: $input) { id } }',
-        variables: "{'input':{'id':'f1','name':'Private name'}}",
-        userId: 'user-1',
-        status: '200',
-      },
-      {
-        timestamp: 'garbage',
-        query: null,
-        variables: null,
-        userId: null,
-        status: null,
-      },
-    ])
+    const fetchDayLines = vi.fn(async () => ({
+      mutationLines: [
+        {
+          timestamp: '2026-11-04 16:00:01.000',
+          query: 'mutation U($input: X!) { updateFlow(input: $input) { id } }',
+          variables: "{'input':{'id':'f1','name':'Private name'}}",
+          userId: 'user-1',
+          status: '200',
+        },
+        {
+          timestamp: 'garbage',
+          query: null,
+          variables: null,
+          userId: null,
+          status: null,
+        },
+      ],
+      mcpToolLines: [],
+    }))
 
     await writeMutationLogDays({
       fetchDayLines,
+      resolveUserIds: noUsers,
       resolveFlowIds: noFlows,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
@@ -152,8 +205,9 @@ describe('writeMutationLogDays', () => {
     const written: string[] = []
     const write = (failOn: string | null) =>
       writeMutationLogDays({
-        fetchDayLines: async () => [],
+        fetchDayLines: async () => ({ mutationLines: [], mcpToolLines: [] }),
         resolveFlowIds: noFlows,
+        resolveUserIds: noUsers,
         sink: async (key) => {
           if (failOn && key.startsWith(failOn)) {
             throw new Error('upload failed')
@@ -177,7 +231,7 @@ describe('writeMutationLogDays', () => {
     expect(written).toEqual([
       'bronze/mutation_log/day=2026-11-05/current.parquet',
       'silver/flow_edit_daily/day=2026-11-05.parquet',
-      'bronze/_completion/mutation_log/day=2026-11-05.v2.json',
+      'bronze/_completion/mutation_log/day=2026-11-05.v3.json',
     ])
   })
 })
@@ -234,7 +288,8 @@ describe('the mutation log file layout', () => {
     }))
 
     await writeMutationLogDays({
-      fetchDayLines: async () => lines,
+      fetchDayLines: async () => ({ mutationLines: lines, mcpToolLines: [] }),
+      resolveUserIds: noUsers,
       resolveFlowIds: noFlows,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
@@ -308,8 +363,9 @@ describe('exportMutationLogToDir', () => {
 
     await exportMutationLogToDir({
       dir,
-      fetchDayLines: async () => [],
+      fetchDayLines: async () => ({ mutationLines: [], mcpToolLines: [] }),
       resolveFlowIds: noFlows,
+      resolveUserIds: noUsers,
       days: ['2026-11-04', '2026-11-05'],
     })
 
