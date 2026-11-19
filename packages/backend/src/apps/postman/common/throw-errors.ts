@@ -1,6 +1,11 @@
-import { IGlobalVariable } from '@plumber/types'
+import {
+  MessageRejected,
+  TooManyRequestsException,
+} from '@aws-sdk/client-sesv2'
+import { IGlobalVariable, StepErrorKind } from '@plumber/types'
+import { ServiceException } from '@smithy/smithy-client'
 
-import HttpError from '@/errors/http'
+import HttpError, { isNetworkError, isNetworkErrorCode } from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -19,9 +24,11 @@ type PostmanApiErrorData = {
 // Until this is fixed, we will retry these requests on behalf of the user
 const POSTMAN_RETRIABLE_HTTP_CODES = [500, 502, 504, 520, 524]
 
-export function getPostmanErrorStatus(
-  error: HttpError,
-): PostmanEmailSendStatus {
+export function getPostmanErrorStatus(error: unknown): PostmanEmailSendStatus {
+  if (!(error instanceof HttpError)) {
+    return 'ERROR'
+  }
+
   const postmanErrorData: PostmanApiErrorData = error.response?.data ?? {}
   const { code: errorCode, message: errorMessage } = postmanErrorData
   // catch common postman error codes and provide solution
@@ -40,7 +47,10 @@ export function getPostmanErrorStatus(
     case 'attachment_limit':
       return 'ATTACHMENT-SIZE-EXCEEDED'
     default:
-      if (POSTMAN_RETRIABLE_HTTP_CODES.includes(error.response?.status)) {
+      if (
+        error.response?.status !== undefined &&
+        POSTMAN_RETRIABLE_HTTP_CODES.includes(error.response.status)
+      ) {
         return 'INTERMITTENT-ERROR'
       }
       // return original error if not caught
@@ -75,42 +85,56 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'ATTACHMENT-SIZE-EXCEEDED'
   }
 
-  // SES SDK errors expose $metadata.httpStatusCode
-  const httpStatus = (error as { $metadata?: { httpStatusCode?: number } })
-    .$metadata?.httpStatusCode
+  // The SES client fetches credentials from STS, so STS errors must retry like SES errors.
+  if (!(error instanceof ServiceException)) {
+    return 'ERROR'
+  }
 
-  // Rate limiting — 429 or known throttling error names
+  const httpStatus = error.$metadata?.httpStatusCode
+
+  // ThrottlingException has no modeled SDK class, so match it by name.
   if (
     httpStatus === 429 ||
-    error.name === 'TooManyRequestsException' ||
+    error instanceof TooManyRequestsException ||
     error.name === 'ThrottlingException'
   ) {
     return 'RATE-LIMITED'
   }
 
   // Server errors — 500+ are transient, worth retrying
-  if (httpStatus >= 500) {
+  if (httpStatus !== undefined && httpStatus >= 500) {
     return 'INTERMITTENT-ERROR'
   }
 
-  // MessageRejected — check message for specific sub-cases
-  if (error.name === 'MessageRejected') {
+  if (error instanceof MessageRejected) {
     const msg = error.message?.toLowerCase() ?? ''
     if (msg.includes('blacklisted') || msg.includes('suppression list')) {
       return 'BLACKLISTED'
     }
-    return 'ERROR'
-  }
-
-  // Account-level issues — not retriable, surface as ERROR
-  if (
-    error.name === 'SendingPausedException' ||
-    error.name === 'AccountSuspendedException'
-  ) {
-    return 'ERROR'
   }
 
   return 'ERROR'
+}
+
+// Network failures and timeouts never reach AWS, so the SDK does not wrap them in its exception class.
+function isSesNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error) || error instanceof ServiceException) {
+    return false
+  }
+  const { code } = error as { code?: unknown }
+  return error.name === 'TimeoutError' || isNetworkErrorCode(code)
+}
+
+// Postman 4xx and SES service errors reaching the catch-all stem from Plumber's API key or SES setup.
+function getCatchAllKind(error: unknown): StepErrorKind {
+  if (!(error instanceof HttpError)) {
+    return isSesNetworkError(error) ? 'third-party' : 'internal'
+  }
+  const status = error.response?.status
+  if (status === undefined) {
+    return isNetworkError(error) ? 'third-party' : 'internal'
+  }
+  return status >= 500 ? 'third-party' : 'internal'
 }
 
 function getInvalidAttachmentSolution({
@@ -143,8 +167,8 @@ export function throwPostmanStepError({
   isRetryWithoutAttachments,
 }: {
   $: IGlobalVariable
-  status: PostmanEmailSendStatus
-  error: HttpError
+  status?: PostmanEmailSendStatus
+  error?: unknown
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
   invalidAttachments: string[]
@@ -156,9 +180,22 @@ export function throwPostmanStepError({
     // should not show attachments list if we are retrying without attachments
     showAttachmentsList: !isRetryWithoutAttachments,
   })
+  // Only some error paths (e.g. AttachmentSizeExceededError) produce a real
+  // HttpError; StepError/RetriableError's `error`/`.details` still want a best
+  // effort message either way.
+  const httpError = error instanceof HttpError ? error : undefined
+  const errorMessage = error instanceof Error ? error.message : undefined
 
   switch (status) {
     case 'BLACKLISTED': {
+      if (!$.user) {
+        throw new StepError({
+          name: 'Flow is missing an owner',
+          solution:
+            'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+          kind: 'internal',
+        })
+      }
       let name = 'Blacklisted recipient email'
       const formLink = createRequestBlacklistFormLink({
         userEmail: $.user.email,
@@ -198,35 +235,38 @@ export function throwPostmanStepError({
         throw new PartialStepError({
           name,
           solution,
+          kind: 'config',
           partialRetry: {
             buttonMessage,
           },
         })
       }
-      throw new StepError(name, solution, error)
+      throw new StepError({ name, solution, kind: 'config', cause: error })
     }
     case 'RATE-LIMITED':
       // this will be auto-retried later on
       throw new RetriableError({
-        error: error.details ?? error.message,
+        error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'queue',
       })
     case 'INVALID-ATTACHMENT':
-      throw new StepError(
-        'Password-protected attachment(s)',
-        `Check that the attachment(s) are not password-protected.`,
-        error,
-      )
+      throw new StepError({
+        name: 'Password-protected attachment(s)',
+        solution: `Check that the attachment(s) are not password-protected.`,
+        kind: 'config',
+        cause: error,
+      })
     case 'ATTACHMENT-SIZE-EXCEEDED':
-      throw new StepError(
-        'Total attachment size exceeded',
-        'Check that the attachments do not exceed 20MB in total.',
-        error,
-      )
+      throw new StepError({
+        name: 'Total attachment size exceeded',
+        solution: 'Check that the attachments do not exceed 20MB in total.',
+        kind: 'config',
+        cause: error,
+      })
     case 'INTERMITTENT-ERROR':
       throw new RetriableError({
-        error: error.details ?? error.message,
+        error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'step',
       })
@@ -234,9 +274,9 @@ export function throwPostmanStepError({
     default:
       // socket hang up is a Cloudflare/Postman-specific issue; only retry
       // if the error came from the Postman path (not SES).
-      if (error?.message === 'socket hang up') {
+      if (errorMessage === 'socket hang up') {
         throw new RetriableError({
-          error: `Retrying ${error.message}`,
+          error: `Retrying ${errorMessage}`,
           delayInMs: 'default',
           delayType: 'step',
         })
@@ -254,19 +294,27 @@ export function throwPostmanStepError({
         // throw StepError for test runs so that user cannot publish the pipe
         // until the error is fixed
         if ($.execution.testRun) {
-          throw new StepError(name, solution, error)
+          throw new StepError({
+            name,
+            solution,
+            kind: 'config',
+            cause: error,
+          })
         }
 
         throw new PartialStepError({
           name,
           solution: invalidAttachmentsSolution,
+          kind: 'config',
           partialRetry: { buttonMessage: '' }, // nothing to retry
         })
       }
-      throw new StepError(
-        'Something went wrong',
-        'Please contact plumber@open.gov.sg for assistance.',
-        error,
-      )
+      throw new StepError({
+        name: 'Something went wrong',
+        solution:
+          'Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: getCatchAllKind(error),
+        cause: error,
+      })
   }
 }

@@ -26,7 +26,10 @@ async function getDataOutMetadata(
       order: 1,
     },
   }
-  const rowData = (dataOut as UpdateRowOutput).row
+  const rowData = (dataOut as unknown as UpdateRowOutput).row
+  if (!rowData) {
+    return null
+  }
   const columnNameMetadata = await generateColumnNameMetadata(rowData)
 
   return { ...metadata, ...columnNameMetadata }

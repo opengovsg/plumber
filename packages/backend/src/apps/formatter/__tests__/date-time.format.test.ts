@@ -1,6 +1,6 @@
 import '@/types/luxon-extensions'
 import { IGlobalVariable } from '@plumber/types'
-import { Settings as LuxonSettings } from 'luxon'
+import { DateTime, Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { spec } from '../actions/date-time/transforms/convert-date-time'
@@ -12,6 +12,13 @@ LuxonSettings.defaultLocale = 'en-SG'
 
 const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
 }))
 
 describe('convert date time', () => {
@@ -281,6 +288,56 @@ describe('convert date time', () => {
 
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: expectedResult },
+    })
+  })
+
+  describe('step error kind', () => {
+    it('marks an unknown output format as config', async () => {
+      $.step.parameters = {
+        dateTimeFormat: 'formsgDateField',
+        formatDateTimeToFormat: 'not-a-format',
+      }
+      await expect(spec.transformData($, '01 Apr 2024')).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it.each([
+      {
+        valueToTransform: '',
+        name: "Error with the original value: '' is not a valid FormSG date field'",
+      },
+      {
+        valueToTransform: '2024-04-01',
+        name: "Error with the original value: '2024-04-01' is not a valid FormSG date field'",
+      },
+    ])(
+      'marks a value that does not match the format ($valueToTransform) as config',
+      async ({ valueToTransform, name }) => {
+        $.step.parameters = {
+          dateTimeFormat: 'formsgDateField',
+          formatDateTimeToFormat: 'dd LLL yyyy',
+        }
+        const result = spec.transformData($, valueToTransform)
+        await expect(result).rejects.toMatchObject({ kind: 'config' })
+        await expect(result).rejects.toThrow(JSON.stringify(name))
+      },
+    )
+
+    it('marks a formatting failure after parsing as internal without logging it', async () => {
+      vi.spyOn(DateTime.prototype, 'toPlumberFormat').mockImplementation(() => {
+        throw new Error('boom')
+      })
+      $.step.parameters = {
+        dateTimeFormat: 'formsgDateField',
+        formatDateTimeToFormat: 'dd LLL yyyy',
+      }
+      const result = spec.transformData($, '01 Apr 2024')
+      await expect(result).rejects.toMatchObject({ kind: 'internal' })
+      await expect(result).rejects.toThrow(
+        'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+      )
+      expect(mocks.logError).not.toHaveBeenCalled()
     })
   })
 })

@@ -365,8 +365,10 @@ const action: IRawAction = {
         throwGatherSGStepError(error)
       }
 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       throw new StepError({
-        name: `An error occurred: '${error.message}'`,
+        name: `An error occurred: '${errorMessage}'`,
         solution: 'Please check that you have configured your step correctly',
         kind: 'internal',
       })

@@ -1,7 +1,8 @@
-import type { IExecutionStep } from '@plumber/types'
+import type { IExecutionStep, IGlobalVariable } from '@plumber/types'
 import { DateTime } from 'luxon'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import action from '../actions/compare-calculate'
 import getDataOutMetadata from '../actions/compare-calculate/get-data-out-metadata'
 import {
   computeComparison,
@@ -9,6 +10,25 @@ import {
   computeGap,
   parseOperand,
 } from '../actions/compare-calculate/logic'
+
+const mocks = vi.hoisted(() => ({
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    error: mocks.logError,
+  },
+}))
+
+vi.mock('../actions/compare-calculate/logic', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../actions/compare-calculate/logic')>()
+  return {
+    ...actual,
+    computeDifference: vi.fn(actual.computeDifference),
+  }
+})
 
 const SG = 'Asia/Singapore'
 const sg = (iso: string): DateTime => DateTime.fromISO(iso, { zone: SG })
@@ -128,6 +148,93 @@ describe('compare-calculate prototype', () => {
         label: 'Time difference (always positive)',
       })
       expect(meta?.unit).toMatchObject({ label: 'Unit (e.g. days, weeks)' })
+    })
+  })
+
+  describe('run step error kind', () => {
+    const makeGlobal = (parameters: Record<string, unknown>) =>
+      ({
+        step: { parameters },
+        setActionItem: vi.fn(),
+      }) as unknown as IGlobalVariable
+
+    const validDates = {
+      firstDateFormat: 'formsgDateField',
+      firstDateValue: '01 Apr 2024',
+      secondDateFormat: 'formsgDateField',
+      secondDateValue: '08 Apr 2024',
+    }
+
+    it.each([
+      {
+        case: 'an unknown operation',
+        parameters: { ...validDates, operation: 'bogus' },
+      },
+      {
+        case: 'a non-positive gap amount',
+        parameters: {
+          ...validDates,
+          operation: 'gap',
+          gapOperator: 'within',
+          gapPeriod: [{ gapAmount: '0', gapUnit: 'days' }],
+        },
+      },
+      {
+        case: 'no comparison operator',
+        parameters: { ...validDates, operation: 'compare' },
+      },
+      {
+        case: 'an incomplete time gap',
+        parameters: {
+          ...validDates,
+          operation: 'gap',
+          gapPeriod: [{ gapAmount: '2', gapUnit: '' }],
+        },
+      },
+      {
+        case: 'no difference unit',
+        parameters: { ...validDates, operation: 'calculate' },
+      },
+      {
+        case: 'an empty date value',
+        parameters: {
+          ...validDates,
+          firstDateValue: '',
+          operation: 'calculate',
+          diffUnit: 'days',
+        },
+      },
+      {
+        case: 'a date value that does not match its format',
+        parameters: {
+          ...validDates,
+          secondDateValue: '2024-04-08',
+          operation: 'calculate',
+          diffUnit: 'days',
+        },
+      },
+    ])('marks $case as config', async ({ parameters }) => {
+      await expect(action.run(makeGlobal(parameters))).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('marks a failure after parsing the dates as internal without logging it', async () => {
+      vi.mocked(computeDifference).mockImplementationOnce(() => {
+        throw new Error('boom')
+      })
+      const result = action.run(
+        makeGlobal({
+          ...validDates,
+          operation: 'calculate',
+          diffUnit: 'days',
+        }),
+      )
+      await expect(result).rejects.toMatchObject({ kind: 'internal' })
+      await expect(result).rejects.toThrow(
+        'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+      )
+      expect(mocks.logError).not.toHaveBeenCalled()
     })
   })
 })

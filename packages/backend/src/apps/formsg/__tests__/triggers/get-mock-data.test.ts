@@ -19,6 +19,7 @@ vi.mock('../../common/webhook-settings', async (importOriginal) => ({
   getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
 }))
 
+import { NricFilter } from '../../triggers/new-submission'
 import getMockData from '../../triggers/new-submission/get-mock-data'
 
 const CHILDREN_FIELD_ID = '69c1de89ce7be59aafa2f556'
@@ -133,4 +134,53 @@ describe('getMockData - MyInfo children fields', () => {
       order: '1.1',
     })
   })
+})
+
+describe('getMockData - verified submitter info', () => {
+  async function getVerifiedSubmitterInfo(
+    authType: string,
+    nricFilter: string,
+  ) {
+    const $ = makeGlobalVariable({ responses: {} })
+    $.step.parameters.nricFilter = nricFilter
+    const result = await getMockData($, {
+      form: {
+        responseMode: 'storage',
+        isSubmitterIdCollectionEnabled: true,
+        authType,
+        form_fields: [],
+      },
+    })
+    return (result as { verifiedSubmitterInfo?: Record<string, string> })
+      .verifiedSubmitterInfo
+  }
+
+  it.each([
+    { nricFilter: NricFilter.None, uinFin: 'S1234568B' },
+    { nricFilter: NricFilter.Mask, uinFin: 'xxxxx568B' },
+  ])(
+    'applies the $nricFilter NRIC filter to MyInfo uinFin',
+    async ({ nricFilter, uinFin }) => {
+      expect(await getVerifiedSubmitterInfo('MyInfo', nricFilter)).toEqual({
+        uinFin,
+        sgidUinFin: uinFin,
+      })
+    },
+  )
+
+  it('omits MyInfo verified info when the NRIC filter removes NRICs', async () => {
+    expect(
+      await getVerifiedSubmitterInfo('MyInfo', NricFilter.Remove),
+    ).toBeUndefined()
+  })
+
+  it.each(Object.values(NricFilter))(
+    'returns the unfiltered CorpPass UID with the %s NRIC filter',
+    async (nricFilter) => {
+      expect(await getVerifiedSubmitterInfo('CP', nricFilter)).toEqual({
+        cpUid: 'S1234568B',
+        cpUen: '201612345A',
+      })
+    },
+  )
 })

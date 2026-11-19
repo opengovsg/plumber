@@ -75,4 +75,46 @@ describe('evaluateConditionGroups', () => {
       evaluateConditionGroups([failingGroup, malformedGroup]),
     ).toThrow(/condition group 2/)
   })
+
+  function catchStepError(groups: IMultiRowGroup<IConditionRow>[]): StepError {
+    try {
+      evaluateConditionGroups(groups)
+    } catch (err) {
+      if (err instanceof StepError) {
+        return err
+      }
+      throw err
+    }
+    throw new Error('Expected a StepError')
+  }
+
+  it('rethrows an inner StepError unchanged, keeping its kind and name', () => {
+    const err = catchStepError([
+      group(
+        row({ field: 'a', text: 'a' }),
+        row({ condition: 'gt', text: '1' }),
+      ),
+    ])
+
+    expect(err.kind).toBe('config')
+    expect(JSON.parse(err.message)).toEqual({
+      name: 'Error in condition group 1: Non-number used in field for comparison',
+      solution: 'Check that the condition has been configured properly.',
+      kind: 'config',
+    })
+  })
+
+  it('wraps a non-StepError inner throw as internal', () => {
+    const err = catchStepError([
+      group(row({ field: 'a', text: 'mismatch' })),
+      group(row({ field: undefined, condition: 'contains', text: 'a' })),
+    ])
+
+    expect(err.kind).toBe('internal')
+    expect(JSON.parse(err.message)).toEqual({
+      name: "Error in condition group 2: Cannot read properties of undefined (reading 'toString')",
+      solution: 'Check that the condition has been configured properly.',
+      kind: 'internal',
+    })
+  })
 })

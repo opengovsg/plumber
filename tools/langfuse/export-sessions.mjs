@@ -37,12 +37,12 @@
 import { mkdirSync, rmSync } from 'node:fs'
 
 import { resolveOptions } from './lib/cli/options.mjs'
+import { buildLangfuseClient } from './lib/client.mjs'
 import {
   CLIENT_TIMEOUT_MS,
   EXPORT_DIR_MODE,
   OUT_DIR,
 } from './lib/constants.mjs'
-import { buildLangfuseClient } from './lib/langfuse/client.mjs'
 import { getSession, listSessions } from './lib/langfuse/sessions.mjs'
 import { fetchLastTraces } from './lib/langfuse/traces.mjs'
 import { buildFields, toRecord } from './lib/output/fields.mjs'

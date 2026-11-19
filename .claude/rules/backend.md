@@ -98,7 +98,7 @@ The backend has three error families. Do not add a new family.
 The thrower chooses `kind`. Never derive it later from messages or status codes.
 
 - `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries: `handleFailedStepAndThrow` (`helpers/actions/handle-failed-step-and-throw.ts`) throws `UnrecoverableError` for it.
-- `third-party`: an external service failed. Counts as bad, but apart from Plumber bugs.
+- `third-party`: an external service is down or unreachable (e.g. 5xx, network errors, timeouts). Counts as bad, but apart from Plumber bugs.
 - `internal`: a Plumber bug. Counts as bad.
 
 Special cases:
@@ -107,6 +107,7 @@ Special cases:
 - A user's own endpoint failing (custom-api) is `config`. The user owns the endpoint.
 - Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
+- An error likely caused by an external API changing its format is `internal`, not `third-party` (e.g. an unexpected response body). Plumber owns keeping up with API changes.
 
 ### `UserFacingError`
 

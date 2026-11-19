@@ -554,7 +554,7 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
-type IFieldMultiRowMultiColSubField = IField & {
+export type IFieldMultiRowMultiColSubField = IField & {
   customStyle?: Record<string, string | number>
 }
 
@@ -1180,7 +1180,7 @@ export interface IActionOutput {
 }
 
 export interface IActionItem {
-  raw: IJSONObject
+  raw: IJSONObject | null
   meta?: IExecutionStepMetadata
 }
 
@@ -1377,6 +1377,8 @@ export type IGlobalVariable = {
   execution: {
     id: string
     testRun: boolean
+    // ISO 8601. Undefined outside an execution, e.g. in dynamic data.
+    createdAt?: string
   }
   metadata?: IJSONObject
   webhookUrl?: string
@@ -1424,7 +1426,7 @@ export interface IRequest extends Request {
 
 export interface IVerifyConnectionRegistrationOutput {
   registrationVerified: boolean
-  message: string
+  message: string | null | undefined
 }
 
 export interface ITestConnectionOutput extends Partial<IVerifyConnectionRegistrationOutput> {

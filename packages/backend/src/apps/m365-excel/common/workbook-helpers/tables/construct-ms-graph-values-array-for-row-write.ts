@@ -1,3 +1,5 @@
+import StepError from '@/errors/step'
+
 interface ColumnToWrite {
   columnName: string
   value: string
@@ -32,9 +34,11 @@ export function constructMsGraphValuesArrayForRowWrite(
     const index = columnNameToIndex.get(columnToWrite.columnName)
 
     if (index === undefined) {
-      throw new Error(
-        `Column "${columnToWrite.columnName}" does not exist in your table. Remove this column from 'Row Data' section to proceed.`,
-      )
+      throw new StepError({
+        name: `Column "${columnToWrite.columnName}" does not exist in your table.`,
+        solution: "Remove this column from 'Row Data' section to proceed.",
+        kind: 'config',
+      })
     }
 
     result[index] = columnToWrite.value

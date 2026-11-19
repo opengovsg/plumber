@@ -83,25 +83,31 @@ const action: IRawAction = {
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'There was a problem with the input.',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
 
     const { fileId, worksheetId, cells } = parametersParseResult.data
 
     // Basic sanity checks
     if (cells.length > 3) {
-      throw new StepError('Too many cells', 'Please only input up to 3 cells')
+      throw new StepError({
+        name: 'Too many cells',
+        solution: 'Please only input up to 3 cells',
+        kind: 'config',
+      })
     }
 
     for (const cell of cells) {
       if (!/^[a-zA-Z]+[1-9][0-9]*$/.test(cell.address)) {
-        throw new StepError(
-          `Invalid cell address ${cell.address}`,
-          'Please specify cell addresses in A1 notation.',
-        )
+        throw new StepError({
+          name: `Invalid cell address ${cell.address}`,
+          solution: 'Please specify cell addresses in A1 notation.',
+          kind: 'config',
+        })
       }
     }
 

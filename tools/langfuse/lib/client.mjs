@@ -1,9 +1,14 @@
 import { LangfuseClient } from '@langfuse/client'
 
-import { PROJECT_CREDENTIAL_ENV } from '../constants.mjs'
+import { PROJECT_CREDENTIAL_ENV } from './constants.mjs'
 
-const DEFAULT_TIMEOUT_MS = 10_000
+const DEFAULT_TIMEOUT_MS = 30_000
 
+/**
+ * The one Langfuse client for every script in tools/langfuse.
+ * Same credential path as packages/backend/src/helpers/langfuse.ts.
+ * Secrets are injected by scripts/with-op-env.mjs, not read from a .env file.
+ */
 export function buildLangfuseClient(
   project,
   env,
@@ -20,7 +25,7 @@ export function buildLangfuseClient(
 
   if (!credentials.publicKey || !credentials.secretKey) {
     throw new Error(
-      `Missing Langfuse credentials for project "${project}". Run this through its "pnpm run" script so 1Password injects them.`,
+      `Missing Langfuse credentials for project "${project}". Run the script through pnpm so 1Password injects them.`,
     )
   }
 

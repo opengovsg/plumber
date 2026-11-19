@@ -1,5 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import HttpError from '@/errors/http'
+
 export async function verifyApiKey($: IGlobalVariable): Promise<void> {
   try {
     await $.http.post('/cases/search', {
@@ -7,11 +9,11 @@ export async function verifyApiKey($: IGlobalVariable): Promise<void> {
       size: 0,
     })
   } catch (err) {
-    if (err.response?.status === 401) {
+    if (err instanceof HttpError && err.response?.status === 401) {
       throw new Error(
         'API key is invalid, please ensure you have copied the correct API key',
       )
-    } else if (err.response?.status === 403) {
+    } else if (err instanceof HttpError && err.response?.status === 403) {
       throw new Error(
         'Please check that you have the correct permissions to access the Ownself Gather API e.g. view, update or tag cases',
       )

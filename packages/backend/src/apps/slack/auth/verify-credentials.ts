@@ -6,7 +6,10 @@ const verifyCredentials = async ($: IGlobalVariable) => {
   // Our own auth, so safe to cast $.app.auth
   const oauthRedirectUrlField = (
     $.app.auth as IUserAddedConnectionAuth
-  ).fields.find((field) => field.key == 'oAuthRedirectUrl')
+  ).fields?.find((field) => field.key == 'oAuthRedirectUrl')
+  if (!oauthRedirectUrlField) {
+    throw new Error('Slack auth definition is missing oAuthRedirectUrl field')
+  }
   const redirectUri = oauthRedirectUrlField.value as string
   const params = {
     code: $.auth.data.code,

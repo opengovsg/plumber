@@ -34,7 +34,7 @@ export async function getAccessToken(
   }
   const cachedToken = cachedTokens[tenantKey]
 
-  if (Date.now() < cachedToken.token?.expiryTimestamp) {
+  if (cachedToken.token && Date.now() < cachedToken.token.expiryTimestamp) {
     return cachedToken.token.value
   }
 
@@ -43,7 +43,7 @@ export async function getAccessToken(
     // If multiple requests await this callback, then the 1st request would
     // have grabbed a new token before resolving. This check makes later
     // requests avoid grabbing a token again.
-    if (Date.now() < cachedToken.token?.expiryTimestamp) {
+    if (cachedToken.token && Date.now() < cachedToken.token.expiryTimestamp) {
       return
     }
 
@@ -51,5 +51,9 @@ export async function getAccessToken(
     cachedToken.token = await makeAccessTokenRequest(tenantKey, httpClient)
   })
 
-  return cachedTokens[tenantKey].token.value
+  const token = cachedTokens[tenantKey].token
+  if (!token) {
+    throw new Error(`Failed to obtain M365 access token for ${tenantKey}`)
+  }
+  return token.value
 }

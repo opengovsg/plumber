@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   setActionItem: vi.fn(),
   generateObject: vi.fn(),
   getImageContent: vi.fn(),
+  logError: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.logError },
 }))
 
 vi.mock('@/helpers/pair', () => ({
@@ -65,7 +70,9 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrowError(StepError)
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) => error instanceof StepError && error.kind === 'config',
+    )
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.getImageContent).not.toHaveBeenCalled()
   })
@@ -77,7 +84,9 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrowError(StepError)
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) => error instanceof StepError && error.kind === 'config',
+    )
     expect(mocks.generateObject).not.toHaveBeenCalled()
   })
 
@@ -150,7 +159,7 @@ describe('Process image action', () => {
     mocks.generateObject.mockRejectedValue(
       new APICallError({
         message: 'image exceeds 5 MB maximum: 5899164 bytes > 5242880 bytes',
-        url: 'https://litellm.example.com/v1/chat/completions',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
         requestBodyValues: {},
         statusCode: 400,
       }),
@@ -161,21 +170,20 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrow(
-      /Image is too large/,
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) =>
+        error instanceof StepError &&
+        /Image is too large/.test(error.message) &&
+        error.kind === 'config',
     )
   })
 
-  it('hides the noisy litellm message for other API call errors', async () => {
+  it('hides the raw model message for other API call errors', async () => {
     mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
     mocks.generateObject.mockRejectedValue(
       new APICallError({
-        message: [
-          'litellm.RateLimitError: rate limited',
-          'Received Model Group=bedrock-nova',
-          'Available Model Group Fallbacks=[bedrock-claude]',
-        ].join('\n'),
-        url: 'https://litellm.example.com/v1/chat/completions',
+        message: 'Too many requests, please wait before trying again.',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
         requestBodyValues: {},
         statusCode: 429,
       }),
@@ -189,10 +197,97 @@ describe('Process image action', () => {
     await expect(processImageAction.run($)).rejects.toSatisfy(
       (error: StepError) => {
         expect(error).toBeInstanceOf(StepError)
-        expect(error.message).not.toMatch(/RateLimitError|Model Group/)
+        expect(error.message).not.toMatch(/Too many requests/)
         expect(error.message).toMatch(/Failed to process image/)
+        expect(error.kind).toBe('internal')
         return true
       },
     )
+  })
+
+  it('throws a third-party StepError when Bedrock fails', async () => {
+    mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: 'Internal server error',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
+        requestBodyValues: {},
+        statusCode: 500,
+      }),
+    )
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) =>
+        error instanceof StepError &&
+        /Failed to process image/.test(error.message) &&
+        error.kind === 'third-party',
+    )
+  })
+
+  it('logs the model error without its request body', async () => {
+    mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: 'Output blocked by content filtering policy',
+        url: 'https://bedrock-runtime.ap-southeast-1.amazonaws.com/model/claude/invoke',
+        requestBodyValues: { messages: [{ role: 'user', content: 'secret' }] },
+        statusCode: 400,
+      }),
+    )
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toBeInstanceOf(StepError)
+    expect(mocks.logError).toHaveBeenCalledWith('Failed to process image', {
+      errorName: 'AI_APICallError',
+      errorMessage: 'Output blocked by content filtering policy',
+      statusCode: 400,
+      flowId: 'flow-id',
+      executionId: 'execution-id',
+      stepId: 'step-id',
+      userId: 'user@open.gov.sg',
+      s3Id: 's3-id-123',
+    })
+  })
+
+  it('throws an internal StepError for an unknown error', async () => {
+    mocks.getImageContent.mockRejectedValue(new Error('boom'))
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error) =>
+        error instanceof StepError &&
+        /Failed to process image/.test(error.message) &&
+        error.kind === 'internal',
+    )
+  })
+
+  it('rethrows a StepError from reading the image unchanged', async () => {
+    const stepError = new StepError({
+      name: 'png files are not supported',
+      solution: 'Use another file.',
+      kind: 'config',
+    })
+    mocks.getImageContent.mockRejectedValue(stepError)
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toBe(stepError)
+    expect(mocks.generateObject).not.toHaveBeenCalled()
   })
 })

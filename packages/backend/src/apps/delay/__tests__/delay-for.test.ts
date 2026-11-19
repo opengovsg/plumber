@@ -63,4 +63,16 @@ describe('Delay for action', () => {
     // throw partial step error message
     await expect(delayForAction.run($)).rejects.toThrow(StepError)
   })
+
+  it('throws a config step error if delay for value is not a number', async () => {
+    $.step.parameters = {
+      delayForUnit: DELAY_UNIT,
+      delayForValue: INVALID_DELAY_VALUE,
+    }
+
+    await expect(delayForAction.run($)).rejects.toMatchObject({
+      message: expect.stringContaining('Invalid delay for value entered'),
+      kind: 'config',
+    })
+  })
 })

@@ -7,10 +7,15 @@ import {
 } from '@/config/app-env-vars/m365'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
 import { extractAuthDataWithPlumberFolder } from '../auth-data'
 import { validateCanAccessFile } from '../file-privacy'
+import {
+  rethrowHttpErrorAsStepError,
+  toStepError,
+} from '../graph-api-http-error'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 import {
   clearSessionIdFromRedis,
@@ -23,18 +28,20 @@ async function refreshSessionId(
   fileId: string,
   $: IGlobalVariable,
 ): Promise<string> {
-  const createSessionResponse = await $.http.post<{ id: string }>(
-    `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook/createSession`,
-    {
-      persistChanges: true,
-    },
-    {
-      urlPathParams: {
-        fileId,
-        sharePointSiteId: tenant.sharePointSiteId,
+  const createSessionResponse = await $.http
+    .post<{ id: string }>(
+      `/v1.0/sites/:sharePointSiteId/drive/items/:fileId/workbook/createSession`,
+      {
+        persistChanges: true,
       },
-    },
-  )
+      {
+        urlPathParams: {
+          fileId,
+          sharePointSiteId: tenant.sharePointSiteId,
+        },
+      },
+    )
+    .catch(rethrowHttpErrorAsStepError)
   const sessionId = createSessionResponse.data.id
 
   await setSessionIdInRedis(tenant, fileId, sessionId)
@@ -71,13 +78,22 @@ export default class WorkbookSession {
     $: IGlobalVariable,
     fileId: string,
   ): Promise<WorkbookSession> {
+    if (!$.user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     const authData = extractAuthDataWithPlumberFolder($)
 
     // We _always_ check against the server in case file sensitivity has changed
     // or it has been moved. This guards against things likes delayed actions
     // working on files whose sensitivity has been upgraded during the delay
     // period.
-    await validateCanAccessFile($.user?.email, authData, fileId, $.http)
+    await validateCanAccessFile($.user.email, authData, fileId, $.http)
 
     const tenant = getM365TenantInfo(authData.tenantKey)
     let sessionId = await getSessionIdFromRedis(tenant, fileId)
@@ -140,7 +156,7 @@ export default class WorkbookSession {
         !graphApiInnerError ||
         !graphApiInnerError.startsWith('invalidSession')
       ) {
-        throw err
+        throw toStepError(err)
       }
 
       logger.warn('M365 Excel session was invalidated.', {

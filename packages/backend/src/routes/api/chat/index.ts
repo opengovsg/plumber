@@ -4,7 +4,6 @@ import {
   updateActiveObservation,
   updateActiveTrace,
 } from '@langfuse/tracing'
-import { trace } from '@opentelemetry/api'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -38,6 +37,7 @@ import {
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
 import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
+import { promptTelemetryMetadata } from '@/helpers/ai/prompt-telemetry'
 import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
@@ -284,7 +284,7 @@ const handleChatStream = observe(
                     environment: appConfig.appEnv,
                     promptName: chatPromptName,
                     promptVersion: version,
-                    langfusePrompt: prompt.toJSON(),
+                    ...promptTelemetryMetadata(prompt),
                     tags: [
                       'ai-builder',
                       'stream',
@@ -419,9 +419,6 @@ const handleChatStream = observe(
                     if (mcpClient) {
                       closeQuietly(mcpClient)
                     }
-
-                    // Manually end the span since we're streaming
-                    trace.getActiveSpan()?.end()
                   }
                 },
                 onError: ({ error }) => {
@@ -439,9 +436,6 @@ const handleChatStream = observe(
 
                   updateActiveObservation({ output: errorMessage })
                   updateActiveTrace({ output: errorMessage })
-
-                  // Manually end the span since we're streaming
-                  trace.getActiveSpan()?.end()
                 },
               }),
           )
@@ -493,11 +487,8 @@ const handleChatStream = observe(
      */
     captureInput: false,
     captureOutput: false,
-    /**
-     * do not automatically end so that we can update the trace and observation
-     * in the onFinish callback
-     */
-    endOnExit: false,
+    // endOnExit stays default: the handler awaits the full response stream, so
+    // the span ends once after it drains, including on pre-stream failures.
   },
 )
 

@@ -2,11 +2,12 @@ import type { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import app from '../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import createPaymentAction from '../../actions/create-payment'
 import { MOCK_PAYMENT } from '../utils'
 
 const mocks = vi.hoisted(() => ({
-  httpPost: vi.fn(() => ({
+  httpPost: vi.fn(async () => ({
     data: MOCK_PAYMENT,
   })),
 }))
@@ -137,7 +138,7 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    mocks.httpPost.mockReturnValueOnce({
+    mocks.httpPost.mockResolvedValueOnce({
       data: {
         ...MOCK_PAYMENT,
         amount_in_cents: 31,
@@ -244,4 +245,41 @@ describe('create payment', () => {
       },
     )
   })
+
+  it('throws a config StepError when a field is invalid', async () => {
+    $.step.parameters.payerEmail = 'not-an-email'
+
+    await expect(createPaymentAction.run($)).rejects.toMatchObject({
+      kind: 'config',
+    })
+    expect(mocks.httpPost).not.toHaveBeenCalled()
+  })
+
+  it('throws an internal StepError when PaySG returns an unexpected response', async () => {
+    mocks.httpPost.mockResolvedValueOnce({ data: { id: 123 } } as never)
+
+    await expect(createPaymentAction.run($)).rejects.toMatchObject({
+      kind: 'internal',
+      message: expect.stringContaining(
+        'PaySG returned an unexpected response. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+      ),
+    })
+  })
+
+  it.each([
+    { status: 404, kind: 'config' },
+    { status: 500, kind: 'third-party' },
+    { status: 429, kind: 'internal' },
+  ])(
+    'throws a $kind StepError with the HttpError as cause on a $status response',
+    async ({ status, kind }) => {
+      const httpError = makeHttpError({ status })
+      mocks.httpPost.mockRejectedValueOnce(httpError as never)
+
+      await expect(createPaymentAction.run($)).rejects.toMatchObject({
+        kind,
+        cause: httpError,
+      })
+    },
+  )
 })

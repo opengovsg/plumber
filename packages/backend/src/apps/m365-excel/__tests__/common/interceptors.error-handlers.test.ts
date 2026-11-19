@@ -292,46 +292,55 @@ describe('M365 request error handlers', () => {
     )
   })
 
-  it('throws StepError immediately on 504 (test run)', async () => {
-    // Create http client with testRun: true
-    const $testRun = {
-      auth: {
-        data: {
-          tenantKey: 'test-tenant',
+  it.each([
+    ['post', '/workbook/tables/t/rows', 'config'],
+    ['patch', '/workbook/tables/t/rows/itemAt(index=1)', 'config'],
+    ['get', '/workbook/tables/t/range', 'third-party'],
+    ['post', '/workbook/createSession', 'third-party'],
+  ])(
+    'throws a StepError immediately on a 504 from %s %s (test run), with kind %s',
+    async (method, url, kind) => {
+      // Create http client with testRun: true
+      const $testRun = {
+        auth: {
+          data: {
+            tenantKey: 'test-tenant',
+          },
         },
-      },
-      step: {
-        position: 1,
-      },
-      app: {
-        name: 'M365 Excel',
-      },
-      execution: {
-        testRun: true,
-      },
-    } as unknown as IGlobalVariable
-    const httpTestRun = createHttpClient({
-      $: $testRun,
-      baseURL: 'http://localhost/mock-m365-graph-api',
-      beforeRequest: [],
-      requestErrorHandler: m365ExcelApp.requestErrorHandler,
-    })
+        step: {
+          position: 1,
+        },
+        app: {
+          name: 'M365 Excel',
+        },
+        execution: {
+          testRun: true,
+        },
+      } as unknown as IGlobalVariable
+      const httpTestRun = createHttpClient({
+        $: $testRun,
+        baseURL: 'http://localhost/mock-m365-graph-api',
+        beforeRequest: [],
+        requestErrorHandler: m365ExcelApp.requestErrorHandler,
+      })
 
-    mockAxiosAdapterToThrowOnce(504)
-    await httpTestRun
-      .get('/test-url')
-      .then(() => {
-        expect.unreachable()
-      })
-      .catch((error): void => {
-        expect(error).toBeInstanceOf(StepError)
-        expect(error.message).toContain('Excel request timed out')
-      })
-    expect(mocks.logWarning).toHaveBeenCalledWith(
-      expect.stringContaining('HTTP 504'),
-      expect.objectContaining({ event: 'm365-http-504' }),
-    )
-  })
+      mockAxiosAdapterToThrowOnce(504)
+      await httpTestRun
+        .request({ method, url })
+        .then(() => {
+          expect.unreachable()
+        })
+        .catch((error): void => {
+          expect(error).toBeInstanceOf(StepError)
+          expect(error.kind).toBe(kind)
+          expect(error.message).toContain('Excel request timed out')
+        })
+      expect(mocks.logWarning).toHaveBeenCalledWith(
+        expect.stringContaining('HTTP 504'),
+        expect.objectContaining({ event: 'm365-http-504' }),
+      )
+    },
+  )
 
   it('throws a RetriableError with default step delay on ETIMEDOUT', async () => {
     mockAxiosAdapterToThrowNetworkErrorOnce('ETIMEDOUT')

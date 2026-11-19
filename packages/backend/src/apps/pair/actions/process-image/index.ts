@@ -11,6 +11,8 @@ import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
+import { getModelErrorKind } from '../../common/get-model-error-kind'
+import { getModelErrorLogFields } from '../../common/get-model-error-log-fields'
 import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { hasProvidedImage, schema } from './schema'
 
@@ -91,13 +93,24 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const user = $.user
+    if (!user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     const validatedParameters = schema.safeParse($.step.parameters)
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
-      throw new StepError(
-        firstError.message,
-        GenericSolution.ReconfigureInvalidField,
-      )
+      throw new StepError({
+        name: firstError.message,
+        solution: GenericSolution.ReconfigureInvalidField,
+        kind: 'config',
+      })
     }
     const { image, responseFields, continueIfNoFile } = validatedParameters.data
 
@@ -120,7 +133,7 @@ const action: IRawAction = {
       const content = await getImageContent(image[0], $.flow.id)
 
       const { object } = await withAiTelemetryContext(
-        { distinctId: $.user.id, aiSessionId: $.execution.id },
+        { distinctId: user.id, aiSessionId: $.execution.id },
         () =>
           generateObject({
             model: imageModel,
@@ -136,7 +149,7 @@ const action: IRawAction = {
               isEnabled: true,
               functionId: 'pair-action-process-image',
               metadata: {
-                userId: $.user.email,
+                userId: user.email,
                 executionId: $.execution.id,
                 flowId: $.flow.id,
                 stepId: $.step.id,
@@ -151,23 +164,33 @@ const action: IRawAction = {
       })
     } catch (error) {
       logger.error('Failed to process image', {
-        error,
+        ...getModelErrorLogFields(error),
         flowId: $.flow.id,
         executionId: $.execution.id,
         stepId: $.step.id,
-        userId: $.user.email,
+        userId: user.email,
         s3Id: image[0],
       })
 
+      // Keeps user-facing reasons, e.g. a malware scan result or an unsupported file type.
+      if (error instanceof StepError) {
+        throw error
+      }
+
       if (isBedrockImageTooLargeError(error)) {
-        throw new StepError(
-          'Image is too large',
-          'Please limit your images to 4MB or less and try again.',
-        )
+        throw new StepError({
+          name: 'Image is too large',
+          solution: 'Please limit your images to 4MB or less and try again.',
+          kind: 'config',
+        })
       }
 
       // The error is already logged above. Its raw message is not written for users.
-      throw new StepError('Failed to process image', 'Please try again.', error)
+      throw new StepError({
+        name: 'Failed to process image',
+        solution: 'Please try again.',
+        kind: getModelErrorKind(error),
+      })
     }
   },
 }

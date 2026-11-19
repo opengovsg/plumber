@@ -5,6 +5,10 @@ import Connection from '@/models/connection'
 import { checkSchemaExists } from './check-schema-exists'
 
 const isStillVerified = async ($: IGlobalVariable) => {
+  if (!$.auth.connectionId) {
+    return false
+  }
+
   const databricksConnection = await Connection.query().findById(
     $.auth.connectionId,
   )

@@ -1,7 +1,8 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, StepErrorKind } from '@plumber/types'
 
+import HttpError, { isNetworkError } from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
 
 type ThrowingHandler = (
@@ -30,6 +31,15 @@ const handle5xxErrors: ThrowingHandler = (_, error): never => {
   })
 }
 
+// Other 4xx codes are Plumber bugs or ambiguous, e.g. 403 covers archived campaigns and Postman role failures.
+function getCatchAllKind(error: HttpError): StepErrorKind {
+  const status = error.response.status
+  if (status === undefined) {
+    return isNetworkError(error) ? 'third-party' : 'internal'
+  }
+  return status >= 500 ? 'third-party' : 'internal'
+}
+
 const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   $,
   error,
@@ -55,13 +65,37 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
       }
 
       if (error.response.data?.error?.code === 'parameter_invalid') {
-        throw new StepError(
-          'Campaign template was not set up correctly',
-          'Ensure that you have followed the instructions in our guide to set up your campaign template.',
-        )
+        throw new StepError({
+          name: 'Campaign template was not set up correctly',
+          solution:
+            'Ensure that you have followed the instructions in our guide to set up your campaign template.',
+          kind: 'config',
+        })
       }
 
-      throw new StepError('Error sending SMS', error.message)
+      if (error.response.data?.error?.code === 'invalid_api_key_provided') {
+        throw new StepError({
+          name: 'Invalid Postman API key',
+          solution: GenericSolution.MalformedConnectionData,
+          kind: 'config',
+        })
+      }
+
+      if (error.response.data?.error?.code === 'invalid_ip_address_used') {
+        throw new StepError({
+          name: "Plumber's IPs are not whitelisted in your campaign",
+          solution:
+            "Add Plumber's IP addresses to your API key's IP whitelist in Postman, then try again.",
+          kind: 'config',
+        })
+      }
+
+      throw new StepError({
+        name: 'Error sending SMS',
+        solution: error.message,
+        kind: getCatchAllKind(error),
+        cause: error,
+      })
   }
 }
 

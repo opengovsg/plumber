@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
@@ -69,10 +70,12 @@ const action: IRawAction = {
   async run($) {
     const messageText = ($.step.parameters.text as string).trim()
     if (!messageText) {
-      throw new StepError(
-        'Empty message text',
-        'Check that the message text is not empty, especially if variables are used.',
-      )
+      throw new StepError({
+        name: 'Empty message text',
+        solution:
+          'Check that the message text is not empty, especially if variables are used.',
+        kind: 'config',
+      })
     }
 
     const sanitizedMarkdown = sanitizeMarkdown(messageText)
@@ -95,6 +98,9 @@ const action: IRawAction = {
         raw: response.data,
       })
     } catch (err) {
+      if (!(err instanceof HttpError)) {
+        throw err
+      }
       await throwSendMessageError(err, $.step, $.execution.testRun)
     }
   },

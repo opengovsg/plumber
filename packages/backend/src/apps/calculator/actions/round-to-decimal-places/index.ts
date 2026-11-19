@@ -5,7 +5,10 @@ import { ZodError } from 'zod'
 import StepError, { GenericSolution } from '@/errors/step'
 import { firstZodParseError } from '@/helpers/zod-utils'
 
-import { formatBigJsErrorMessage } from '../../common/format-bigjs-error-message'
+import {
+  formatBigJsErrorMessage,
+  isBigJsError,
+} from '../../common/format-bigjs-error-message'
 import { fields, fieldSchema } from './fields'
 
 const action = {
@@ -40,21 +43,30 @@ const action = {
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new StepError(
-          `Configuration problem: '${firstZodParseError(error)}'`,
-          GenericSolution.ReconfigureInvalidField,
-        )
-      } else if (error instanceof Error) {
-        throw new StepError(
-          `Error performing rounding: '${formatBigJsErrorMessage(error)}'`,
-          'Ensure that you have entered valid numbers.',
-        )
-      } else {
-        throw new StepError(
-          `Error performing rounding`,
-          'Ensure that you have entered valid numbers.',
-        )
+        throw new StepError({
+          name: `Configuration problem: '${firstZodParseError(error)}'`,
+          solution: GenericSolution.ReconfigureInvalidField,
+          kind: 'config',
+        })
       }
+
+      if (isBigJsError(error)) {
+        throw new StepError({
+          name: `Error performing rounding: '${formatBigJsErrorMessage(error)}'`,
+          solution: 'Ensure that you have entered valid numbers.',
+          kind: 'config',
+        })
+      }
+
+      throw new StepError({
+        name:
+          error instanceof Error
+            ? `Error performing rounding: '${error.message}'`
+            : 'Error performing rounding',
+        solution:
+          'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
     }
   },
 } satisfies IRawAction

@@ -1,32 +1,23 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import StepError, { getStepErrorKind } from '@/errors/step'
 
 import { makeSubTriggerWorker } from '../helpers/make-sub-trigger-worker'
 
-const mocks = vi.hoisted(() => {
-  // Stands in for any Objection query chain and resolves to `value` when awaited.
-  function queryResolving(value: unknown): unknown {
-    const query: unknown = new Proxy((): void => undefined, {
-      get: (_target, prop): unknown =>
-        prop === 'then'
-          ? (resolve: (v: unknown) => void) => resolve(value)
-          : (): unknown => query,
-    })
-    return query
-  }
+const mocks = vi.hoisted(() => ({
+  workerConstructor: vi.fn(function () {
+    return { on: vi.fn(), close: vi.fn() }
+  }),
+  tracerWrap: vi.fn((_name: string, processor: unknown) => processor),
+  actionRun: vi.fn(),
+  globalVariable: vi.fn(async () => ({ actionOutput: {} })),
+  recordLateScheduledStart: vi.fn(),
+}))
 
-  return {
-    queryResolving,
-    workerConstructor: vi.fn(function WorkerPro() {
-      return { on: vi.fn(), close: vi.fn() }
-    }),
-    globalVariable: vi.fn(),
-    recordLateScheduledStart: vi.fn(),
-  }
-})
-
-vi.mock('@taskforcesh/bullmq-pro', () => ({
+vi.mock('@taskforcesh/bullmq-pro', async (importActual) => ({
+  ...(await importActual<typeof import('@taskforcesh/bullmq-pro')>()),
   WorkerPro: mocks.workerConstructor,
-  UnrecoverableError: class UnrecoverableError extends Error {},
 }))
 
 vi.mock('@/config/redis', async (importActual) => ({
@@ -36,72 +27,125 @@ vi.mock('@/config/redis', async (importActual) => ({
 
 vi.mock('@/helpers/tracer', () => ({
   default: {
-    wrap: vi.fn((_name, processor) => processor),
-    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
+    wrap: mocks.tracerWrap,
+    scope: () => ({ active: (): null => null }),
   },
-}))
-
-vi.mock('@/queues/action', () => ({
-  enqueueActionJob: vi.fn(),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: () =>
-      mocks.queryResolving({ getApp: vi.fn(), $relatedQuery: vi.fn() }),
-  },
-}))
-
-vi.mock('@/models/flow', () => ({
-  default: { query: () => mocks.queryResolving({}) },
-}))
-
-vi.mock('@/models/execution', () => ({
-  default: { query: () => mocks.queryResolving({}) },
 }))
 
 vi.mock('@/helpers/global-variable', () => ({
   default: mocks.globalVariable,
 }))
 
-vi.mock('@/workers/helpers/worker-event-handlers', () => ({
+vi.mock('@/models/step', () => {
+  const step = {
+    id: 'step-id',
+    getApp: vi.fn(),
+    $relatedQuery: vi.fn(),
+    getActionCommand: vi.fn(async () => ({ run: mocks.actionRun })),
+  }
+  return {
+    default: {
+      query: () => ({
+        findById: () => ({ throwIfNotFound: async () => step }),
+      }),
+    },
+  }
+})
+
+vi.mock('@/models/flow', () => {
+  const flowQuery = {
+    findById: () => flowQuery,
+    withGraphJoined: () => flowQuery,
+    withGraphFetched: () => flowQuery,
+    throwIfNotFound: async () => ({ id: 'flow-id' }),
+  }
+  return { default: { query: () => flowQuery } }
+})
+
+vi.mock('@/models/execution', () => ({
+  default: {
+    query: () => ({
+      findById: () => ({
+        throwIfNotFound: async () => ({ id: 'execution-id' }),
+      }),
+    }),
+  },
+}))
+
+vi.mock('@/models/execution-step', () => ({ default: {} }))
+
+vi.mock('@/queues/action', () => ({
+  enqueueActionJob: vi.fn(),
+}))
+
+vi.mock('../helpers/worker-event-handlers', () => ({
   registerWorkerEventHandlers: vi.fn(),
 }))
 
-vi.mock('@/workers/helpers/record-late-scheduled-start', () => ({
+vi.mock('../helpers/record-late-scheduled-start', () => ({
   recordLateScheduledStart: mocks.recordLateScheduledStart,
 }))
 
-describe('makeSubTriggerWorker processor', () => {
+type Processor = (job: unknown) => Promise<unknown>
+
+describe('makeSubTriggerWorker', () => {
+  let processor: Processor
+
+  beforeEach(() => {
+    makeSubTriggerWorker({ appKey: 'formsg', queueName: '{formsg-queue}' })
+    processor = (
+      mocks.workerConstructor.mock.calls[0] as unknown[]
+    )[1] as Processor
+  })
+
   afterEach(() => {
     vi.clearAllMocks()
   })
 
-  it('records late scheduled starts before running the sub-trigger', async () => {
-    const job = {
-      id: '1',
-      data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
-      opts: {},
-    }
-    mocks.globalVariable.mockRejectedValueOnce(new Error('stop here'))
-    makeSubTriggerWorker({
-      appKey: 'formsg',
-      queueName: '{app-actions-formsg}',
-    })
-    const calls = mocks.workerConstructor.mock.calls as unknown as [
-      string,
-      (job: unknown) => Promise<void>,
-    ][]
+  const job = {
+    id: 'job-id',
+    data: { flowId: 'flow-id', executionId: 'execution-id', stepId: 'step-id' },
+    opts: {},
+  }
 
-    await expect(calls.at(-1)[1](job)).rejects.toThrow('stop here')
+  it('records late scheduled starts before running the sub-trigger', async () => {
+    mocks.globalVariable.mockRejectedValueOnce(new Error('stop here'))
+
+    await expect(processor(job)).rejects.toThrow('stop here')
 
     expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({
       job,
-      queueName: '{app-actions-formsg}',
+      queueName: '{formsg-queue}',
       rateLimited: false,
     })
     expect(mocks.recordLateScheduledStart).toHaveBeenCalledBefore(
       mocks.globalVariable,
     )
+  })
+
+  it('keeps a StepError as the hidden cause when the action fails', async () => {
+    const stepError = new StepError({
+      name: 'n',
+      solution: 's',
+      kind: 'third-party',
+    })
+    mocks.actionRun.mockRejectedValueOnce(stepError)
+
+    const thrown = (await processor(job).catch((error) => error)) as Error
+
+    expect(thrown).toBeInstanceOf(UnrecoverableError)
+    expect(thrown.cause).toBe(stepError)
+    expect(getStepErrorKind(thrown.cause)).toBe('third-party')
+    expect(Object.keys(thrown)).not.toContain('cause')
+  })
+
+  it('attaches no cause when the action throws a non-StepError', async () => {
+    mocks.actionRun.mockRejectedValueOnce(new Error('boom'))
+
+    const thrown = (await processor(job).catch((error) => error)) as Error
+
+    expect(thrown).toBeInstanceOf(UnrecoverableError)
+    expect(thrown.cause).toBeUndefined()
+    expect(getStepErrorKind(thrown.cause)).toBe('internal')
   })
 })

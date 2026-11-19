@@ -7,7 +7,11 @@
   "scripts": {
     "get-prompt": "node ../../scripts/with-op-env.mjs node get-prompt.mjs",
     "export-sessions": "node ../../scripts/with-op-env.mjs node export-sessions.mjs",
-    "test": "node --test 'test/**/*.test.mjs'"
+    "test": "node --test 'lib/**/*.test.mjs' 'test/**/*.test.mjs'",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write ."
   },
   "author": "",
   "license": "ISC",
