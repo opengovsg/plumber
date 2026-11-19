@@ -109,7 +109,8 @@ export function sgtDaysBetween(from: string, to: string): string[] {
 }
 
 // Bump when a day's files change. The next night replays the last 7 days from the log, which is append-only.
-export const MUTATION_LOG_VERSION = 1
+// 2 adds flow_edit_daily.
+export const MUTATION_LOG_VERSION = 2
 
 export type FetchDayLines = (window: {
   startMs: number
@@ -225,24 +226,25 @@ export async function writeMutationLogDays({
         ).length,
       })
 
-    const edits = summarizeFlowEdits(day, rows)
-    const editsKey = buildSilverDayKey(FLOW_EDIT_DAILY_TABLE, day)
-    await sink(editsKey, encodeParquet(FLOW_EDIT_DAILY_COLUMNS, edits))
-    logger.info({
-      event: 'analytics.flow_edit_daily.day.written',
-      day,
-      key: editsKey,
-      rows: edits.length,
-    })
+      const edits = summarizeFlowEdits(day, rows)
+      const editsKey = buildSilverDayKey(FLOW_EDIT_DAILY_TABLE, day)
+      await sink(editsKey, encodeParquet(FLOW_EDIT_DAILY_COLUMNS, edits))
+      logger.info({
+        event: 'analytics.flow_edit_daily.day.written',
+        day,
+        key: editsKey,
+        rows: edits.length,
+      })
 
-    await markDayComplete({
-      sink,
-      job: MUTATION_LOG_TABLE,
-      completion: { day, version: MUTATION_LOG_VERSION, full: false },
-      source,
-      outputs: [key, editsKey],
-    })
-  }
+      await markDayComplete({
+        sink,
+        job: MUTATION_LOG_TABLE,
+        completion: { day, version: MUTATION_LOG_VERSION, full: false },
+        source,
+        outputs: [key, editsKey],
+      })
+    },
+  )
 }
 
 interface ExportMutationLogParams {
