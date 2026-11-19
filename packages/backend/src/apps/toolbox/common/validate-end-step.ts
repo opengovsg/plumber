@@ -10,7 +10,6 @@ import {
   remapIfThenEndStepIdsOnDuplicate,
   remapIfThenEndStepIdsOnDuplicateBranch,
 } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -287,9 +286,6 @@ export async function pinEndStep(
     })
 }
 
-// Mirrors packages/frontend/src/config/flags.ts's IF_THEN_THEN_FEATURE_FLAG.
-export const IF_THEN_THEN_LD_FLAG_KEY = 'feature_if_then_then'
-
 /**
  * Deletes a V1 block's leftover blank placeholder members and closes the
  * position gaps they leave, highest position first so each target's own
@@ -376,14 +372,13 @@ export async function deriveV1EndStepDroppingBlankMembers(
 
 /**
  * Opportunistically pins every legacy (V1) if-then block in a flow to its
- * current derived extent, when the flag is on for the flow owner. Once
- * pinned, the existing V2 repair logic protects the block forever after, so
- * this only ever needs to run once per block.
+ * current derived extent. Once pinned, the existing V2 repair logic protects
+ * the block forever after, so this only ever needs to run once per block.
  *
  * IMPORTANT: the derived extent is already region-confined, so an MRF pipe
  * upgrades without tripping the region checks in `checkEndStepWrite`.
  */
-export async function upgradeIfThenV1BlocksIfEnabled(
+export async function upgradeIfThenV1Blocks(
   trx: Transaction,
   flow: Flow,
   flowSteps: ValidationStep[],
@@ -393,22 +388,6 @@ export async function upgradeIfThenV1BlocksIfEnabled(
     (step) =>
       isIfThenStep(step) && !isIfThenV2(step) && !excludeStepIds.has(step.id),
   )
-  if (v1IfThens.length === 0) {
-    return
-  }
-
-  const owner = await flow
-    .$relatedQuery('user', trx)
-    .select('email')
-    .throwIfNotFound()
-  const isEnabled = await getLdFlagValue(
-    IF_THEN_THEN_LD_FLAG_KEY,
-    owner.email,
-    false,
-  )
-  if (!isEnabled) {
-    return
-  }
 
   let currentSteps = flowSteps
 

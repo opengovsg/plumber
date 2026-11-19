@@ -13,7 +13,6 @@ import {
   validateSubstep,
 } from '@/helpers/editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
-import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -41,8 +40,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = useDisclosure()
 
   const { arguments: args } = substep
-  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
-    useIfThenV2Enabled()
   const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
@@ -72,17 +69,9 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
           arg.key,
           step,
           getFlagValue,
-          { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading },
         ),
       ) || [],
-    [
-      args,
-      step,
-      isIfThenV2Enabled,
-      isIfThenV2Loading,
-      selectedActionOrTrigger?.key,
-      getFlagValue,
-    ],
+    [args, step, selectedActionOrTrigger?.key, getFlagValue],
   )
 
   /**

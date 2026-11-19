@@ -17,7 +17,6 @@ import {
   isIfThenStep as checkIfThenStep,
   TOOLBOX_ACTIONS,
 } from '@/helpers/toolbox'
-import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 enum AI_ACTIONS {
   Pair = 'pair',
@@ -81,14 +80,7 @@ export function useStepMetadata(
     [actionsOrTriggers, step?.key],
   )
 
-  // TODO: remove this branchName-specific check once if-then V2 is rolled
-  // out to 100% and if-then V1 is retired.
-  const { isEnabled: isIfThenV2Enabled } = useIfThenV2Enabled()
-  const { stepName, defaultStepName } = getStepName(
-    allApps,
-    step,
-    isIfThenV2Enabled,
-  )
+  const { stepName, defaultStepName } = getStepName(allApps, step, true)
 
   const substeps = selectedActionOrTrigger?.substeps || []
   const hasConnection = substeps?.some(

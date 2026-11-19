@@ -3,15 +3,12 @@ import type { ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo } from 'react'
 
 import { filterStepsByApprovalBranch } from '@/helpers/formsg'
-import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import { EditorContext } from './Editor'
 import { MrfContext } from './MrfContext'
 
 export type StepToDisplayContextValue = {
   triggerStep: IStep | null
-  actionStepsBeforeGroup: IStep[]
-  groupedSteps: IStep[][]
   appsWithActions: IApp[]
   groupingActions: Set<string> | null
   stepIdToOrder: Record<string, number>
@@ -21,8 +18,6 @@ export type StepToDisplayContextValue = {
 
 export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
   triggerStep: null,
-  actionStepsBeforeGroup: [],
-  groupedSteps: [],
   appsWithActions: [],
   groupingActions: null,
   stepIdToOrder: {},
@@ -80,39 +75,7 @@ export function StepsToDisplayProvider({
     return map
   }, [stepsToDisplay])
 
-  const [triggerStep, actionStepsBeforeGroup, groupedSteps] = useMemo(() => {
-    if (!groupingActions) {
-      return [null, [], []]
-    }
-
-    const groupStepIdx = stepsToDisplay.findIndex((step, index) => {
-      if (
-        // We ignore the 1st step because it's either a trigger, or a
-        // step-grouping action that is using a nested Editor to edit steps in
-        // its group.
-        index === 0 ||
-        !step.appKey ||
-        !step.key
-      ) {
-        return false
-      }
-      return groupingActions.has(`${step.appKey}-${step.key}`)
-    })
-
-    let branchesWithSteps: IStep[][] = []
-    if (groupStepIdx !== -1) {
-      branchesWithSteps = extractBranchesWithSteps(
-        stepsToDisplay.slice(groupStepIdx),
-        0,
-      )
-    }
-
-    const triggerStep = stepsToDisplay[0]
-
-    return groupStepIdx === -1
-      ? [triggerStep, stepsToDisplay.slice(1), []]
-      : [triggerStep, stepsToDisplay.slice(1, groupStepIdx), branchesWithSteps]
-  }, [groupingActions, stepsToDisplay])
+  const triggerStep = groupingActions ? stepsToDisplay[0] : null
 
   useEffect(() => {
     if (
@@ -128,8 +91,6 @@ export function StepsToDisplayProvider({
     <StepsToDisplayContext.Provider
       value={{
         triggerStep,
-        actionStepsBeforeGroup,
-        groupedSteps,
         appsWithActions,
         groupingActions,
         stepIdToOrder,

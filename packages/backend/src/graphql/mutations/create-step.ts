@@ -3,7 +3,7 @@ import { IStepConfig } from '@plumber/types'
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
 import {
   extractSelfEndStepIntent,
-  upgradeIfThenV1BlocksIfEnabled,
+  upgradeIfThenV1Blocks,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
@@ -121,16 +121,15 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
       throw error
     }
 
-    // Opportunistically pins any other legacy if-then block, if the flag is
-    // on for the pipe owner.
-    // IMPORTANT: must run before validateEndStepOnCreateStep. Its rule 2
+    // Opportunistically pins any other legacy if-then block.
+    // IMPORTANT: must run before fixupEndStepOnCreateStep. Its rule 2
     // (tail-extend) only recognizes a block as extendable once it's explicit
     // V2, so pinning first lets a still-legacy tail-added block see its own
     // fresh pin and extend, instead of staying unmarked and being skipped.
     const preInsertSteps = (
       await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
     ).filter((flowStep) => flowStep.id !== step.id)
-    await upgradeIfThenV1BlocksIfEnabled(trx, flow, preInsertSteps)
+    await upgradeIfThenV1Blocks(trx, flow, preInsertSteps)
 
     // IMPORTANT: throws (and rolls back the whole creation) on any marker
     // violation.

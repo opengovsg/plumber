@@ -28,7 +28,6 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     multimedia: {
       animationData: IfRepeatAnimation,
     },
-    ldFlagKey: 'feature_if_then_then',
   },
   {
     date: '2026-09-18',

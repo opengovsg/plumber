@@ -18,21 +18,17 @@ import { createStepService } from '../create-step'
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
-  getLdFlagValue: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
-  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 describe('createStepService', () => {
   beforeEach(() => {
     mocks.getAllLdFlags.mockResolvedValue({})
     mocks.getRestrictedAppKeys.mockReturnValue([])
-    // The If block flag is on unless a test turns it off.
-    mocks.getLdFlagValue.mockResolvedValue(true)
   })
 
   it('appends a new action step at the end of the pipe', async () => {
@@ -423,9 +419,9 @@ describe('createStepService', () => {
       )
     })
 
-    it('places a step after a legacy If block when the flag is off', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(false)
-      const { user, flow, ifThen, email } = await createBlockPipe('legacy-off')
+    it('pins a legacy If block, then places a step after it with afterIfThenBlock on the If step', async () => {
+      const { user, flow, ifThen, email } =
+        await createBlockPipe('legacy-after')
       await Step.query().findById(ifThen.id).patch({ config: {} })
 
       const sms = await createStepService({

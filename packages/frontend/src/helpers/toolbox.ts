@@ -1,9 +1,7 @@
 import { useMutation } from '@apollo/client'
 import type { IStep } from '@plumber/types'
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useState } from 'react'
 
-import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
-import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 
 export const TOOLBOX_APP_KEY = 'toolbox'
@@ -142,130 +140,6 @@ export function areAllIfThenBranchesCompleted(
   return branches.every(isIfThenBranchCompleted)
 }
 
-export function useIfThenV1Initializer(): [
-  (currStep: IStep) => Promise<IStep>,
-  boolean,
-] {
-  const [isInitializing, setIsInitializing] = useState(false)
-  const { depth } = useContext(BranchContext)
-
-  // We run these in parallel without updating the cache, and explicitly
-  // re-fetch pipe _after_. This is because we don't want users on slow
-  // connections to see Branch 1, then have Branch 2 pop up later; this is uber
-  // confusing.
-  //
-  // It's kinda dangerous in that we're relying on GET_FLOW to contain whatever
-  // UPDATE_STEP and CREATE_STEP would have returned, but this should be fine
-  // since GET_FLOW should constitute a full refresh of the pipe.
-  const [updateStep] = useMutation(UPDATE_STEP, { fetchPolicy: 'no-cache' })
-  const [createStep] = useMutation(CREATE_STEP, { fetchPolicy: 'no-cache' })
-
-  const initialize = useCallback(
-    async (currStep: IStep) => {
-      setIsInitializing(true)
-
-      const commonConfig = {
-        ...(currStep.config?.approval && {
-          approval: currStep.config?.approval,
-        }),
-      }
-
-      const updateFirstBranch = await updateStep({
-        variables: {
-          input: {
-            id: currStep.id,
-            appKey: TOOLBOX_APP_KEY,
-            key: TOOLBOX_ACTIONS.IfThen,
-            flow: {
-              id: currStep.flowId,
-              updatedAt: currStep.flow.updatedAt,
-            },
-            parameters: {
-              branchName: 'Branch 1',
-              depth,
-            },
-            connection: {
-              id: null,
-            },
-            // no need to set config here since it's already set
-          },
-        },
-      })
-      const updatedFirstBranch = updateFirstBranch?.data?.updateStep
-      const createSecondBranch = await createStep({
-        variables: {
-          input: {
-            key: TOOLBOX_ACTIONS.IfThen,
-            appKey: TOOLBOX_APP_KEY,
-            previousStep: {
-              id: currStep.id,
-            },
-            flow: {
-              id: currStep.flowId,
-              updatedAt: updatedFirstBranch?.flow?.updatedAt,
-            },
-            parameters: {
-              depth,
-              branchName: 'Branch 2',
-            },
-            config: commonConfig,
-          },
-        },
-      })
-      const createdSecondBranch = createSecondBranch?.data?.createStep
-      const [_firstBranch, secondBranch] = await Promise.all([
-        updateFirstBranch,
-        createSecondBranch,
-      ])
-
-      // After creating branches, we create a sample step to each branch. This is
-      // because users always get confused on how to add actions within a
-      // branch.
-      //
-      // FIXME (ogp-weeloong): Intentionally serial; need to fix createSteps to
-      // enable concurrent updates on same pipe.
-      const createFirstStep = await createStep({
-        variables: {
-          input: {
-            previousStep: {
-              id: currStep.id,
-            },
-            flow: {
-              id: currStep.flowId,
-              updatedAt: createdSecondBranch.flow.updatedAt,
-            },
-            config: commonConfig,
-          },
-        },
-      })
-      const createdFirstStep = createFirstStep?.data?.createStep
-      await createStep({
-        variables: {
-          input: {
-            previousStep: {
-              id: secondBranch.data.createStep.id,
-            },
-            flow: {
-              id: currStep.flowId,
-              updatedAt: createdFirstStep?.flow?.updatedAt,
-            },
-            config: commonConfig,
-          },
-        },
-      })
-
-      setIsInitializing(false)
-
-      // we dont refetch GET_FLOW here but leave it to the caller to refetch
-
-      return currStep
-    },
-    [createStep, depth, updateStep],
-  )
-
-  return [initialize, isInitializing]
-}
-
 /**
  * Hook for initializing an if-then V2 block on a step that already exists
  * before its app/key are chosen (e.g. a template, or an empty action left
@@ -281,7 +155,6 @@ export function useIfThenV2Initializer(): [
   boolean,
 ] {
   const [isInitializing, setIsInitializing] = useState(false)
-  const { depth } = useContext(BranchContext)
 
   const [updateStep] = useMutation(UPDATE_STEP, { fetchPolicy: 'no-cache' })
 
@@ -304,7 +177,7 @@ export function useIfThenV2Initializer(): [
               updatedAt: currStep.flow.updatedAt,
             },
             parameters: {
-              depth,
+              depth: 0,
             },
             connection: {
               id: null,
@@ -319,7 +192,7 @@ export function useIfThenV2Initializer(): [
       // The caller refetches GET_FLOW; this hook doesn't.
       return currStep
     },
-    [depth, updateStep],
+    [updateStep],
   )
 
   return [initialize, isInitializing]

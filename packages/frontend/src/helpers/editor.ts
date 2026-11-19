@@ -21,7 +21,6 @@ import {
 } from '@/helpers/grouped-multirow-validation'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { isIfThenStep } from '@/helpers/toolbox'
-import type { IfThenV2State } from '@/hooks/useIfThenV2Enabled'
 
 export const getFlowStepHeaderWidth = (
   isDrawerOpen: boolean,
@@ -54,15 +53,9 @@ export function isInputVisibleForStep(
   argKey: string,
   step: IStep,
   getFlagValue: LaunchDarklyContextData['getFlagValue'],
-  ifThenV2State?: IfThenV2State,
 ): boolean {
-  // TODO (if-then-then): remove once if-then V2 is 100% rolled out.
-  if (
-    argKey === 'branchName' &&
-    isIfThenStep(step) &&
-    ifThenV2State?.isEnabled &&
-    !ifThenV2State.isLoading
-  ) {
+  // Branch names only made sense for if-then V1's sibling branches.
+  if (argKey === 'branchName' && isIfThenStep(step)) {
     return false
   }
 

@@ -11,10 +11,8 @@ import { getMrfApprovalConfig } from '@/helpers/formsg'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useIfThenV1Initializer,
   useIfThenV2Initializer,
 } from '@/helpers/toolbox'
-import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 import {
   APP_ALLOWING_EMPTY_CONNECTION,
@@ -68,8 +66,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
 
   const [fetchAppConnections] = useLazyQuery(GET_APP_CONNECTIONS)
 
-  const { isEnabled: isIfThenV2Enabled } = useIfThenV2Enabled()
-  const [initializeIfThenV1] = useIfThenV1Initializer()
   const [initializeIfThenV2] = useIfThenV2Initializer()
 
   /**
@@ -137,7 +133,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             triggerOrAction.key,
             systemConnection?.id || undefined,
             approvalConfig && { approval: approvalConfig },
-            { previousBlockId, isIfThenV2Enabled },
+            { previousBlockId },
           )
           newStepId = createdStep.id
         } else if (step) {
@@ -147,10 +143,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             app.key === TOOLBOX_APP_KEY &&
             triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
           ) {
-            const initializeIfThen = isIfThenV2Enabled
-              ? initializeIfThenV2
-              : initializeIfThenV1
-            const ifThen = await initializeIfThen(step)
+            const ifThen = await initializeIfThenV2(step)
             newStepId = ifThen.id
           } else {
             const updatedStep = await onUpdateStep({
@@ -187,8 +180,6 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       setCurrentStepId,
       approvalBranches,
       onCreateStep,
-      isIfThenV2Enabled,
-      initializeIfThenV1,
       initializeIfThenV2,
       onUpdateStep,
     ],

@@ -40,8 +40,6 @@ type FlowStepProps = {
   isLastStep: boolean
   isNested?: boolean
   allowReorder?: boolean
-  // we use this to control the width of condition steps in if-then and for-each
-  canChildStepsReorder?: boolean
   // An if-then V2 block titles its condition step with the block's own name,
   // so the block's header reads as the block rather than a generic
   // "Condition".
@@ -67,7 +65,6 @@ export default function FlowStep(
     isLastStep,
     isNested,
     allowReorder = true,
-    canChildStepsReorder = false,
     stepNameOverride,
     isContainerHeader = false,
     isClickable = true,
@@ -98,7 +95,6 @@ export default function FlowStep(
     flow,
     isDrawerOpen,
     isMobile,
-    readOnly,
     shouldWarnOnLeave,
     testExecutionSteps,
     onDrawerClose,
@@ -243,12 +239,7 @@ export default function FlowStep(
   }
 
   return (
-    <FlowStepWrapper
-      canChildStepsReorder={canChildStepsReorder}
-      allowReorder={allowReorder}
-      isDrawerOpen={isDrawerOpen}
-      isReadOnly={readOnly}
-    >
+    <FlowStepWrapper>
       {!app ? (
         <EmptyFlowStepHeader
           isNested={isNested}

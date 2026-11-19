@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStepPositions from '@/graphql/mutations/update-step-positions'
@@ -7,16 +15,6 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
-
-// Defaults to false in beforeEach below so pre-existing tests here stay
-// byte-identical; the opportunistic-upgrade tests override it per case.
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 
@@ -69,6 +67,10 @@ const MOCK_STEPS = [
 ] as const
 
 describe('updateStepPositions mutation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let context: any
   let fakeSteps: any[]
   let fakeFlow: any
@@ -79,7 +81,6 @@ describe('updateStepPositions mutation', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Set up flow patch and fetch spy first
     flowPatchAndFetchSpy = vi.fn().mockReturnValue({
@@ -98,7 +99,7 @@ describe('updateStepPositions mutation', () => {
       $query: vi.fn().mockReturnValue({
         patchAndFetch: flowPatchAndFetchSpy,
       }),
-      // Used by upgradeIfThenV1BlocksIfEnabled's re-fetch. MOCK_STEPS has no
+      // Used by upgradeIfThenV1Blocks's re-fetch. MOCK_STEPS has no
       // if-then steps, so it's a no-op regardless of what this returns.
       $relatedQuery: vi.fn().mockReturnValue({
         orderBy: vi.fn().mockResolvedValue(MOCK_STEPS),
@@ -350,6 +351,10 @@ describe('updateStepPositions mutation', () => {
 // Real-DB integration tests, kept separate from the mock-based suite above
 // so the repair runs against real flow steps.
 describe('updateStepPositions endStepId repair', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let testFlow: Flow
   let owner: User
   let context: Context
@@ -392,7 +397,6 @@ describe('updateStepPositions endStepId repair', () => {
 
   beforeEach(async () => {
     vi.restoreAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
     owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
@@ -469,7 +473,7 @@ describe('updateStepPositions endStepId repair', () => {
     expect(wasRepaired()).toBe(false)
   })
 
-  it('reorders a legacy (marker-less) flow without writing any marker', async () => {
+  it('pins a legacy block, then repairs its marker after an interior reorder', async () => {
     const [, legacy, s3, s4] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
       { key: 'ifThen', appKey: 'toolbox', type: 'action' },
@@ -491,8 +495,8 @@ describe('updateStepPositions endStepId repair', () => {
       context,
     )
 
-    expect((await reload(legacy.id)).config.endStepId).toBeUndefined()
-    expect(wasRepaired()).toBe(false)
+    expect((await reload(legacy.id)).config.endStepId).toBe(s3.id)
+    expect(wasRepaired()).toBe(true)
   })
 
   describe('opportunistic if-then V1 upgrade', () => {
@@ -529,7 +533,6 @@ describe('updateStepPositions endStepId repair', () => {
     it('pins both legacy blocks to their pre-reorder extents so the drag does not absorb the trailing step', async () => {
       const [, ifThenA, childA, ifThenB, childB, trailing] =
         await seedTwoBlockFlow()
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       await updateStepPositions(
         {},
@@ -542,20 +545,6 @@ describe('updateStepPositions endStepId repair', () => {
       expect((await reload(ifThenA.id)).config.endStepId).toBe(childA.id)
       expect((await reload(ifThenB.id)).config.endStepId).toBeDefined()
       expect((await reload(trailing.id)).config.endStepId).toBeUndefined()
-    })
-
-    it('does not pin any V1 if-then block when the flag is off', async () => {
-      const [, ifThenA, childA, ifThenB, childB] = await seedTwoBlockFlow()
-      mocks.getLdFlagValue.mockResolvedValue(false)
-
-      await updateStepPositions(
-        {},
-        { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
-        context,
-      )
-
-      expect((await reload(ifThenA.id)).config.endStepId).toBeUndefined()
-      expect((await reload(ifThenB.id)).config.endStepId).toBeUndefined()
     })
   })
 })

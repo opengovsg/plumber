@@ -24,7 +24,7 @@ import {
 
 import { getAppActionFlag, getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { TOOLBOX_APP_KEY, useIfThenV1Initializer } from '@/helpers/toolbox'
+import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { getSelectableActions } from '../helpers/selectable-actions'
@@ -60,9 +60,6 @@ export default function ChooseApp(props: ChooseAppProps) {
     anchorPlacement,
   })
 
-  const [_, isInitializingIfThen] = useIfThenV1Initializer()
-  const isLoading = isInitializingIfThen
-
   const [searchQuery, setSearchQuery] = useState('')
 
   const onSelectApp = useCallback(
@@ -87,10 +84,6 @@ export default function ChooseApp(props: ChooseAppProps) {
   )
 
   const toolboxActionsToDisplay = useMemo(() => {
-    if (isLoading) {
-      return []
-    }
-
     const ldToolboxAppFlag = getAppFlag(TOOLBOX_APP_KEY)
     if (!getFlagValue(ldToolboxAppFlag, false)) {
       return []
@@ -100,10 +93,6 @@ export default function ChooseApp(props: ChooseAppProps) {
       apps?.find((app) => app.key === TOOLBOX_APP_KEY)?.actions ?? []
     const filteredToolboxActions = toolboxActions.filter((action) => {
       // Filter away actions hidden behind feature flags
-      if (isLoading) {
-        return true
-      }
-
       const ldToolboxActionFlag = getAppActionFlag(TOOLBOX_APP_KEY, action.key)
       return getFlagValue(ldToolboxActionFlag, true)
     })
@@ -117,13 +106,13 @@ export default function ChooseApp(props: ChooseAppProps) {
       .map((result) => result.obj)
 
     return fuzzySearchToolboxActions
-  }, [apps, isLoading, getFlagValue, searchQuery])
+  }, [apps, getFlagValue, searchQuery])
 
   // Combine filtering and grouping logic into a single operation
   const groupedApps: [string, IApp[]][] = useMemo(() => {
     const filteredApps = apps?.filter((app) => {
       // Filter away apps hidden behind feature flags
-      if (isLoading || !app?.key) {
+      if (!app?.key) {
         return true
       }
       const ldAppFlag = getAppFlag(app.key)
@@ -172,14 +161,7 @@ export default function ChooseApp(props: ChooseAppProps) {
       }
       return a[0].localeCompare(b[0])
     })
-  }, [
-    apps,
-    getFlagValue,
-    isLoading,
-    isTrigger,
-    searchQuery,
-    toolboxActionsToDisplay,
-  ])
+  }, [apps, getFlagValue, isTrigger, searchQuery, toolboxActionsToDisplay])
 
   return (
     <>

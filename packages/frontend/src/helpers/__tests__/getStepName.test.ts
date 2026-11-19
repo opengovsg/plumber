@@ -65,7 +65,7 @@ describe('getStepName', () => {
       })
     })
 
-    it('ignores branchName when the flag param is omitted, even if set', () => {
+    it('ignores branchName when combineV1BranchName is omitted, even if set', () => {
       const step = createMockStep({
         ...ifThenStep,
         parameters: { branchName: 'Branch 1' },
@@ -77,7 +77,7 @@ describe('getStepName', () => {
       })
     })
 
-    it('ignores branchName when the flag is explicitly off', () => {
+    it('ignores branchName when combineV1BranchName is off', () => {
       const step = createMockStep({
         ...ifThenStep,
         parameters: { branchName: 'Branch 1' },
@@ -90,7 +90,7 @@ describe('getStepName', () => {
       })
     })
 
-    it('ignores branchName for a V2 step even when the flag is on', () => {
+    it('ignores branchName for a V2 step even when combineV1BranchName is on', () => {
       const step = createMockStep({
         ...ifThenStep,
         parameters: { branchName: 'Branch 1' },
@@ -103,7 +103,7 @@ describe('getStepName', () => {
       })
     })
 
-    it('combines branchName and stepName for a leftover V1 step when the flag is on', () => {
+    it('combines branchName and stepName for a leftover V1 step', () => {
       const step = createMockStep({
         ...ifThenStep,
         parameters: { branchName: 'Branch 1' },
@@ -116,7 +116,7 @@ describe('getStepName', () => {
       })
     })
 
-    it('falls back to branchName alone for a leftover V1 step with no stepName, flag on', () => {
+    it('falls back to branchName alone for a leftover V1 step with no stepName', () => {
       const step = createMockStep({
         ...ifThenStep,
         parameters: { branchName: 'Branch 1' },
@@ -128,7 +128,7 @@ describe('getStepName', () => {
       })
     })
 
-    it('falls back to "If" for a leftover V1 step with no branchName, flag on', () => {
+    it('falls back to "If" for a leftover V1 step with no branchName', () => {
       const result = getStepName([], ifThenStep, true)
       expect(result).toEqual({
         stepName: 'If',

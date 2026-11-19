@@ -1,5 +1,13 @@
 import { NotFoundError } from 'objection'
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import deleteStep from '@/graphql/mutations/delete-step'
 import logger from '@/helpers/logger'
@@ -15,17 +23,11 @@ import {
 } from './flow.mock'
 import { generateMockContext } from './tiles/table.mock'
 
-// Defaults to false in beforeEach below so pre-existing tests here stay
-// byte-identical. The opportunistic-upgrade tests override it per case.
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
-
 describe('deleteStep mutation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let context: Context
   let testFlow: Flow
   let testSteps: Step[]
@@ -38,7 +40,6 @@ describe('deleteStep mutation', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Mock the patchLastUpdated method
     vi.spyOn(Flow.prototype, 'patchLastUpdated').mockImplementation(
@@ -545,7 +546,6 @@ describe('deleteStep mutation', () => {
       const ifThenB = await addIfThen(4)
       const childB = await addPlain(5)
       const unrelated = await addPlain(6)
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       await deleteStep(
         {},
@@ -560,30 +560,6 @@ describe('deleteStep mutation', () => {
       expect(steps.find((s) => s.id === ifThenB.id)?.config.endStepId).toBe(
         childB.id,
       )
-    })
-
-    it('does not pin any V1 if-then block when the flag is off', async () => {
-      await addTrigger('catchRawWebhook', 'custom-api')
-      const ifThenA = await addIfThen(2)
-      await addPlain(3)
-      const ifThenB = await addIfThen(4)
-      await addPlain(5)
-      const unrelated = await addPlain(6)
-      mocks.getLdFlagValue.mockResolvedValue(false)
-
-      await deleteStep(
-        {},
-        { input: { ids: [unrelated.id], ...blockFlowInput } },
-        context,
-      )
-
-      const steps = await currentSteps()
-      expect(
-        steps.find((s) => s.id === ifThenA.id)?.config.endStepId,
-      ).toBeUndefined()
-      expect(
-        steps.find((s) => s.id === ifThenB.id)?.config.endStepId,
-      ).toBeUndefined()
     })
   })
 })

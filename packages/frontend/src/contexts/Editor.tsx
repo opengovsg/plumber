@@ -35,16 +35,12 @@ import {
   SELF_END_STEP_SENTINEL,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useIfThenV1Initializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
 
 interface OnCreateStepOptions {
   previousBlockId?: string
-  // The caller resolves the owner-scoped flag and passes it here; the
-  // provider component can't read it itself.
-  isIfThenV2Enabled?: boolean
 }
 
 interface IEditorContextValue {
@@ -206,11 +202,6 @@ export const EditorProvider = ({
     refetchQueries: [GET_FLOW],
   })
 
-  // The caller (a flag-aware modal consumer) tells onCreateStep which one to
-  // use, since the provider component can't read its own EditorContext to
-  // evaluate the flag.
-  const [initializeIfThenV1, isInitializingIfThenV1] = useIfThenV1Initializer()
-
   // Add a step to the flow with the given appKey and eventKey
   const onCreateStep = useCallback(
     async (
@@ -223,7 +214,6 @@ export const EditorProvider = ({
     ) => {
       const isIfThen =
         appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen
-      const isIfThenV2Creation = isIfThen && !!options?.isIfThenV2Enabled
 
       const mutationInput = {
         previousStep: {
@@ -244,7 +234,7 @@ export const EditorProvider = ({
         // resolves the sentinel into a self-reference in the same createStep
         // transaction — no separate updateStep round-trip, no marker-absent
         // window.
-        config: isIfThenV2Creation
+        config: isIfThen
           ? { ...config, endStepId: SELF_END_STEP_SENTINEL }
           : config,
       }
@@ -253,20 +243,15 @@ export const EditorProvider = ({
         variables: { input: mutationInput },
       })
 
-      let newStep = createdStep.data.createStep
+      const newStep = createdStep.data.createStep
       setCurrentStepId(newStep.id)
 
-      // if-then V1 still needs its two-branch setup after creation; V2
-      // self-refs in the same createStep call above.
-      if (isIfThen && !isIfThenV2Creation) {
-        newStep = await initializeIfThenV1(newStep)
-      }
       // we refetch GET_FLOW after everything is completed
       await client.refetchQueries({ include: [GET_FLOW] })
 
       return newStep as IStep
     },
-    [createStep, flow, flowId, initializeIfThenV1],
+    [createStep, flow, flowId],
   )
 
   /**
@@ -417,8 +402,7 @@ export const EditorProvider = ({
           isLoadingAllApps ||
           isLoadingTestExecutionSteps ||
           isCreatingStep ||
-          isUpdatingStep ||
-          isInitializingIfThenV1,
+          isUpdatingStep,
         hasFlowTransfer,
       }}
     >
