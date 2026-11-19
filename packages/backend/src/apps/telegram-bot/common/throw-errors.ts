@@ -35,6 +35,7 @@ export async function throwSendMessageError(
       error: 'Timeout error. Telegram may be experiencing issues.',
       delayInMs: 'default',
       delayType: 'step',
+      kind: 'third-party',
     })
   }
 
@@ -141,6 +142,7 @@ export async function throwSendMessageError(
         error: 'Timeout error. Telegram may be experiencing issues.',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'third-party',
       })
     case 401:
       throw new StepError({
