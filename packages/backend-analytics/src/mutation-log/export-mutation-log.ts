@@ -1,5 +1,7 @@
 import type { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import type { S3Client } from '@aws-sdk/client-s3'
+import { BaseStep } from '@plumber/backend-models'
+import type { Knex } from 'knex'
 import { DateTime } from 'luxon'
 
 import {
@@ -146,8 +148,43 @@ export function logsInsightsFetcher(
   return (window) => fetchMutationLines({ client, logGroup, ...window })
 }
 
+// Maps step ids to their pipe ids. The editor's deleteStep sends step ids without the pipe.
+export type ResolveFlowIds = (stepIds: string[]) => Promise<Map<string, string>>
+
+export function dbFlowIdResolver(db: Knex): ResolveFlowIds {
+  return async (stepIds) => {
+    if (stepIds.length === 0) {
+      return new Map()
+    }
+    // A deleted step is soft-deleted, so it keeps its pipe.
+    const steps = await BaseStep.query(db)
+      .withSoftDeleted()
+      .whereIn('id', stepIds)
+      .select('id', 'flow_id')
+    return new Map(steps.map((step) => [step.id, step.flowId]))
+  }
+}
+
+async function fillFlowIds(
+  rows: MutationLogRow[],
+  resolveFlowIds: ResolveFlowIds,
+): Promise<MutationLogRow[]> {
+  const stepIds = [
+    ...new Set(
+      rows.flatMap((row) => (!row.flow_id && row.step_id ? [row.step_id] : [])),
+    ),
+  ]
+  const flowIdByStep = await resolveFlowIds(stepIds)
+  return rows.map((row) =>
+    !row.flow_id && row.step_id
+      ? { ...row, flow_id: flowIdByStep.get(row.step_id) ?? null }
+      : row,
+  )
+}
+
 interface WriteMutationLogDaysParams {
   fetchDayLines: FetchDayLines
+  resolveFlowIds: ResolveFlowIds
   sink: SilverSink
   days: string[]
   parameterByAction?: Record<string, string>
@@ -155,16 +192,18 @@ interface WriteMutationLogDaysParams {
 
 export async function writeMutationLogDays({
   fetchDayLines,
+  resolveFlowIds,
   sink,
   days,
   parameterByAction = resourceParameters(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
   for (const day of days) {
     const lines = await fetchDayLines(sgtDayWindow(day))
+    const parsedRows = lines
+      .map((line) => toMutationLogRow(line, parameterByAction))
+      .filter((row): row is MutationLogRow => row !== null)
     const rows = sortForFlowSearch(
-      lines
-        .map((line) => toMutationLogRow(line, parameterByAction))
-        .filter((row): row is MutationLogRow => row !== null),
+      await fillFlowIds(parsedRows, resolveFlowIds),
     )
     const key = buildBronzeDayKey(MUTATION_LOG_TABLE, day)
     await sink(
@@ -182,6 +221,9 @@ export async function writeMutationLogDays({
       rows: rows.length,
       rowsWithoutOperation: rows.filter((row) => !row.operation).length,
       rowsWithoutUser: rows.filter((row) => !row.user_id).length,
+      rowsWithFlowFromStep: parsedRows.filter(
+        (row) => !row.flow_id && row.step_id,
+      ).length,
       // Ids for these came from recoverVariables. Their step resource is unknown.
       rowsWithUnreadableVariables: lines.filter(
         (line) =>
@@ -193,6 +235,7 @@ export async function writeMutationLogDays({
 }
 
 interface ExportMutationLogParams {
+  db: Knex
   logsClient: Pick<CloudWatchLogsClient, 'send'>
   s3Client: S3Client
   appEnv: string
@@ -203,6 +246,7 @@ interface ExportMutationLogParams {
 }
 
 export async function exportMutationLog({
+  db,
   logsClient,
   s3Client,
   appEnv,
@@ -239,6 +283,7 @@ export async function exportMutationLog({
   }
   await writeMutationLogDays({
     fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
+    resolveFlowIds: dbFlowIdResolver(db),
     sink: s3Sink(s3Client, bucket),
     days: dayList,
   })

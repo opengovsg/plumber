@@ -14,6 +14,7 @@ export {
   localDirCompletionStore,
 } from './completion-stores'
 export {
+  dbFlowIdResolver,
   exportMutationLog,
   logsInsightsFetcher,
   previousSgtDay,

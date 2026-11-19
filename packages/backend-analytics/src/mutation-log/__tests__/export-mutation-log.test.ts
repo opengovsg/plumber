@@ -63,7 +63,44 @@ describe('Singapore days', () => {
   })
 })
 
+const noFlows = async () => new Map<string, string>()
+
 describe('writeMutationLogDays', () => {
+  it("fills a deleted step's pipe from its step id", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
+    const resolveFlowIds = vi.fn(async () => new Map([['s1', 'f1']]))
+
+    await writeMutationLogDays({
+      // The editor's DeleteStepButton payload, which has no pipe id.
+      fetchDayLines: async () => [
+        {
+          timestamp: '2026-11-04 16:00:01.000',
+          query:
+            'mutation DeleteStep($input: DeleteStepInput!) { deleteStep(input: $input) { id } }',
+          variables:
+            "{'input':{'ids':['s1'],'flow':{'updatedAt':'2026-11-04T15:59:00.000Z'}}}",
+          userId: 'user-1',
+          status: '200',
+        },
+      ],
+      resolveFlowIds,
+      sink: localDirSink(dir),
+      days: ['2026-11-05'],
+    })
+
+    expect(resolveFlowIds).toHaveBeenCalledWith(['s1'])
+    const file = await readFile(
+      path.join(dir, 'bronze/mutation_log/day=2026-11-05/current.parquet'),
+    )
+    expect(await parquetReadObjects({ file: toArrayBuffer(file) })).toEqual([
+      expect.objectContaining({
+        operation: 'deleteStep',
+        step_id: 's1',
+        flow_id: 'f1',
+      }),
+    ])
+  })
+
   it('writes one file per day with the logged mutations', async () => {
     dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
     const fetchDayLines = vi.fn(async () => [
@@ -85,6 +122,7 @@ describe('writeMutationLogDays', () => {
 
     await writeMutationLogDays({
       fetchDayLines,
+      resolveFlowIds: noFlows,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
     })
@@ -170,6 +208,7 @@ describe('the mutation log file layout', () => {
 
     await writeMutationLogDays({
       fetchDayLines: async () => lines,
+      resolveFlowIds: noFlows,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
     })
@@ -207,6 +246,7 @@ describe('exportMutationLog', () => {
     'reads nothing when APP_ENV is %s',
     async (appEnv) => {
       await exportMutationLog({
+        db: {} as never,
         logsClient,
         s3Client,
         appEnv,
@@ -222,6 +262,7 @@ describe('exportMutationLog', () => {
   it('fails in prod without a log group', async () => {
     await expect(
       exportMutationLog({
+        db: {} as never,
         logsClient,
         s3Client,
         appEnv: 'prod',
