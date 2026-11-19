@@ -6,6 +6,12 @@ import { DateTime } from 'luxon'
 import { z } from 'zod'
 
 import {
+  type CompletionSource,
+  markDayComplete,
+  planDays,
+  runWithCoverage,
+} from '../day-completion'
+import {
   EXPORT_APP_ENVS,
   s3Sink,
   type SilverSink,
@@ -13,7 +19,6 @@ import {
 import logger from '../logger'
 import { s3KeyLister } from '../silver-change-tables'
 import {
-  BRONZE_PREFIX,
   buildBronzeDayKey,
   encodeParquet,
   type ParquetColumns,
@@ -96,46 +101,8 @@ export function sgtDaysBetween(from: string, to: string): string[] {
   return days
 }
 
-// Each day costs one Logs Insights scan and runs before archival, so a long outage is left to a manual backfill.
-export const MAX_CATCH_UP_DAYS = 7
-
-const BRONZE_DAY_KEY = /\/day=(\d{4}-\d{2}-\d{2})\/current\.parquet$/
-
-/**
- * Picks the days to extract: every missing day in the last MAX_CATCH_UP_DAYS, through yesterday.
- *
- * Checking the whole window, not just days after the latest file, keeps a targeted backfill from hiding earlier gaps.
- */
-export function planMutationLogDays(
-  existingKeys: string[],
-  yesterday: string,
-): { days: string[]; skipped: string[] } {
-  const written = new Set(
-    existingKeys
-      .map((key) => BRONZE_DAY_KEY.exec(key)?.[1])
-      .filter((day): day is string => day !== undefined),
-  )
-  if (written.size === 0) {
-    return { days: [yesterday], skipped: [] }
-  }
-  const sorted = [...written].sort()
-  const firstDay = sorted[0]
-  const lastDay = sorted[sorted.length - 1]
-  const windowStart = DateTime.fromFormat(yesterday, DAY_FORMAT, { zone: ZONE })
-    .minus({ days: MAX_CATCH_UP_DAYS - 1 })
-    .toFormat(DAY_FORMAT)
-  // Days before the first file are history, which a manual backfill fills.
-  const from = firstDay > windowStart ? firstDay : windowStart
-  const days =
-    from > yesterday
-      ? []
-      : sgtDaysBetween(from, yesterday).filter((day) => !written.has(day))
-  const skipped =
-    lastDay < windowStart
-      ? sgtDaysBetween(lastDay, windowStart).slice(1, -1)
-      : []
-  return { days, skipped }
-}
+// Bump when a day's files change. The next night replays the last 7 days from the log, which is append-only.
+export const MUTATION_LOG_VERSION = 1
 
 export type FetchDayLines = (window: {
   startMs: number
@@ -200,6 +167,7 @@ interface WriteMutationLogDaysParams {
   resolveFlowIds: ResolveFlowIds
   sink: SilverSink
   days: string[]
+  source?: CompletionSource
   parameterByAction?: Record<string, string>
 }
 
@@ -208,6 +176,7 @@ export async function writeMutationLogDays({
   resolveFlowIds,
   sink,
   days,
+  source = 'backfill',
   parameterByAction = resourceParameters(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
   for (const day of days) {
@@ -244,6 +213,14 @@ export async function writeMutationLogDays({
           parseVariables(line.variables) === null,
       ).length,
     })
+
+    await markDayComplete({
+      sink,
+      job: MUTATION_LOG_TABLE,
+      completion: { day, version: MUTATION_LOG_VERSION, full: false },
+      source,
+      outputs: [key],
+    })
   }
 }
 
@@ -254,7 +231,7 @@ interface ExportMutationLogParams {
   appEnv: string
   bucket: string | undefined
   logGroup: string | undefined
-  // `through` catches up every missing day up to that day, from the files already written.
+  // `through` redoes every day in the catch-up window, up to that day, with no current completion file.
   days: string[] | { through: string }
 }
 
@@ -276,28 +253,28 @@ export async function exportMutationLog({
       `ANALYTICS_BUCKET and ANALYTICS_REQUEST_LOG_GROUP must be set in ${appEnv}`,
     )
   }
-  let dayList: string[]
-  if (Array.isArray(days)) {
-    dayList = days
-  } else {
-    const existingKeys = await s3KeyLister(
-      s3Client,
-      bucket,
-    )(`${BRONZE_PREFIX}${MUTATION_LOG_TABLE}/`)
-    const plan = planMutationLogDays(existingKeys, days.through)
-    if (plan.skipped.length > 0) {
-      logger.warn({
-        event: 'analytics.mutation_log.catch_up_capped',
-        firstSkipped: plan.skipped[0],
-        lastSkipped: plan.skipped.at(-1),
+  const yesterday = Array.isArray(days)
+    ? previousSgtDay(new Date())
+    : days.through
+  const sink = s3Sink(s3Client, bucket)
+  await runWithCoverage(
+    {
+      job: MUTATION_LOG_TABLE,
+      yesterday,
+      version: MUTATION_LOG_VERSION,
+      listKeys: s3KeyLister(s3Client, bucket),
+      sink,
+    },
+    async (state) => {
+      await writeMutationLogDays({
+        fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
+        resolveFlowIds: dbFlowIdResolver(db),
+        sink,
+        days: Array.isArray(days)
+          ? days
+          : planDays(state, yesterday, MUTATION_LOG_VERSION).days,
+        source: Array.isArray(days) ? 'backfill' : 'nightly',
       })
-    }
-    dayList = plan.days
-  }
-  await writeMutationLogDays({
-    fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
-    resolveFlowIds: dbFlowIdResolver(db),
-    sink: s3Sink(s3Client, bucket),
-    days: dayList,
-  })
+    },
+  )
 }

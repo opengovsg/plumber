@@ -10,7 +10,6 @@ import { localDirSink } from '../../export-silver-tables'
 import {
   exportMutationLog,
   MUTATION_LOG_ROW_GROUP_SIZE,
-  planMutationLogDays,
   previousSgtDay,
   sgtDaysBetween,
   sgtDayWindow,
@@ -154,6 +153,32 @@ describe('writeMutationLogDays', () => {
       },
     ])
   })
+
+  it('marks a day done only after its file is written', async () => {
+    const written: string[] = []
+    const write = (fail: boolean) =>
+      writeMutationLogDays({
+        fetchDayLines: async () => [],
+        resolveFlowIds: noFlows,
+        sink: async (key) => {
+          if (fail && key.startsWith('bronze/mutation_log/')) {
+            throw new Error('upload failed')
+          }
+          written.push(key)
+        },
+        days: ['2026-11-05'],
+        source: 'nightly',
+      })
+
+    await expect(write(true)).rejects.toThrow('upload failed')
+    expect(written).toEqual([])
+
+    await write(false)
+    expect(written).toEqual([
+      'bronze/mutation_log/day=2026-11-05/current.parquet',
+      'bronze/_completion/mutation_log/day=2026-11-05.v1.json',
+    ])
+  })
 })
 
 function toArrayBuffer(file: Buffer): ArrayBuffer {
@@ -272,43 +297,5 @@ describe('exportMutationLog', () => {
         days: ['2026-11-05'],
       }),
     ).rejects.toThrow('ANALYTICS_REQUEST_LOG_GROUP')
-  })
-})
-
-describe('planMutationLogDays', () => {
-  const key = (day: string) => `bronze/mutation_log/day=${day}/current.parquet`
-
-  it.each([
-    ['an empty folder', [], ['2026-11-10'], []],
-    ['an up-to-date folder', [key('2026-11-10')], [], []],
-    [
-      'a failed night',
-      [key('2026-11-07'), key('2026-11-08')],
-      ['2026-11-09', '2026-11-10'],
-      [],
-    ],
-    [
-      'a gap longer than the catch-up limit',
-      [key('2026-11-01')],
-      [
-        '2026-11-04',
-        '2026-11-05',
-        '2026-11-06',
-        '2026-11-07',
-        '2026-11-08',
-        '2026-11-09',
-        '2026-11-10',
-      ],
-      ['2026-11-02', '2026-11-03'],
-    ],
-    [
-      'gaps before a targeted backfill of a later day',
-      [key('2026-11-07'), key('2026-11-10')],
-      ['2026-11-08', '2026-11-09'],
-      [],
-    ],
-    ['history before the first file', [key('2026-11-09')], ['2026-11-10'], []],
-  ])('plans %s', (_case, keys, days, skipped) => {
-    expect(planMutationLogDays(keys, '2026-11-10')).toEqual({ days, skipped })
   })
 })
