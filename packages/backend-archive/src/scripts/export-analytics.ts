@@ -46,6 +46,7 @@ async function main(): Promise<void> {
       tables,
       changeTables,
       full: values.full,
+      source: 'backfill',
       sink: localDirSink(dir),
       listKeys: localDirKeyLister(dir),
     })
@@ -61,6 +62,7 @@ async function main(): Promise<void> {
     tables,
     changeTables,
     full: values.full,
+    source: 'backfill',
   })
 }
 

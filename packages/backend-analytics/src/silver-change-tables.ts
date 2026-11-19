@@ -4,14 +4,20 @@ import path from 'node:path'
 import { ListObjectsV2Command, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 
+import {
+  type CompletionSource,
+  type JobState,
+  latestFullCopy,
+  markDayComplete,
+  planDays,
+  runWithCoverage,
+} from './day-completion'
 import type { SilverSink } from './export-silver-tables'
 import logger from './logger'
-import { type SgtDayWindow, sgtDaysAfter, sgtDayWindow } from './sgt-day'
+import { type SgtDayWindow, sgtDayWindow } from './sgt-day'
 import {
   buildSilverDayKey,
   encodeSilverTable,
-  parseSilverDayKey,
-  SILVER_PREFIX,
   type SilverRow,
   type SilverTable,
 } from './silver-table'
@@ -23,6 +29,8 @@ import {
  */
 export interface SilverChangeTable<Row extends SilverRow> {
   name: string
+  // Bump when the columns or query change, so the next run writes a new full copy.
+  version: number
   columns: SilverTable<Row>['columns']
   // A null window asks for every row, for the first file or a re-baseline.
   // Each page becomes one file, so memory stays bounded however large the table grows.
@@ -77,25 +85,28 @@ export interface ChangeFilePlan {
 }
 
 /**
- * Picks the day files to write, using the files already written as the watermark.
+ * Picks the day files to write from the completion files.
  *
- * A missed night is caught up on the next run, to each step's current state only. With no file yet,
- * or with `full`, a full copy of yesterday becomes the latest file and replaces any pending catch-up.
+ * A missed day is written to each row's current state only. With no full copy yet, with `full`,
+ * or after a version bump, a full copy of yesterday covers every earlier day.
  */
 export function planChangeFiles(
-  existingKeys: string[],
+  state: JobState,
   yesterday: string,
   full: boolean,
+  version: number,
 ): ChangeFilePlan[] {
-  const lastDay = existingKeys
-    .map(parseSilverDayKey)
-    .filter((day): day is string => day !== null)
-    .sort()
-    .at(-1)
-  if (full || !lastDay) {
+  const baseline = latestFullCopy(state.completions)
+  if (full || !baseline || baseline.version < version) {
     return [{ day: yesterday, full: true }]
   }
-  return sgtDaysAfter(lastDay, yesterday).map((day) => ({ day, full: false }))
+  // IMPORTANT: a finished day is never rewritten. A rerun reads rows' current updated_at, so it would drop rows edited since.
+  const finished = new Set(
+    state.completions.map((completion) => completion.day),
+  )
+  return planDays(state, yesterday, version)
+    .days.filter((day) => !finished.has(day))
+    .map((day) => ({ day, full: false }))
 }
 
 async function writeChangeFile({
@@ -112,7 +123,7 @@ async function writeChangeFile({
   part?: number
   rows: SilverRow[]
   full: boolean
-}): Promise<void> {
+}): Promise<string> {
   // A full copy after a direct write repeats older rows' updated_at, so a view picks each row's latest by day first.
   const body = encodeSilverTable(
     { columns: { day: 'STRING', ...table.columns } },
@@ -128,6 +139,44 @@ async function writeChangeFile({
     rows: rows.length,
     bytes: body.length,
   })
+  return key
+}
+
+async function writeChangeDay({
+  db,
+  sink,
+  table,
+  file,
+  source,
+}: {
+  db: Knex
+  sink: SilverSink
+  table: SilverChangeTable<SilverRow>
+  file: ChangeFilePlan
+  source: CompletionSource
+}): Promise<void> {
+  const window = file.full ? null : sgtDayWindow(file.day)
+  const write = (rows: SilverRow[], part?: number) =>
+    writeChangeFile({ sink, table, day: file.day, part, rows, full: file.full })
+  // The last page takes the unnumbered key, so a one-page day is a single file.
+  const outputs: string[] = []
+  let held: SilverRow[] = []
+  let part = 0
+  for await (const rows of table.fetchPages(db, window)) {
+    if (part > 0) {
+      outputs.push(await write(held, part))
+    }
+    held = rows
+    part++
+  }
+  outputs.push(await write(held))
+  await markDayComplete({
+    sink,
+    job: table.name,
+    completion: { day: file.day, version: table.version, full: file.full },
+    source,
+    outputs,
+  })
 }
 
 interface WriteSilverChangeTablesParams {
@@ -137,6 +186,7 @@ interface WriteSilverChangeTablesParams {
   tables: SilverChangeTable<SilverRow>[]
   yesterday: string
   full?: boolean
+  source?: CompletionSource
 }
 
 export async function writeSilverChangeTables({
@@ -146,32 +196,23 @@ export async function writeSilverChangeTables({
   tables,
   yesterday,
   full = false,
+  source = 'nightly',
 }: WriteSilverChangeTablesParams): Promise<void> {
   for (const table of tables) {
-    const existingKeys = await listKeys(`${SILVER_PREFIX}${table.name}/`)
-    for (const file of planChangeFiles(existingKeys, yesterday, full)) {
-      const window = file.full ? null : sgtDayWindow(file.day)
-      const write = (rows: SilverRow[], part?: number) =>
-        writeChangeFile({
-          sink,
-          table,
-          day: file.day,
-          part,
-          rows,
-          full: file.full,
-        })
-      // IMPORTANT: the last page goes to the unnumbered key, written last. A run that fails
-      // part-way leaves the day unmarked, so the next run writes it again instead of skipping it.
-      let held: SilverRow[] = []
-      let part = 0
-      for await (const rows of table.fetchPages(db, window)) {
-        if (part > 0) {
-          await write(held, part)
+    await runWithCoverage(
+      {
+        job: table.name,
+        yesterday,
+        version: table.version,
+        listKeys,
+        sink,
+      },
+      async (state) => {
+        const files = planChangeFiles(state, yesterday, full, table.version)
+        for (const file of files) {
+          await writeChangeDay({ db, sink, table, file, source })
         }
-        held = rows
-        part++
-      }
-      await write(held)
-    }
+      },
+    )
   }
 }

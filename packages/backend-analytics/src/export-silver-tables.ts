@@ -5,6 +5,7 @@ import path from 'node:path'
 import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 
+import type { CompletionSource } from './day-completion'
 import logger from './logger'
 import { previousSgtDay } from './sgt-day'
 import {
@@ -65,7 +66,7 @@ export function localDirSink(dir: string): SilverSink {
   return async (key, body) => {
     const filePath = path.join(dir, key)
     await mkdir(path.dirname(filePath), { recursive: true })
-    // A day's completion file is the watermark, so a half-written file must never carry its name.
+    // A half-written file must never carry its final name, since a completion file names finished outputs.
     const tempPath = `${filePath}.${randomUUID()}.tmp`
     await writeFile(tempPath, body)
     await rename(tempPath, filePath)
@@ -122,6 +123,7 @@ interface WriteAllSilverTablesParams extends WriteSilverTablesParams {
   changeTables?: SilverChangeTable<SilverRow>[]
   // Rewrites each change table as a full copy, after a direct database write.
   full?: boolean
+  source?: CompletionSource
   now?: Date
 }
 
@@ -132,6 +134,7 @@ export async function writeAllSilverTables({
   tables = SILVER_TABLES,
   changeTables = SILVER_CHANGE_TABLES,
   full = false,
+  source = 'nightly',
   now = new Date(),
 }: WriteAllSilverTablesParams): Promise<void> {
   await writeSilverTables({ db, sink, tables })
@@ -142,6 +145,7 @@ export async function writeAllSilverTables({
     tables: changeTables,
     yesterday: previousSgtDay(now),
     full,
+    source,
   })
 }
 

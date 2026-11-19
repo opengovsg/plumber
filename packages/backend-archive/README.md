@@ -176,13 +176,26 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ## Exporting analytics tables
 
-The archival task writes the silver analytics tables to S3 each night, before it archives. The export code lives in [`backend-analytics`](../backend-analytics/README.md). This package runs it. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`, except `flow_step`. `flow_step` writes one file per Singapore day at `silver/flow_step/day=YYYY-MM-DD.parquet`, holding only the steps whose `updated_at` falls on that day. PostHog bills each row it imports, so a nightly full copy would bill every step daily. The latest day file already in the folder is the watermark. An empty folder gets a full copy. A full copy spans `day=YYYY-MM-DD.part-N.parquet` files of 50,000 steps, and the unnumbered file, written last, marks the day done. Every row carries the file's `day`. A step's current state is its row with the latest `day`, then the latest `updated_at`.
+The archival task writes the silver analytics tables to S3 each night, before it archives. The export code lives in [`backend-analytics`](../backend-analytics/README.md). This package runs it. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`, except `flow_step`. `flow_step` writes one file per Singapore day at `silver/flow_step/day=YYYY-MM-DD.parquet`, holding only the steps whose `updated_at` falls on that day. PostHog bills each row it imports, so a nightly full copy would bill every step daily. The first run writes a full copy. A full copy spans `day=YYYY-MM-DD.part-N.parquet` files of 50,000 steps plus the unnumbered file. [Tracking finished days](#tracking-finished-days) covers missed nights. Every row carries the file's `day`. A step's current state is its row with the latest `day`, then the latest `updated_at`.
 
 A day file holds each changed step as it was at export time, not at the end of that day. So:
 
-- A missed night is caught up on the next run, but only to each step's current state. A step edited on both missed days appears once, on the later day.
+- A missed night in the last 7 days is redone on the next run, but only to each step's current state. A step edited on both missed days appears once, on the later day. An older gap alerts and needs `--full`.
 - Edits between exports are not kept anywhere. The mutation log records who edited a step and when, but not what changed.
-- `--full` writes only yesterday and replaces any pending catch-up. The full copy holds every step's current state, so nothing is lost beyond the point above.
+- `--full` writes only yesterday, and its completion file covers every earlier day. The full copy holds every step's current state, so nothing is lost beyond the point above.
+- A finished day is never rewritten. A rerun reads each step's current `updated_at`, so it would drop steps edited since.
+- Approving a transfer rewrites the pipe's steps. Shared connections point at duplicated copies, and M365 Excel steps lose their connection. Those steps appear in that day's file with their new `connection_id`.
+
+Bump `flowStepTable.version` when its columns or query change, or when an existing catalog `resource_parameter` changes. The next night writes a full copy instead of a day file. That syncs every step to PostHog once, about 705k rows, so batch such changes.
+
+Columns read from `steps.config`, none of which holds user content:
+
+- `ai_tools`: the AI builder tools recorded on the step, sorted and comma-joined, such as `create_step,update_step_parameters`. It stays raw, so a new tool needs no re-export. Views decide what counts as created or edited by AI.
+- `has_setup_guide`: true while the step still shows the setup guide from a template or the AI builder. The guide is cleared when the step is first tested. The pipe's template is `flow_stage.template_id`.
+- `has_step_name`: whether the user named the step. The name is not exported.
+- `if_then_end_step_id`: on an if-then step, the last step of its block.
+- `approval_reject_step_id`: on a step in an MRF approval step's reject path, that approval step.
+- `parameters_version`: the stored parameter format. Analytics reads `parameters` as stored, before the app's step transformer runs.
 
 Known gaps, accepted because each is rare:
 
@@ -191,12 +204,12 @@ Known gaps, accepted because each is rare:
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
-| Flag           | Meaning                                                                                                                                                                                       |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`, `flow_stage`, `flow_access`, `flow_ai_suggestion`, `action_catalog`, `flow_step`.                                   |
-| `--full`       | Write `flow_step` as a full copy for yesterday. Run it after a migration or script writes `steps` directly, since those skip `updated_at`, or after an existing `resource_parameter` changes. |
-| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                          |
-| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                                                                                |
+| Flag           | Meaning                                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--tables a,b` | Silver tables to write. Default: all. Today: `flow_transfer`, `dim_user`, `flow_stage`, `flow_access`, `flow_ai_suggestion`, `action_catalog`, `flow_step`. |
+| `--full`       | Write `flow_step` as a full copy for yesterday. Run it after a migration or script writes `steps` directly, since those skip `updated_at`.                  |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                        |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                                              |
 
 Pass exactly one of `--out` and `--s3`.
 
