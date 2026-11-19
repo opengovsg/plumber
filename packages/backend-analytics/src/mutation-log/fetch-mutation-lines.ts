@@ -5,6 +5,7 @@ import {
   StartQueryCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
 
+import { MCP_EDIT_TOOLS, type McpToolLine } from './parse-mcp-tool-line'
 import {
   type MutationLogLine,
   parseInsightsTimestamp,
@@ -25,6 +26,15 @@ export const MUTATION_LOG_QUERY = [
   `| limit ${MAX_QUERY_RESULTS}`,
 ].join('\n')
 
+// The AI builder's tool calls run inside the chat stream, so Morgan never logs them.
+export const MCP_TOOL_LOG_QUERY = [
+  'fields @timestamp, @message',
+  "| filter `message.event` = 'mcp-tool' and `message.source` = 'plumber'",
+  `| filter \`message.tool\` in [${MCP_EDIT_TOOLS.map((tool) => `'${tool}'`).join(', ')}]`,
+  '| sort @timestamp asc',
+  `| limit ${MAX_QUERY_RESULTS}`,
+].join('\n')
+
 type LogsClient = Pick<CloudWatchLogsClient, 'send'>
 
 interface FetchMutationLinesParams {
@@ -38,9 +48,12 @@ interface FetchMutationLinesParams {
 const defaultSleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms))
 
+function fieldValue(fields: ResultField[], name: string): string | null {
+  return fields.find((field) => field.field === name)?.value ?? null
+}
+
 function toLine(fields: ResultField[]): MutationLogLine {
-  const value = (name: string) =>
-    fields.find((field) => field.field === name)?.value ?? null
+  const value = (name: string) => fieldValue(fields, name)
   return {
     timestamp: value('@timestamp') ?? '',
     query: value('query'),
@@ -50,13 +63,16 @@ function toLine(fields: ResultField[]): MutationLogLine {
   }
 }
 
-async function runQuery({
-  client,
-  logGroup,
-  startMs,
-  endMs,
-  sleep = defaultSleep,
-}: FetchMutationLinesParams): Promise<{
+async function runQuery(
+  queryString: string,
+  {
+    client,
+    logGroup,
+    startMs,
+    endMs,
+    sleep = defaultSleep,
+  }: FetchMutationLinesParams,
+): Promise<{
   rows: ResultField[][]
   truncated: boolean
 }> {
@@ -66,7 +82,7 @@ async function runQuery({
       // Whole seconds, inclusive at both ends. Rows outside the window are dropped later.
       startTime: Math.floor(startMs / 1_000),
       endTime: Math.ceil(endMs / 1_000),
-      queryString: MUTATION_LOG_QUERY,
+      queryString,
       limit: MAX_QUERY_RESULTS,
     }),
   )
@@ -91,6 +107,38 @@ async function runQuery({
   }
 }
 
+async function fetchRows(
+  queryString: string,
+  params: FetchMutationLinesParams,
+): Promise<ResultField[][]> {
+  const { startMs, endMs } = params
+  const { rows, truncated } = await runQuery(queryString, params)
+  if (!truncated) {
+    // Each window keeps only its own rows, so a line on a split boundary is not read twice.
+    return rows.filter((fields) =>
+      inWindow(params)({ timestamp: fieldValue(fields, '@timestamp') ?? '' }),
+    )
+  }
+  const mid = Math.floor((startMs + (endMs - startMs) / 2) / 1_000) * 1_000
+  if (mid <= startMs || mid >= endMs) {
+    throw new Error(
+      `More than ${MAX_QUERY_RESULTS} log lines in one second at ${new Date(startMs).toISOString()}`,
+    )
+  }
+  const first = await fetchRows(queryString, { ...params, endMs: mid })
+  const second = await fetchRows(queryString, { ...params, startMs: mid })
+  return [...first, ...second]
+}
+
+function inWindow(
+  params: FetchMutationLinesParams,
+): (line: { timestamp: string }) => boolean {
+  return (line) => {
+    const ms = parseInsightsTimestamp(line.timestamp)?.getTime()
+    return ms !== undefined && ms >= params.startMs && ms < params.endMs
+  }
+}
+
 /**
  * Fetches every mutation line with a timestamp in [startMs, endMs).
  *
@@ -99,23 +147,19 @@ async function runQuery({
 export async function fetchMutationLines(
   params: FetchMutationLinesParams,
 ): Promise<MutationLogLine[]> {
-  const { startMs, endMs } = params
-  const { rows, truncated } = await runQuery(params)
+  const rows = await fetchRows(MUTATION_LOG_QUERY, params)
+  return rows.map(toLine)
+}
 
-  if (truncated) {
-    const mid = Math.floor((startMs + (endMs - startMs) / 2) / 1_000) * 1_000
-    if (mid <= startMs || mid >= endMs) {
-      throw new Error(
-        `More than ${MAX_QUERY_RESULTS} mutations in one second at ${new Date(startMs).toISOString()}`,
-      )
-    }
-    const first = await fetchMutationLines({ ...params, endMs: mid })
-    const second = await fetchMutationLines({ ...params, startMs: mid })
-    return [...first, ...second]
-  }
-
-  return rows.map(toLine).filter((line) => {
-    const ms = parseInsightsTimestamp(line.timestamp)?.getTime()
-    return ms !== undefined && ms >= startMs && ms < endMs
-  })
+/**
+ * Fetches every AI builder edit with a timestamp in [startMs, endMs).
+ */
+export async function fetchMcpToolLines(
+  params: FetchMutationLinesParams,
+): Promise<McpToolLine[]> {
+  const rows = await fetchRows(MCP_TOOL_LOG_QUERY, params)
+  return rows.map((fields) => ({
+    timestamp: fieldValue(fields, '@timestamp') ?? '',
+    event: fieldValue(fields, '@message'),
+  }))
 }

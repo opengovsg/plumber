@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util'
 
 import {
   dbFlowIdResolver,
+  dbUserIdResolver,
   exportMutationLog,
   localDirSink,
   logsInsightsFetcher,
@@ -22,7 +23,7 @@ const USAGE = `Usage: analytics:mutation-log --from YYYY-MM-DD [--to YYYY-MM-DD]
   --from       First Singapore day to extract.
   --to         Last Singapore day, inclusive. Default: --from.
   --log-group  Server log group, with --out only. Default: ANALYTICS_REQUEST_LOG_GROUP. Skips the database lookups, since the reader may be another environment.
-  --out        Write the files under this local folder. Runs in any APP_ENV. Reads steps through the database reader.
+  --out        Write the files under this local folder. Runs in any APP_ENV. Reads steps and users through the database reader.
   --s3         Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only. Finished days only.`
 
 async function main(): Promise<void> {
@@ -64,6 +65,9 @@ async function main(): Promise<void> {
       fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
       resolveFlowIds: lookUpIds
         ? dbFlowIdResolver(archivalDbReader)
+        : async () => new Map(),
+      resolveUserIds: lookUpIds
+        ? dbUserIdResolver(archivalDbReader)
         : async () => new Map(),
       sink: localDirSink(dir),
       days,
