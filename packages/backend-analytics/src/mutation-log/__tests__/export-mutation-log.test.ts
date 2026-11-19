@@ -259,6 +259,13 @@ describe('planMutationLogDays', () => {
       ],
       ['2026-11-02', '2026-11-03'],
     ],
+    [
+      'gaps before a targeted backfill of a later day',
+      [key('2026-11-07'), key('2026-11-10')],
+      ['2026-11-08', '2026-11-09'],
+      [],
+    ],
+    ['history before the first file', [key('2026-11-09')], ['2026-11-10'], []],
   ])('plans %s', (_case, keys, days, skipped) => {
     expect(planMutationLogDays(keys, '2026-11-10')).toEqual({ days, skipped })
   })
