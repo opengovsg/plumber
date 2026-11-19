@@ -40,6 +40,8 @@ const RULES: SharedRule[] = [
     use: 'prepareStepParameters from services/step-parameters.ts',
     allowed: {
       'services/step-parameters.ts': 'owner',
+      'services/reconciler/checks/scheduler-pipes/fetch-published-scheduled-pipes.ts':
+        'BaseStep read path with injectable transformer; no version bump',
     },
   },
 ]
