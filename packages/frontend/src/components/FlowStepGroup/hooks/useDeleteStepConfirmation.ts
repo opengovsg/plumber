@@ -10,7 +10,7 @@ import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 const useDeleteStepConfirmation = (
   type: string,
-  groupedSteps: IStep[][],
+  steps: IStep[],
   branchSteps?: IStep[],
 ) => {
   const { flow } = useContext(EditorContext)
@@ -36,8 +36,7 @@ const useDeleteStepConfirmation = (
        *  deleting the entire for-each deletes the entire for-each loop
        * and all the steps inside it.
        */
-      const flatSteps = groupedSteps.flat()
-      const idsToDelete = flatSteps.map((step) => step.id)
+      const idsToDelete = steps.map((step) => step.id)
       await deleteStep({
         variables: { input: { ids: idsToDelete, flow: flowInput } },
       })
@@ -48,7 +47,7 @@ const useDeleteStepConfirmation = (
       })
     }
     onClose()
-  }, [branchSteps, deleteStep, flow.updatedAt, groupedSteps, onClose, type])
+  }, [branchSteps, deleteStep, flow.updatedAt, steps, onClose, type])
 
   return {
     cancelRef,

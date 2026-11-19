@@ -12,9 +12,7 @@ import {
 
 // Loose enough that unit tests can pass partial plain objects instead of full
 // Step rows.
-type ExtentStep = StepLike &
-  Pick<IStep, 'id' | 'position'> &
-  Partial<Pick<IStep, 'parameters'>>
+type ExtentStep = StepLike & Pick<IStep, 'id' | 'position'>
 
 // Loose enough that unit tests can pass partial plain objects instead of
 // full Step rows.
@@ -24,13 +22,6 @@ type RepairStep = StepLike & Pick<IStep, 'id' | 'position'>
 export interface EndStepPatch {
   ifThenStepId: string
   endStepId: string
-}
-
-// Mirrors getIfThenV1StepIdToSkipTo's depth defaulting; nesting never shipped,
-// so this is dead-code defense.
-function parseDepth(step: ExtentStep): number {
-  const depth = parseInt(step.parameters?.depth as string)
-  return isNaN(depth) ? 0 : depth
 }
 
 /**
@@ -49,11 +40,9 @@ export function deriveIfThenV1EndStep<T extends ExtentStep>(
   ifThenStep: T,
 ): T {
   const startIndex = flowSteps.findIndex((step) => step.id === ifThenStep.id)
-  const currDepth = parseDepth(ifThenStep)
 
   const nextBoundaryIndex = flowSteps.findIndex(
-    (step, index) =>
-      index > startIndex && isIfThenStep(step) && parseDepth(step) <= currDepth,
+    (step, index) => index > startIndex && isIfThenStep(step),
   )
   const lastIndex =
     nextBoundaryIndex === -1 ? flowSteps.length - 1 : nextBoundaryIndex - 1

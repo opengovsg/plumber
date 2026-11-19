@@ -48,16 +48,6 @@ export interface ForEachBlock {
 }
 
 /**
- * Reads an if-then V1's nesting depth from `parameters.depth`, mirroring how
- * the flow editor and the backend do. Nesting never shipped for if-then V2
- * blocks, so this is inert defense.
- */
-function parseDepth(step: IStep): number {
-  const depth = parseInt(step.parameters?.depth as string)
-  return isNaN(depth) ? 0 : depth
-}
-
-/**
  * Mirrors the backend's `getRejectionBranchId`. `config.approval` is only
  * ever written for rejection branches, so its `stepId` identifies the branch
  * on its own.
@@ -84,11 +74,9 @@ export function deriveIfThenV1EndStep(
   ifThenStep: IStep,
 ): IStep {
   const startIndex = actionSteps.findIndex((step) => step.id === ifThenStep.id)
-  const currDepth = parseDepth(ifThenStep)
 
   const nextBoundaryIndex = actionSteps.findIndex(
-    (step, index) =>
-      index > startIndex && isIfThenStep(step) && parseDepth(step) <= currDepth,
+    (step, index) => index > startIndex && isIfThenStep(step),
   )
   const lastIndex =
     nextBoundaryIndex === -1 ? actionSteps.length - 1 : nextBoundaryIndex - 1
