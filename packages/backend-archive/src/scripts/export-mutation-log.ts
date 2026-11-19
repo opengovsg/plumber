@@ -2,6 +2,7 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 
 import {
+  dbFlowIdResolver,
   exportMutationLog,
   localDirSink,
   logsInsightsFetcher,
@@ -11,6 +12,7 @@ import {
 } from 'backend-analytics'
 
 import { archivalConfig } from '@/helpers/archival/config'
+import { archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'
 import { logsClient } from '@/helpers/archival/logs-client'
 import { checkMutationLogBackfill } from '@/helpers/archival/mutation-log-backfill'
@@ -20,7 +22,7 @@ const USAGE = `Usage: analytics:mutation-log --from YYYY-MM-DD [--to YYYY-MM-DD]
   --from       First Singapore day to extract.
   --to         Last Singapore day, inclusive. Default: --from.
   --log-group  Server log group, with --out only. Default: ANALYTICS_REQUEST_LOG_GROUP.
-  --out        Write the files under this local folder. Runs in any APP_ENV.
+  --out        Write the files under this local folder. Runs in any APP_ENV. Reads steps through the database reader.
   --s3         Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only. Finished days only.`
 
 async function main(): Promise<void> {
@@ -54,6 +56,7 @@ async function main(): Promise<void> {
     const dir = path.resolve(values.out)
     await writeMutationLogDays({
       fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
+      resolveFlowIds: dbFlowIdResolver(archivalDbReader),
       sink: localDirSink(dir),
       days,
     })
@@ -62,6 +65,7 @@ async function main(): Promise<void> {
   }
 
   await exportMutationLog({
+    db: archivalDbReader,
     logsClient,
     s3Client: archiveS3Client,
     appEnv: archivalConfig.appEnv,
@@ -72,8 +76,12 @@ async function main(): Promise<void> {
 }
 
 main()
-  .then(() => process.exit(0))
-  .catch((err) => {
+  .then(async () => {
+    await archivalDbReader.destroy()
+    process.exit(0)
+  })
+  .catch(async (err) => {
     logger.error({ event: 'analytics.mutation_log.error', err })
+    await archivalDbReader.destroy()
     process.exit(1)
   })

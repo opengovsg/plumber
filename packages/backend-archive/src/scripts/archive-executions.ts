@@ -47,6 +47,7 @@ async function runAnalyticsExport(): Promise<boolean> {
 async function runMutationLogExport(): Promise<boolean> {
   try {
     await exportMutationLog({
+      db: archivalDbReader,
       logsClient,
       s3Client: archiveS3Client,
       appEnv: archivalConfig.appEnv,
