@@ -13,3 +13,10 @@ export {
   claimLocalExportDir,
   localDirCompletionStore,
 } from './completion-stores'
+export {
+  exportMutationLog,
+  logsInsightsFetcher,
+  previousSgtDay,
+  sgtDaysBetween,
+  writeMutationLogDays,
+} from './mutation-log/export-mutation-log'
