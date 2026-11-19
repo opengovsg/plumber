@@ -434,6 +434,7 @@ describe('executeStep mutation - editor testRunMetadata', () => {
     expect(testStepSpy).toHaveBeenCalledWith({
       stepId: flow.steps[1].id,
       testRunMetadata,
+      loggedInUser: editor,
     })
     expect(result.id).toBe(executionStepId)
   })
