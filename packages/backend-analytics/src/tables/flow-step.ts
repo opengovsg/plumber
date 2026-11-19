@@ -29,7 +29,8 @@ const flowStepSqlRowSchema = z.object({
   if_then_end_step_id: z.string().nullable(),
   approval_reject_step_id: z.string().nullable(),
   parameters_version: z.number().int(),
-  resource_value: z.string().nullable(),
+  // The raw JSON value, so an object or array never reaches resource_id as text.
+  resource_value: z.unknown(),
 })
 
 type FlowStepSqlRow = z.infer<typeof flowStepSqlRowSchema>
@@ -104,7 +105,7 @@ const FLOW_STEP_SQL = `
     s.config ->> 'endStepId' AS if_then_end_step_id,
     s.config -> 'approval' ->> 'stepId' AS approval_reject_step_id,
     s.version AS parameters_version,
-    s.parameters ->> (?::jsonb ->> (s.app_key || '.' || s.key)) AS resource_value
+    s.parameters -> (?::jsonb ->> (s.app_key || '.' || s.key)) AS resource_value
   FROM steps s
   WHERE s.flow_id IS NOT NULL
     AND (s.flow_id, s.id) > (?::uuid, ?::uuid)
@@ -142,7 +143,10 @@ export async function* fetchFlowStepPages(
     if (page.length > 0) {
       yield page.map(({ resource_value, ...row }) => ({
         ...row,
-        resource_id: toResourceId(row.app_key, resource_value),
+        resource_id: toResourceId(
+          row.app_key,
+          typeof resource_value === 'string' ? resource_value : null,
+        ),
       }))
     }
     if (page.length < pageSize) {

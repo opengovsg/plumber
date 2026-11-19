@@ -69,6 +69,7 @@ describe('flow_step against the migrated schema', () => {
       step(STEP_NEXT_DAY, FLOW_A, '2026-11-10T16:00:00.000Z'),
       {
         ...step(STEP_OTHER_FLOW, FLOW_B, '2026-11-10T08:00:00.000Z'),
+        parameters: { tableId: { id: 'table-x', note: 'not a resource' } },
         config: { templateConfig: {}, stepName: '' },
       },
     ])
@@ -107,9 +108,11 @@ describe('flow_step against the migrated schema', () => {
     })
     expect(rows[1].deleted_at).not.toBeNull()
     // The AI builder leaves an empty templateConfig, which shows no guide.
+    // A structured parameter never becomes a resource id.
     expect(rows[2]).toMatchObject({
       has_setup_guide: false,
       has_step_name: false,
+      resource_id: null,
     })
   })
 
