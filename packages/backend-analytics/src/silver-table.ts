@@ -13,6 +13,7 @@ export interface SilverTable<Row extends SilverRow> {
 }
 
 export const SILVER_PREFIX = 'silver/'
+export const BRONZE_PREFIX = 'bronze/'
 
 const COLUMN_SCHEMA: Record<SilverColumnType, Omit<SchemaElement, 'name'>> = {
   STRING: { type: 'BYTE_ARRAY', converted_type: 'UTF8' },
