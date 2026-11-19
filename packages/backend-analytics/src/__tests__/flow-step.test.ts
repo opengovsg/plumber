@@ -40,8 +40,12 @@ function sqlRow(stepId: string, flowId: string) {
     updated_at: new Date('2026-11-01T00:00:00.000Z'),
     deleted_at: null as Date | null,
     updated_by_user_id: null as string | null,
-    created_by_ai: false,
-    updated_by_ai: false,
+    ai_tools: null as string | null,
+    has_setup_guide: false,
+    has_step_name: false,
+    if_then_end_step_id: null as string | null,
+    approval_reject_step_id: null as string | null,
+    parameters_version: 1,
     resource_value: `table-${stepId}`,
   }
 }

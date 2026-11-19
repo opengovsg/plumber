@@ -23,8 +23,12 @@ const flowStepSqlRowSchema = z.object({
   updated_at: z.date(),
   deleted_at: z.date().nullable(),
   updated_by_user_id: z.string().nullable(),
-  created_by_ai: z.boolean(),
-  updated_by_ai: z.boolean(),
+  ai_tools: z.string().nullable(),
+  has_setup_guide: z.boolean(),
+  has_step_name: z.boolean(),
+  if_then_end_step_id: z.string().nullable(),
+  approval_reject_step_id: z.string().nullable(),
+  parameters_version: z.number().int(),
   resource_value: z.string().nullable(),
 })
 
@@ -63,6 +67,8 @@ export function toResourceId(
 
 // IMPORTANT: FormSG keeps its form id in the encrypted connection data. connection_id identifies the form instead.
 // Pages follow flow_id, so a search by pipe reads few row groups. A step without a pipe is left out.
+// ai_tools stays raw, so a new AI builder tool needs no re-export. Views decide what counts as created or edited by AI.
+// templateConfig is cleared when a step is first tested, so has_setup_guide marks a step not yet set up.
 const FLOW_STEP_SQL = `
   SELECT
     s.id AS step_id,
@@ -77,15 +83,27 @@ const FLOW_STEP_SQL = `
     s.updated_at,
     s.deleted_at,
     s.updated_by AS updated_by_user_id,
+    (
+      SELECT string_agg(DISTINCT entry ->> 'tool', ',' ORDER BY entry ->> 'tool')
+      FROM jsonb_array_elements(
+        CASE jsonb_typeof(s.config -> 'aiBuilderConfig')
+          WHEN 'array' THEN s.config -> 'aiBuilderConfig'
+          ELSE '[]'::jsonb
+        END
+      ) AS entry
+      WHERE entry ->> 'tool' IS NOT NULL
+    ) AS ai_tools,
     coalesce(
-      s.config -> 'aiBuilderConfig' @> '[{"tool": "create_pipe"}]'
-        OR s.config -> 'aiBuilderConfig' @> '[{"tool": "create_step"}]',
+      jsonb_exists_any(
+        s.config -> 'templateConfig',
+        array['appEventKey', 'customTemplate']
+      ),
       false
-    ) AS created_by_ai,
-    coalesce(
-      s.config -> 'aiBuilderConfig' @> '[{"tool": "update_step_parameters"}]',
-      false
-    ) AS updated_by_ai,
+    ) AS has_setup_guide,
+    coalesce(s.config ->> 'stepName', '') <> '' AS has_step_name,
+    s.config ->> 'endStepId' AS if_then_end_step_id,
+    s.config -> 'approval' ->> 'stepId' AS approval_reject_step_id,
+    s.version AS parameters_version,
     s.parameters ->> (?::jsonb ->> (s.app_key || '.' || s.key)) AS resource_value
   FROM steps s
   WHERE s.flow_id IS NOT NULL
@@ -143,6 +161,8 @@ export async function* fetchFlowStepPages(
  */
 export const flowStepTable: SilverChangeTable<FlowStepRow> = {
   name: 'flow_step',
+  // IMPORTANT: a bump makes the next run write a full copy, about 705k rows synced to PostHog once.
+  version: 1,
   columns: {
     flow_id: 'STRING',
     step_id: 'STRING',
@@ -157,8 +177,12 @@ export const flowStepTable: SilverChangeTable<FlowStepRow> = {
     updated_at: 'TIMESTAMP',
     deleted_at: 'TIMESTAMP',
     updated_by_user_id: 'STRING',
-    created_by_ai: 'BOOLEAN',
-    updated_by_ai: 'BOOLEAN',
+    ai_tools: 'STRING',
+    has_setup_guide: 'BOOLEAN',
+    has_step_name: 'BOOLEAN',
+    if_then_end_step_id: 'STRING',
+    approval_reject_step_id: 'STRING',
+    parameters_version: 'INT64',
   },
   fetchPages: (db, window) => fetchFlowStepPages(db, window),
 }

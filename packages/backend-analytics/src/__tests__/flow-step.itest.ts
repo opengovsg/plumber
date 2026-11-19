@@ -49,14 +49,28 @@ describe('flow_step against the migrated schema', () => {
     await db('steps').insert([
       {
         ...step(STEP_LAST_SECOND, FLOW_A, '2026-11-10T15:59:59.000Z'),
-        config: { aiBuilderConfig: [{ traceId: 't', tool: 'create_step' }] },
+        version: 2,
+        config: {
+          stepName: 'Save the row',
+          endStepId: STEP_OTHER_FLOW,
+          approval: { branch: 'reject', stepId: STEP_DELETED },
+          templateConfig: { appEventKey: 'tiles.createTileRow' },
+          aiBuilderConfig: [
+            { traceId: 't2', tool: 'update_step_parameters' },
+            { traceId: 't1', tool: 'create_step' },
+            { traceId: 't3', tool: 'update_step_parameters' },
+          ],
+        },
       },
       {
         ...step(STEP_DELETED, FLOW_A, '2026-11-09T16:00:00.000Z'),
         deleted_at: new Date('2026-11-09T16:00:00.000Z'),
       },
       step(STEP_NEXT_DAY, FLOW_A, '2026-11-10T16:00:00.000Z'),
-      step(STEP_OTHER_FLOW, FLOW_B, '2026-11-10T08:00:00.000Z'),
+      {
+        ...step(STEP_OTHER_FLOW, FLOW_B, '2026-11-10T08:00:00.000Z'),
+        config: { templateConfig: {}, stepName: '' },
+      },
     ])
   })
 
@@ -76,10 +90,27 @@ describe('flow_step against the migrated schema', () => {
     ])
     expect(rows[0]).toMatchObject({
       resource_id: 'table-1',
-      created_by_ai: true,
-      updated_by_ai: false,
+      ai_tools: 'create_step,update_step_parameters',
+      has_setup_guide: true,
+      has_step_name: true,
+      if_then_end_step_id: STEP_OTHER_FLOW,
+      approval_reject_step_id: STEP_DELETED,
+      parameters_version: 2,
+    })
+    expect(rows[1]).toMatchObject({
+      ai_tools: null,
+      has_setup_guide: false,
+      has_step_name: false,
+      if_then_end_step_id: null,
+      approval_reject_step_id: null,
+      parameters_version: 1,
     })
     expect(rows[1].deleted_at).not.toBeNull()
+    // The AI builder leaves an empty templateConfig, which shows no guide.
+    expect(rows[2]).toMatchObject({
+      has_setup_guide: false,
+      has_step_name: false,
+    })
   })
 
   it('reads the resource from the argument the catalog names', async () => {
