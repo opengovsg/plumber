@@ -10,6 +10,7 @@ import {
   markDayComplete,
   planDays,
   runWithCoverage,
+  writeEachDay,
 } from '../day-completion'
 import {
   EXPORT_APP_ENVS,
@@ -179,49 +180,54 @@ export async function writeMutationLogDays({
   source = 'backfill',
   parameterByAction = resourceParameters(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
-  for (const day of days) {
-    const lines = await fetchDayLines(sgtDayWindow(day))
-    const parsedRows = lines
-      .map((line) => toMutationLogRow(line, parameterByAction))
-      .filter((row): row is MutationLogRow => row !== null)
-    const rows = sortForFlowSearch(
-      await fillFlowIds(parsedRows, resolveFlowIds),
-    )
-    const key = buildBronzeDayKey(MUTATION_LOG_TABLE, day)
-    await sink(
-      key,
-      encodeParquet(MUTATION_LOG_COLUMNS, rows, {
-        rowGroupSize: MUTATION_LOG_ROW_GROUP_SIZE,
-        bloomFilterColumns: ['flow_id'],
-      }),
-    )
-    logger.info({
-      event: 'analytics.mutation_log.day.written',
-      day,
-      key,
-      lines: lines.length,
-      rows: rows.length,
-      rowsWithoutOperation: rows.filter((row) => !row.operation).length,
-      rowsWithoutUser: rows.filter((row) => !row.user_id).length,
-      rowsWithFlowFromStep:
-        rows.filter((row) => row.flow_id).length -
-        parsedRows.filter((row) => row.flow_id).length,
-      // Ids for these came from recoverVariables. Their step resource is unknown.
-      rowsWithUnreadableVariables: lines.filter(
-        (line) =>
-          recoverVariables(line.variables) !== null &&
-          parseVariables(line.variables) === null,
-      ).length,
-    })
+  await writeEachDay(
+    MUTATION_LOG_TABLE,
+    days,
+    (day) => day,
+    async (day) => {
+      const lines = await fetchDayLines(sgtDayWindow(day))
+      const parsedRows = lines
+        .map((line) => toMutationLogRow(line, parameterByAction))
+        .filter((row): row is MutationLogRow => row !== null)
+      const rows = sortForFlowSearch(
+        await fillFlowIds(parsedRows, resolveFlowIds),
+      )
+      const key = buildBronzeDayKey(MUTATION_LOG_TABLE, day)
+      await sink(
+        key,
+        encodeParquet(MUTATION_LOG_COLUMNS, rows, {
+          rowGroupSize: MUTATION_LOG_ROW_GROUP_SIZE,
+          bloomFilterColumns: ['flow_id'],
+        }),
+      )
+      logger.info({
+        event: 'analytics.mutation_log.day.written',
+        day,
+        key,
+        lines: lines.length,
+        rows: rows.length,
+        rowsWithoutOperation: rows.filter((row) => !row.operation).length,
+        rowsWithoutUser: rows.filter((row) => !row.user_id).length,
+        rowsWithFlowFromStep:
+          rows.filter((row) => row.flow_id).length -
+          parsedRows.filter((row) => row.flow_id).length,
+        // Ids for these came from recoverVariables. Their step resource is unknown.
+        rowsWithUnreadableVariables: lines.filter(
+          (line) =>
+            recoverVariables(line.variables) !== null &&
+            parseVariables(line.variables) === null,
+        ).length,
+      })
 
-    await markDayComplete({
-      sink,
-      job: MUTATION_LOG_TABLE,
-      completion: { day, version: MUTATION_LOG_VERSION, full: false },
-      source,
-      outputs: [key],
-    })
-  }
+      await markDayComplete({
+        sink,
+        job: MUTATION_LOG_TABLE,
+        completion: { day, version: MUTATION_LOG_VERSION, full: false },
+        source,
+        outputs: [key],
+      })
+    },
+  )
 }
 
 interface ExportMutationLogParams {

@@ -170,7 +170,9 @@ describe('writeMutationLogDays', () => {
         source: 'nightly',
       })
 
-    await expect(write(true)).rejects.toThrow('upload failed')
+    await expect(write(true)).rejects.toThrow(
+      'mutation_log: 1 day(s) failed: 2026-11-05',
+    )
     expect(written).toEqual([])
 
     await write(false)
