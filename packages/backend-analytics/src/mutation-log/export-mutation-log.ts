@@ -20,6 +20,8 @@ import { fetchMutationLines } from './fetch-mutation-lines'
 import {
   type MutationLogLine,
   type MutationLogRow,
+  parseVariables,
+  recoverVariables,
   toMutationLogRow,
 } from './parse-mutation-line'
 
@@ -168,6 +170,12 @@ export async function writeMutationLogDays({
       rows: rows.length,
       rowsWithoutOperation: rows.filter((row) => !row.operation).length,
       rowsWithoutUser: rows.filter((row) => !row.user_id).length,
+      // Ids for these came from recoverVariables. Their step resource is unknown.
+      rowsWithUnreadableVariables: lines.filter(
+        (line) =>
+          recoverVariables(line.variables) !== null &&
+          parseVariables(line.variables) === null,
+      ).length,
     })
   }
 }

@@ -4,6 +4,7 @@ import {
   extractIds,
   parseRootField,
   parseVariables,
+  recoverVariables,
   toMutationLogRow,
 } from '../parse-mutation-line'
 
@@ -208,5 +209,71 @@ describe('toMutationLogRow', () => {
     expect(
       toMutationLogRow({ ...line, timestamp: 'not a time' }, PARAMETERS),
     ).toBeNull()
+  })
+})
+
+describe('recoverVariables', () => {
+  const STEP = '11111111-1111-4111-8111-111111111111'
+  const FLOW = '22222222-2222-4222-8222-222222222222'
+  const CONNECTION = '33333333-3333-4333-8333-333333333333'
+  const DECOY = '44444444-4444-4444-8444-444444444444'
+
+  // The editor's field order. An apostrophe before a comma defeats restoreLoggedJson.
+  const variables = logged({
+    input: {
+      id: STEP,
+      key: 'createTileRow',
+      parameters: {
+        note: "the students', parents",
+        rows: [{ id: DECOY, key: 'decoy', flow: { id: DECOY } }],
+      },
+      connection: { id: CONNECTION },
+      flow: { id: FLOW, updatedAt: '2026-11-18T00:00:00.000Z' },
+      appKey: 'tiles',
+    },
+  })
+
+  it('cannot parse the variables', () => {
+    expect(parseVariables(variables)).toBeNull()
+  })
+
+  it('recovers the ids and app-action, not values from the parameters', () => {
+    expect(recoverVariables(variables)).toEqual({
+      input: {
+        id: STEP,
+        key: 'createTileRow',
+        ids: [],
+        appKey: 'tiles',
+        flow: { id: FLOW },
+        connection: { id: CONNECTION },
+      },
+    })
+  })
+
+  it('gives the row its ids, with no resource', () => {
+    const row = toMutationLogRow(
+      {
+        timestamp: '2026-11-05 03:12:45.123',
+        query:
+          'mutation UpdateStep($input: UpdateStepInput!) { updateStep(input: $input) { id } }',
+        variables,
+        userId: 'user-1',
+        status: '200',
+      },
+      PARAMETERS,
+    )
+
+    expect(row).toMatchObject({
+      flow_id: FLOW,
+      step_id: STEP,
+      connection_id: CONNECTION,
+      app_key: 'tiles',
+      action_key: 'createTileRow',
+      resource_id: null,
+    })
+  })
+
+  it('returns null for redacted variables', () => {
+    expect(recoverVariables('[redacted]')).toBeNull()
   })
 })
