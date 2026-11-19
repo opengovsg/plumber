@@ -102,6 +102,48 @@ export function parseVariables(
   }
 }
 
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const KEY = '[A-Za-z0-9_-]{1,64}'
+
+function matchAll(logged: string, pattern: string): string[] {
+  return [...logged.matchAll(new RegExp(pattern, 'g'))].map((match) => match[1])
+}
+
+/**
+ * Pulls the ids out of variables that restoreLoggedJson cannot parse, such as an apostrophe before a comma.
+ *
+ * The editor sends `id` and `key` before `parameters`, and `connection`, `flow` and `appKey` after.
+ * Taking the first or last match keeps user text inside `parameters` from shadowing them.
+ */
+export function recoverVariables(
+  logged: string | null,
+): Record<string, unknown> | null {
+  if (!logged || logged === '-' || logged === '[redacted]') {
+    return null
+  }
+  const first = (name: string, value: string) =>
+    matchAll(logged, `'${name}':'(${value})'`)[0]
+  const last = (name: string, value: string) =>
+    matchAll(logged, `'${name}':'(${value})'`).at(-1)
+  const lastNested = (name: string) =>
+    matchAll(logged, `'${name}':\\{'id':'(${UUID})'`).at(-1)
+  const input = Object.fromEntries(
+    Object.entries({
+      id: first('id', UUID),
+      key: first('key', KEY),
+      flowId: first('flowId', UUID),
+      stepId: first('stepId', UUID),
+      tableId: first('tableId', UUID),
+      connectionId: first('connectionId', UUID),
+      ids: matchAll(logged, `'ids':\\['(${UUID})'`).slice(0, 1),
+      appKey: last('appKey', KEY),
+      flow: { id: lastNested('flow') },
+      connection: { id: lastNested('connection') },
+    }).filter(([, value]) => value !== undefined),
+  )
+  return { input }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -196,7 +238,8 @@ export function toMutationLogRow(
     return null
   }
   const operation = parseRootField(line.query)
-  const variables = parseVariables(line.variables)
+  const variables =
+    parseVariables(line.variables) ?? recoverVariables(line.variables)
   return {
     ts,
     user_id: line.userId && line.userId !== '-' ? line.userId : null,
