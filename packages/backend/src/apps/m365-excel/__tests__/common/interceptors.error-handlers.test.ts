@@ -273,8 +273,12 @@ describe('M365 request error handlers', () => {
   it.each([
     ['post', '/workbook/tables/t/rows', 'config'],
     ['patch', '/workbook/tables/t/rows/itemAt(index=1)', 'config'],
+    ['patch', "/workbook/worksheets/w/range(address='A1')", 'config'],
     ['get', '/workbook/tables/t/range', 'third-party'],
     ['post', '/workbook/createSession', 'third-party'],
+    ['post', '/tenant-id/oauth2/v2.0/token', 'third-party'],
+    ['post', '/v1.0/sites/s/drive/root/children', 'third-party'],
+    ['post', '/v1.0/sites/s/drive/items/f/invite', 'third-party'],
   ])(
     'throws RetriableError with custom max attempts on a 504 from %s %s (live run), with kind %s',
     async (method, url, kind) => {
@@ -304,8 +308,12 @@ describe('M365 request error handlers', () => {
   it.each([
     ['post', '/workbook/tables/t/rows', 'config'],
     ['patch', '/workbook/tables/t/rows/itemAt(index=1)', 'config'],
+    ['patch', "/workbook/worksheets/w/range(address='A1')", 'config'],
     ['get', '/workbook/tables/t/range', 'third-party'],
     ['post', '/workbook/createSession', 'third-party'],
+    ['post', '/tenant-id/oauth2/v2.0/token', 'third-party'],
+    ['post', '/v1.0/sites/s/drive/root/children', 'third-party'],
+    ['post', '/v1.0/sites/s/drive/items/f/invite', 'third-party'],
   ])(
     'throws a StepError immediately on a 504 from %s %s (test run), with kind %s',
     async (method, url, kind) => {
