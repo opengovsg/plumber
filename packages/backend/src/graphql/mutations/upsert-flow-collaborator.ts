@@ -8,6 +8,10 @@ import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
+import {
+  captureCollaboratorChange,
+  classifyCollaboratorUpsert,
+} from '@/services/flow/flow-collaborator-event'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -94,12 +98,26 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
           throw new BadUserInputError('Error creating user')
         }
 
+        // Locked so a removal cannot commit between this read and the patch, which would restore the row without an event.
         const existingCollaborator = await FlowCollaborator.query(trx)
           .findOne({
             flow_id: flowId,
             user_id: collaboratorUser.id,
           })
           .withSoftDeleted()
+          .forUpdate()
+
+        const change = classifyCollaboratorUpsert(existingCollaborator, role)
+        if (change) {
+          captureCollaboratorChange({
+            actorUserId: context.currentUser.id,
+            flowId,
+            collaboratorUserId: collaboratorUser.id,
+            change,
+            source: 'app',
+            trx,
+          })
+        }
 
         if (existingCollaborator) {
           await existingCollaborator

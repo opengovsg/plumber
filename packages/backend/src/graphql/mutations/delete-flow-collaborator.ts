@@ -1,10 +1,29 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { validateAndParseEmail } from '@/helpers/email-validator'
+import type { FlowCollaboratorSource } from '@/helpers/flow-events'
 import logger from '@/helpers/logger'
 import FlowCollaborator from '@/models/flow-collaborators'
 import User from '@/models/user'
+import { captureCollaboratorChange } from '@/services/flow/flow-collaborator-event'
 
 import { MutationResolvers } from '../__generated__/types.generated'
+
+function captureRemoval(
+  removed: FlowCollaborator[],
+  actorUserId: string,
+  flowId: string,
+  source: FlowCollaboratorSource,
+): void {
+  for (const collaborator of removed) {
+    captureCollaboratorChange({
+      actorUserId,
+      flowId,
+      collaboratorUserId: collaborator.userId,
+      change: { type: 'removed', previousRole: collaborator.role },
+      source,
+    })
+  }
+}
 
 const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
   async (_parent, params, context) => {
@@ -33,8 +52,9 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
         )
       }
 
+      let removed: FlowCollaborator[]
       try {
-        await FlowCollaborator.query()
+        removed = await FlowCollaborator.query()
           .delete()
           .where({
             flow_id: flowId,
@@ -54,6 +74,7 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
         throw new Error('Failed to leave pipe')
       }
 
+      captureRemoval(removed, context.currentUser.id, flowId, 'left')
       return true
     }
 
@@ -70,8 +91,9 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
       })
       .throwIfNotFound('No such user found')
 
+    let removed: FlowCollaborator[]
     try {
-      await FlowCollaborator.query()
+      removed = await FlowCollaborator.query()
         .delete()
         .where({
           flow_id: flowId,
@@ -92,6 +114,7 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
       throw new Error(e.message ?? 'Failed to delete collaborator')
     }
 
+    captureRemoval(removed, context.currentUser.id, flowId, 'app')
     return true
   }
 
