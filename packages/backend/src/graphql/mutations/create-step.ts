@@ -72,7 +72,7 @@ const createStep: MutationResolvers['createStep'] = async (
        * (TODO: phase 2) Editor will be able to add their own connections
        */
       await getConnection({
-        context,
+        user: context.currentUser,
         connectionId: input.connection.id,
         flowId: flow.id,
         includeOwnConnections: flow.role === 'owner',
