@@ -95,7 +95,7 @@ function handleHttpError(
     })
   }
 
-  if (retryInfo.retryAfterMs !== undefined) {
+  if (retryInfo.reason === 'retry-after-too-long') {
     throw new UnrecoverableError(
       `Retry-After (${retryInfo.retryAfterMs}ms) is too long!`,
     )

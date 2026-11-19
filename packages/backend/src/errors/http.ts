@@ -39,11 +39,9 @@ const RETRIABLE_STATUS_CODES = [
 
 export type HttpRetryInfo =
   | { retriable: true; delayInMs: number | 'default' }
-  | {
-      retriable: false
-      // Set when the server asked for a wait over the limit.
-      retryAfterMs?: number
-    }
+  // A wait over the limit fails at once instead of falling back to the status.
+  | { retriable: false; reason: 'retry-after-too-long'; retryAfterMs: number }
+  | { retriable: false; reason: 'not-retriable' }
 
 export default class HttpError extends BaseError {
   response: SanitisedAxiosResponse
@@ -111,7 +109,7 @@ export default class HttpError extends BaseError {
     if (retryAfterMs !== null) {
       return retryAfterMs <= RETRY_AFTER_LIMIT_MS
         ? { retriable: true, delayInMs: retryAfterMs }
-        : { retriable: false, retryAfterMs }
+        : { retriable: false, reason: 'retry-after-too-long', retryAfterMs }
     }
 
     const { status } = this.response
@@ -128,7 +126,7 @@ export default class HttpError extends BaseError {
       return { retriable: true, delayInMs: 'default' }
     }
 
-    return { retriable: false }
+    return { retriable: false, reason: 'not-retriable' }
   }
 }
 

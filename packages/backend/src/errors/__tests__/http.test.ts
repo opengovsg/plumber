@@ -87,7 +87,10 @@ describe('HttpError retry', () => {
 
       vi.advanceTimersByTime(8_000)
 
-      expect(error.getRetryInfo()).toEqual({ retriable: false })
+      expect(error.getRetryInfo()).toEqual({
+        retriable: false,
+        reason: 'not-retriable',
+      })
     })
 
     it('checks the 12 hour limit when the retry is decided', () => {
@@ -127,6 +130,7 @@ describe('HttpError retry', () => {
 
     expect(error.getRetryInfo()).toEqual({
       retriable: false,
+      reason: 'retry-after-too-long',
       retryAfterMs: (TWELVE_HOURS_IN_SECONDS + 1) * 1000,
     })
   })
@@ -147,6 +151,7 @@ describe('HttpError retry', () => {
     })
     expect(makeHttpError({ status: 400, headers }).getRetryInfo()).toEqual({
       retriable: false,
+      reason: 'not-retriable',
     })
   })
 
@@ -170,7 +175,10 @@ describe('HttpError retry', () => {
       makeHttpError({ message: 'socket hang up', code: 'ECONNRESET' }),
     ],
   ])('does not retry %s', (_, error) => {
-    expect(error.getRetryInfo()).toEqual({ retriable: false })
+    expect(error.getRetryInfo()).toEqual({
+      retriable: false,
+      reason: 'not-retriable',
+    })
   })
 
   describe('setRetryAfter', () => {
