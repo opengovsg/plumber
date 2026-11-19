@@ -8,10 +8,7 @@ import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
 
-import {
-  loadAccessibleFlow,
-  loadAccessibleStep,
-} from '../access'
+import { loadAccessibleFlow, loadAccessibleStep } from '../access'
 
 type Member = 'owner' | 'editor' | 'viewer' | 'stranger'
 
