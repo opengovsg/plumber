@@ -15,7 +15,6 @@ import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
-import { extractBranchesWithSteps } from '@/helpers/toolbox'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import { EDITOR_RIGHT_DRAWER_WIDTH } from '../constants'
@@ -215,14 +214,7 @@ export function StepsList({ isNested }: StepsListProps) {
       />
 
       {forEachItem && (
-        // FlowStepGroup expects branch-shaped grouping, so the for-each's
-        // steps get rebuilt into that shape instead of rendered directly.
-        <FlowStepGroup
-          groupedSteps={extractBranchesWithSteps(
-            actionStepsToDisplay.slice(forEachIndex),
-            0,
-          )}
-        />
+        <FlowStepGroup steps={actionStepsToDisplay.slice(forEachIndex)} />
       )}
     </Flex>
   )
