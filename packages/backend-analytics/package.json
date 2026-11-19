@@ -9,18 +9,23 @@
     "data"
   ],
   "scripts": {
-    "prebuild": "rimraf ./dist",
+    "prebuild": "rimraf ./dist && pnpm run build:deps",
     "build": "tsc -p tsconfig.build.json",
+    "build:deps": "pnpm --filter \"backend-analytics^...\" run build",
+    "pretest:unit": "pnpm run build:deps",
     "test:unit": "vitest --config ./vitest.config.ts",
+    "pretest:integration": "pnpm run build:deps",
     "test:integration": "vitest --config ./vitest.config.integration.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
+    "pretypecheck": "pnpm run build:deps",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
+    "@plumber/backend-models": "workspace:*",
     "hyparquet-writer": "0.16.12",
     "knex": "catalog:",
     "winston": "catalog:",
