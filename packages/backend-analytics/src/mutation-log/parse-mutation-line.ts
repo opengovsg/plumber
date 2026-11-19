@@ -112,8 +112,8 @@ function matchAll(logged: string, pattern: string): string[] {
 /**
  * Pulls the ids out of variables that restoreLoggedJson cannot parse, such as an apostrophe before a comma.
  *
- * The editor sends `id` and `key` before `parameters`, and `connection`, `flow` and `appKey` after.
- * Taking the first or last match keeps user text inside `parameters` from shadowing them.
+ * Each pattern is anchored to where the editor puts that field, so a value inside `parameters` cannot match.
+ * A field whose place cannot be established stays out.
  */
 export function recoverVariables(
   logged: string | null,
@@ -121,24 +121,22 @@ export function recoverVariables(
   if (!logged || logged === '-' || logged === '[redacted]') {
     return null
   }
-  const first = (name: string, value: string) =>
-    matchAll(logged, `'${name}':'(${value})'`)[0]
-  const last = (name: string, value: string) =>
-    matchAll(logged, `'${name}':'(${value})'`).at(-1)
-  const lastNested = (name: string) =>
-    matchAll(logged, `'${name}':\\{'id':'(${UUID})'`).at(-1)
+  const capture = (pattern: string) => matchAll(logged, pattern).at(-1)
+  const nested = (id: string | undefined) => (id ? { id } : undefined)
+  // `id` and `key` open the input. `connection`, `flow`, `config` and `appKey` follow `parameters`, in that order.
   const input = Object.fromEntries(
     Object.entries({
-      id: first('id', UUID),
-      key: first('key', KEY),
-      flowId: first('flowId', UUID),
-      stepId: first('stepId', UUID),
-      tableId: first('tableId', UUID),
-      connectionId: first('connectionId', UUID),
-      ids: matchAll(logged, `'ids':\\['(${UUID})'`).slice(0, 1),
-      appKey: last('appKey', KEY),
-      flow: { id: lastNested('flow') },
-      connection: { id: lastNested('connection') },
+      id: capture(`^\\{'input':\\{'id':'(${UUID})'`),
+      key: capture(`^\\{'input':\\{'id':'${UUID}','key':'(${KEY})'`),
+      connection: nested(
+        capture(`'connection':\\{'id':'(${UUID})'\\},'flow':\\{'id':'`),
+      ),
+      flow: nested(
+        capture(
+          `'flow':\\{'id':'(${UUID})'(?:,'updatedAt':'[^']*')?\\},'config':\\{`,
+        ),
+      ),
+      appKey: capture(`'appKey':'(${KEY})'\\}\\}$`),
     }).filter(([, value]) => value !== undefined),
   )
   return { input }
