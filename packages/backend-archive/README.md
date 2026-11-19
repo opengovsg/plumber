@@ -233,9 +233,12 @@ Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `
 
 Each row records a request, not its outcome. GraphQL returns resolver errors with HTTP 200, so a rejected `updateStep` looks like a saved one. Treat `app_key`, `action_key` and `resource_id` as attempted changes, and read saved state from `flow_step`. A mutation whose root selection is a fragment spread gets no `operation`. Plumber's frontend never sends one. The editor's `deleteStep` sends only step ids, so a row with a `step_id` and no `flow_id` gets its pipe from `steps.flow_id` through the database reader, deleted steps included. The day's `rowsWithFlowFromStep` counts them. Morgan logs variables with every `"` turned into `'`, so an apostrophe directly before `,` `:` `}` or `]` makes them unparseable. The ids are then recovered from their fixed place in the editor's `updateStep` input, other ids and `resource_id` stay null, and the day's `rowsWithUnreadableVariables` counts those rows. Lines logged before the request log carried a user id have no `user_id`.
 
+The AI builder edits pipes through MCP tools inside the chat stream, so the request log never sees those calls. A second Logs Insights query reads the `mcp-tool` usage lines for Plumber's tools that change a pipe: `create_pipe`, `create_step`, `update_step_parameters`, `delete_step`, `unpublish_pipe` and `register_connection`. Each becomes a row with `operation` `mcp:<tool>`, the pipe and step from its args, and `http_status` 200 for success or 500 for error. `register_connection` never checks its `pipe_id`, so its pipe comes from the step through the database reader. Pipe, step and connection ids are lowercased. The usage log keeps args, not results, and redacts parameter values. So a `create_pipe` row has no `flow_id`, a `create_step` row has no `step_id`, and no MCP row has a `resource_id`. The usage log names users by email. The export maps each email to its user id through the database reader, and an email with no account leaves `user_id` null. Adding these rows bumps `MUTATION_LOG_VERSION` to 3. If the nightly run is already live when this ships, the next night redoes the last 7 days with them. Older days it wrote before this change stay without `mcp:` rows until `analytics:mutation-log --from --to --s3` rewrites them.
+
 The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. The day's completion file waits for both files. This table bumps `MUTATION_LOG_VERSION` to 2, so if the nightly run shipped first, the next night redoes the last 7 days with it. An older day needs `analytics:mutation-log --s3`. It holds one row per pipe, user and edit operation that day, with `edits`, `first_edit_at` and `last_edit_at`.
 
-- Only mutations that change the pipe count: step changes, `duplicateBranch`, `updateFlow`, `updateFlowConfig`, `updateFlowStatus` and `deleteFlow`. `duplicateFlow`, run retries, sharing and connection setup name a pipe without changing it.
+- Only mutations that change the pipe count: step changes, `duplicateBranch`, `updateFlow`, `updateFlowConfig`, `updateFlowStatus` and `deleteFlow`, plus the MCP tools `create_step`, `update_step_parameters`, `delete_step`, `unpublish_pipe` and `register_connection`. `duplicateFlow`, run retries, sharing and connection setup name a pipe without changing it.
+- A row with an HTTP status of 400 or more is left out. MCP rows carry the tool call's outcome this way.
 - `edits` counts requests, not saves. A rejected request returns HTTP 200, so it counts too. The editor is read-only for viewers, so a viewer's request needs a stale tab.
 - A join with `flow_access` gives each user's current access, not their role at edit time. Its owner row dates the current owner from the pipe's creation, so a former editor's past edits read as owner edits. For the role at edit time, use `flow_transfer` for ownership and the `flow_collaborator_*` PostHog events for collaborator changes, matched on each request's timestamp in the bronze `mutation_log`.
 
@@ -245,7 +248,7 @@ The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which 
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--from YYYY-MM-DD`  | First Singapore day.                                                                                                                                                                                                                                                |
 | `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                                                                                                                                                                                   |
-| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`. Skips the step lookups, since the database reader may belong to another environment.                                                                                                   |
+| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`. Skips the step and user lookups, since the database reader may belong to another environment.                                                                                          |
 | `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                                                                                                |
 | `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. Finished days only, since a completion file marks the day done. Reads `ANALYTICS_REQUEST_LOG_GROUP`, so the source matches the bucket's environment. |
 
@@ -253,6 +256,12 @@ The query reads AWS credentials from the default chain. To try one day against p
 
 ```bash
 pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out ./mutation-log-out
+```
+
+That checks the query and parsing only. `--log-group` skips the lookups, so `deleteStep` and `register_connection` rows have no pipe, and MCP rows have no user. `flow_edit_daily` then leaves out every MCP row. To check the lookups and `flow_edit_daily` too, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine), with `ANALYTICS_REQUEST_LOG_GROUP` set to the production log group. Then run without `--log-group`:
+
+```bash
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --out ./mutation-log-out
 ```
 
 Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.

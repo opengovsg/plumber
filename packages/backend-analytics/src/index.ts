@@ -12,6 +12,7 @@ export {
 export { localDirKeyLister } from './silver-change-tables'
 export {
   dbFlowIdResolver,
+  dbUserIdResolver,
   exportMutationLog,
   logsInsightsFetcher,
   previousSgtDay,

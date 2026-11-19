@@ -1,6 +1,6 @@
 import type { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import type { S3Client } from '@aws-sdk/client-s3'
-import { BaseStep } from '@plumber/backend-models'
+import { BaseStep, BaseUser } from '@plumber/backend-models'
 import type { Knex } from 'knex'
 import { DateTime } from 'luxon'
 import { z } from 'zod'
@@ -26,12 +26,17 @@ import {
   type ParquetColumns,
 } from '../silver-table'
 import { readActionCatalog, resourceParameters } from '../tables/action-catalog'
-import { fetchMutationLines } from './fetch-mutation-lines'
+import { fetchMcpToolLines, fetchMutationLines } from './fetch-mutation-lines'
 import {
   FLOW_EDIT_DAILY_COLUMNS,
   FLOW_EDIT_DAILY_TABLE,
   summarizeFlowEdits,
 } from './flow-edit-daily'
+import {
+  type McpToolLine,
+  parseMcpToolLine,
+  toMcpToolRow,
+} from './parse-mcp-tool-line'
 import {
   type MutationLogLine,
   type MutationLogRow,
@@ -109,19 +114,43 @@ export function sgtDaysBetween(from: string, to: string): string[] {
 }
 
 // Bump when a day's files change. The next night replays the last 7 days from the log, which is append-only.
-// 2 adds flow_edit_daily.
-export const MUTATION_LOG_VERSION = 2
+// 2 adds flow_edit_daily. 3 adds AI builder tool calls.
+export const MUTATION_LOG_VERSION = 3
+
+export interface DayLines {
+  mutationLines: MutationLogLine[]
+  mcpToolLines: McpToolLine[]
+}
 
 export type FetchDayLines = (window: {
   startMs: number
   endMs: number
-}) => Promise<MutationLogLine[]>
+}) => Promise<DayLines>
 
 export function logsInsightsFetcher(
   client: Pick<CloudWatchLogsClient, 'send'>,
   logGroup: string,
 ): FetchDayLines {
-  return (window) => fetchMutationLines({ client, logGroup, ...window })
+  return async (window) => ({
+    mutationLines: await fetchMutationLines({ client, logGroup, ...window }),
+    mcpToolLines: await fetchMcpToolLines({ client, logGroup, ...window }),
+  })
+}
+
+// Maps lowercase emails to user ids. The AI builder's usage log names users by email.
+export type ResolveUserIds = (emails: string[]) => Promise<Map<string, string>>
+
+export function dbUserIdResolver(db: Knex): ResolveUserIds {
+  return async (emails) => {
+    if (emails.length === 0) {
+      return new Map()
+    }
+    const users = await BaseUser.query(db)
+      .withSoftDeleted()
+      .whereIn(db.raw('lower(email)'), emails)
+      .select('id', 'email')
+    return new Map(users.map((user) => [user.email.toLowerCase(), user.id]))
+  }
 }
 
 // Maps step ids to their pipe ids. The editor's deleteStep sends step ids without the pipe.
@@ -173,6 +202,7 @@ async function fillFlowIds(
 interface WriteMutationLogDaysParams {
   fetchDayLines: FetchDayLines
   resolveFlowIds: ResolveFlowIds
+  resolveUserIds: ResolveUserIds
   sink: SilverSink
   days: string[]
   source?: CompletionSource
@@ -182,6 +212,7 @@ interface WriteMutationLogDaysParams {
 export async function writeMutationLogDays({
   fetchDayLines,
   resolveFlowIds,
+  resolveUserIds,
   sink,
   days,
   source = 'backfill',
@@ -192,10 +223,28 @@ export async function writeMutationLogDays({
     days,
     (day) => day,
     async (day) => {
-      const lines = await fetchDayLines(sgtDayWindow(day))
-      const parsedRows = lines
-        .map((line) => toMutationLogRow(line, parameterByAction))
-        .filter((row): row is MutationLogRow => row !== null)
+      const { mutationLines: lines, mcpToolLines } = await fetchDayLines(
+        sgtDayWindow(day),
+      )
+      const mcpToolCalls = mcpToolLines
+        .map(parseMcpToolLine)
+        .filter((call) => call !== null)
+      const userIdByEmail = await resolveUserIds([
+        ...new Set(
+          mcpToolCalls.flatMap((call) =>
+            call.userEmail ? [call.userEmail] : [],
+          ),
+        ),
+      ])
+      const mcpToolRows = mcpToolCalls.map((call) =>
+        toMcpToolRow(call, userIdByEmail),
+      )
+      const parsedRows = [
+        ...lines
+          .map((line) => toMutationLogRow(line, parameterByAction))
+          .filter((row): row is MutationLogRow => row !== null),
+        ...mcpToolRows,
+      ]
       const rows = sortForFlowSearch(
         await fillFlowIds(parsedRows, resolveFlowIds),
       )
@@ -212,6 +261,8 @@ export async function writeMutationLogDays({
         day,
         key,
         lines: lines.length,
+        mcpToolLines: mcpToolLines.length,
+        mcpToolRows: mcpToolRows.length,
         rows: rows.length,
         rowsWithoutOperation: rows.filter((row) => !row.operation).length,
         rowsWithoutUser: rows.filter((row) => !row.user_id).length,
@@ -292,6 +343,7 @@ export async function exportMutationLog({
       await writeMutationLogDays({
         fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
         resolveFlowIds: dbFlowIdResolver(db),
+        resolveUserIds: dbUserIdResolver(db),
         sink,
         days: Array.isArray(days)
           ? days

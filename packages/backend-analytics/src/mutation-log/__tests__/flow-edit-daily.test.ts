@@ -29,6 +29,16 @@ describe('summarizeFlowEdits', () => {
       mutation({ ts: '2026-11-04T16:30:00.000Z' }),
       mutation({ ts: '2026-11-05T01:00:00.000Z', operation: 'updateFlow' }),
       mutation({ ts: '2026-11-05T02:00:00.000Z', user_id: 'user-2' }),
+      mutation({
+        ts: '2026-11-05T02:30:00.000Z',
+        user_id: 'user-3',
+        operation: 'mcp:update_step_parameters',
+      }),
+      mutation({
+        ts: '2026-11-05T02:45:00.000Z',
+        user_id: 'user-4',
+        operation: 'mcp:register_connection',
+      }),
     ])
 
     expect(rows).toEqual([
@@ -49,6 +59,16 @@ describe('summarizeFlowEdits', () => {
         last_edit_at: new Date('2026-11-05T03:00:00.000Z'),
       }),
       expect.objectContaining({ user_id: 'user-2', edits: 1 }),
+      expect.objectContaining({
+        user_id: 'user-3',
+        operation: 'mcp:update_step_parameters',
+        edits: 1,
+      }),
+      expect.objectContaining({
+        user_id: 'user-4',
+        operation: 'mcp:register_connection',
+        edits: 1,
+      }),
     ])
   })
 
@@ -62,6 +82,11 @@ describe('summarizeFlowEdits', () => {
         mutation({
           ts: '2026-11-05T01:00:00.000Z',
           operation: 'bulkRetryExecutions',
+        }),
+        mutation({
+          ts: '2026-11-05T01:00:00.000Z',
+          operation: 'mcp:delete_step',
+          http_status: 500,
         }),
         mutation({ ts: '2026-11-05T01:00:00.000Z', flow_id: null }),
         mutation({ ts: '2026-11-05T01:00:00.000Z', user_id: null }),

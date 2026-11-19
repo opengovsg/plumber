@@ -6,8 +6,10 @@ import {
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  fetchMcpToolLines,
   fetchMutationLines,
   MAX_QUERY_RESULTS,
+  MCP_TOOL_LOG_QUERY,
   MUTATION_LOG_QUERY,
 } from '../fetch-mutation-lines'
 
@@ -133,5 +135,38 @@ describe('fetchMutationLines', () => {
 describe('MUTATION_LOG_QUERY', () => {
   it('admits a mutation logged with a leading space', () => {
     expect(MUTATION_LOG_QUERY).toContain('like /^\\s*mutation/')
+  })
+})
+
+describe('fetchMcpToolLines', () => {
+  it('queries Plumber edit tools and returns each whole event', async () => {
+    const event = '{"message":{"event":"mcp-tool","tool":"delete_step"}}'
+    const send = vi.fn(async (command: unknown) =>
+      command instanceof StartQueryCommand
+        ? { queryId: 'q1' }
+        : {
+            status: 'Complete',
+            results: [
+              [
+                { field: '@timestamp', value: insightsTimestamp(START) },
+                { field: '@message', value: event },
+              ],
+            ],
+          },
+    )
+
+    const lines = await fetchMcpToolLines({
+      client: { send } as never,
+      logGroup: 'server',
+      startMs: START,
+      endMs: END,
+      sleep: noSleep,
+    })
+
+    expect(lines).toEqual([{ timestamp: insightsTimestamp(START), event }])
+    const [start] = send.mock.calls[0] as [StartQueryCommand]
+    expect(start.input.queryString).toBe(MCP_TOOL_LOG_QUERY)
+    expect(MCP_TOOL_LOG_QUERY).toContain("`message.source` = 'plumber'")
+    expect(MCP_TOOL_LOG_QUERY).toContain("'update_step_parameters'")
   })
 })
