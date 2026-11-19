@@ -27,7 +27,7 @@ vi.mock('@/pages/AiBuilder/AiBuilderContext', () => ({
     output: context.output,
     chatId: 'chat-1',
     ddSessionId: '',
-    refetchTestExecutionSteps: vi.fn(),
+    refetchTestExecutionSteps: vi.fn().mockResolvedValue(undefined),
   }),
 }))
 
@@ -182,15 +182,21 @@ describe('useChatStream', () => {
 
     act(() => hook.sendMessage('Add a step'))
     await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    act(() => hook.sendMessage('Add another step'))
+    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     act(() => hook.resetChat())
     act(() => hook.sendMessage('Continue building my pipe.'))
-    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(3))
 
-    for (const call of [0, 1]) {
+    for (const call of [0, 1, 2]) {
       expect(firstMessage(call)).toMatchObject({
         id: 'pipe-context-resync',
         role: 'user',
-        parts: [{ text: expect.stringContaining('step-1') }],
+        parts: [
+          {
+            text: expect.stringMatching(/Pipe id: pipe-1\n[\s\S]*step-1/),
+          },
+        ],
       })
     }
     context.output = {}

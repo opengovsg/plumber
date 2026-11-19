@@ -1,5 +1,5 @@
 import { Box, Flex, Link, Text } from '@chakra-ui/react'
-import { useCallback, useEffect } from 'react'
+import { type ReactNode, useCallback, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { StickToBottom } from 'use-stick-to-bottom'
 
@@ -108,7 +108,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     cancelStream()
     resetChat()
     onNewChat?.()
-    setIsDrawerOpen(false)
+    const isKeepingPipe = hasExceededSizeLimit && !!output?.pipeId
+    // The kept pipe has no chat messages to reopen its preview from.
+    setIsDrawerOpen(isKeepingPipe && !isMobile)
 
     // Build the new draft from the last assistant message's continuation prompt.
     // createNewChatDraft() always mints its own fresh chatId, so the new chat starts
@@ -139,6 +141,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     flowName,
     output,
     parameterLabelsByStepId,
+    isMobile,
   ])
 
   const handleOpenPreview = useCallback(() => {
@@ -165,8 +168,28 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     }
   }, [isStreaming, hasMessages, isReadyForPreview, handleOpenPreview])
 
+  const withPreviewDrawer = (chatColumn: ReactNode) => (
+    <Flex h="100%" w="full" position="relative" overflow="hidden">
+      <Flex
+        h="100%"
+        w="full"
+        flexDir="column"
+        position="relative"
+        pr={isDrawerOpen && !isMobile ? '50%' : '0'}
+        transition="padding-right 0.3s ease-in-out"
+      >
+        {chatColumn}
+      </Flex>
+
+      <SideDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+    </Flex>
+  )
+
   if (!hasMessages) {
-    return (
+    const landingView = (
       <Flex
         h="100%"
         w="full"
@@ -193,108 +216,92 @@ export default function ChatInterface(props: ChatInterfaceProps) {
         </Flex>
       </Flex>
     )
+    // A pipe kept from a too-large chat stays previewable in the new chat.
+    return output?.pipeId ? withPreviewDrawer(landingView) : landingView
   }
 
-  return (
-    <Flex h="100%" w="full" position="relative" overflow="hidden">
-      <Flex
-        h="100%"
-        w="full"
-        flexDir="column"
-        position="relative"
-        pr={isDrawerOpen && !isMobile ? '50%' : '0'}
-        transition="padding-right 0.3s ease-in-out"
-      >
-        <StickToBottom
-          resize="smooth"
-          initial="smooth"
-          style={{
-            display: 'flex',
-            height: '100%',
-            width: '100%',
-            flexDirection: 'column',
-            position: 'relative',
-          }}
-        >
-          <ChatMessages
-            messages={messages}
-            currentResponse={currentResponse}
-            isWorking={isWorking}
-            isStreaming={isStreaming}
-          />
-
-          <Box
-            borderTop="1px"
-            borderColor="gray.200"
-            bg="white"
-            w="full"
-            flexShrink={0}
-            position="relative"
-          >
-            <Box
-              maxW="3xl"
-              mx="auto"
-              px={8}
-              py={4}
-              gap={4}
-              display="flex"
-              flexDirection="column"
-            >
-              <ScrollButton />
-              {hasHitStepLimit && !hasReachedLimit && !hasExceededSizeLimit && (
-                <StepLimitBanner
-                  onContinue={() => sendMessage(CONTINUE_PROMPT)}
-                />
-              )}
-              {hasReachedLimit || hasExceededSizeLimit ? (
-                <MessageLimitBanner
-                  reason={hasExceededSizeLimit ? 'size' : 'messages'}
-                  onNewChat={handleNewChat}
-                  onRetry={onRetryLastTurn}
-                />
-              ) : (
-                <PromptInput
-                  sendMessage={sendMessage}
-                  isStreaming={isStreaming}
-                  cancelStream={cancelStream}
-                  clarification={activeClarification}
-                  dynamicPicker={activeDynamicPicker}
-                  columnTable={activeColumnTable}
-                  tileSetup={activeTileSetup}
-                  onAddConnection={onAddConnection}
-                  knownFormUrl={knownFormUrl}
-                  onConnectForm={onConnectForm}
-                  onSelectExistingForm={onSelectExistingForm}
-                  attachedForm={attachedForm}
-                />
-              )}
-              {!isMobile && (
-                <Text
-                  textStyle="caption-1"
-                  color="interaction.support.placeholder"
-                  textAlign="center"
-                >
-                  This feature is new and still improving. It can make mistakes.
-                  Still need help?{' '}
-                  <Link
-                    href={buildSupportFormUrl(chatId)}
-                    isExternal
-                    textDecoration="underline"
-                  >
-                    Contact us here
-                  </Link>
-                  .
-                </Text>
-              )}
-            </Box>
-          </Box>
-        </StickToBottom>
-      </Flex>
-
-      <SideDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+  return withPreviewDrawer(
+    <StickToBottom
+      resize="smooth"
+      initial="smooth"
+      style={{
+        display: 'flex',
+        height: '100%',
+        width: '100%',
+        flexDirection: 'column',
+        position: 'relative',
+      }}
+    >
+      <ChatMessages
+        messages={messages}
+        currentResponse={currentResponse}
+        isWorking={isWorking}
+        isStreaming={isStreaming}
       />
-    </Flex>
+
+      <Box
+        borderTop="1px"
+        borderColor="gray.200"
+        bg="white"
+        w="full"
+        flexShrink={0}
+        position="relative"
+      >
+        <Box
+          maxW="3xl"
+          mx="auto"
+          px={8}
+          py={4}
+          gap={4}
+          display="flex"
+          flexDirection="column"
+        >
+          <ScrollButton />
+          {hasHitStepLimit && !hasReachedLimit && !hasExceededSizeLimit && (
+            <StepLimitBanner onContinue={() => sendMessage(CONTINUE_PROMPT)} />
+          )}
+          {hasReachedLimit || hasExceededSizeLimit ? (
+            <MessageLimitBanner
+              reason={hasExceededSizeLimit ? 'size' : 'messages'}
+              onNewChat={handleNewChat}
+              onRetry={onRetryLastTurn}
+            />
+          ) : (
+            <PromptInput
+              sendMessage={sendMessage}
+              isStreaming={isStreaming}
+              cancelStream={cancelStream}
+              clarification={activeClarification}
+              dynamicPicker={activeDynamicPicker}
+              columnTable={activeColumnTable}
+              tileSetup={activeTileSetup}
+              onAddConnection={onAddConnection}
+              knownFormUrl={knownFormUrl}
+              onConnectForm={onConnectForm}
+              onSelectExistingForm={onSelectExistingForm}
+              attachedForm={attachedForm}
+            />
+          )}
+          {!isMobile && (
+            <Text
+              textStyle="caption-1"
+              color="interaction.support.placeholder"
+              textAlign="center"
+            >
+              This feature is new and still improving. It can make mistakes.
+              Still need help?{' '}
+              <Link
+                href={buildSupportFormUrl(chatId)}
+                isExternal
+                textDecoration="underline"
+              >
+                Contact us here
+              </Link>
+              .
+            </Text>
+          )}
+        </Box>
+      </Box>
+    </StickToBottom>,
   )
 }
