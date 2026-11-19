@@ -216,11 +216,11 @@ The archival task also extracts yesterday's GraphQL mutations from the server re
 
 The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night. A finished run logs `analytics.mutation_log.complete` with `durationMs`. A failed run logs `analytics.mutation_log.error` with `durationMs`, and `timedOut: true` when the 30 minutes ran out.
 
-The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. It is written before the bronze file, so a failed upload leaves the day for the next run. It holds one row per pipe, user and edit operation that day, with `edits`, `first_edit_at` and `last_edit_at`. Join it with `flow_access` to see whether the owner, an editor or a viewer made each change.
+The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. The day's completion file waits for both files. This table bumps `MUTATION_LOG_VERSION` to 2, so if the nightly run shipped first, the next night redoes the last 7 days with it. An older day needs `analytics:mutation-log --s3`. It holds one row per pipe, user and edit operation that day, with `edits`, `first_edit_at` and `last_edit_at`.
 
 - Only mutations that change the pipe count: step changes, `duplicateBranch`, `updateFlow`, `updateFlowConfig`, `updateFlowStatus` and `deleteFlow`. `duplicateFlow`, run retries, sharing and connection setup name a pipe without changing it.
 - `edits` counts requests, not saves. A rejected request returns HTTP 200, so it counts too. The editor is read-only for viewers, so a viewer's request needs a stale tab.
-- A role is resolved per day. When a user's role changes mid-day, every edit that day gets one role. The bronze `mutation_log` keeps each request's timestamp for finer attribution.
+- A join with `flow_access` gives each user's current access, not their role at edit time. Its owner row dates the current owner from the pipe's creation, so a former editor's past edits read as owner edits. For the role at edit time, use `flow_transfer` for ownership and the `flow_collaborator_*` PostHog events for collaborator changes, matched on each request's timestamp in the bronze `mutation_log`.
 
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 

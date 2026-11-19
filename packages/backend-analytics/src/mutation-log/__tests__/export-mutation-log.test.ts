@@ -148,14 +148,14 @@ describe('writeMutationLogDays', () => {
     ])
   })
 
-  it('marks a day done only after its file is written', async () => {
+  it('marks a day done only after both files are written', async () => {
     const written: string[] = []
-    const write = (fail: boolean) =>
+    const write = (failOn: string | null) =>
       writeMutationLogDays({
         fetchDayLines: async () => [],
         resolveFlowIds: noFlows,
         sink: async (key) => {
-          if (fail && key.startsWith('bronze/mutation_log/')) {
+          if (failOn && key.startsWith(failOn)) {
             throw new Error('upload failed')
           }
           written.push(key)
@@ -165,15 +165,19 @@ describe('writeMutationLogDays', () => {
         source: 'nightly',
       })
 
-    await expect(write(true)).rejects.toThrow(
+    await expect(write('silver/flow_edit_daily/')).rejects.toThrow(
       'mutation_log: 1 day(s) failed: 2026-11-05',
     )
-    expect(written).toEqual([])
-
-    await write(false)
     expect(written).toEqual([
       'bronze/mutation_log/day=2026-11-05/current.parquet',
-      'bronze/_completion/mutation_log/day=2026-11-05.v1.json',
+    ])
+
+    written.length = 0
+    await write(null)
+    expect(written).toEqual([
+      'bronze/mutation_log/day=2026-11-05/current.parquet',
+      'silver/flow_edit_daily/day=2026-11-05.parquet',
+      'bronze/_completion/mutation_log/day=2026-11-05.v2.json',
     ])
   })
 })

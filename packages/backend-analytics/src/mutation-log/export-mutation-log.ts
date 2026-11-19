@@ -81,7 +81,8 @@ export function sortForFlowSearch(rows: MutationLogRow[]): MutationLogRow[] {
 }
 
 // Bump when a day's files change. The next night replays the last 7 days from the log, which is append-only.
-export const MUTATION_LOG_VERSION = 1
+// 2 adds flow_edit_daily.
+export const MUTATION_LOG_VERSION = 2
 
 export type FetchDayLines = (window: {
   startMs: number
