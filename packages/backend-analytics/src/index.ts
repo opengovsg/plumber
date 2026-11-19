@@ -21,4 +21,5 @@ export {
   logsInsightsFetcher,
 } from './mutation-log/export-mutation-log'
 export { createLogsClient } from './mutation-log/fetch-mutation-lines'
+export { nestedErrors } from './log-format'
 export { previousSgtDay, sgtDaysBetween } from './sgt-day'
