@@ -1,10 +1,12 @@
 import { useQuery } from '@apollo/client'
-import type { IApp, IConnection } from '@plumber/types'
+import type { IApp } from '@plumber/types'
 import { useCallback, useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
+import client from '@/graphql/client'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
 
 import { DATABRICKS_APP_KEY, EXCEL_APP_KEY } from '../constants'
@@ -14,55 +16,11 @@ import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
 import ConfigureDatabricksConnection from './ConfigureDatabricksConnection'
 import ConfigureExcelConnection from './ConfigureExcelConnection'
-import { databricksReconnectConnections } from './databricks-reconnect-connections'
+import { databricksReconnectDropdownConnections } from './databricks-reconnect-connections'
+import { optionGenerator } from './option-generator'
 
 interface ChooseAndAddConnectionProps {
   onClose: () => void
-}
-
-export type ConnectionDropdownOption = {
-  label: string
-  value: string
-  description?: string
-  env?: string // only used for FormSG / Databricks for now
-}
-
-// For FormSG, it will generate a label with the form title and the description with the form id
-// Note: doing this on the frontend instead because of backwards compatibility whereby
-// only re-verifying the connection on the backend will update the connection formattedData (inconsistency)
-export const optionGenerator = (
-  connection: Partial<IConnection>,
-  appKey: string,
-): ConnectionDropdownOption => {
-  const screenName = connection?.formattedData?.screenName as string
-  const description = connection?.description as string
-  if (appKey === 'formsg') {
-    // old form connections will have env as undefined and be treated as prod
-    const env = (connection?.formattedData?.env as string) ?? 'prod'
-
-    // parse the screenName to get the env, formId, and formTitle
-    const [envWithFormId, formTitle] = screenName.split(' - ')
-    let formId = envWithFormId
-    // only if the env is not prod, we need to parse the env from the screenName
-    if (env !== 'prod') {
-      const endIndex = envWithFormId.indexOf(']')
-      formId = envWithFormId.substring(endIndex + 2) // skip "]"
-    }
-
-    return {
-      label: `${env === 'prod' ? '' : `[${env.toUpperCase()}] `}${formTitle}`,
-      value: connection?.id as string,
-      description: description ? `${formId} - ${description}` : formId,
-      env,
-    }
-  }
-
-  return {
-    label: screenName ?? 'Unnamed',
-    value: connection?.id as string,
-    description: connection?.description ?? undefined,
-    env: connection?.formattedData?.env as string | undefined,
-  }
 }
 
 export default function ChooseAndAddConnection(
@@ -92,6 +50,9 @@ export default function ChooseAndAddConnection(
     variables: {
       key: selectedApp?.key,
       flowId: flow.id,
+      ...(selectedApp?.key === DATABRICKS_APP_KEY
+        ? { ensureDatabricksNew: true }
+        : {}),
     },
     skip: !selectedApp,
   })
@@ -99,13 +60,14 @@ export default function ChooseAndAddConnection(
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
     const storedConnectionId = step?.connection?.id
+    const listedConnections = appWithConnections?.connections
     const connections =
-      appWithConnections?.key === DATABRICKS_APP_KEY && storedConnectionId
-        ? databricksReconnectConnections(
-            appWithConnections.connections ?? [],
+      appWithConnections?.key === DATABRICKS_APP_KEY
+        ? databricksReconnectDropdownConnections(
+            listedConnections ?? [],
             storedConnectionId,
           )
-        : appWithConnections?.connections
+        : listedConnections
     const options =
       connections?.map((connection) =>
         optionGenerator(connection, appWithConnections.key),
@@ -153,6 +115,7 @@ export default function ChooseAndAddConnection(
           )
           newStepId = createdStep.id
         } else if (step) {
+          const connectionChanged = connectionId !== step.connection?.id
           const updatedStep = await onUpdateStep({
             ...step,
             appKey: selectedApp.key,
@@ -162,6 +125,10 @@ export default function ChooseAndAddConnection(
             },
           })
           newStepId = updatedStep.id
+          // The table list is cached by step id. The connection id is not part of that query.
+          if (connectionChanged) {
+            await client.refetchQueries({ include: [GET_DYNAMIC_DATA] })
+          }
         }
         onClose()
         onDrawerOpen()
