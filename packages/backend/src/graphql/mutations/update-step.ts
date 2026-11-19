@@ -35,7 +35,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
   }
 
   const step = await Step.transaction(async (trx) => {
-    // IMPORTANT: loadAccessibleStep skips flow scoping when flowId is falsy.
     if (!input.flow?.id) {
       throw new BadUserInputError('Step not found')
     }

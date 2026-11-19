@@ -149,6 +149,7 @@ describe('access loaders', () => {
         const result = await loadAccessibleStep({
           user: users[member],
           stepId: steps[0].id,
+          flowId: flow.id,
           role,
         })
 
@@ -167,9 +168,21 @@ describe('access loaders', () => {
         loadAccessibleStep({
           user: users.owner,
           stepId: randomUUID(),
+          flowId: flow.id,
           role: 'viewer',
         }),
       ).resolves.toBeUndefined()
+    })
+
+    it('rejects an empty flowId instead of dropping the flow filter', async () => {
+      await expect(
+        loadAccessibleStep({
+          user: users.owner,
+          stepId: steps[1].id,
+          flowId: '',
+          role: 'editor',
+        }),
+      ).rejects.toThrow(/invalid input syntax for type uuid/)
     })
 
     it('returns the step when flowId matches', async () => {
@@ -204,6 +217,7 @@ describe('access loaders', () => {
       const result = await loadAccessibleStep({
         user: users.owner,
         stepId: steps[1].id,
+        flowId: flow.id,
         role: 'viewer',
         graph: 'flow.steps',
       })

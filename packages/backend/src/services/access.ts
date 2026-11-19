@@ -16,7 +16,7 @@ interface LoadAccessibleFlowInput {
 interface LoadAccessibleStepInput {
   user: User
   stepId: string
-  flowId?: string
+  flowId: string
   role: IFlowCollabRole
   graph?: RelationExpression<Step>
   trx?: Transaction
@@ -68,7 +68,7 @@ export async function loadAccessibleStep({
 }: LoadAccessibleStepInput): Promise<Step | undefined> {
   return accessibleStepsQuery({ user, role, graph, trx }).findOne({
     'steps.id': stepId,
-    ...(flowId ? { 'steps.flow_id': flowId } : {}),
+    'steps.flow_id': flowId,
   })
 }
 
