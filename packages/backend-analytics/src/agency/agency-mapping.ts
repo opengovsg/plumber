@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import { z } from 'zod'
 
-// src/helpers/analytics/agency and dist/helpers/analytics/agency sit at the same depth.
-export const AGENCY_DATA_DIR = path.resolve(__dirname, '../../../../data')
+// src/agency and dist/agency sit at the same depth.
+export const AGENCY_DATA_DIR = path.resolve(__dirname, '../../data')
 
 export const AGENCY_CATEGORIES = [
   'ministry',

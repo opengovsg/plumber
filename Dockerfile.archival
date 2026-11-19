@@ -12,6 +12,7 @@ RUN npm install -g pnpm@12.11.2
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm_config__auth="{\"https://npm.taskforce.sh\":{\"@taskforcesh\":{\"authToken\":\"$(cat /run/secrets/NPM_TASKFORCESH_TOKEN)\"}}}" \
   pnpm install --frozen-lockfile
+# The package's prebuild builds its workspace dependencies first.
 RUN pnpm --filter backend-archive run build
 # `pnpm deploy` materializes a self-contained node_modules for one workspace
 # package (resolving symlinks and workspace:* deps into real files), unlike
@@ -29,8 +30,6 @@ FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc6
 WORKDIR /opt/plumber
 
 COPY --from=build /opt/plumber/packages/backend-archive/dist ./packages/backend-archive/dist
-# The agency mapping CSVs are read at runtime from the package root.
-COPY --from=build /opt/plumber/packages/backend-archive/data ./packages/backend-archive/data
 COPY --from=build /opt/plumber/deploy/backend-archive/package.json ./packages/backend-archive/package.json
 COPY --from=build /opt/plumber/deploy/backend-archive/node_modules ./packages/backend-archive/node_modules
 

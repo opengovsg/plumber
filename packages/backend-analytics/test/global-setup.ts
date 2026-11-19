@@ -5,7 +5,7 @@ import { createGlobalSetup } from '@opengovsg/testcontainers/vitest'
 import knex from 'knex'
 import type { TestProject } from 'vitest/node'
 
-import { TEST_POSTGRES } from '../src/helpers/analytics/__tests__/helpers/test-postgres'
+import { TEST_POSTGRES } from '../src/__tests__/helpers/test-postgres'
 
 // IMPORTANT: the export queries must run against the app's real schema, so this applies backend's migrations.
 // A migration that renames or drops a column the export reads then fails here, before merge.

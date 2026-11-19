@@ -7,7 +7,8 @@ import {
   SILVER_TABLES,
   selectSilverTables,
   writeSilverTables,
-} from '@/helpers/analytics/export-silver-tables'
+} from 'backend-analytics'
+
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'

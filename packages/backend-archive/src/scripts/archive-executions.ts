@@ -1,4 +1,5 @@
-import { exportSilverTables } from '@/helpers/analytics/export-silver-tables'
+import { exportSilverTables } from 'backend-analytics'
+
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb, archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'

@@ -1,0 +1,39 @@
+{
+  "name": "backend-analytics",
+  "version": "1.104.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "data"
+  ],
+  "scripts": {
+    "prebuild": "rimraf ./dist",
+    "build": "tsc -p tsconfig.build.json",
+    "test:unit": "vitest --config ./vitest.config.ts",
+    "test:integration": "vitest --config ./vitest.config.integration.ts",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "hyparquet-writer": "0.16.12",
+    "knex": "catalog:",
+    "winston": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@opengovsg/testcontainers": "0.2.0",
+    "@types/node": "22.18.0",
+    "hyparquet": "1.31.4",
+    "pg": "catalog:",
+    "rimraf": "^4.4.1",
+    "testcontainers": "11.14.0",
+    "typescript": "catalog:",
+    "vitest": "^4.1.11"
+  }
+}
