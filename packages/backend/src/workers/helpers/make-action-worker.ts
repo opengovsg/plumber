@@ -9,6 +9,7 @@ import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
 import FileLockContentionError from '@/errors/file-lock-contention'
+import { attachHiddenCauseIfStepError } from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import tracer from '@/helpers/tracer'
 import Step from '@/models/step'
@@ -140,9 +141,14 @@ export function makeActionWorker(
             // This happens when the prerequisite steps for the action fails
             // (e.g. db error, missing execution, flow, step, etc...) in such
             // cases, we do not want to retry
-            throw new UnrecoverableError(
+            const unrecoverableError = new UnrecoverableError(
               err.message || 'Action failed to execute',
             )
+            // handleFailedJob logs each failure's kind for SLI computation, and
+            // reads the kind from this error's `cause`. Without the StepError
+            // as cause, every failure here would count as internal.
+            attachHiddenCauseIfStepError(unrecoverableError, err)
+            throw unrecoverableError
           },
         )
 

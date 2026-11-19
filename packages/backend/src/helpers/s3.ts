@@ -157,31 +157,42 @@ export const SES_BLOCKED_EXTENSIONS = [
 export const MAX_FILE_SIZE = 1024 * 1024 * 20 // 20MB
 
 function throwAttachmentError(
-  errorType: string,
+  errorType: string | undefined,
   metadata: Record<string, string>,
-) {
-  let name
-  let solution
+): never {
   switch (errorType) {
     case MALWARE_SCAN_STATUS.THREATS_FOUND:
-      name = `Attachment malware scan found threats in: ${metadata.filename}`
-      solution = 'Please delete the attachment and try again.'
-      break
+      throw new StepError({
+        name: `Attachment malware scan found threats in: ${metadata.filename}`,
+        solution: 'Please delete the attachment and try again.',
+        kind: 'config',
+      })
     case MALWARE_SCAN_STATUS.UNSUPPORTED:
-      name = `Unsupported attachment: ${metadata.filename}`
-      solution = 'Please delete the attachment and try again.'
-      break
+      throw new StepError({
+        name: `Unsupported attachment: ${metadata.filename}`,
+        solution: 'Please delete the attachment and try again.',
+        kind: 'config',
+      })
     case MALWARE_SCAN_STATUS.PENDING:
-      name = `Attachment malware scan in progress`
-      solution = 'Please try again in a few minutes.'
-      break
+      throw new StepError({
+        name: `Attachment malware scan in progress`,
+        solution: 'Please try again in a few minutes.',
+        kind: 'internal',
+      })
+    case MALWARE_SCAN_STATUS.FAILED:
+      throw new StepError({
+        name: `Attachment malware scan failed`,
+        solution: 'Please try again in a few minutes.',
+        kind: 'third-party',
+      })
+    // A missing scan tag lands here. It usually means GuardDuty has not scanned the file yet.
     default:
-      name = `Attachment malware scan failed`
-      solution = 'Please try again in a few minutes.'
-      break
+      throw new StepError({
+        name: `Attachment malware scan failed`,
+        solution: 'Please try again in a few minutes.',
+        kind: 'internal',
+      })
   }
-
-  throw new StepError(name, solution)
 }
 
 function requireDevEnv(name: string, value: string | undefined): string {
@@ -425,11 +436,7 @@ export async function getObjectFromS3Id(
           idData.objectKey,
         )
         if (!isValid) {
-          // No scan-status tag found is treated the same as a failed scan.
-          throwAttachmentError(
-            scanStatus ?? MALWARE_SCAN_STATUS.FAILED,
-            metadata,
-          )
+          throwAttachmentError(scanStatus, metadata)
         }
       }
     }

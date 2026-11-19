@@ -1,6 +1,8 @@
 import { IFlowConfig } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import StepError from '@/errors/step'
+
 import { processAction } from '../action'
 
 const mocks = vi.hoisted(() => {
@@ -129,6 +131,16 @@ vi.mock('@/queues/action', () => ({
   enqueueActionJob: vi.fn(),
 }))
 
+vi.mock('@/helpers/distributed-lock', () => ({
+  withLock: vi.fn(
+    (
+      lockKey: string,
+      _fn: unknown,
+      opts: { onContention: (lockKey: string) => unknown },
+    ) => opts.onContention(lockKey),
+  ),
+}))
+
 const OPTIONS = {
   flowId: 'flow-id',
   stepId: 'step-id',
@@ -163,6 +175,25 @@ describe('processAction', () => {
 
       const result = await processAction(OPTIONS)
       expect(result.executionError).toBeNull()
+    })
+  })
+
+  describe('Test run file lock contention', () => {
+    it('records an internal StepError', async () => {
+      mocks.globalVariable.mockReturnValueOnce({
+        step: { parameters: {} },
+        actionOutput: { data: null, error: null },
+        execution: { id: 'execution-id' },
+        app: {
+          key: 'webhook',
+          queue: { getLockKey: () => 'lock-key' },
+        },
+      } as unknown as ReturnType<typeof mocks.globalVariable>)
+
+      const result = await processAction({ ...OPTIONS, testRun: true })
+
+      expect(result.executionError).toBeInstanceOf(StepError)
+      expect(result.executionError).toMatchObject({ kind: 'internal' })
     })
   })
 })
