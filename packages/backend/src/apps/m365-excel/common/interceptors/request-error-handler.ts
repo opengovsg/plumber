@@ -152,11 +152,17 @@ const EXCEL_504_ERROR_MESSAGE = {
    - Fix: Simplify the formulas, or set the calculation mode to Manual (Formulas tab > Calculation Options).`,
 }
 
-// Only a row write's timeout reliably points at the user's slow workbook.
+// Unlike other 5xx, a workbook write's 504 is config: Graph times out on the
+// user's slow formulas.
 function get504Kind(config: AxiosRequestConfig | undefined): StepErrorKind {
+  // Excludes the OAuth token renewal, which any action can trigger.
+  const isWorkbookCall =
+    getLastHitGraphApiType(config?.url ?? '') === GraphApiType.Excel
   const isWrite = config?.method !== undefined && config.method !== 'get'
   const isCreateSession = config?.url?.endsWith('/createSession') ?? false
-  return isWrite && !isCreateSession ? 'config' : 'third-party'
+  return isWorkbookCall && isWrite && !isCreateSession
+    ? 'config'
+    : 'third-party'
 }
 
 const handle504: ThrowingHandler = function ($, error) {
@@ -186,6 +192,7 @@ const handle504: ThrowingHandler = function ($, error) {
     delayType: 'step',
     delayInMs: 'default',
     maxAttempts: EXCEL_504_MAX_ATTEMPTS,
+    kind: get504Kind(error.response.config),
   })
 }
 
