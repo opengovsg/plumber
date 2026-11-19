@@ -1,8 +1,16 @@
 import { gql } from '@apollo/client'
 
 export const GET_APP_CONNECTIONS = gql`
-  query GetAppConnections($key: String!, $flowId: String) {
-    getApp(key: $key, flowId: $flowId) {
+  query GetAppConnections(
+    $key: String!
+    $flowId: String
+    $ensureDatabricksNew: Boolean
+  ) {
+    getApp(
+      key: $key
+      flowId: $flowId
+      ensureDatabricksNew: $ensureDatabricksNew
+    ) {
       key
       auth {
         supportsConnectionEdit
@@ -11,6 +19,7 @@ export const GET_APP_CONNECTIONS = gql`
         id
         key
         verified
+        generation
         flowCount
         editableLabel
         environment {

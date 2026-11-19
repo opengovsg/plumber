@@ -94,6 +94,32 @@ interface ConfigureDatabricksConnectionProps {
   onCreateOrUpdateStep: (connectionId: string) => Promise<void>
 }
 
+type ListedConnection = {
+  id?: string | null
+  generation?: string | null
+}
+
+function databricksSetupConnectionId(
+  selectedConnectionId: string | undefined,
+  connections: ListedConnection[],
+): string {
+  if (selectedConnectionId) {
+    return selectedConnectionId
+  }
+  const created = connections.find(
+    (connection) => connection.generation === 'new' && connection.id,
+  )
+  if (created?.id) {
+    return created.id
+  }
+  const legacy = connections.find(
+    (connection) =>
+      connection.id &&
+      (connection.generation === 'legacy' || connection.generation == null),
+  )
+  return legacy?.id ?? ''
+}
+
 export default function ConfigureDatabricksConnection(
   props: ConfigureDatabricksConnectionProps,
 ) {
@@ -108,14 +134,20 @@ export default function ConfigureDatabricksConnection(
   const { data: appConnectionsData, loading: connectionsLoading } = useQuery(
     GET_APP_CONNECTIONS,
     {
-      variables: { key: DATABRICKS_APP_KEY, flowId },
+      variables: {
+        key: DATABRICKS_APP_KEY,
+        flowId,
+        ensureDatabricksNew: true,
+      },
     },
   )
 
-  const connectionId =
-    selectedConnectionId ??
-    appConnectionsData?.getApp?.connections?.[0]?.id ??
-    ''
+  const connections: ListedConnection[] =
+    appConnectionsData?.getApp?.connections ?? []
+  const connectionId = databricksSetupConnectionId(
+    selectedConnectionId,
+    connections,
+  )
 
   const { testResult, testResultLoading, testConnection } =
     useConnectionVerification({
