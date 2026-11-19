@@ -233,7 +233,11 @@ Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `
 
 Each row records a request, not its outcome. GraphQL returns resolver errors with HTTP 200, so a rejected `updateStep` looks like a saved one. Treat `app_key`, `action_key` and `resource_id` as attempted changes, and read saved state from `flow_step`. A mutation whose root selection is a fragment spread gets no `operation`. Plumber's frontend never sends one. The editor's `deleteStep` sends only step ids, so a row with a `step_id` and no `flow_id` gets its pipe from `steps.flow_id` through the database reader, deleted steps included. The day's `rowsWithFlowFromStep` counts them. Morgan logs variables with every `"` turned into `'`, so an apostrophe directly before `,` `:` `}` or `]` makes them unparseable. The ids are then recovered from their fixed place in the editor's `updateStep` input, other ids and `resource_id` stay null, and the day's `rowsWithUnreadableVariables` counts those rows. Lines logged before the request log carried a user id have no `user_id`.
 
-The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. It holds one row per pipe, user and operation that day, with `edits`, `first_edit_at` and `last_edit_at`. Join it with `flow_access` to see whether the owner, an editor or a viewer made each change. It counts mutations only, so viewing a pipe leaves no row. Rows without a pipe, a user or an operation are left out.
+The same run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. It is written before the bronze file, so a failed upload leaves the day for the next run. It holds one row per pipe, user and edit operation that day, with `edits`, `first_edit_at` and `last_edit_at`. Join it with `flow_access` to see whether the owner, an editor or a viewer made each change.
+
+- Only mutations that change the pipe count: step changes, `duplicateBranch`, `updateFlow`, `updateFlowConfig`, `updateFlowStatus` and `deleteFlow`. `duplicateFlow`, run retries, sharing and connection setup name a pipe without changing it.
+- `edits` counts requests, not saves. A rejected request returns HTTP 200, so it counts too. The editor is read-only for viewers, so a viewer's request needs a stale tab.
+- A role is resolved per day. When a user's role changes mid-day, every edit that day gets one role. The bronze `mutation_log` keeps each request's timestamp for finer attribution.
 
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 

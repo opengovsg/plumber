@@ -24,10 +24,23 @@ export const FLOW_EDIT_DAILY_COLUMNS: ParquetColumns<FlowEditDailyRow> = {
   last_edit_at: 'TIMESTAMP',
 }
 
+// Other mutations name a pipe without changing it, such as duplicateFlow, run retries and sharing.
+export const FLOW_EDIT_OPERATIONS: ReadonlySet<string> = new Set([
+  'createStep',
+  'updateStep',
+  'deleteStep',
+  'updateStepPositions',
+  'duplicateBranch',
+  'updateFlow',
+  'updateFlowConfig',
+  'updateFlowStatus',
+  'deleteFlow',
+])
+
 /**
- * Counts one day's mutations per pipe, user and operation.
+ * Counts one day's edit requests per pipe, user and operation.
  *
- * A row without a pipe, user or operation cannot say who changed which pipe, so it is left out.
+ * IMPORTANT: GraphQL reports a rejected request with HTTP 200, so a count includes rejected edits.
  */
 export function summarizeFlowEdits(
   day: string,
@@ -37,7 +50,12 @@ export function summarizeFlowEdits(
   const groups = new Map<string, FlowEditDailyRow>()
 
   for (const row of rows) {
-    if (!row.flow_id || !row.user_id || !row.operation) {
+    if (
+      !row.flow_id ||
+      !row.user_id ||
+      !row.operation ||
+      !FLOW_EDIT_OPERATIONS.has(row.operation)
+    ) {
       continue
     }
     const key = `${row.flow_id}\u0000${row.user_id}\u0000${row.operation}`
