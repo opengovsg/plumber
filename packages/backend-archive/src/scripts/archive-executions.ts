@@ -1,8 +1,13 @@
-import { exportSilverTables } from 'backend-analytics'
+import {
+  exportMutationLog,
+  exportSilverTables,
+  previousSgtDay,
+} from 'backend-analytics'
 
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb, archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'
+import { logsClient } from '@/helpers/archival/logs-client'
 import { runArchivalLoop } from '@/helpers/archival/run-archival-loop'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
@@ -39,9 +44,28 @@ async function runAnalyticsExport(): Promise<boolean> {
   }
 }
 
+async function runMutationLogExport(): Promise<boolean> {
+  try {
+    await exportMutationLog({
+      db: archivalDbReader,
+      logsClient,
+      s3Client: archiveS3Client,
+      appEnv: archivalConfig.appEnv,
+      bucket: archivalConfig.analyticsBucket,
+      logGroup: archivalConfig.analyticsRequestLogGroup,
+      days: { through: previousSgtDay(new Date()) },
+    })
+    return true
+  } catch (err) {
+    logger.error({ event: 'analytics.mutation_log.error', err })
+    return false
+  }
+}
+
 async function main(): Promise<void> {
   const analyticsExported = await runAnalyticsExport()
-  const exitCode = analyticsExported ? 0 : 1
+  const mutationLogExported = await runMutationLogExport()
+  const exitCode = analyticsExported && mutationLogExported ? 0 : 1
 
   if (!archivalConfig.archiveEnabled) {
     logger.info({ event: 'archival.run.disabled' })
