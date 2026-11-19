@@ -181,7 +181,7 @@ const handleChatStream = observe(
         model: model.modelId,
         disabledMcpServers,
         requestBytes: (req as IRequest).rawBody?.length,
-        partBytes: measurePartBytes(rawMessages),
+        partBytes: measurePartBytes(req.body),
       })
 
       // Re-derived fresh every turn from the raw message text and verified

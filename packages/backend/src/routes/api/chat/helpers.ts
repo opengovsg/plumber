@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import type User from '@/models/user'
 import { listConnectionsService } from '@/services/mcp/list-connections'
 
@@ -23,16 +25,27 @@ export function serializeMessagesForLangfuse(
   }))
 }
 
+const rawChatBodySchema = z.object({
+  messages: z.array(
+    z.object({ parts: z.array(z.looseObject({ type: z.string() })) }),
+  ),
+})
+
 /**
  * Sums the JSON size of message parts by part kind, grouping `tool-*` and `data-*` parts.
  *
  * Shows which parts fill a chat request as it nears the request body size limit.
+ * IMPORTANT: parses the raw body because chatRequestSchema strips fields that still count toward the size limit.
  */
 export function measurePartBytes(
-  messages: ChatRequest['messages'],
-): Record<string, number> {
+  body: unknown,
+): Record<string, number> | undefined {
+  const parsed = rawChatBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return undefined
+  }
   const bytes: Record<string, number> = {}
-  for (const message of messages) {
+  for (const message of parsed.data.messages) {
     for (const part of message.parts) {
       const kind = part.type.startsWith('tool-')
         ? 'tool'

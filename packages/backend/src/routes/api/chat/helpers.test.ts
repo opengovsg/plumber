@@ -24,21 +24,19 @@ function userMessage(text: string): ChatRequest['messages'][number] {
 }
 
 describe('measurePartBytes', () => {
-  it('sums part JSON bytes, grouping tool and data parts', () => {
-    type Part = ChatRequest['messages'][number]['parts'][number]
-    const text: Part = { type: 'text', text: 'hi' }
-    const tool: Part = { type: 'tool-get_flow', output: { a: 1 } }
-    const data: Part = {
-      type: 'data-tileSetup',
-      data: { question: 'q', name: null, columns: ['c'] },
-    }
+  it('sums part JSON bytes, including fields the chat schema strips', () => {
+    const text = { type: 'text', text: 'hi' }
+    const tool = { type: 'tool-get_flow', errorText: 'Step not found' }
+    const data = { type: 'data-tileSetup', data: { columns: ['c'] } }
     const size = (part: object) => JSON.stringify(part).length
 
     expect(
-      measurePartBytes([
-        { role: 'user', parts: [text] },
-        { role: 'assistant', parts: [tool, data, text] },
-      ]),
+      measurePartBytes({
+        messages: [
+          { role: 'user', parts: [text] },
+          { role: 'assistant', parts: [tool, data, text] },
+        ],
+      }),
     ).toEqual({ text: 2 * size(text), tool: size(tool), data: size(data) })
   })
 })
