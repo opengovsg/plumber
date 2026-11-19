@@ -1,0 +1,134 @@
+canonical,agency_name,category
+ite.edu.sg,ITE,education
+schools.gov.sg,MOE schools,education
+nyp.edu.sg,Nanyang Polytechnic,education
+np.edu.sg,Ngee Ann Polytechnic,education
+rp.edu.sg,Republic Polytechnic,education
+sst.edu.sg,School of Science and Technology,education
+sota.edu.sg,School of the Arts,education
+sp.edu.sg,Singapore Polytechnic,education
+tp.edu.sg,Temasek Polytechnic,education
+alpshealthcare.com.sg,ALPS Healthcare,healthcare
+aic.sg,Agency for Integrated Care,healthcare
+cgh.com.sg,Changi General Hospital,healthcare
+cris.sg,Consortium for Clinical Research and Innovation,healthcare
+imh.com.sg,Institute of Mental Health,healthcare
+kkh.com.sg,KK Women's and Children's Hospital,healthcare
+ktph.com.sg,Khoo Teck Puat Hospital,healthcare
+mohh.com.sg,MOH Holdings,healthcare
+moht.com.sg,MOH Office for Healthcare Transformation,healthcare
+nhghealth.com.sg,NHG Health,healthcare
+nuhs.edu.sg,NUHS,healthcare
+nccs.com.sg,National Cancer Centre,healthcare
+ncid.sg,National Centre for Infectious Diseases,healthcare
+ndcs.com.sg,National Dental Centre,healthcare
+nhcs.com.sg,National Heart Centre,healthcare
+nni.com.sg,National Neuroscience Institute,healthcare
+nsc.com.sg,National Skin Centre,healthcare
+skh.com.sg,Sengkang General Hospital,healthcare
+singhealth.com.sg,SingHealth,healthcare
+singhealthacademy.edu.sg,SingHealth Academy,healthcare
+singhealthch.com.sg,SingHealth Community Hospitals,healthcare
+seri.com.sg,Singapore Eye Research Institute,healthcare
+sgh.com.sg,Singapore General Hospital,healthcare
+snec.com.sg,Singapore National Eye Centre,healthcare
+synapxe.sg,Synapxe,healthcare
+ttsh.com.sg,Tan Tock Seng Hospital,healthcare
+vanguardhealthcare.com.sg,Vanguard Healthcare,healthcare
+wh.com.sg,Woodlands Health,healthcare
+yishunhospital.com.sg,Yishun Community Hospital,healthcare
+agd.gov.sg,Accountant-General's Department,ministry
+cpib.gov.sg,CPIB,ministry
+cnb.gov.sg,Central Narcotics Bureau,ministry
+csit.gov.sg,Centre for Strategic Infocomm Technologies,ministry
+csa.gov.sg,Cyber Security Agency,ministry
+dotc.gov.sg,Digital Ops-Tech Centre,ministry
+eld.gov.sg,Elections Department,ministry
+hta.gov.sg,Home Team Academy,ministry
+ica.gov.sg,Immigration & Checkpoints Authority,ministry
+lab.gov.sg,Legal Aid Bureau,ministry
+mccy.gov.sg,"Ministry of Culture, Community and Youth",ministry
+mindef.gov.sg,Ministry of Defence,ministry
+mddi.gov.sg,Ministry of Digital Development and Information,ministry
+moe.gov.sg,Ministry of Education,ministry
+meti.gov.sg,"Ministry of Energy, Trade and Industry",ministry
+mof.gov.sg,Ministry of Finance,ministry
+mfa.gov.sg,Ministry of Foreign Affairs,ministry
+moh.gov.sg,Ministry of Health,ministry
+mha.gov.sg,Ministry of Home Affairs,ministry
+mlaw.gov.sg,Ministry of Law,ministry
+mom.gov.sg,Ministry of Manpower,ministry
+mnd.gov.sg,Ministry of National Development,ministry
+msf.gov.sg,Ministry of Social and Family Development,ministry
+mse.gov.sg,Ministry of Sustainability and the Environment,ministry
+mot.gov.sg,Ministry of Transport,ministry
+nrf.gov.sg,National Research Foundation,ministry
+nscs.gov.sg,National Security Coordination Secretariat,ministry
+pmo.gov.sg,Prime Minister's Office,ministry
+psd.gov.sg,Public Service Division,ministry
+reach.gov.sg,REACH,ministry
+scdf.gov.sg,Singapore Civil Defence Force,ministry
+customs.gov.sg,Singapore Customs,ministry
+singstat.gov.sg,Singapore Department of Statistics,ministry
+spf.gov.sg,Singapore Police Force,ministry
+pris.gov.sg,Singapore Prison Service,ministry
+vital.gov.sg,VITAL,ministry
+open.gov.sg,Open Government Products,ogp
+agc.gov.sg,Attorney-General's Chambers,organ_of_state
+ago.gov.sg,Auditor-General's Office,organ_of_state
+istana.gov.sg,Istana,organ_of_state
+judiciary.gov.sg,Judiciary,organ_of_state
+parl.gov.sg,Parliament of Singapore,organ_of_state
+a-star.edu.sg,A*STAR,statutory_board
+acra.gov.sg,ACRA,statutory_board
+boa.gov.sg,Board of Architects,statutory_board
+bca.gov.sg,Building and Construction Authority,statutory_board
+cpf.gov.sg,CPF Board,statutory_board
+caas.gov.sg,Civil Aviation Authority of Singapore,statutory_board
+cscollege.gov.sg,Civil Service College,statutory_board
+cda.gov.sg,Communicable Diseases Agency,statutory_board
+cccs.gov.sg,Competition and Consumer Commission,statutory_board
+cea.gov.sg,Council for Estate Agencies,statutory_board
+dsta.gov.sg,Defence Science and Technology Agency,statutory_board
+ecda.gov.sg,Early Childhood Development Agency,statutory_board
+edb.gov.sg,Economic Development Board,statutory_board
+ema.gov.sg,Energy Market Authority,statutory_board
+enterprisesg.gov.sg,Enterprise Singapore,statutory_board
+gra.gov.sg,Gambling Regulatory Authority,statutory_board
+tech.gov.sg,GovTech,statutory_board
+hpb.gov.sg,Health Promotion Board,statutory_board
+hsa.gov.sg,Health Sciences Authority,statutory_board
+htx.gov.sg,Home Team Science and Technology Agency,statutory_board
+hdb.gov.sg,Housing & Development Board,statutory_board
+imda.gov.sg,IMDA,statutory_board
+ipos.gov.sg,IPOS,statutory_board
+iras.gov.sg,IRAS,statutory_board
+iseas.gov.sg,ISEAS-Yusof Ishak Institute,statutory_board
+jtc.gov.sg,JTC,statutory_board
+lta.gov.sg,Land Transport Authority,statutory_board
+muis.gov.sg,MUIS,statutory_board
+mpa.gov.sg,Maritime and Port Authority,statutory_board
+mas.gov.sg,Monetary Authority of Singapore,statutory_board
+nac.gov.sg,National Arts Council,statutory_board
+ncss.gov.sg,National Council of Social Service,statutory_board
+nea.gov.sg,National Environment Agency,statutory_board
+nhb.gov.sg,National Heritage Board,statutory_board
+nlb.gov.sg,National Library Board,statutory_board
+nparks.gov.sg,National Parks Board,statutory_board
+nyc.gov.sg,National Youth Council,statutory_board
+pub.gov.sg,PUB,statutory_board
+pa.gov.sg,People's Association,statutory_board
+pdpc.gov.sg,Personal Data Protection Commission,statutory_board
+ptc.gov.sg,Public Transport Council,statutory_board
+science.edu.sg,Science Centre Singapore,statutory_board
+sentosa.gov.sg,Sentosa Development Corporation,statutory_board
+seab.gov.sg,Singapore Examinations and Assessment Board,statutory_board
+sfa.gov.sg,Singapore Food Agency,statutory_board
+sla.gov.sg,Singapore Land Authority,statutory_board
+stb.gov.sg,Singapore Tourism Board,statutory_board
+swda.gov.sg,Skills and Workforce Development Agency,statutory_board
+sport.gov.sg,Sport Singapore,statutory_board
+toteboard.gov.sg,Tote Board,statutory_board
+ura.gov.sg,Urban Redevelopment Authority,statutory_board
+yellowribbon.gov.sg,Yellow Ribbon Singapore,statutory_board
+vendor.gov.sg,Vendor accounts,vendor

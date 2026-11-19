@@ -174,6 +174,21 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ---
 
+## Agency mapping
+
+Two files in `data/` map email domains to agencies. The export reads them at runtime.
+
+| File                 | Columns                                | Holds                                                                      |
+| -------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
+| `agencies.csv`       | `canonical`, `agency_name`, `category` | One row per agency. `canonical` is its main email domain.                  |
+| `agency-domains.csv` | `domain`, `canonical`                  | One row per email domain, including subdomains, renamed domains and typos. |
+
+A domain with no row falls back to its parent domain. `gt.tech.gov.sg` tries `tech.gov.sg`. The lookup never falls back to `gov.sg`, `edu.sg`, `com.sg` or `sg`. A domain that still has no match is `unclassified`.
+
+IMPORTANT: the files are public. Add only government domains and public bodies. Never add user counts.
+
+---
+
 ## Counting archived steps by app and action
 
 Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bucket. The `stepCounts` field breaks down the number of archived steps by SGT date → `appKey` → `actionKey` for that run.
