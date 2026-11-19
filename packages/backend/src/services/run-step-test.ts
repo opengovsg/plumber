@@ -4,6 +4,7 @@ import { raw } from 'objection'
 import type ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import type Step from '@/models/step'
+import type User from '@/models/user'
 import {
   getMrfTestStartStep,
   isMrfStep,
@@ -15,6 +16,8 @@ import testStep from '@/services/test-step'
 export interface RunStepTestInput {
   step: Step
   testRunMetadata?: TestRunStepMetadata
+  // Acting editor/collaborator. Distinct from $.user (pipe owner).
+  loggedInUser?: User
 }
 
 export interface RunStepTestResult {
@@ -27,12 +30,14 @@ export interface RunStepTestResult {
 export async function runStepTest({
   step,
   testRunMetadata,
+  loggedInUser,
 }: RunStepTestInput): Promise<RunStepTestResult> {
   const startStep = isMrfStep(step) ? await getMrfTestStartStep(step) : step
 
   const { executionStep, executionId } = await testStep({
     stepId: startStep.id,
     testRunMetadata,
+    loggedInUser,
   })
 
   await Flow.query().patchAndFetchById(startStep.flowId, {
@@ -49,7 +54,11 @@ export async function runStepTest({
   })
 
   const stageResults = isMrfStep(updatedStep)
-    ? await testRemainingMrfSteps(startStep.flowId, testRunMetadata)
+    ? await testRemainingMrfSteps(
+        startStep.flowId,
+        testRunMetadata,
+        loggedInUser,
+      )
     : []
 
   return { step: updatedStep, executionStep, stageResults }

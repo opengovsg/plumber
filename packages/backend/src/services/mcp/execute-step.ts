@@ -49,6 +49,7 @@ export async function executeStepService(
   } = await runStepTest({
     step: requestedStep,
     testRunMetadata: { preferMock: true },
+    loggedInUser: user,
   })
 
   let resultStep = step

@@ -101,6 +101,7 @@ describe('runStepTest', () => {
     const result = await runStepTest({
       step: action,
       testRunMetadata: { sample: true },
+      loggedInUser: user,
     })
 
     expect(result.step.id).toBe(action.id)
@@ -109,6 +110,7 @@ describe('runStepTest', () => {
     expect(mocks.testStep).toHaveBeenCalledWith({
       stepId: action.id,
       testRunMetadata: { sample: true },
+      loggedInUser: user,
     })
 
     const updated = await Step.query().findById(action.id)
@@ -183,6 +185,7 @@ describe('runStepTest', () => {
       const result = await runStepTest({
         step: stage,
         testRunMetadata: { preferMock: true },
+        loggedInUser: user,
       })
 
       expect(result.step.id).toBe(trigger.id)
@@ -197,6 +200,9 @@ describe('runStepTest', () => {
         { preferMock: true },
         { preferMock: true },
       ])
+      expect(
+        mocks.testStep.mock.calls.map(([arg]) => arg.loggedInUser),
+      ).toEqual([user, user, user])
       for (const id of [trigger.id, ...stageIds]) {
         expect((await Step.query().findById(id)).status).toBe('completed')
       }

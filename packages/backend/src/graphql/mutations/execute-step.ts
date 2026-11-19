@@ -27,6 +27,7 @@ const executeStep: MutationResolvers['executeStep'] = async (
   const { executionStep } = await runStepTest({
     step,
     testRunMetadata,
+    loggedInUser: context.currentUser,
   })
 
   return executionStep
