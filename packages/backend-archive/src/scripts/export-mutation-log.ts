@@ -21,7 +21,7 @@ import { archiveS3Client } from '@/helpers/archival/s3-client'
 const USAGE = `Usage: analytics:mutation-log --from YYYY-MM-DD [--to YYYY-MM-DD] [--log-group <name>] (--out <dir> | --s3)
   --from       First Singapore day to extract.
   --to         Last Singapore day, inclusive. Default: --from.
-  --log-group  Server log group, with --out only. Default: ANALYTICS_REQUEST_LOG_GROUP.
+  --log-group  Server log group, with --out only. Default: ANALYTICS_REQUEST_LOG_GROUP. Skips the database lookups, since the reader may be another environment.
   --out        Write the files under this local folder. Runs in any APP_ENV. Reads steps through the database reader.
   --s3         Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only. Finished days only.`
 
@@ -42,6 +42,7 @@ async function main(): Promise<void> {
   const days = sgtDaysBetween(values.from, values.to ?? values.from)
   checkMutationLogBackfill({
     s3: values.s3,
+    appEnv: archivalConfig.appEnv,
     logGroupOverride: values['log-group'],
     lastDay: days[days.length - 1],
     yesterday: previousSgtDay(new Date()),
@@ -54,9 +55,16 @@ async function main(): Promise<void> {
       throw new Error(USAGE)
     }
     const dir = path.resolve(values.out)
+    // An overridden log group may belong to another environment than the database reader, so its ids would not match.
+    const lookUpIds = !values['log-group']
+    if (!lookUpIds) {
+      logger.warn({ event: 'analytics.mutation_log.local.lookups_skipped' })
+    }
     await writeMutationLogDays({
       fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
-      resolveFlowIds: dbFlowIdResolver(archivalDbReader),
+      resolveFlowIds: lookUpIds
+        ? dbFlowIdResolver(archivalDbReader)
+        : async () => new Map(),
       sink: localDirSink(dir),
       days,
     })

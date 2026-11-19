@@ -1,5 +1,8 @@
+import { EXPORT_APP_ENVS } from 'backend-analytics'
+
 interface BackfillOptions {
   s3: boolean
+  appEnv: string
   logGroupOverride: string | undefined
   lastDay: string
   yesterday: string
@@ -13,12 +16,19 @@ interface BackfillOptions {
  */
 export function checkMutationLogBackfill({
   s3,
+  appEnv,
   logGroupOverride,
   lastDay,
   yesterday,
 }: BackfillOptions): void {
   if (!s3) {
     return
+  }
+  // Without this, the export would skip the environment and the command would exit 0 having written nothing.
+  if (!EXPORT_APP_ENVS.has(appEnv)) {
+    throw new Error(
+      `--s3 runs only when APP_ENV is prod or staging, not ${appEnv}.`,
+    )
   }
   if (logGroupOverride) {
     throw new Error(
