@@ -8,10 +8,7 @@ import { type Span } from 'dd-trace'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError, {
-  attachHiddenCauseIfStepError,
-  getStepErrorKind,
-} from '@/errors/step'
+import StepError, { keepErrorKindViaCause } from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -134,8 +131,10 @@ export function handleFailedStepAndThrow(
   try {
     // Retrying cannot fix the user's configuration, but a transient HTTP
     // failure behind it may clear, so `handleHttpError` decides for those.
+    // A RetriableError's kind only labels its final failure.
     const isConfigStepError =
-      getStepErrorKind(params.executionError) === 'config'
+      params.executionError instanceof StepError &&
+      params.executionError.kind === 'config'
     const hasHttpCause = executionError instanceof HttpError
     if (isConfigStepError && !hasHttpCause) {
       throw new UnrecoverableError(JSON.stringify(errorDetails))
@@ -168,12 +167,12 @@ export function handleFailedStepAndThrow(
       willRetry: isRetriable ? 'true' : 'false',
     })
 
-    // If we threw a different error here, and the original executionError was StepError, attach it as the cause
+    // If we threw a different error here, attach the original as the cause to keep its kind.
     const isCreatedHere =
       finalError instanceof UnrecoverableError ||
       (finalError instanceof RetriableError && finalError !== executionError)
     if (isCreatedHere) {
-      attachHiddenCauseIfStepError(finalError, params.executionError)
+      keepErrorKindViaCause(finalError, params.executionError)
     }
 
     throw finalError
