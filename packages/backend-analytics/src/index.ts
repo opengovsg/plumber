@@ -19,3 +19,4 @@ export {
   sgtDaysBetween,
   writeMutationLogDays,
 } from './mutation-log/export-mutation-log'
+export { nestedErrors } from './log-format'
