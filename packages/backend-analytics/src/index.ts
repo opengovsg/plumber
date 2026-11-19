@@ -10,3 +10,10 @@ export {
   writeSilverTables,
 } from './export-silver-tables'
 export { localDirKeyLister } from './silver-change-tables'
+export {
+  exportMutationLog,
+  logsInsightsFetcher,
+  previousSgtDay,
+  sgtDaysBetween,
+  writeMutationLogDays,
+} from './mutation-log/export-mutation-log'
