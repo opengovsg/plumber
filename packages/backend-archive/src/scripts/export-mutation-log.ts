@@ -5,6 +5,7 @@ import {
   exportMutationLog,
   localDirSink,
   logsInsightsFetcher,
+  previousSgtDay,
   sgtDaysBetween,
   writeMutationLogDays,
 } from 'backend-analytics'
@@ -12,14 +13,15 @@ import {
 import { archivalConfig } from '@/helpers/archival/config'
 import logger from '@/helpers/archival/logger'
 import { logsClient } from '@/helpers/archival/logs-client'
+import { checkMutationLogBackfill } from '@/helpers/archival/mutation-log-backfill'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
 const USAGE = `Usage: analytics:mutation-log --from YYYY-MM-DD [--to YYYY-MM-DD] [--log-group <name>] (--out <dir> | --s3)
   --from       First Singapore day to extract.
   --to         Last Singapore day, inclusive. Default: --from.
-  --log-group  Server log group. Default: ANALYTICS_REQUEST_LOG_GROUP.
+  --log-group  Server log group, with --out only. Default: ANALYTICS_REQUEST_LOG_GROUP.
   --out        Write the files under this local folder. Runs in any APP_ENV.
-  --s3         Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only.`
+  --s3         Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only. Finished days only.`
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -36,6 +38,12 @@ async function main(): Promise<void> {
   }
 
   const days = sgtDaysBetween(values.from, values.to ?? values.from)
+  checkMutationLogBackfill({
+    s3: values.s3,
+    logGroupOverride: values['log-group'],
+    lastDay: days[days.length - 1],
+    yesterday: previousSgtDay(new Date()),
+  })
   const logGroup =
     values['log-group'] ?? archivalConfig.analyticsRequestLogGroup
 
