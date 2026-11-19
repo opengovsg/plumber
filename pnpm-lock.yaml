@@ -620,6 +620,9 @@ importers:
       knex:
         specifier: 'catalog:'
         version: 2.4.2(pg@8.16.3)(supports-color@8.1.1)
+      luxon:
+        specifier: 'catalog:'
+        version: 2.5.2
       winston:
         specifier: 'catalog:'
         version: 3.17.0
@@ -630,6 +633,9 @@ importers:
       '@opengovsg/testcontainers':
         specifier: 0.2.0
         version: 0.2.0(testcontainers@11.14.0(supports-color@8.1.1))(vitest@4.1.12)(zod@4.6.6)
+      '@types/luxon':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@types/node':
         specifier: 22.18.0
         version: 22.18.0
