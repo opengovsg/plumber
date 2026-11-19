@@ -4,11 +4,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { dbFlowIdResolver } from '../mutation-log/export-mutation-log'
 import { connectTestDb } from './helpers/test-db'
 
-const OWNER = '00000000-0000-0000-0000-0000000000d1'
-const FLOW = '00000000-0000-0000-0000-0000000000d2'
-const LIVE_STEP = '00000000-0000-0000-0000-0000000000d3'
-const DELETED_STEP = '00000000-0000-0000-0000-0000000000d4'
-const UNKNOWN_STEP = '00000000-0000-0000-0000-0000000000d5'
+const OWNER = 'd1000000-0000-4000-8000-000000000001'
+const FLOW = 'd2000000-0000-4000-8000-000000000002'
+const LIVE_STEP = 'd3000000-0000-4000-8000-000000000003'
+const DELETED_STEP = 'd4000000-0000-4000-8000-000000000004'
+const UNKNOWN_STEP = 'd5000000-0000-4000-8000-000000000005'
 
 describe('dbFlowIdResolver against the migrated schema', () => {
   let db: Knex

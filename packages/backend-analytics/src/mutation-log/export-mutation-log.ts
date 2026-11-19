@@ -3,6 +3,7 @@ import type { S3Client } from '@aws-sdk/client-s3'
 import { BaseStep } from '@plumber/backend-models'
 import type { Knex } from 'knex'
 import { DateTime } from 'luxon'
+import { z } from 'zod'
 
 import {
   EXPORT_APP_ENVS,
@@ -152,12 +153,13 @@ export function logsInsightsFetcher(
 export type ResolveFlowIds = (stepIds: string[]) => Promise<Map<string, string>>
 
 // The log keeps rejected mutations, so a step id may be any short string. A non-UUID would fail the whole query.
-const STEP_ID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const stepIdSchema = z.uuid()
 
 export function dbFlowIdResolver(db: Knex): ResolveFlowIds {
   return async (candidateIds) => {
-    const stepIds = candidateIds.filter((id) => STEP_ID.test(id))
+    const stepIds = candidateIds.filter(
+      (id) => stepIdSchema.safeParse(id).success,
+    )
     if (stepIds.length === 0) {
       return new Map()
     }
@@ -174,15 +176,21 @@ async function fillFlowIds(
   rows: MutationLogRow[],
   resolveFlowIds: ResolveFlowIds,
 ): Promise<MutationLogRow[]> {
+  // Postgres returns UUIDs in lowercase, so the lookup key is lowercased. The logged step_id is kept as is.
   const stepIds = [
     ...new Set(
-      rows.flatMap((row) => (!row.flow_id && row.step_id ? [row.step_id] : [])),
+      rows.flatMap((row) =>
+        !row.flow_id && row.step_id ? [row.step_id.toLowerCase()] : [],
+      ),
     ),
   ]
   const flowIdByStep = await resolveFlowIds(stepIds)
   return rows.map((row) =>
     !row.flow_id && row.step_id
-      ? { ...row, flow_id: flowIdByStep.get(row.step_id) ?? null }
+      ? {
+          ...row,
+          flow_id: flowIdByStep.get(row.step_id.toLowerCase()) ?? null,
+        }
       : row,
   )
 }
