@@ -103,7 +103,32 @@ describe('actionStepsSchema validation', () => {
   })
 
   describe('if-then validation', () => {
-    it('should accept valid if-then step with depth: 0 and branchName', () => {
+    it('should accept valid if-then step with branchName', () => {
+      const steps = [
+        {
+          type: 'action' as StepEnumType,
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: {
+            branchName: 'If',
+          },
+        },
+        {
+          type: 'action' as StepEnumType,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
+      ]
+
+      const result = actionStepsSchema.safeParse(steps)
+      expect(result.success).toBe(true)
+    })
+
+    it('should strip a legacy depth parameter from an if-then step', () => {
       const steps = [
         {
           type: 'action' as StepEnumType,
@@ -127,32 +152,7 @@ describe('actionStepsSchema validation', () => {
 
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(true)
-    })
-
-    it('should reject if-then step with depth other than 0', () => {
-      const steps = [
-        {
-          type: 'action' as StepEnumType,
-          appKey: 'toolbox',
-          key: 'ifThen',
-          position: 2,
-          config: {},
-          parameters: {
-            depth: 1, // Should be 0
-            branchName: 'If',
-          },
-        },
-        {
-          type: 'action' as StepEnumType,
-          appKey: 'postman',
-          key: 'sendTransactionalEmail',
-          position: 3,
-          config: {},
-        },
-      ]
-
-      const result = actionStepsSchema.safeParse(steps)
-      expect(result.success).toBe(false)
+      expect(result.data?.[0].parameters).toEqual({ branchName: 'If' })
     })
 
     it('should accept if-then step missing branchName parameter', () => {
@@ -164,7 +164,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             // missing branchName
           },
         },
@@ -179,33 +178,6 @@ describe('actionStepsSchema validation', () => {
 
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(true)
-    })
-
-    it('should default depth to 0 if-then step missing depth parameter', () => {
-      const steps = [
-        {
-          type: 'action' as StepEnumType,
-          appKey: 'toolbox',
-          key: 'ifThen',
-          position: 2,
-          config: {},
-          parameters: {
-            // missing depth
-            branchName: 'If',
-          },
-        },
-        {
-          type: 'action' as StepEnumType,
-          appKey: 'postman',
-          key: 'sendTransactionalEmail',
-          position: 3,
-          config: {},
-        },
-      ]
-
-      const result = actionStepsSchema.safeParse(steps)
-      expect(result.success).toBe(true)
-      expect(result.data![0].parameters?.depth).toBe(0)
     })
 
     it('fills in if-then parameter defaults when parameters is omitted', () => {
@@ -229,7 +201,6 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(true)
       expect(result.data?.[0].parameters).toEqual({
-        depth: 0,
         branchName: 'Branch',
       })
     })
@@ -250,7 +221,6 @@ describe('actionStepsSchema validation', () => {
           position: 3,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -274,7 +244,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -285,7 +254,6 @@ describe('actionStepsSchema validation', () => {
           position: 3,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'Else',
           },
         },
@@ -309,7 +277,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -327,7 +294,6 @@ describe('actionStepsSchema validation', () => {
           position: 4,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'Else',
           },
         },
@@ -352,7 +318,7 @@ describe('actionStepsSchema validation', () => {
       key: 'ifThen',
       position,
       config: {},
-      parameters: { depth: 0, branchName: 'If' },
+      parameters: { branchName: 'If' },
       ifThenChildCount,
     })
     const email = (position: number) => ({
@@ -500,7 +466,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -545,7 +510,6 @@ describe('actionStepsSchema validation', () => {
           position: 4,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -571,7 +535,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -822,7 +785,6 @@ describe('actionStepsSchema validation', () => {
           position: 3,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -840,7 +802,6 @@ describe('actionStepsSchema validation', () => {
           position: 5,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'Else',
           },
         },
@@ -880,7 +841,6 @@ describe('actionStepsSchema validation', () => {
           position: 4,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -913,7 +873,6 @@ describe('actionStepsSchema validation', () => {
           position: 4,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -939,7 +898,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -984,7 +942,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },
@@ -1024,7 +981,6 @@ describe('actionStepsSchema validation', () => {
           position: 2,
           config: {},
           parameters: {
-            depth: 0,
             branchName: 'If',
           },
         },

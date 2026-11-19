@@ -26,8 +26,7 @@ export function getActionStepsSchema(
     'action',
     restrictedAppKeys,
   ).refine(validateActionParameters, {
-    message:
-      'If-then steps must have parameters with depth: 0 and branchName (string)',
+    message: 'If-then steps must have parameters with branchName (string)',
   })
 
   return z

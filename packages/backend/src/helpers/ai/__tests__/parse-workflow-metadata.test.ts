@@ -349,7 +349,6 @@ steps:
 `
       const result = parseWorkflowMetadata(text)
       expect(result.actions[0].parameters).toStrictEqual({
-        depth: 0,
         branchName: 'Priority is High',
       })
     })
@@ -396,7 +395,6 @@ steps:
       ])
       expect(result.actions[0].ifThenChildCount).toBe(2)
       expect(result.actions[0].parameters).toStrictEqual({
-        depth: 0,
         branchName: 'Is urgent',
       })
       expect(result.actions[1].ifThenChildCount).toBeUndefined()

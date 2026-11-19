@@ -20,7 +20,7 @@ const ifThen = (id: string, extra: Partial<IStep> = {}): IStep =>
     id,
     appKey: 'toolbox',
     key: 'ifThen',
-    parameters: { depth: '0' },
+    parameters: {},
     ...extra,
   }) as IStep
 

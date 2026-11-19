@@ -27,7 +27,7 @@ const ifThen = (id: string, endStepId: string): IStep => {
     id,
     appKey: 'toolbox',
     key: 'ifThen',
-    parameters: { depth: '0' },
+    parameters: {},
     ...marker,
   } as IStep
 }

@@ -27,7 +27,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'Resetting device',
         conditions: [
           {
@@ -67,7 +66,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'Damaged device',
         conditions: [
           {
@@ -107,7 +105,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'Lost device',
         conditions: [
           {
@@ -147,7 +144,6 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'New device',
         conditions: [
           {

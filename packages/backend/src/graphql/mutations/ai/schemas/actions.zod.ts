@@ -19,7 +19,6 @@ const baseActionSchema = z.object({
 })
 
 export const ifThenParametersSchema = z.object({
-  depth: z.literal(0).default(0),
   branchName: z.string().default('Branch'),
 })
 
@@ -84,8 +83,7 @@ function getActionSchema(
   )
 
   return generatedSchema.refine(validateActionParameters, {
-    message:
-      'Parameters are only allowed when key is ifThen (with depth: 0 and branchName)',
+    message: 'Parameters are only allowed when key is ifThen (with branchName)',
   })
 }
 
@@ -102,11 +100,11 @@ export function getActionsSchema(
 
 /**
  * Reusable validation function for individual action steps that enforces:
- * - If-then actions must have parameters with depth: 0 and branchName
+ * - If-then actions must have parameters with branchName
  * - Other actions should not have parameters field (removes it if present)
  */
 export function validateActionParameters(data: any): boolean {
-  // IF-THEN special case: parameters are required to specify depth: 0 and branchName
+  // IF-THEN special case: parameters are required to specify branchName
   if (data.appKey === TOOLBOX_APP_KEY && data.key === TOOLBOX_ACTIONS.IF_THEN) {
     const result = ifThenParametersSchema.safeParse(data.parameters)
     return result.success

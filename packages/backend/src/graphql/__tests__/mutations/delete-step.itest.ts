@@ -315,7 +315,7 @@ describe('deleteStep mutation', () => {
         'action',
         blockFlow.id,
         position,
-        { depth: '0' },
+        {},
         config,
       )
 
@@ -508,7 +508,7 @@ describe('deleteStep mutation', () => {
         'action',
         blockFlow.id,
         position,
-        { depth: '0' },
+        {},
         config,
       )
 
