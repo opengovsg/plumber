@@ -16,9 +16,11 @@ function git(...args) {
 }
 
 const mergeBase = git('merge-base', baseRef, 'HEAD')
+// Without -z, git quotes and escapes unusual paths (e.g. non-ASCII), so they
+// would not match the literal paths FTA reports.
 const changedFiles = new Set(
-  git('diff', '--name-only', '--diff-filter=ACMR', mergeBase)
-    .split('\n')
+  git('diff', '--name-only', '-z', '--diff-filter=ACMR', mergeBase)
+    .split('\0')
     .filter(Boolean),
 )
 
