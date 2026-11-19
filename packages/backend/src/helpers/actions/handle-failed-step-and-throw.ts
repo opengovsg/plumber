@@ -5,7 +5,6 @@ import {
   WorkerPro,
 } from '@taskforcesh/bullmq-pro'
 import { type Span } from 'dd-trace'
-import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
@@ -16,7 +15,6 @@ import StepError, {
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
-import { parseRetryAfterToMs } from '../parse-retry-after-to-ms'
 
 /**
  * For queue and group delays, we need to manually check for max attempts ourselves
@@ -83,58 +81,26 @@ function handleRetriableError(
   }
 }
 
-const RETRY_AFTER_LIMIT_MS = 12 * 60 * 60 * 1000 // 12 hours
-const RETRIABLE_ERROR_SUBSTRINGS = ['ETIMEDOUT', 'ECONNRESET']
-const RETRIABLE_STATUS_CODES = [
-  504,
-  429, // Some 429s may not have Retry-After
-]
-
 function handleHttpError(
   executionError: HttpError,
   errorDetails: HandleFailedStepAndThrowParams['errorDetails'],
 ): never {
-  // Handle reasonable Retry-After responses.
-  const retryAfterMs = parseRetryAfterToMs(
-    executionError.response?.headers?.['retry-after'],
-  )
-
-  if (retryAfterMs !== null) {
-    if (retryAfterMs <= RETRY_AFTER_LIMIT_MS) {
-      throw new RetriableError({
-        error: errorDetails,
-        delayInMs: retryAfterMs,
-        delayType: 'step',
-      })
-    }
-    throw new UnrecoverableError(`Retry-After (${retryAfterMs}ms) is too long!`)
-  }
-
-  // Handle retriable status codes
-  if (
-    executionError.response?.status !== undefined &&
-    RETRIABLE_STATUS_CODES.includes(executionError.response.status)
-  ) {
+  const retryInfo = executionError.getRetryInfo()
+  // Without strictNullChecks, only `=== true` narrows `retryInfo` for the branch below.
+  if (retryInfo.retriable === true) {
     throw new RetriableError({
       error: errorDetails,
-      delayInMs: 'default',
+      delayInMs: retryInfo.delayInMs,
       delayType: 'step',
     })
   }
 
-  // Handle retriable errors (identified by message substring)
-  const errorString = JSON.stringify(get(errorDetails, 'details.error', ''))
-  for (const errorSubstring of RETRIABLE_ERROR_SUBSTRINGS) {
-    if (errorString.includes(errorSubstring)) {
-      throw new RetriableError({
-        error: errorDetails,
-        delayInMs: 'default',
-        delayType: 'step',
-      })
-    }
+  if (retryInfo.reason === 'retry-after-too-long') {
+    throw new UnrecoverableError(
+      `Retry-After (${retryInfo.retryAfterMs}ms) is too long!`,
+    )
   }
 
-  // All other HTTP errors are un-retriable
   throw new UnrecoverableError(JSON.stringify(errorDetails))
 }
 
@@ -166,8 +132,12 @@ export function handleFailedStepAndThrow(
 
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
-    // Retrying cannot fix the user's own configuration.
-    if (getStepErrorKind(params.executionError) === 'config') {
+    // Retrying cannot fix the user's configuration, but a transient HTTP
+    // failure behind it may clear, so `handleHttpError` decides for those.
+    const isConfigStepError =
+      getStepErrorKind(params.executionError) === 'config'
+    const hasHttpCause = executionError instanceof HttpError
+    if (isConfigStepError && !hasHttpCause) {
       throw new UnrecoverableError(JSON.stringify(errorDetails))
     }
     if (executionError instanceof RetriableError) {
