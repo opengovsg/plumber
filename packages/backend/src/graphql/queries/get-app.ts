@@ -1,3 +1,6 @@
+import { ensureDatabricksConnection } from '@/apps/databricks/auth/ensure-new-connection'
+import { loadDatabricksConnections } from '@/apps/databricks/auth/get-system-added-connections'
+import { APP_KEY as DATABRICKS_APP_KEY } from '@/apps/databricks/common/constants'
 import App from '@/models/app'
 import Connection from '@/models/connection'
 import Context from '@/types/express/context'
@@ -70,6 +73,17 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
 
       if (flowRole === 'editor') {
         return { ...app, connections: sharedConnections }
+      }
+    }
+
+    if (key === DATABRICKS_APP_KEY) {
+      await ensureDatabricksConnection(
+        context.currentUser,
+        params.ensureDatabricksNew === true,
+      )
+      return {
+        ...app,
+        connections: await loadDatabricksConnections(context.currentUser),
       }
     }
 
