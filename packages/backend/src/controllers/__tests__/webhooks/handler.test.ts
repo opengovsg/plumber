@@ -7,7 +7,12 @@ import logger from '@/helpers/logger'
 import webhookHandler from '../../webhooks/handler'
 
 const mocks = vi.hoisted(() => {
+  const getNextStep = vi.fn<() => { id: string } | undefined>(() => ({
+    id: 'next-step-id',
+  }))
+
   return {
+    getNextStep,
     rateLimiterRes: class {},
     rateLimiterRedis: {
       consume: vi.fn(),
@@ -21,9 +26,8 @@ const mocks = vi.hoisted(() => {
       active: false,
       config: {},
       getTriggerStep: vi.fn(() => ({
-        getNextStep: vi.fn(() => ({
-          id: 'next-step-id',
-        })),
+        id: 'trigger-step-id',
+        getNextStep,
         getTriggerCommand: vi.fn(() => ({
           type: 'webhook',
         })),
@@ -32,10 +36,9 @@ const mocks = vi.hoisted(() => {
         })),
       })),
     },
-    processTrigger: vi.fn(() => ({
-      executionId: 'execution-id',
-      shouldExecute: true,
-    })),
+    processTrigger: vi.fn<
+      () => { executionId: string | null; shouldExecute: boolean }
+    >(() => ({ executionId: 'execution-id', shouldExecute: true })),
     enqueueActionJob: vi.fn(),
   }
 })
@@ -51,6 +54,7 @@ vi.mock('@/helpers/logger', () => ({
   default: {
     info: vi.fn(),
     warn: vi.fn(),
+    error: vi.fn(),
   },
 }))
 vi.mock('@/models/flow', () => ({
@@ -164,6 +168,48 @@ describe('webhook handler', () => {
     })
   })
 
+  describe('trigger execution', () => {
+    beforeEach(() => {
+      mocks.flow.active = true
+    })
+
+    it.each([
+      {
+        executionId: null,
+        missingNextStep: false,
+        message: 'Webhook trigger did not create an execution',
+      },
+      {
+        executionId: 'execution-id',
+        missingNextStep: true,
+        message: 'Webhook trigger has no next step',
+      },
+    ])(
+      'returns 500: $message',
+      async ({ executionId, missingNextStep, message }) => {
+        mocks.processTrigger.mockResolvedValueOnce({
+          executionId,
+          shouldExecute: true,
+        })
+        if (missingNextStep) {
+          mocks.getNextStep.mockReturnValueOnce(undefined)
+        }
+
+        await webhookHandler(request, mocks.response)
+
+        expect(mocks.response.sendStatus).toHaveBeenCalledWith(500)
+        expect(logger.error).toHaveBeenCalledWith(
+          message,
+          expect.objectContaining({
+            flowId: FLOW_ID,
+            stepId: 'trigger-step-id',
+          }),
+        )
+        expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
+      },
+    )
+  })
+
   describe('rate limits', () => {
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(
       'allows pipes to execute if they are not rate limited',
@@ -244,7 +290,7 @@ describe('webhook handler', () => {
     it('should not enqueue job when processTrigger returns shouldExecute: false', async () => {
       mocks.flow.active = true
       mocks.processTrigger.mockResolvedValueOnce({
-        executionId: 'execution-id',
+        executionId: null,
         shouldExecute: false,
       })
 

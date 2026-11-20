@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-import { IGlobalVariable } from '@plumber/types'
+import type { IAuth, IGlobalVariable } from '@plumber/types'
 
 import appConfig from '@/config/app'
 import logger from '@/helpers/logger'
@@ -101,7 +101,7 @@ function verifySignature(signature: string, basestring: string) {
  */
 export async function decryptResponse(
   $: IGlobalVariable,
-): Promise<{ verified: boolean; internalId: string | null }> {
+): ReturnType<NonNullable<IAuth['verifyWebhook']>> {
   try {
     if (!$.request) {
       logger.error('No trigger item provided')

@@ -83,9 +83,13 @@ export function makeSubTriggerWorker(
 
       await recordLateScheduledStart({ job, queueName, rateLimited: false })
 
+      const app = await step.getApp()
+      if (!app) {
+        throw new UnrecoverableError(`App not found for step: ${stepId}`)
+      }
       const $ = await globalVariable({
         flow,
-        app: await step.getApp(),
+        app,
         step,
         connection: await step.$relatedQuery('connection'),
         execution,
@@ -94,6 +98,11 @@ export function makeSubTriggerWorker(
       })
 
       const actionCommand = await step.getActionCommand()
+      if (!actionCommand?.run) {
+        throw new UnrecoverableError(
+          `Action command has no run() for step: ${stepId}`,
+        )
+      }
 
       try {
         const runResult = ((await actionCommand.run($, metadata)) ??
@@ -102,12 +111,12 @@ export function makeSubTriggerWorker(
         const jobName = `${executionId}-${step.id}`
 
         let nextStep: Step | null = null
-        const nextStepCommand = runResult?.nextStep?.command
-        switch (nextStepCommand) {
+        const nextStepResult = runResult?.nextStep
+        switch (nextStepResult?.command) {
           case 'jump-to-step':
             nextStep = await flow
               .$relatedQuery('steps')
-              .findById(runResult.nextStep.stepId)
+              .findById(nextStepResult.stepId)
               .throwIfNotFound()
             break
           case 'pause-execution':
@@ -119,7 +128,7 @@ export function makeSubTriggerWorker(
           case 'start-for-each':
             logger.error({
               event: 'invalid-subtrigger-command',
-              command: nextStepCommand,
+              command: nextStepResult.command,
               stepId,
               flowId,
               executionId,
@@ -128,7 +137,7 @@ export function makeSubTriggerWorker(
               `start-for-each command not allowed for sub-triggers`,
             )
           default:
-            nextStep = await step.getNextStep()
+            nextStep = (await step.getNextStep()) ?? null
         }
 
         if (!nextStep) {
@@ -211,31 +220,33 @@ export function makeSubTriggerWorker(
           // already committed, so a retry would read 'success' and enqueue
           // nothing. The execution stalls instead of running the next step
           // twice.
-          throw new UnrecoverableError(error.message)
+          throw new UnrecoverableError(
+            error instanceof Error ? error.message : String(error),
+          )
         }
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error)
+
         if (error instanceof HttpError) {
-          $.actionOutput.error = {
+          const errorDetails = {
             details: error.details,
-            status: error.response.status,
-            statusText: error.response.statusText,
+            status: error.response.status ?? null,
+            statusText: error.response.statusText ?? null,
           }
-          logger.error('[sub-trigger] error', {
-            details: error.details,
-            status: error.response.status,
-            statusText: error.response.statusText,
-          })
+          $.actionOutput.error = errorDetails
+          logger.error('[sub-trigger] error', errorDetails)
         } else {
           try {
-            const parsedError = JSON.parse(error.message)
+            const parsedError = JSON.parse(errorMessage)
             $.actionOutput.error = parsedError
             logger.error('[sub-trigger] error', parsedError)
           } catch {
-            $.actionOutput.error = { error: error.message }
-            logger.error('[sub-trigger] error', { error: error.message })
+            $.actionOutput.error = { error: errorMessage }
+            logger.error('[sub-trigger] error', { error: errorMessage })
           }
         }
-        const unrecoverableError = new UnrecoverableError(error.message)
+        const unrecoverableError = new UnrecoverableError(errorMessage)
         keepErrorKindViaCause(unrecoverableError, error)
         throw unrecoverableError
       }

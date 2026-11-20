@@ -39,7 +39,7 @@ vi.mock('@/helpers/global-variable', () => ({
 vi.mock('@/models/step', () => {
   const step = {
     id: 'step-id',
-    getApp: vi.fn(),
+    getApp: vi.fn(async () => ({ key: 'formsg' })),
     $relatedQuery: vi.fn(),
     getActionCommand: vi.fn(async () => ({ run: mocks.actionRun })),
   }
