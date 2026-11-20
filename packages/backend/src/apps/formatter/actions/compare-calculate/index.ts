@@ -46,8 +46,9 @@ function parseDate(
   try {
     return parseOperand(...args)
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     throw new StepError({
-      name: `Error processing dates: '${error.message}'`,
+      name: `Error processing dates: '${errorMessage}'`,
       solution:
         'Ensure that you have selected the correct format for each date.',
       kind: 'config',

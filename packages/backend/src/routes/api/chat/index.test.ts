@@ -292,7 +292,7 @@ describe('chat handler — GitBook MCP integration', () => {
   })
 
   it('streams the bare support form URL when chatId is absent', async () => {
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
@@ -302,13 +302,13 @@ describe('chat handler — GitBook MCP integration', () => {
   })
 
   it('wires the cache checkpoints and support URL transform into streamText', async () => {
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
     const [[{ messages, prepareStep, experimental_transform }]] =
       vi.mocked(streamText).mock.calls
-    expect(messages[0]).toEqual(
+    expect(messages![0]).toEqual(
       expect.objectContaining({
         role: 'system',
         content: expect.stringContaining('Support: {{SUPPORT_FORM_URL}}'),
@@ -870,7 +870,7 @@ describe('chat handler — observation span lifecycle', () => {
   }
 
   function startHandler() {
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
     return handler(makeReq() as any, makeRes() as any, vi.fn()) as Promise<void>
   }

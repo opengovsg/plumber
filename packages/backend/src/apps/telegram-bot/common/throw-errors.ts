@@ -153,7 +153,7 @@ export async function throwSendMessageError(
         cause: err,
       })
     default:
-      if (err.response.status >= 500 || isNetworkError(err)) {
+      if ((err.response.status ?? 0) >= 500 || isNetworkError(err)) {
         throw new StepError({
           name: 'Telegram unavailable',
           solution:

@@ -68,7 +68,7 @@ describe('send payment email', () => {
   it('throws a config StepError when a field is invalid', async () => {
     $.step.parameters.paymentId = ' '
 
-    await expect(sendEmailAction.run($)).rejects.toMatchObject({
+    await expect(sendEmailAction.run!($)).rejects.toMatchObject({
       kind: 'config',
     })
     expect(mocks.httpPost).not.toHaveBeenCalled()
@@ -84,7 +84,7 @@ describe('send payment email', () => {
       const httpError = makeHttpError({ status })
       mocks.httpPost.mockRejectedValueOnce(httpError as never)
 
-      await expect(sendEmailAction.run($)).rejects.toMatchObject({
+      await expect(sendEmailAction.run!($)).rejects.toMatchObject({
         kind,
         cause: httpError,
       })

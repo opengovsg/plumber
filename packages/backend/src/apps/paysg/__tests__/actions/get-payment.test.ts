@@ -84,7 +84,7 @@ describe('get payment', () => {
   it('throws a config StepError when a field is invalid', async () => {
     $.step.parameters.paymentId = ' '
 
-    await expect(getPaymentAction.run($)).rejects.toMatchObject({
+    await expect(getPaymentAction.run!($)).rejects.toMatchObject({
       kind: 'config',
     })
     expect(mocks.httpGet).not.toHaveBeenCalled()
@@ -93,7 +93,7 @@ describe('get payment', () => {
   it('throws an internal StepError when PaySG returns an unexpected response', async () => {
     mocks.httpGet.mockResolvedValueOnce({ data: { id: 123 } } as never)
 
-    await expect(getPaymentAction.run($)).rejects.toMatchObject({
+    await expect(getPaymentAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
       message: expect.stringContaining(
         'PaySG returned an unexpected response. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
@@ -111,7 +111,7 @@ describe('get payment', () => {
       const httpError = makeHttpError({ status })
       mocks.httpGet.mockRejectedValueOnce(httpError as never)
 
-      await expect(getPaymentAction.run($)).rejects.toMatchObject({
+      await expect(getPaymentAction.run!($)).rejects.toMatchObject({
         kind,
         cause: httpError,
       })

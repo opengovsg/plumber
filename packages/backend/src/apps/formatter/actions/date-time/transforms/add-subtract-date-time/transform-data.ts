@@ -69,8 +69,9 @@ function parseValue(
   try {
     return parseDateTime(dateTimeFormat, valueToTransform)
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     throw new StepError({
-      name: `Error processing dates: '${error.message}'`,
+      name: `Error processing dates: '${errorMessage}'`,
       solution:
         'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
       kind: 'config',

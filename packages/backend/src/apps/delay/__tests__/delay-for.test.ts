@@ -70,7 +70,7 @@ describe('Delay for action', () => {
       delayForValue: INVALID_DELAY_VALUE,
     }
 
-    await expect(delayForAction.run($)).rejects.toMatchObject({
+    await expect(delayForAction.run!($)).rejects.toMatchObject({
       message: expect.stringContaining('Invalid delay for value entered'),
       kind: 'config',
     })

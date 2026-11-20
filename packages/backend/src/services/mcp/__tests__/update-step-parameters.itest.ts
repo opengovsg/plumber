@@ -275,7 +275,7 @@ describe('updateStepParametersService', () => {
       ).rejects.toThrow('Action can only be updated by system')
 
       const reloaded = await Step.query().findById(step.id)
-      expect(reloaded.parameters).toEqual({ original: true })
+      expect(reloaded?.parameters).toEqual({ original: true })
     })
 
     it('rejects a step whose key is not in the app registry', async () => {

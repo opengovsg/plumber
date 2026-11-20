@@ -354,7 +354,7 @@ describe('If-then', () => {
       await expect(ifThenAction.run!($)).rejects.toThrow(
         `Conditional logic block contains an unknown operator: ${invalidCondition}`,
       )
-      await expect(ifThenAction.run($)).rejects.toMatchObject({
+      await expect(ifThenAction.run!($)).rejects.toMatchObject({
         kind: 'internal',
       })
     })
@@ -367,7 +367,7 @@ describe('If-then', () => {
         text: '04 Nov 2024',
       })
 
-      await expect(ifThenAction.run($)).rejects.toMatchObject({
+      await expect(ifThenAction.run!($)).rejects.toMatchObject({
         kind: 'config',
         message: expect.stringContaining(
           'Error in condition group 1: Invalid date used in field for comparison',
