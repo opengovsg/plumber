@@ -51,7 +51,7 @@ describe('create table mutation', () => {
 
   it('should create a blank table', async () => {
     const table = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: true } },
       context,
     )
@@ -67,7 +67,7 @@ describe('create table mutation', () => {
 
   it('should create a table and with placeholder rows and columns', async () => {
     const table = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: false } },
       context,
     )
@@ -84,13 +84,13 @@ describe('create table mutation', () => {
 
   it('should be able create tables with the same name', async () => {
     const table = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: false } },
       context,
     )
 
     const table2 = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: false } },
       context,
     )
@@ -100,7 +100,7 @@ describe('create table mutation', () => {
 
   it('should throw an error when table name is empty', async () => {
     await expect(
-      createTable(null, { input: { name: '', isBlank: false } }, context),
+      createTable({}, { input: { name: '', isBlank: false } }, context),
     ).rejects.toThrow()
   })
 
@@ -120,7 +120,7 @@ describe('create table mutation', () => {
 
     it('should add all flow collaborators to table_collaborators when flowId is provided', async () => {
       const table = await createTable(
-        null,
+        {},
         {
           input: {
             name: 'Flow Table',
@@ -175,7 +175,7 @@ describe('create table mutation', () => {
 
       await expect(
         createTable(
-          null,
+          {},
           {
             input: {
               name: 'Editor Flow Table',
@@ -193,7 +193,7 @@ describe('create table mutation', () => {
 
       await expect(
         createTable(
-          null,
+          {},
           {
             input: {
               name: 'Flow Table',

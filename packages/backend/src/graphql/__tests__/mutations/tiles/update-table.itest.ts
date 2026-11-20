@@ -48,7 +48,7 @@ describe.each([['ddb'], ['pg']])(
       it('is able to update table name', async () => {
         const newTableName = 'New Table Name'
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -65,7 +65,7 @@ describe.each([['ddb'], ['pg']])(
 
       it('will not amend table name if undefined', async () => {
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -110,7 +110,7 @@ describe.each([['ddb'], ['pg']])(
     describe('adding columns to table', () => {
       it('should add columns to table with correct positions', async () => {
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -140,7 +140,7 @@ describe.each([['ddb'], ['pg']])(
 
       it('should add columns to table with same name', async () => {
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -161,7 +161,7 @@ describe.each([['ddb'], ['pg']])(
     describe('modify columns in table', () => {
       it('should modify column name', async () => {
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -194,7 +194,7 @@ describe.each([['ddb'], ['pg']])(
           })
 
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -224,7 +224,7 @@ describe.each([['ddb'], ['pg']])(
 
       it('should fail if column does not exist', async () => {
         const updateTableAction = updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -249,7 +249,7 @@ describe.each([['ddb'], ['pg']])(
       it('should delete columns', async () => {
         // add more columns for deletion
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -261,7 +261,7 @@ describe.each([['ddb'], ['pg']])(
         )
 
         await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -298,7 +298,7 @@ describe.each([['ddb'], ['pg']])(
       it('should not delete last column', async () => {
         await expect(() =>
           updateTable(
-            null,
+            {},
             {
               input: {
                 id: dummyTable.id,
@@ -315,7 +315,7 @@ describe.each([['ddb'], ['pg']])(
       it('should throw an error if trying to delete a column from a different table', async () => {
         // add more columns for deletion
         await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -340,7 +340,7 @@ describe.each([['ddb'], ['pg']])(
           })
         await expect(
           updateTable(
-            null,
+            {},
             {
               input: {
                 id: dummyTable.id,
@@ -359,7 +359,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
@@ -378,7 +378,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = viewer
       await expect(
         updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,
