@@ -4,7 +4,13 @@ import { BiQuestionMark, BiTransferAlt } from 'react-icons/bi'
 
 import mainLogo from '@/assets/logo.svg'
 
-function AppLogoBox({ imageUrl }: { imageUrl: string }) {
+function AppLogoBox({
+  imageUrl,
+  imageSize = 10,
+}: {
+  imageUrl: string
+  imageSize?: number
+}) {
   return (
     <Box
       boxSize={14}
@@ -19,7 +25,7 @@ function AppLogoBox({ imageUrl }: { imageUrl: string }) {
     >
       <Image
         src={imageUrl}
-        boxSize={10}
+        boxSize={imageSize}
         borderStyle="solid"
         fit="contain"
         fallback={
@@ -40,7 +46,7 @@ export default function ConnectionHeader(props: ConnectionHeaderProps) {
   return (
     <Flex flexDir="column" alignItems="center" gap={4}>
       <Flex justifyContent="center" alignItems="center" gap={2} mt={2}>
-        <AppLogoBox imageUrl={mainLogo} />
+        <AppLogoBox imageUrl={mainLogo} imageSize={8} />
         <Icon as={BiTransferAlt} boxSize={6} color="base.content.default" />
         <AppLogoBox imageUrl={selectedApp?.iconUrl} />
       </Flex>

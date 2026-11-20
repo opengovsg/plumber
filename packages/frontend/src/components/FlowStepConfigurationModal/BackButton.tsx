@@ -15,8 +15,9 @@ export default function BackButton(props: BackButtonProps) {
       colorScheme="secondary"
       size="xs"
       onClick={onBack}
-      leftIcon={<BiChevronLeft size={20} />}
-      ml={-4}
+      leftIcon={<BiChevronLeft size={24} />}
+      // Pulls the chevron glyph flush with the modal content edge.
+      ml="-23px"
     >
       <Text textStyle="subhead-1">Back</Text>
     </Button>

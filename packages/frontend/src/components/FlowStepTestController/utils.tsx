@@ -315,6 +315,7 @@ export function getInfoBoxDetails({
   stepId,
   testVariables,
   isAiStep,
+  isAssistantStep = false,
 }: {
   isDirty: boolean
   isIfThenStep: boolean
@@ -327,12 +328,14 @@ export function getInfoBoxDetails({
   stepId: string
   testVariables: Variable[] | null
   isAiStep: boolean
+  isAssistantStep?: boolean
 }): [InfoboxProps['variant'], React.ReactNode] {
   if (isTestExecuting) {
     return ['unstyled', 'Checking step...']
   }
 
-  if (isAiStep) {
+  // The Pair assistant reports success first and keeps the AI caution short.
+  if (isAiStep && !isAssistantStep) {
     return [
       'warning',
       <Text key={`${stepId}-ai-warning-text`}>
@@ -365,6 +368,12 @@ export function getInfoBoxDetails({
     if (isIfThenStep) {
       const isConditionMet = testVariables?.[0]?.value as boolean
       return getIfThenOutput(isConditionMet, stepId)
+    }
+    if (isAssistantStep) {
+      return [
+        'success',
+        'Step was set up successfully. AI can be wrong, so try other inputs.',
+      ]
     }
     return ['success', 'Step was set up successfully!']
   }

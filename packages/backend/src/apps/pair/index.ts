@@ -1,6 +1,7 @@
 import { IApp } from '@plumber/types'
 
 import actions from './actions'
+import auth from './auth'
 
 const app: IApp = {
   name: 'Pair',
@@ -11,6 +12,7 @@ const app: IApp = {
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '',
+  auth,
   actions,
   category: 'ai',
   isNewApp: true,
