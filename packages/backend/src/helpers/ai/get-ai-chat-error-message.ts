@@ -16,6 +16,9 @@ import { UserFacingError } from '@/errors/user-facing-error'
 export const AI_CHAT_GENERIC_ERROR_MESSAGE =
   'Something went wrong generating a response. Please try again.'
 
+export const AI_CHAT_TOO_LONG_MESSAGE =
+  'Your conversation is too long for the AI to process. Please start a new chat.'
+
 /**
  * Returned for AbortError so the frontend can skip the error toast when the
  * user cancels a stream. Empty string is intentional — useChat surfaces
@@ -76,7 +79,7 @@ function mapStatusToMessage(statusCode: number | undefined): string | null {
     return 'The AI service took too long to respond. Please try again.'
   }
   if (statusCode === 413) {
-    return 'Your conversation is too long for the AI to process. Please start a new chat.'
+    return AI_CHAT_TOO_LONG_MESSAGE
   }
   if (statusCode !== undefined && statusCode >= 500) {
     return 'The AI service is temporarily unavailable. Please try again.'
@@ -96,7 +99,7 @@ function mapProviderMessage(message: string): string {
       message,
     )
   ) {
-    return 'Your conversation is too long for the AI to process. Please start a new chat.'
+    return AI_CHAT_TOO_LONG_MESSAGE
   }
   return AI_CHAT_GENERIC_ERROR_MESSAGE
 }
