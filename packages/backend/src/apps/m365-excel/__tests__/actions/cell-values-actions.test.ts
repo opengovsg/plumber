@@ -38,7 +38,7 @@ beforeEach(() => {
 describe('getCellValues', () => {
   it('throws a config StepError on invalid parameters', async () => {
     const error = await catchStepError(
-      getCellValuesAction.run(
+      getCellValuesAction.run!(
         makeGlobalVariable({
           fileId: 'file-1',
           worksheetId: '{sheet-1}',
@@ -52,7 +52,7 @@ describe('getCellValues', () => {
 
   it('throws a config StepError for more than 3 cells', async () => {
     const error = await catchStepError(
-      getCellValuesAction.run(
+      getCellValuesAction.run!(
         makeGlobalVariable({
           fileId: 'file-1',
           worksheetId: '{sheet-1}',
@@ -68,7 +68,7 @@ describe('getCellValues', () => {
 describe('writeCellValues', () => {
   it('throws a config StepError on invalid parameters', async () => {
     const error = await catchStepError(
-      writeCellValuesAction.run(
+      writeCellValuesAction.run!(
         makeGlobalVariable({
           fileId: 'file-1',
           worksheetId: '{sheet-1}',

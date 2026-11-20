@@ -370,7 +370,7 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
       testRun: testRunSpy,
       preprocessVariable: undefined,
     } as any)
-    vi.spyOn(Step.prototype, 'getNextStep').mockResolvedValue(null)
+    vi.spyOn(Step.prototype, 'getNextStep').mockResolvedValue(undefined)
   })
 
   afterEach(() => {

@@ -117,7 +117,7 @@ describe('custom-api http request: user endpoint failures', () => {
   })
 
   async function runAndCatch(): Promise<StepError> {
-    const error = await makeRequestAction.run($).catch((e: unknown) => e)
+    const error = await makeRequestAction.run!($).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(StepError)
     return error as StepError
   }

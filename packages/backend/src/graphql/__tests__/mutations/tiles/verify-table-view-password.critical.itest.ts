@@ -34,7 +34,7 @@ describe('verify table view password lockout', () => {
     })
     table = mockTable.table
     viewOnlyKey = await enableViewPassword(table)
-    table = await TableMetadata.query().findById(table.id)
+    table = (await TableMetadata.query().findById(table.id))!
   })
 
   it('refuses the correct password once the allowance is exhausted', async () => {
@@ -46,7 +46,7 @@ describe('verify table view password lockout', () => {
     for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
       await expect(
         verifyTableViewPassword(
-          null,
+          {},
           { input: { tableId: table.id, password: `wrong-${i}` } },
           context,
         ),
@@ -55,7 +55,7 @@ describe('verify table view password lockout', () => {
 
     await expect(
       verifyTableViewPassword(
-        null,
+        {},
         { input: { tableId: table.id, password: VIEW_PASSWORD } },
         context,
       ),

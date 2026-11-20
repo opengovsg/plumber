@@ -213,7 +213,7 @@ describe('deleteStep mutation', () => {
 
     // Verify the referencing step was invalidated
     const invalidatedStep = await Step.query().findById(referencingStep.id)
-    expect(invalidatedStep.status).toBe('incomplete')
+    expect(invalidatedStep!.status).toBe('incomplete')
   })
 
   it('should call patchLastUpdated when deleting trigger step', async () => {
@@ -334,7 +334,9 @@ describe('deleteStep mutation', () => {
       blockFlow.$relatedQuery('steps').orderBy('position', 'asc')
 
     beforeEach(async () => {
-      loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+      loggerErrorSpy = vi
+        .spyOn(logger, 'error')
+        .mockImplementation(() => logger)
       blockFlow = await owner.$relatedQuery('flows').insertAndFetch({
         name: 'Block Flow',
       })

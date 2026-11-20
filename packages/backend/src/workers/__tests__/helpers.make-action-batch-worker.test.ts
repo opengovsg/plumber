@@ -218,7 +218,7 @@ describe('makeActionBatchWorker', () => {
           (job: unknown) => Promise<void>,
         ][]
 
-        await calls.at(-1)[1]({ getBatch: () => members })
+        await calls.at(-1)![1]({ getBatch: () => members })
 
         for (const member of members) {
           expect(mocks.recordLateScheduledStart).toHaveBeenCalledWith({

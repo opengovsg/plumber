@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 
+import type { Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import appConfig from '@/config/app'
@@ -121,11 +122,11 @@ describe('getExecutions', () => {
     await Flow.query().delete()
 
     // Get test user
-    testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    testUser = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
-      req: null,
+      req: null as unknown as Request,
       currentUser: testUser,
-      res: null,
+      res: null as unknown as Response,
       isAdminOperation: false,
     }
 
@@ -171,9 +172,9 @@ describe('getExecutions', () => {
     it('should return empty result when no executions exist', async () => {
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(0)
-      expect(result.pageInfo.currentPage).toBe(1)
-      expect(result.pageInfo.totalCount).toBe(0)
+      expect(result!.edges).toHaveLength(0)
+      expect(result!.pageInfo.currentPage).toBe(1)
+      expect(result!.pageInfo.totalCount).toBe(0)
     })
 
     it('should return executions for the specified flow', async () => {
@@ -188,12 +189,12 @@ describe('getExecutions', () => {
 
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(3)
-      expect(result.pageInfo.currentPage).toBe(1)
-      expect(result.pageInfo.totalCount).toBe(3)
+      expect(result!.edges).toHaveLength(3)
+      expect(result!.pageInfo.currentPage).toBe(1)
+      expect(result!.pageInfo.totalCount).toBe(3)
 
       // Check that executions are ordered by created_at desc
-      const executionIds = result.edges.map((edge) => edge.node.id)
+      const executionIds = result!.edges.map((edge) => edge!.node!.id)
       expect(executionIds).toEqual([
         executions[2].id,
         executions[1].id,
@@ -231,12 +232,12 @@ describe('getExecutions', () => {
 
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(1)
-      const executionNode = result.edges[0].node
-      expect(executionNode.executionSteps).toHaveLength(3)
+      expect(result!.edges).toHaveLength(1)
+      const executionNode = result!.edges[0]!.node
+      expect(executionNode!.executionSteps).toHaveLength(3)
 
       // Verify execution steps are fetched correctly
-      const stepIds = executionNode.executionSteps.map((step) => step.stepId)
+      const stepIds = executionNode!.executionSteps!.map((step) => step!.stepId)
       expect(stepIds).toEqual(
         expect.arrayContaining([
           testSteps[0].id,
@@ -261,9 +262,9 @@ describe('getExecutions', () => {
     it('should filter out test runs', async () => {
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(3)
-      result.edges.forEach((edge) => {
-        expect(edge.node.testRun).toBe(false)
+      expect(result!.edges).toHaveLength(3)
+      result!.edges.forEach((edge) => {
+        expect(edge!.node!.testRun).toBe(false)
       })
     })
 
@@ -272,8 +273,8 @@ describe('getExecutions', () => {
         status: 'success',
       })
 
-      expect(result.edges).toHaveLength(1)
-      expect(result.edges[0].node.status).toBe('success')
+      expect(result!.edges).toHaveLength(1)
+      expect(result!.edges[0]!.node!.status).toBe('success')
     })
 
     it('should filter by failure status', async () => {
@@ -281,8 +282,8 @@ describe('getExecutions', () => {
         status: 'failure',
       })
 
-      expect(result.edges).toHaveLength(1)
-      expect(result.edges[0].node.status).toBe('failure')
+      expect(result!.edges).toHaveLength(1)
+      expect(result!.edges[0]!.node!.status).toBe('failure')
     })
 
     it('should filter by null aka waiting status', async () => {
@@ -290,17 +291,17 @@ describe('getExecutions', () => {
         status: null,
       })
 
-      expect(result.edges).toHaveLength(1)
-      expect(result.edges[0].node.status).toBeNull()
+      expect(result!.edges).toHaveLength(1)
+      expect(result!.edges[0]!.node!.status).toBeNull()
     })
 
     it('should return all executions when no status filter', async () => {
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(3)
+      expect(result!.edges).toHaveLength(3)
 
       // Check that all expected statuses are present (order may vary due to same created_at)
-      const statuses = result.edges.map((edge) => edge.node.status)
+      const statuses = result!.edges.map((edge) => edge!.node!.status)
       expect(statuses).toEqual(
         expect.arrayContaining(['success', 'failure', null]),
       )
@@ -320,22 +321,22 @@ describe('getExecutions', () => {
     it('should paginate results correctly', async () => {
       const firstPage = await callGetExecutions(testFlow.id, context)
 
-      expect(firstPage.edges).toHaveLength(DEFAULT_LIMIT)
-      expect(firstPage.pageInfo.currentPage).toBe(1)
-      expect(firstPage.pageInfo.totalCount).toBe(15)
+      expect(firstPage!.edges).toHaveLength(DEFAULT_LIMIT)
+      expect(firstPage!.pageInfo.currentPage).toBe(1)
+      expect(firstPage!.pageInfo.totalCount).toBe(15)
 
       const secondPage = await callGetExecutions(testFlow.id, context, {
         limit: 5,
         offset: 5,
       })
 
-      expect(secondPage.edges).toHaveLength(5)
-      expect(secondPage.pageInfo.currentPage).toBe(2)
-      expect(secondPage.pageInfo.totalCount).toBe(15)
+      expect(secondPage!.edges).toHaveLength(5)
+      expect(secondPage!.pageInfo.currentPage).toBe(2)
+      expect(secondPage!.pageInfo.totalCount).toBe(15)
 
       // Ensure different results
-      const firstPageIds = firstPage.edges.map((edge) => edge.node.id)
-      const secondPageIds = secondPage.edges.map((edge) => edge.node.id)
+      const firstPageIds = firstPage!.edges.map((edge) => edge!.node!.id)
+      const secondPageIds = secondPage!.edges.map((edge) => edge!.node!.id)
       expect(firstPageIds).not.toEqual(secondPageIds)
     })
 
@@ -345,9 +346,9 @@ describe('getExecutions', () => {
         offset: 10,
       })
 
-      expect(lastPage.edges).toHaveLength(5) // Remaining 5 items
-      expect(lastPage.pageInfo.currentPage).toBe(2)
-      expect(lastPage.pageInfo.totalCount).toBe(15)
+      expect(lastPage!.edges).toHaveLength(5) // Remaining 5 items
+      expect(lastPage!.pageInfo.currentPage).toBe(2)
+      expect(lastPage!.pageInfo.totalCount).toBe(15)
     })
   })
 
@@ -398,17 +399,17 @@ describe('getExecutions', () => {
 
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(1)
-      const executionNode = result.edges[0].node
-      expect(executionNode.executionSteps).toHaveLength(2) // Should have distinct steps
+      expect(result!.edges).toHaveLength(1)
+      const executionNode = result!.edges[0]!.node
+      expect(executionNode!.executionSteps).toHaveLength(2) // Should have distinct steps
 
       // Find the execution step for the first step (should be the latest one)
-      const step1ExecutionStep = executionNode.executionSteps.find(
-        (es) => es.stepId === testSteps[0].id,
+      const step1ExecutionStep = executionNode!.executionSteps!.find(
+        (es) => es!.stepId === testSteps[0].id,
       )
       expect(step1ExecutionStep).toBeDefined()
-      expect(step1ExecutionStep.status).toBe('success') // Latest one should be success
-      expect(step1ExecutionStep.dataOut).toEqual({ output: 'retry-result' })
+      expect(step1ExecutionStep!.status).toBe('success') // Latest one should be success
+      expect(step1ExecutionStep!.dataOut).toEqual({ output: 'retry-result' })
     })
 
     it('should handle multiple steps with multiple retries correctly', async () => {
@@ -486,9 +487,9 @@ describe('getExecutions', () => {
 
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(1)
-      const executionNode = result.edges[0].node
-      expect(executionNode.executionSteps).toHaveLength(4) // Should have distinct steps only
+      expect(result!.edges).toHaveLength(1)
+      const executionNode = result!.edges[0]!.node
+      expect(executionNode!.executionSteps).toHaveLength(4) // Should have distinct steps only
 
       // Verify each step has the latest execution step
       const stepResults = [
@@ -515,17 +516,17 @@ describe('getExecutions', () => {
       ]
 
       stepResults.forEach(({ stepIndex, expectedInput, expectedOutput }) => {
-        const executionStep = executionNode.executionSteps.find(
-          (es) => es.stepId === testSteps[stepIndex].id,
+        const executionStep = executionNode!.executionSteps!.find(
+          (es) => es!.stepId === testSteps[stepIndex].id,
         )
         expect(executionStep).toBeDefined()
-        expect(executionStep.status).toBe('success')
-        expect(executionStep.dataOut).toEqual({ output: expectedOutput })
-        expect(executionStep.dataIn).toEqual({ input: expectedInput })
+        expect(executionStep!.status).toBe('success')
+        expect(executionStep!.dataOut).toEqual({ output: expectedOutput })
+        expect(executionStep!.dataIn).toEqual({ input: expectedInput })
       })
 
       // Verify ordering by step_id within the execution
-      const stepIds = executionNode.executionSteps.map((es) => es.stepId)
+      const stepIds = executionNode!.executionSteps!.map((es) => es!.stepId)
       const sortedStepIds = [...stepIds].sort()
       expect(stepIds).toEqual(sortedStepIds)
     })
@@ -560,8 +561,8 @@ describe('getExecutions', () => {
 
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(1)
-      expect(result.edges[0].node.id).toBe(recentExecution.id)
+      expect(result!.edges).toHaveLength(1)
+      expect(result!.edges[0]!.node!.id).toBe(recentExecution.id)
     })
 
     it('includes executions older than 3 months when the flow has archival disabled', async () => {
@@ -573,7 +574,7 @@ describe('getExecutions', () => {
 
       const result = await callGetExecutions(testFlow.id, context)
 
-      expect(result.edges).toHaveLength(2)
+      expect(result!.edges).toHaveLength(2)
     })
 
     it('includes executions older than 3 months for admin operations regardless of archival config', async () => {
@@ -585,7 +586,7 @@ describe('getExecutions', () => {
       const adminContext: Context = { ...context, isAdminOperation: true }
       const result = await callGetExecutions(testFlow.id, adminContext)
 
-      expect(result.edges).toHaveLength(2)
+      expect(result!.edges).toHaveLength(2)
     })
   })
 
@@ -595,7 +596,7 @@ describe('getExecutions', () => {
       const otherUser = await User.query().findOne({
         email: 'viewer@open.gov.sg',
       })
-      const otherFlow = await otherUser.$relatedQuery('flows').insertAndFetch({
+      const otherFlow = await otherUser!.$relatedQuery('flows').insertAndFetch({
         name: 'Other User Flow',
       })
 
@@ -611,8 +612,8 @@ describe('getExecutions', () => {
       const result = await callGetExecutions(otherFlow.id, context)
 
       // Should return empty since testUser doesn't have access to otherFlow
-      expect(result.edges).toHaveLength(0)
-      expect(result.pageInfo.totalCount).toBe(0)
+      expect(result!.edges).toHaveLength(0)
+      expect(result!.pageInfo.totalCount).toBe(0)
     })
   })
 })

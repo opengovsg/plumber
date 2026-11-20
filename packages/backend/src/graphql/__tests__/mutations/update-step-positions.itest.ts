@@ -117,7 +117,7 @@ describe('updateStepPositions mutation', () => {
       const trx = {
         raw: vi.fn().mockResolvedValue({}),
       } as any
-      return callback(trx)
+      return callback!(trx)
     })
 
     // Mock Step.query
@@ -370,8 +370,8 @@ describe('updateStepPositions endStepId repair', () => {
   ): Promise<Step[]> {
     return testFlow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: spec.parameters ?? {},
@@ -394,7 +394,7 @@ describe('updateStepPositions endStepId repair', () => {
     vi.restoreAllMocks()
     mocks.getLdFlagValue.mockResolvedValue(false)
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
       req: null,
       currentUser: owner,
@@ -407,7 +407,7 @@ describe('updateStepPositions endStepId repair', () => {
       updatedBy: owner.id,
     })
 
-    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => null)
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
   })
 
   it('moves the endStep marker to the new highest member after an interior reorder', async () => {

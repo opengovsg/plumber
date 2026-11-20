@@ -106,8 +106,8 @@ describe('updateConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(collaboratorConnection.id)
-      expect(result.formattedData.screenName).toBe('Updated Shared Slack')
+      expect(result!.id).toBe(collaboratorConnection.id)
+      expect(result!.formattedData!.screenName).toBe('Updated Shared Slack')
     })
 
     it('should allow owner to update their own personal connection', async () => {
@@ -123,8 +123,8 @@ describe('updateConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(ownerConnection.id)
-      expect(result.formattedData.screenName).toBe('Updated Owner Slack')
+      expect(result!.id).toBe(ownerConnection.id)
+      expect(result!.formattedData!.screenName).toBe('Updated Owner Slack')
     })
 
     it('should allow owner to update shared connection in their flow', async () => {
@@ -140,8 +140,8 @@ describe('updateConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(collaboratorConnection.id)
-      expect(result.formattedData.screenName).toBe('Owner Updated Shared')
+      expect(result!.id).toBe(collaboratorConnection.id)
+      expect(result!.formattedData!.screenName).toBe('Owner Updated Shared')
     })
   })
 })

@@ -520,15 +520,15 @@ describe('updateFlowStatus', () => {
       ).rejects.toThrow('queue down')
 
       const refetched = await Flow.query().findById(fakeFlow.id)
-      expect(refetched.active).toBe(false)
-      expect(refetched.publishedAt).toBeNull()
+      expect(refetched!.active).toBe(false)
+      expect(refetched!.publishedAt).toBeNull()
     })
 
     it('rolls back the DB write when removeRepeatableByKey fails during unpublish', async () => {
       // Seed the row as active so we exercise the deactivate path. Use an
       // instance patch so objection populates `opt.old` for $beforeUpdate.
       const seedFlow = await Flow.query().findById(fakeFlow.id)
-      await seedFlow.$query().patch({
+      await seedFlow!.$query().patch({
         active: true,
         publishedAt: new Date().toISOString(),
       })
@@ -560,8 +560,8 @@ describe('updateFlowStatus', () => {
       ).rejects.toThrow('queue down')
 
       const refetched = await Flow.query().findById(fakeFlow.id)
-      expect(refetched.active).toBe(true)
-      expect(refetched.publishedAt).not.toBeNull()
+      expect(refetched!.active).toBe(true)
+      expect(refetched!.publishedAt).not.toBeNull()
     })
 
     it('logs a warning and does not call removeRepeatableByKey when no repeatable job is found on unpublish', async () => {
@@ -622,7 +622,7 @@ describe('updateFlowStatus', () => {
 
       await updateFlowStatus(
         {},
-        { input: { ...defaultInput, updatedAt: realFlow.updatedAt } },
+        { input: { ...defaultInput, updatedAt: realFlow!.updatedAt } },
         context,
       )
 
@@ -632,7 +632,7 @@ describe('updateFlowStatus', () => {
       // for the old bullmq@5.7.8 it accepts the repeat key but does not use it
       // it still derives by concatenating the metadata
       // we check the starting pattern to ensure compatibility with the newer bullmq@5 and the older bullmq@5 versions
-      expect(job.key).toMatch(new RegExp(`^flow-${fakeFlow.id}`))
+      expect(job!.key).toMatch(new RegExp(`^flow-${fakeFlow.id}`))
     })
 
     it('removes the repeatable job on unpublish using the custom key', async () => {
@@ -640,7 +640,7 @@ describe('updateFlowStatus', () => {
       let realFlow = await Flow.query().findById(fakeFlow.id)
       await updateFlowStatus(
         {},
-        { input: { ...defaultInput, updatedAt: realFlow.updatedAt } },
+        { input: { ...defaultInput, updatedAt: realFlow!.updatedAt } },
         context,
       )
 
@@ -663,7 +663,7 @@ describe('updateFlowStatus', () => {
           input: {
             ...defaultInput,
             active: false,
-            updatedAt: realFlow.updatedAt,
+            updatedAt: realFlow!.updatedAt,
           },
         },
         context,

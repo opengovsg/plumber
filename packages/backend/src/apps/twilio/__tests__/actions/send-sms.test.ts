@@ -60,7 +60,7 @@ describe('send sms', () => {
   })
 
   it('sends the SMS and sets the action item', async () => {
-    await sendSmsAction.run($)
+    await sendSmsAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/2010-04-01/Accounts/AC123/Messages.json',
@@ -88,7 +88,7 @@ describe('send sms', () => {
     })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+    await expect(sendSmsAction.run!($)).rejects.toMatchObject({
       kind: 'config',
       cause: httpError,
       message: expect.stringContaining(
@@ -107,7 +107,7 @@ describe('send sms', () => {
     const httpError = makeHttpError({ status: 400, data })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+    await expect(sendSmsAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
       cause: httpError,
       message: expect.stringContaining(
@@ -122,7 +122,7 @@ describe('send sms', () => {
       const httpError = makeHttpError({ status })
       mocks.httpPost.mockRejectedValueOnce(httpError)
 
-      await expect(sendSmsAction.run($)).rejects.toMatchObject({
+      await expect(sendSmsAction.run!($)).rejects.toMatchObject({
         kind: 'config',
         cause: httpError,
       })
@@ -140,7 +140,7 @@ describe('send sms', () => {
       const httpError = makeHttpError({ status })
       mocks.httpPost.mockRejectedValueOnce(httpError)
 
-      await expect(sendSmsAction.run($)).rejects.toMatchObject({
+      await expect(sendSmsAction.run!($)).rejects.toMatchObject({
         kind,
         cause: httpError,
       })
@@ -150,7 +150,7 @@ describe('send sms', () => {
   it('tells the user to contact Plumber for an unlisted 4xx response', async () => {
     mocks.httpPost.mockRejectedValueOnce(makeHttpError({ status: 409 }))
 
-    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+    await expect(sendSmsAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
       message: expect.stringContaining(
         '"solution":"Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance."',
@@ -162,7 +162,7 @@ describe('send sms', () => {
     const httpError = makeHttpError({ code: 'ECONNRESET' })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+    await expect(sendSmsAction.run!($)).rejects.toMatchObject({
       kind: 'third-party',
       cause: httpError,
     })
@@ -174,7 +174,7 @@ describe('send sms', () => {
       const httpError = makeHttpError({ code })
       mocks.httpPost.mockRejectedValueOnce(httpError)
 
-      await expect(sendSmsAction.run($)).rejects.toMatchObject({
+      await expect(sendSmsAction.run!($)).rejects.toMatchObject({
         kind: 'internal',
         cause: httpError,
         message: expect.stringContaining(
@@ -188,7 +188,7 @@ describe('send sms', () => {
     const httpError = makeHttpError()
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(sendSmsAction.run($)).rejects.toMatchObject({
+    await expect(sendSmsAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
       cause: httpError,
       message: expect.stringContaining(
@@ -201,7 +201,7 @@ describe('send sms', () => {
     const error = new Error('boom')
     mocks.httpPost.mockRejectedValueOnce(error)
 
-    const thrown = await sendSmsAction.run($).catch((e: unknown) => e)
+    const thrown = await sendSmsAction.run!($).catch((e: unknown) => e)
 
     expect(thrown).toBe(error)
     expect(thrown).not.toBeInstanceOf(StepError)

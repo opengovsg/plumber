@@ -22,7 +22,6 @@
     "format": "turbo run format",
     "format:fix": "turbo run format:fix",
     "typecheck": "turbo run typecheck",
-    "typecheck:strict": "turbo run typecheck:strict",
     "fta": "fta .",
     "fta:changed": "node scripts/fta-changed.mjs",
     "test": "turbo run test test:unit test:integration",

@@ -270,7 +270,7 @@ async function buildCreateRowFlow(options: {
 
   return {
     flow,
-    createTableRowStep: flow.steps.find((s) => s.key === 'createTableRow'),
+    createTableRowStep: flow.steps.find((s) => s.key === 'createTableRow')!,
     forEachStep: flow.steps.find((s) => s.key === 'forEach'),
     execution,
   }
@@ -369,7 +369,7 @@ describe('m365-excel batch worker (integration)', () => {
     mocks.getLockKey.mockResolvedValue(null)
     // File access granted by default; the partial-failure tests reject one job.
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
-    userId = (await User.query().findOne({ email: 'tester@open.gov.sg' })).id
+    userId = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!.id
 
     // Pause both workers so we can enqueue every job up front (the batch worker
     // then fetches them all as one batch on resume) and so next-step jobs the
@@ -701,14 +701,14 @@ describe('m365-excel batch worker (integration)', () => {
         rowValue: 'iter',
         withForEach: true,
       })
-      await seedForEachStep(flow.execution, flow.forEachStep)
+      await seedForEachStep(flow.execution, flow.forEachStep!)
       await enqueueIterations(flow)
 
       batchWorker.resume()
 
       await waitFor(async () => {
         const execution = await Execution.query().findById(flow.execution.id)
-        return execution.status === 'success'
+        return execution!.status === 'success'
       })
       await waitFor(
         async () =>
@@ -746,7 +746,7 @@ describe('m365-excel batch worker (integration)', () => {
         rowValue: 'iter',
         withForEach: true,
       })
-      await seedForEachStep(flow.execution, flow.forEachStep)
+      await seedForEachStep(flow.execution, flow.forEachStep!)
       await enqueueIterations(flow)
 
       batchWorker.resume()
@@ -754,7 +754,7 @@ describe('m365-excel batch worker (integration)', () => {
       // The execution resolves to failure - it must not hang at null.
       await waitFor(async () => {
         const execution = await Execution.query().findById(flow.execution.id)
-        return execution.status === 'failure'
+        return execution!.status === 'failure'
       })
       // The execution can fail before every iteration is recorded and patched.
       await waitFor(
@@ -790,7 +790,7 @@ describe('m365-excel batch worker (integration)', () => {
         rowValue: 'iter',
         withForEach: true,
       })
-      await seedForEachStep(flow.execution, flow.forEachStep)
+      await seedForEachStep(flow.execution, flow.forEachStep!)
       await enqueueIterations(flow)
 
       batchWorker.resume()
@@ -798,7 +798,7 @@ describe('m365-excel batch worker (integration)', () => {
       // The execution resolves to failure - it must not hang at null.
       await waitFor(async () => {
         const execution = await Execution.query().findById(flow.execution.id)
-        return execution.status === 'failure'
+        return execution!.status === 'failure'
       })
       // The execution fails on the first iteration, before the rest are isolated.
       await waitFor(

@@ -99,13 +99,13 @@ describe('getFlow', () => {
         role: 'owner',
       })
 
-      expect(result.steps).toHaveLength(2)
-      expect(result.steps[0].position).toBe(1)
-      expect(result.steps[1].position).toBe(2)
+      expect(result!.steps).toHaveLength(2)
+      expect(result!.steps![0]!.position).toBe(1)
+      expect(result!.steps![1]!.position).toBe(2)
 
       // Test collaborators by manually calling the custom resolver
       const collaborators = await flowResolvers.collaborators(
-        result,
+        result!,
         {},
         context,
       )
@@ -136,14 +136,16 @@ describe('getFlow', () => {
 
       // Test collaborators by manually calling the custom resolver
       const collaborators = await flowResolvers.collaborators(
-        result,
+        result!,
         {},
         context,
       )
-      const ownerCollaborator = collaborators.find((c) => c.userId === owner.id)
+      const ownerCollaborator = collaborators!.find(
+        (c) => c.userId === owner.id,
+      )
       expect(ownerCollaborator).toBeDefined()
-      expect(ownerCollaborator.role).toBe('owner')
-      expect(ownerCollaborator.flowId).toBe(mockFlow.id)
+      expect(ownerCollaborator!.role).toBe('owner')
+      expect(ownerCollaborator!.flowId).toBe(mockFlow.id)
     })
 
     it('should return flow data for editor', async () => {
@@ -156,11 +158,11 @@ describe('getFlow', () => {
         role: 'editor',
       })
 
-      expect(result.steps).toHaveLength(2)
+      expect(result!.steps).toHaveLength(2)
 
       // Test collaborators by manually calling the custom resolver
       const collaborators = await flowResolvers.collaborators(
-        result,
+        result!,
         {},
         context,
       )
@@ -177,11 +179,11 @@ describe('getFlow', () => {
         role: 'viewer',
       })
 
-      expect(result.steps).toHaveLength(2)
+      expect(result!.steps).toHaveLength(2)
 
       // Test collaborators by manually calling the custom resolver
       const collaborators = await flowResolvers.collaborators(
-        result,
+        result!,
         {},
         context,
       )
@@ -273,10 +275,12 @@ describe('getFlow', () => {
 
       const result = await getFlow({}, { id: mockFlow.id }, context)
 
-      expect(result.steps).toHaveLength(2)
-      const stepWithConnection = result.steps.find((s) => s.id === mockStep2.id)
-      expect(stepWithConnection.connection).toBeDefined()
-      expect(stepWithConnection.connection.id).toBe(connection.id)
+      expect(result!.steps).toHaveLength(2)
+      const stepWithConnection = result!.steps!.find(
+        (s) => s!.id === mockStep2.id,
+      )
+      expect(stepWithConnection!.connection).toBeDefined()
+      expect(stepWithConnection!.connection!.id).toBe(connection.id)
     })
   })
 })

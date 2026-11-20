@@ -83,7 +83,7 @@ describe('createConnection', () => {
         )
 
         expect(result).toBeDefined()
-        expect(result.key).toBe('slack')
+        expect(result!.key).toBe('slack')
       })
 
       it('should allow editor to create connection', async () => {
@@ -129,8 +129,8 @@ describe('createConnection', () => {
           context,
         )
 
-        const connection = await Connection.query().findById(result.id)
-        expect(connection.userId).toBeNull()
+        const connection = await Connection.query().findById(result!.id!)
+        expect(connection!.userId).toBeNull()
       })
 
       it('owner-created connection has owner userId', async () => {
@@ -140,8 +140,8 @@ describe('createConnection', () => {
           context,
         )
 
-        const connection = await Connection.query().findById(result.id)
-        expect(connection.userId).toBe(owner.id)
+        const connection = await Connection.query().findById(result!.id!)
+        expect(connection!.userId).toBe(owner.id)
       })
     })
 
@@ -157,12 +157,12 @@ describe('createConnection', () => {
 
         const flowConnection = await FlowConnections.query().findOne({
           flow_id: testFlow.id,
-          connection_id: result.id,
+          connection_id: result!.id,
         })
 
         expect(flowConnection).toBeDefined()
-        expect(flowConnection.connectionType).toBe('connection')
-        expect(flowConnection.addedBy).toBe(editor.id)
+        expect(flowConnection!.connectionType).toBe('connection')
+        expect(flowConnection!.addedBy).toBe(editor.id)
       })
 
       it('owner-created connection is added to flow_connections when flow has collaborators', async () => {
@@ -174,11 +174,11 @@ describe('createConnection', () => {
 
         const flowConnection = await FlowConnections.query().findOne({
           flow_id: testFlow.id,
-          connection_id: result.id,
+          connection_id: result!.id,
         })
 
         expect(flowConnection).toBeDefined()
-        expect(flowConnection.addedBy).toBe(owner.id)
+        expect(flowConnection!.addedBy).toBe(owner.id)
       })
 
       it('owner-created connection is NOT added to flow_connections when flow has no collaborators', async () => {
@@ -192,7 +192,7 @@ describe('createConnection', () => {
 
         const flowConnection = await FlowConnections.query().findOne({
           flow_id: soloFlow.id,
-          connection_id: result.id,
+          connection_id: result!.id,
         })
 
         expect(flowConnection).toBeUndefined()
@@ -210,7 +210,7 @@ describe('createConnection', () => {
         )
 
         const personalConnections = await editor.$relatedQuery('connections')
-        const found = personalConnections.find((c) => c.id === result.id)
+        const found = personalConnections.find((c) => c.id === result!.id)
 
         expect(found).toBeUndefined()
       })
@@ -225,7 +225,7 @@ describe('createConnection', () => {
         )
 
         const ownerConnections = await owner.$relatedQuery('connections')
-        const found = ownerConnections.find((c) => c.id === result.id)
+        const found = ownerConnections.find((c) => c.id === result!.id)
 
         expect(found).toBeUndefined()
       })

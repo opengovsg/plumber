@@ -25,9 +25,9 @@ describe('verifyOtp', () => {
 
     context = await generateMockContext()
 
-    user = await User.query().findOne({
+    user = (await User.query().findOne({
       email: context.currentUser.email,
-    })
+    }))!
 
     validOtpHash = user.hashOtp(TEST_OTP)
   })

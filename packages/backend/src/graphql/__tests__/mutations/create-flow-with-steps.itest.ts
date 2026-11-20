@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { StepEnumType } from '@/graphql/__generated__/types.generated'
@@ -36,11 +37,11 @@ describe('createFlowWithSteps mutation integration tests', () => {
       },
     })
 
-    testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    testUser = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
-      req: null,
+      req: null as unknown as Request,
       currentUser: testUser,
-      res: null,
+      res: null as unknown as Response,
       isAdminOperation: false,
     }
   })
@@ -88,8 +89,8 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       // Verify flow was created
       expect(result).toBeDefined()
-      expect(result.name).toBe('My Test Flow')
-      expect(result.config).toEqual({
+      expect(result!.name).toBe('My Test Flow')
+      expect(result!.config).toEqual({
         aiBuilderConfig: {
           traceId: '123',
           suggested: [
@@ -99,11 +100,11 @@ describe('createFlowWithSteps mutation integration tests', () => {
           ],
         },
       })
-      expect(result.userId).toBe(testUser.id)
+      expect(result!.userId).toBe(testUser.id)
 
       // Verify steps were created and inserted correctly
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
 
       expect(steps).toHaveLength(3)
@@ -176,7 +177,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       const result = await createFlowWithSteps({}, params, context)
 
-      expect(result.name).toBe('Trimmed Flow Name')
+      expect(result!.name).toBe('Trimmed Flow Name')
     })
 
     it('should handle steps without config field', async () => {
@@ -205,7 +206,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       const result = await createFlowWithSteps({}, params, context)
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
 
       expect(steps[0].config).toEqual({
@@ -268,7 +269,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       const result = await createFlowWithSteps({}, params, context)
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
 
       expect(steps).toHaveLength(4)
@@ -680,10 +681,10 @@ describe('createFlowWithSteps mutation integration tests', () => {
       const result = await createFlowWithSteps({}, params, context)
 
       expect(result).toBeDefined()
-      expect(result.name).toBe('Test Flow with If-Then')
+      expect(result!.name).toBe('Test Flow with If-Then')
 
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
 
       expect(steps).toHaveLength(5)
@@ -734,7 +735,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(result).toBeDefined()
 
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
       expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'If' })
     })
@@ -780,7 +781,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(result).toBeDefined()
 
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
       expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'Branch' })
     })
@@ -896,7 +897,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(result).toBeDefined()
 
       const steps = await Step.query()
-        .where('flow_id', result.id)
+        .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
       expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'Branch' })
     })

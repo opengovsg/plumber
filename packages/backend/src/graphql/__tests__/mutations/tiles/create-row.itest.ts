@@ -22,7 +22,7 @@ const getLdFlagValue = vi.fn()
 let pgCreateTableRowSpy = vi.spyOn(pgTableRowFunctions, 'createTableRow')
 let ddbCreateTableRowSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRow')
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'create row mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context

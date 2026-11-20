@@ -198,10 +198,10 @@ describe('deleteFlowConnection', () => {
         connection_id: testConnection.id,
       })
       expect(flowConnection).toBeDefined()
-      expect(flowConnection.connectionType).toBe('connection')
-      expect(flowConnection.addedBy).toBe(owner.id)
-      expect(flowConnection.flowId).toBe(testFlow.id)
-      expect(flowConnection.connectionId).toBe(testConnection.id)
+      expect(flowConnection!.connectionType).toBe('connection')
+      expect(flowConnection!.addedBy).toBe(owner.id)
+      expect(flowConnection!.flowId).toBe(testFlow.id)
+      expect(flowConnection!.connectionId).toBe(testConnection.id)
     })
 
     it('should not affect other steps in the same flow', async () => {
@@ -253,10 +253,10 @@ describe('deleteFlowConnection', () => {
         connection_id: otherConnection.id,
       })
       expect(otherFlowConnection).toBeDefined()
-      expect(otherFlowConnection.connectionType).toBe('connection')
-      expect(otherFlowConnection.addedBy).toBe(owner.id)
-      expect(otherFlowConnection.flowId).toBe(testFlow.id)
-      expect(otherFlowConnection.connectionId).toBe(otherConnection.id)
+      expect(otherFlowConnection!.connectionType).toBe('connection')
+      expect(otherFlowConnection!.addedBy).toBe(owner.id)
+      expect(otherFlowConnection!.flowId).toBe(testFlow.id)
+      expect(otherFlowConnection!.connectionId).toBe(otherConnection.id)
 
       // Check other step is not deleted or affected
       const otherStepCheck = await Step.query().findOne({
@@ -264,8 +264,8 @@ describe('deleteFlowConnection', () => {
         connection_id: otherConnection.id,
       })
       expect(otherStepCheck).toBeDefined()
-      expect(otherStepCheck.connectionId).toBe(otherConnection.id)
-      expect(otherStepCheck.flowId).toBe(testFlow.id)
+      expect(otherStepCheck!.connectionId).toBe(otherConnection.id)
+      expect(otherStepCheck!.flowId).toBe(testFlow.id)
     })
 
     it('should not affect steps from other flows', async () => {
@@ -296,7 +296,7 @@ describe('deleteFlowConnection', () => {
 
       // Check other flow's step is NOT affected
       const unchangedStep = await Step.query().findById(otherStep.id)
-      expect(unchangedStep.connectionId).toBe(testConnection.id)
+      expect(unchangedStep!.connectionId).toBe(testConnection.id)
 
       // Check flow connection is deleted
       const flowConnection = await FlowConnections.query().findOne({
@@ -347,10 +347,10 @@ describe('deleteFlowConnection', () => {
         connection_id: testTable.id,
       })
       expect(flowConnection).toBeDefined()
-      expect(flowConnection.connectionType).toBe('table')
-      expect(flowConnection.addedBy).toBe(owner.id)
-      expect(flowConnection.flowId).toBe(testFlow.id)
-      expect(flowConnection.connectionId).toBe(testTable.id)
+      expect(flowConnection!.connectionType).toBe('table')
+      expect(flowConnection!.addedBy).toBe(owner.id)
+      expect(flowConnection!.flowId).toBe(testFlow.id)
+      expect(flowConnection!.connectionId).toBe(testTable.id)
     })
 
     it('should not affect other tile steps in the same flow', async () => {
@@ -394,8 +394,8 @@ describe('deleteFlowConnection', () => {
         app_key: 'tiles',
       })
       expect(otherStep).toBeDefined()
-      expect(otherStep.parameters.tableId).toBe(otherTable.id)
-      expect(otherStep.flowId).toBe(testFlow.id)
+      expect(otherStep!.parameters.tableId).toBe(otherTable.id)
+      expect(otherStep!.flowId).toBe(testFlow.id)
     })
   })
 })

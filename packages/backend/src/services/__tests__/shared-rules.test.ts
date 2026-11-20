@@ -62,7 +62,7 @@ function covers(entry: string, file: string): boolean {
 function findHits(pattern: RegExp, files: string[]): string[] {
   return files.flatMap((file) =>
     sources
-      .get(file)
+      .get(file)!
       .flatMap((line, index) =>
         pattern.test(line) ? [`${file}:${index + 1}`] : [],
       ),

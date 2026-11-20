@@ -32,7 +32,7 @@ export function getSchedulePattern(
   triggerKey: string,
   triggerParameters: IJSONObject,
 ): string {
-  const trigger = schedulerApp.triggers.find(
+  const trigger = schedulerApp.triggers?.find(
     (candidate) => candidate.key === triggerKey,
   )
   const pattern = trigger?.getInterval?.(triggerParameters)
