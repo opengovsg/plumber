@@ -3,11 +3,9 @@ import FlowConnections from '@/models/flow-connections'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteConnection: MutationResolvers['deleteConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const deleteConnection: NonNullable<
+  MutationResolvers['deleteConnection']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

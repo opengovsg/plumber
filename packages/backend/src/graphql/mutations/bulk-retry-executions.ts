@@ -48,11 +48,9 @@ async function getAllFailedExecutionSteps(
     .select('id', 'execution_id', 'status', 'job_id')
 }
 
-const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const bulkRetryExecutions: NonNullable<
+  MutationResolvers['bulkRetryExecutions']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

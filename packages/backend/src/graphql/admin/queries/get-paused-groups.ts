@@ -4,11 +4,9 @@ import { actionQueuesByName } from '@/queues/action'
 
 import type { AdminQueryResolvers } from '../../__generated__/types.generated'
 
-const getPausedGroups: AdminQueryResolvers['getPausedGroups'] = async (
-  _parent,
-  params,
-  _context,
-) => {
+const getPausedGroups: NonNullable<
+  AdminQueryResolvers['getPausedGroups']
+> = async (_parent, params, _context) => {
   const { appKey } = params
   const queueName = `{app-actions-${appKey}}`
   const queue = actionQueuesByName[queueName]

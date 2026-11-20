@@ -15,11 +15,9 @@ function findApp(appKey: string, apps: IApp[]): IApp {
   return app
 }
 
-const getFlowConnections: QueryResolvers['getFlowConnections'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const getFlowConnections: NonNullable<
+  QueryResolvers['getFlowConnections']
+> = async (_parent, params, context) => {
   const apps = await App.findAll()
 
   const flow = await context.currentUser
