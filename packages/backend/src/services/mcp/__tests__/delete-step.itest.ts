@@ -109,7 +109,7 @@ describe('deleteStepService', () => {
     const result = await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
     })
 
     expect(result.steps).toHaveLength(2)
@@ -150,16 +150,16 @@ describe('deleteStepService', () => {
     const result = await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: triggerStep.id,
+      stepId: triggerStep!.id,
     })
 
     expect(result.steps).toHaveLength(2)
     const newTrigger = result.steps.find((s) => s.type === 'trigger')
     expect(newTrigger).toBeDefined()
-    expect(newTrigger.appKey).toBeNull()
-    expect(newTrigger.key).toBeNull()
-    expect(newTrigger.id).not.toBe(triggerStep.id)
-    expect(newTrigger.config).toEqual({})
+    expect(newTrigger!.appKey).toBeNull()
+    expect(newTrigger!.key).toBeNull()
+    expect(newTrigger!.id).not.toBe(triggerStep!.id)
+    expect(newTrigger!.config).toEqual({})
   })
 
   it('throws if the step does not belong to the requesting user', async () => {
@@ -199,7 +199,7 @@ describe('deleteStepService', () => {
       deleteStepService({
         user: intruder,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
       }),
     ).rejects.toThrow('Step not found')
   })
@@ -237,7 +237,7 @@ describe('deleteStepService', () => {
       deleteStepService({
         user,
         pipeId: randomUUID(), // wrong pipe ID
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
       }),
     ).rejects.toThrow('Step not found')
   })
@@ -274,14 +274,14 @@ describe('deleteStepService', () => {
     await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       traceId: 'trace-delete',
     })
 
-    const visible = await Step.query().findById(actionStep.id)
+    const visible = await Step.query().findById(actionStep!.id)
     expect(visible).toBeUndefined()
 
-    const stored = await Step.query().withSoftDeleted().findById(actionStep.id)
+    const stored = await Step.query().withSoftDeleted().findById(actionStep!.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
       aiBuilderConfig: [
@@ -378,10 +378,10 @@ describe('deleteStepService', () => {
     await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
     })
 
-    const stored = await Step.query().withSoftDeleted().findById(actionStep.id)
+    const stored = await Step.query().withSoftDeleted().findById(actionStep!.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
       aiBuilderConfig: [
@@ -541,7 +541,7 @@ describe('deleteStepService', () => {
         'sendTransactionalEmail',
       ])
       const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
-      expect(updatedIfThen.config.endStepId).toBe(slack.id)
+      expect(updatedIfThen!.config.endStepId).toBe(slack.id)
     })
 
     it('deletes the whole block when the If step is deleted, and keeps the step after it', async () => {

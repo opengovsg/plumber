@@ -87,7 +87,9 @@ for (const [appKey, app] of Object.entries(apps)) {
 
   const actionsByKey = new Map<string, IActionBatchQueue>()
   for (const action of batchActions) {
-    actionsByKey.set(action.key, action.batch)
+    if (action.batch) {
+      actionsByKey.set(action.key, action.batch)
+    }
   }
   batchActionsByAppKey.set(appKey, actionsByKey)
 }
@@ -119,7 +121,7 @@ export async function enqueueActionJob({
       ? batchActionsByAppKey.get(appKey)?.get(actionKey)
       : undefined
 
-  if (batchConfig) {
+  if (batchConfig && appKey) {
     const batchQueue = actionBatchQueues[appKey]
     const groupConfig = await batchConfig.getGroupConfigForJob(jobData)
 
@@ -129,12 +131,12 @@ export async function enqueueActionJob({
     })
   }
 
-  if (!(appKey in appActionQueues)) {
+  if (!appKey || !(appKey in appActionQueues)) {
     return await mainActionQueue.add(jobName, jobData, jobOptions)
   }
 
   const appQueue = appActionQueues[appKey]
-  const groupConfig = await apps[appKey].queue.getGroupConfigForJob?.(jobData)
+  const groupConfig = await apps[appKey].queue?.getGroupConfigForJob?.(jobData)
 
   return await appQueue.add(jobName, jobData, {
     ...jobOptions,

@@ -134,7 +134,7 @@ export default function ExecutionStep({
                 <JSONViewer data={executionStep.dataIn} />
               </TabPanel>
               <TabPanel>
-                <JSONViewer data={executionStep.dataOut} />
+                <JSONViewer data={executionStep.dataOut ?? {}} />
               </TabPanel>
               {showAlertTab && (
                 <TabPanel>

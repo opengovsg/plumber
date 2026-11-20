@@ -74,10 +74,13 @@ export async function fetchPublicForm(
     logger.warn('fetchPublicForm: error fetching public form schema', {
       formId,
       env,
-      error: e.message,
+      error: e instanceof Error ? e.message : String(e),
     })
-    if (e.response?.status === 404) {
-      if (e.response.data?.isPageFound) {
+    const errorResponse = (
+      e as { response?: { status?: number; data?: { isPageFound?: boolean } } }
+    )?.response
+    if (errorResponse?.status === 404) {
+      if (errorResponse.data?.isPageFound) {
         return {
           error:
             'This form is not public. Ask the user to make the form public and try again.',

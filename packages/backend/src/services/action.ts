@@ -66,8 +66,8 @@ async function enqueueFirstForEachStep({
   const results = await Promise.allSettled(
     Array.from({ length: iterations }, (_, i) =>
       enqueueActionJob({
-        appKey: firstStepInForEach.appKey,
-        actionKey: firstStepInForEach.key,
+        appKey: firstStepInForEach.appKey ?? null,
+        actionKey: firstStepInForEach.key ?? null,
         jobName: `${executionId}-${firstStepInForEach.id}-${i + 1}`,
         jobData: {
           flowId: flowId,
@@ -156,7 +156,7 @@ export type PreparedActionExecution = {
   flow: Flow
   execution: Execution
   $: IGlobalVariable
-  actionCommand: Awaited<ReturnType<Step['getActionCommand']>>
+  actionCommand: NonNullable<Awaited<ReturnType<Step['getActionCommand']>>>
   forEachContext: ForEachContext
   computedParameters: ReturnType<typeof computeParameters>
   metadata: TestRunStepMetadata
@@ -204,9 +204,14 @@ export async function prepareActionExecution(
     metadata.isLastStep = true
   }
 
+  const app = await step.getApp()
+  if (!app) {
+    throw new Error(`App not found for step: ${step.id}`)
+  }
+
   const $ = await globalVariable({
     flow,
-    app: await step.getApp(),
+    app,
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
@@ -234,6 +239,12 @@ export async function prepareActionExecution(
     })
 
   const actionCommand = await step.getActionCommand()
+  if (!actionCommand) {
+    throw new Error(`Action command not found for step: ${step.id}`)
+  }
+  if (!actionCommand.run) {
+    throw new Error(`Action command has no run() for step: ${step.id}`)
+  }
   const forEachContext: ForEachContext = {
     executionStepMetadata: metadata,
     forEachStepPosition,
@@ -413,7 +424,7 @@ export async function resolveNextStep({
         'pause-execution command not allowed for actions',
       )
     default:
-      nextStep = await step.getNextStep()
+      nextStep = (await step.getNextStep()) ?? null
   }
 
   return nextStep
@@ -484,10 +495,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     let executionError: unknown = null
     try {
       // Cannot assign directly to runResult due to void return type.
+      // IMPORTANT: Call through actionCommand so run keeps its this.
       const result =
         testRun && actionCommand.testRun
           ? await actionCommand.testRun($, metadata)
-          : await actionCommand.run($, metadata)
+          : await actionCommand.run?.($, metadata)
       if (result) {
         runResult = result
       }
