@@ -27,7 +27,10 @@ import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 import {
   buildNoOptionsFoundMessage,
+  buildSecretKeyRemovedMessage,
   containsSecretKey,
+  extractFormsgSecretKey,
+  removeFormsgSecretKeys,
 } from '@/pages/AiBuilder/helpers'
 import posthog, { isPostHogConfigured } from '@/posthog'
 
@@ -59,6 +62,8 @@ interface PromptInputProps {
    * before a secret key has been added.
    */
   attachedForm?: { label: string; isConnected?: boolean } | null
+  /** Opens the full FormSG connection modal with a key pasted into the composer. */
+  onConnectFormSecurely?: (secretKey: string) => void
 }
 
 // Display-only chip anchoring the conversation's form to the composer.
@@ -115,6 +120,7 @@ export default function PromptInput({
   onConnectForm,
   onSelectExistingForm,
   attachedForm,
+  onConnectFormSecurely,
 }: PromptInputProps) {
   const { steps } = useAiBuilderContext()
   const [input, setInput] = useState<string>(initialValue)
@@ -132,11 +138,29 @@ export default function PromptInput({
     setCurrentQuestionIdx(0)
   }, [clarification])
 
-  const doSend = () => {
+  const formsgSecretKey = showSecretKeyWarning
+    ? extractFormsgSecretKey(input)
+    : undefined
+
+  const captureSecretKeyWarning = (action: string) => {
+    if (isPostHogConfigured) {
+      posthog.capture('ai_builder:secret_key_warning', {
+        action,
+        key_type: extractFormsgSecretKey(input) ? 'formsg' : 'other',
+      })
+    }
+  }
+
+  const closeSecretKeyWarning = (action: string) => {
+    captureSecretKeyWarning(action)
+    setShowSecretKeyWarning(false)
+  }
+
+  const doSend = (message = input) => {
     if (isPostHogConfigured) {
       posthog.capture('ai_builder:message_sent')
     }
-    sendMessage(input)
+    sendMessage(message)
     setInput('')
     setSelectedAnswers({})
     if (textareaRef.current) {
@@ -150,6 +174,7 @@ export default function PromptInput({
       return
     }
     if (containsSecretKey(input)) {
+      captureSecretKeyWarning('shown')
       setShowSecretKeyWarning(true)
       return
     }
@@ -157,8 +182,19 @@ export default function PromptInput({
   }
 
   const handleSendAnyway = () => {
-    setShowSecretKeyWarning(false)
+    closeSecretKeyWarning('send_anyway')
     doSend()
+  }
+
+  const handleRemoveKeyAndSend = () => {
+    closeSecretKeyWarning('remove_key_and_send')
+    doSend(buildSecretKeyRemovedMessage(input))
+  }
+
+  const handleConnectSecurely = (secretKey: string) => {
+    closeSecretKeyWarning('connect_securely')
+    onConnectFormSecurely?.(secretKey)
+    setInput(removeFormsgSecretKeys(input).trim())
   }
 
   const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -470,8 +506,15 @@ export default function PromptInput({
       <SecretKeyWarningDialog
         cancelRef={secretKeyDialogCancelRef}
         isOpen={showSecretKeyWarning}
-        onClose={() => setShowSecretKeyWarning(false)}
+        isFormsgKey={Boolean(formsgSecretKey)}
+        onClose={() => closeSecretKeyWarning('cancel')}
         onSendAnyway={handleSendAnyway}
+        onRemoveKeyAndSend={handleRemoveKeyAndSend}
+        onConnectSecurely={
+          formsgSecretKey && onConnectFormSecurely
+            ? () => handleConnectSecurely(formsgSecretKey)
+            : undefined
+        }
       />
     </Box>
   )

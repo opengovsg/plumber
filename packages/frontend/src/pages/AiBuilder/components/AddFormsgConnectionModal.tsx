@@ -47,6 +47,8 @@ interface AddFormsgConnectionModalProps {
   // 'full': URL + secret key, creates a real connection (see onSuccess).
   variant: 'url-only' | 'full'
   prefillFormUrl?: string
+  // A key the user pasted into the chat composer instead of this modal.
+  prefillSecretKey?: string
   // The URL is already known from the conversation and hard-locked to that
   // form — only reachable for the 'full' variant's key-completion path.
   lockFormUrl?: boolean
@@ -60,6 +62,7 @@ export default function AddFormsgConnectionModal({
   flowId,
   variant,
   prefillFormUrl,
+  prefillSecretKey,
   lockFormUrl,
   onClose,
   onSuccess,
@@ -79,11 +82,11 @@ export default function AddFormsgConnectionModal({
   useEffect(() => {
     if (isOpen) {
       setFormUrl(prefillFormUrl ?? '')
-      setSecretKey('')
+      setSecretKey(prefillSecretKey ?? '')
       setSecretKeyError(null)
       setErrorMessage(null)
     }
-  }, [isOpen, prefillFormUrl])
+  }, [isOpen, prefillFormUrl, prefillSecretKey])
 
   // Only suppress the browser's default "open dropped file" behaviour while
   // this modal is actually open, since the component stays mounted (with
