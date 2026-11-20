@@ -36,5 +36,7 @@ export function knownTools(source) {
   const names = [...text.matchAll(/^\s{4}([a-z_]+): tool\b/gm)].map(
     (match) => match[1],
   )
-  return [...new Set(names)]
+  // IMPORTANT: An empty parse means the backend file format changed. Returning [] would make
+  // every tool look unknown, and `validate --fix` would delete every must_not_tools entry.
+  return names.length > 0 ? [...new Set(names)] : null
 }

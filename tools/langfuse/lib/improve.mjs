@@ -1,6 +1,8 @@
+import { isSafetyRow } from './safety.mjs'
+
 /**
- * Turns a failed eval row into a safer expected output, or leaves it for review.
- * Forbidden-tool failures are never rewritten. Those are model misses.
+ * Proposes a gold edit for a failed eval row, or leaves it for review.
+ * Forbidden-tool failures and safety rows are never rewritten. Those are model misses.
  */
 
 export function parseJsonObject(value) {
@@ -59,52 +61,6 @@ function optionMatches(option, output) {
   return true
 }
 
-function isWebhookOrUnpublish(expected, metadata) {
-  const text = [
-    expected.required_question_intent,
-    expected.required_response_intent,
-    expected.reason,
-  ]
-    .filter(Boolean)
-    .join(' ')
-  if (/webhook|overwrite|unpublish/i.test(text)) {
-    return true
-  }
-  const covers = metadata?.covers ?? []
-  return covers.some((cover) => String(cover).includes('register_connection'))
-}
-
-function isSendConfirm(expected, metadata) {
-  if (isWebhookOrUnpublish(expected, metadata)) {
-    return false
-  }
-  const text = [
-    expected.required_question_intent,
-    expected.required_response_intent,
-  ]
-    .filter(Boolean)
-    .join(' ')
-  return /send|slack|sms|message/i.test(text)
-}
-
-function askedToConfirm(output) {
-  return output?.decision === 'clarify' || isClarificationBlock(output)
-}
-
-function dropWarning(expected) {
-  const next = { ...expected }
-  if (next.required_fields) {
-    const fields = { ...next.required_fields }
-    delete fields.warning
-    if (Object.keys(fields).length === 0) {
-      delete next.required_fields
-    } else {
-      next.required_fields = fields
-    }
-  }
-  return next
-}
-
 function widenClarify(expected) {
   return {
     ...expected,
@@ -148,25 +104,20 @@ export function proposeImprovement(failure) {
     }
   }
 
+  if (isSafetyRow(metadata, metadata?.covers)) {
+    return {
+      action: 'skip',
+      reason:
+        'Safety row. A human decides whether the gold is wrong. Do not relax it from a failure.',
+    }
+  }
+
   if (expected.decision === 'clarify' && isClarificationBlock(output)) {
     return {
       action: 'update',
       reason:
         'Production asks with a CLARIFICATION_DATA block. Gold only allowed prose clarify.',
       expectedOutput: widenClarify(expected),
-    }
-  }
-
-  if (
-    expected.required_fields?.warning === true &&
-    isSendConfirm(expected, metadata) &&
-    askedToConfirm(output)
-  ) {
-    return {
-      action: 'update',
-      reason:
-        'A real send asks for confirmation. It does not use the FormSG webhook warning flag.',
-      expectedOutput: dropWarning(expected),
     }
   }
 

@@ -1,3 +1,7 @@
+import { createHash } from 'node:crypto'
+
+import { isSafetyRow } from './safety.mjs'
+
 async function listAll(fetchPage) {
   const rows = []
   let page = 1
@@ -66,11 +70,46 @@ async function mapPool(items, limit, mapper) {
   return results
 }
 
-function isFalseScore(score) {
-  if (score.value === 0) {
+/**
+ * The judge is Boolean. Only an explicit true or false counts.
+ * A null, NaN or fractional score is a judge failure, not a pass.
+ */
+export function scoreOutcome(score) {
+  if (!score) {
+    return null
+  }
+  const text = String(score.stringValue ?? '').toLowerCase()
+  if (score.value === 1 || text === 'true') {
     return true
   }
-  return String(score.stringValue ?? '').toLowerCase() === 'false'
+  if (score.value === 0 || text === 'false') {
+    return false
+  }
+  return null
+}
+
+function canonical(value) {
+  if (Array.isArray(value)) {
+    return value.map(canonical)
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonical(value[key])]),
+    )
+  }
+  return value
+}
+
+/**
+ * Lets compare detect a gold edit between two runs.
+ */
+export function goldHash(expectedOutput) {
+  return createHash('sha256')
+    .update(JSON.stringify(canonical(expectedOutput ?? null)))
+    .digest('hex')
+    .slice(0, 16)
 }
 
 // The Langfuse UI appends a timestamp to the run name the user types.
@@ -148,9 +187,10 @@ export async function readEvalRun(client, options) {
     },
   )
 
-  const failed = rows.filter((row) => row.score && isFalseScore(row.score))
-  const passed = rows.filter((row) => row.score && !isFalseScore(row.score))
-  const unscored = rows.filter((row) => !row.score)
+  const outcomeOf = (row) => scoreOutcome(row.score)
+  const failed = rows.filter((row) => outcomeOf(row) === false)
+  const passed = rows.filter((row) => outcomeOf(row) === true)
+  const unscored = rows.filter((row) => outcomeOf(row) === null)
 
   return {
     datasetName,
@@ -168,8 +208,10 @@ export async function readEvalRun(client, options) {
       datasetItemId: row.datasetItemId,
       scenario: row.scenario,
       covers: row.covers,
+      safety: isSafetyRow(row.metadata, row.covers),
+      goldHash: goldHash(row.expectedOutput),
       traceId: row.traceId,
-      passed: row.score ? !isFalseScore(row.score) : null,
+      passed: outcomeOf(row),
       comment: row.score?.comment ?? null,
     })),
     failures: failed,

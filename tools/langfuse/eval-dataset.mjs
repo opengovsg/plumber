@@ -13,7 +13,7 @@
  *   pnpm run eval-dataset push     --items=datasets/<name>/items.json --dataset=<langfuse dataset> [--archive-missing]
  *   pnpm run eval-dataset read     --dataset=<langfuse dataset> [--run=<run name>] [--score=tool_intent_correctness]
  *   pnpm run eval-dataset compare  --baseline=out/<dataset>/<run-a>.json --candidate=out/<dataset>/<run-b>.json
- *   pnpm run eval-dataset improve  --report=out/<dataset>/<run>.json [--items=<path>] [--apply] [--push --dataset=<name>]
+ *   pnpm run eval-dataset improve  --report=out/<dataset>/<run>.json [--items=<path>] [--apply [--push --dataset=<name>]]
  *   node eval-dataset.mjs calibrate --report=out/<dataset>/<run>.json[,<run2>.json] --dataset=<name> [--labels=<path>] [--min=0.9] [--write-template [--append] [--only=pass|fail] [--per-class=50]]
  *
  * --items defaults to datasets/<dataset>/items.json when --dataset is given.
@@ -388,6 +388,15 @@ function validateCommand(flags) {
       readJson(itemsFile),
       tools,
     )
+    const totalForbidden = readJson(itemsFile).reduce(
+      (sum, item) => sum + (expectedOutputOf(item)?.must_not_tools?.length ?? 0),
+      0,
+    )
+    if (removed.length > 0 && removed.length === totalForbidden) {
+      throw new Error(
+        `--fix would remove every must_not_tools entry (${totalForbidden}). The backend tool list is probably wrong. Nothing was changed.`,
+      )
+    }
     if (removed.length > 0) {
       writeJson(itemsFile, fixed)
     }
@@ -516,6 +525,11 @@ function compareCommand(flags) {
 }
 
 function improveCommand(flags) {
+  if (flags.push && !flags.apply) {
+    throw new Error(
+      '--push requires --apply so the local items.json and Langfuse stay in sync.',
+    )
+  }
   const reportFile = requireFlag(flags, 'report', 'improve')
   const report = readJson(reportFile)
   const proposals = proposeAll(report.failures ?? [])
@@ -532,6 +546,7 @@ function improveCommand(flags) {
     `Wrote ${outPath} (${summary.update} updates, ${summary.skip} left for review, ${summary.judge_miss} judge misses)`,
   )
 
+  let appliedItems = null
   if (flags.apply) {
     const target = resolve(
       itemsFlag(
@@ -542,13 +557,14 @@ function improveCommand(flags) {
     const items = readJson(target)
     const applied = applyProposals(items, proposals)
     writeJson(target, applied.items)
+    appliedItems = applied.items
     console.log(`Updated ${applied.applied} rows in ${target}`)
   }
 
-  return { report, proposals }
+  return { report, proposals, appliedItems }
 }
 
-async function pushProposals(flags, report, proposals) {
+async function pushProposals(flags, report, proposals, items) {
   const datasetName = flags.dataset ?? report.datasetName
   if (!datasetName) {
     throw new Error(
@@ -558,10 +574,22 @@ async function pushProposals(flags, report, proposals) {
   const client = await langfuseClient(flags)
   const updates = proposals.filter((proposal) => proposal.action === 'update')
   for (const proposal of updates) {
+    const item = items.find(
+      (entry) => entry.metadata?.scenario === proposal.scenario,
+    )
+    if (!item) {
+      throw new Error(
+        `No local item for scenario "${proposal.scenario}". Pull the dataset first.`,
+      )
+    }
+    // Send the whole item so the upsert cannot drop input or metadata.
     await client.api.datasetItems.create({
       datasetName,
-      id: proposal.datasetItemId,
-      expectedOutput: proposal.expectedOutput,
+      id: itemId(item),
+      input: item.input,
+      expectedOutput: expectedOutputOf(item),
+      metadata: item.metadata,
+      status: 'ACTIVE',
     })
     console.log(`Pushed ${proposal.scenario ?? proposal.datasetItemId}`)
   }
@@ -583,7 +611,12 @@ const COMMANDS = {
   improve: async (flags) => {
     const result = improveCommand(flags)
     if (flags.push) {
-      await pushProposals(flags, result.report, result.proposals)
+      await pushProposals(
+        flags,
+        result.report,
+        result.proposals,
+        result.appliedItems,
+      )
     }
   },
 }

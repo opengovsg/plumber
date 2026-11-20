@@ -29,6 +29,7 @@ export function compareRuns(baseline, candidate, options = {}) {
   const fixed = []
   const broken = []
   const unscored = []
+  const goldChanged = []
   const onlyInBaseline = []
   const onlyInCandidate = []
 
@@ -42,8 +43,14 @@ export function compareRuns(baseline, candidate, options = {}) {
       unscored.push(key)
       continue
     }
+    // A gold edit between runs makes the pair measure the edit, not the prompt.
+    if (before.goldHash && row.goldHash && before.goldHash !== row.goldHash) {
+      goldChanged.push(key)
+      continue
+    }
     const entry = {
       scenario: key,
+      safety: Boolean(row.safety || before.safety),
       baselineTraceId: before.traceId,
       candidateTraceId: row.traceId,
       comment: row.comment ?? null,
@@ -78,7 +85,12 @@ export function compareRuns(baseline, candidate, options = {}) {
   }
   for (const [key, row] of cand) {
     const before = base.get(key)
-    if (!before || before.passed == null || row.passed == null) {
+    if (
+      !before ||
+      before.passed == null ||
+      row.passed == null ||
+      goldChanged.includes(key)
+    ) {
       continue
     }
     for (const tag of new Set([...sliceOf(row), ...sliceOf(before)])) {
@@ -103,8 +115,17 @@ export function compareRuns(baseline, candidate, options = {}) {
     bothPass.length + bothFail.length + fixed.length + broken.length
   const discordant = fixed.length + broken.length
 
+  const safetyBroken = broken.filter((entry) => entry.safety)
+  const gatedSliceDrops = sliceRows.filter(
+    (slice) => slice.gate && slice.delta < 0,
+  )
+
   let verdict = 'no_change'
-  if (broken.length > 0 && broken.length >= fixed.length) {
+  // A broken safety row or a drop in a large-enough slice is a regression
+  // even when the overall pass rate rose.
+  if (safetyBroken.length > 0 || gatedSliceDrops.length > 0) {
+    verdict = 'regression'
+  } else if (broken.length > 0 && broken.length >= fixed.length) {
     verdict = 'regression'
   } else if (fixed.length > 0 && broken.length === 0) {
     verdict = 'improvement'
@@ -123,6 +144,7 @@ export function compareRuns(baseline, candidate, options = {}) {
       fixed: fixed.length,
       broken: broken.length,
       unscored: unscored.length,
+      goldChanged: goldChanged.length,
       onlyInBaseline: onlyInBaseline.length,
       onlyInCandidate: onlyInCandidate.length,
     },
@@ -132,6 +154,8 @@ export function compareRuns(baseline, candidate, options = {}) {
     broken,
     bothFail,
     unscored,
+    goldChanged,
+    safetyBroken,
     onlyInBaseline,
     onlyInCandidate,
     slices: sliceRows,
@@ -155,14 +179,22 @@ export function formatCompare(result) {
   )
   if (
     result.counts.unscored ||
+    result.counts.goldChanged ||
     result.counts.onlyInBaseline ||
     result.counts.onlyInCandidate
   ) {
     lines.push(
-      `skipped: unscored ${result.counts.unscored}, only in baseline ${result.counts.onlyInBaseline}, only in candidate ${result.counts.onlyInCandidate}`,
+      `skipped: unscored ${result.counts.unscored}, gold changed ${result.counts.goldChanged}, only in baseline ${result.counts.onlyInBaseline}, only in candidate ${result.counts.onlyInCandidate}`,
     )
   }
   lines.push(`verdict: ${result.verdict}`)
+  if (result.safetyBroken.length > 0) {
+    lines.push(
+      `safety rows broken: ${result.safetyBroken
+        .map((entry) => entry.scenario)
+        .join(', ')}`,
+    )
+  }
   if (result.discordant > 0 && result.discordant < 20) {
     lines.push(
       `only ${result.discordant} rows moved. Below 20 flips this is noise unless the same rows flip again on a re-run.`,

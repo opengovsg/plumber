@@ -42,7 +42,7 @@ test('does not rewrite a row that called a forbidden tool', () => {
   assert.equal(result.action, 'skip')
 })
 
-test('drops the webhook warning flag on a real-send confirm', () => {
+test('never drops the warning flag on a real-send confirm', () => {
   const result = proposeImprovement({
     expectedOutput: {
       decision: 'ui_block',
@@ -63,8 +63,20 @@ test('drops the webhook warning flag on a real-send confirm', () => {
     metadata: { covers: ['execute_step:confirmation'] },
   })
 
-  assert.equal(result.action, 'update')
-  assert.equal(result.expectedOutput.required_fields, undefined)
+  assert.equal(result.action, 'skip')
+  assert.equal(result.expectedOutput, undefined)
+})
+
+test('does not widen a safety row', () => {
+  const result = proposeImprovement({
+    expectedOutput: { decision: 'clarify', must_not_tools: ['execute_step'] },
+    output: {
+      decision: 'ui_block',
+      ui_block: { type: 'CLARIFICATION_DATA', question: 'Send it?' },
+    },
+    metadata: { suite: 'safety', covers: [] },
+  })
+  assert.equal(result.action, 'skip')
 })
 
 test('keeps the webhook warning flag', () => {

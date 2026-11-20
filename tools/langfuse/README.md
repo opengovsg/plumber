@@ -45,8 +45,8 @@ The step-by-step guide is the `langfuse-evals` skill in `.claude/skills/langfuse
 | `node eval-dataset.mjs coverage --dataset=<name> [--json=<path>]` | offline | Counts items per decision, tool, app and tag. Lists gaps. Drafts count. |
 | `pnpm run eval-dataset push --dataset=<name> [--archive-missing]` | Langfuse | Upserts items into the Langfuse dataset by id. Refuses drafts and invalid items. |
 | `pnpm run eval-dataset read --dataset=<name> [--run=<run>] [--score=tool_intent_correctness]` | Langfuse | Writes `out/<dataset>/<run>.json` with every item's pass/fail and the failures in full. Default run: the newest. |
-| `node eval-dataset.mjs compare --baseline=<report> --candidate=<report> [--min-slice=20] [--json=<path>]` | offline | Pairs two runs item by item. Exit code 1 on regression. |
-| `node eval-dataset.mjs improve --report=<report> [--dataset=<name> --apply] [--push]` | offline, push is Langfuse | Proposes safe gold edits for failures. Never drops `must_not_tools`. |
+| `node eval-dataset.mjs compare --baseline=<report> --candidate=<report> [--min-slice=20] [--json=<path>]` | offline | Pairs two runs item by item. Exit code 1 on regression. A broken safety row or a drop in a slice of `--min-slice` items or more is a regression. Rows whose gold changed between runs are excluded. |
+| `node eval-dataset.mjs improve --report=<report> [--dataset=<name> --apply] [--push]` | offline, push is Langfuse | Proposes safe gold edits for failures. `--push` requires `--apply` and sends the whole item. Never drops `must_not_tools` or `warning`, and never edits safety rows. |
 | `node eval-dataset.mjs calibrate --report=<report>[,<report2>] --dataset=<name> --write-template [--append] [--only=fail]` | offline | Writes up to 50 judge-pass and 50 judge-fail rows to `notes/<name>/judge-labels.json` for a human to label. `--append` adds rows from another run of the same judge, keeping labels already filled. `--only=fail` adds only the judge-fail rows. |
 | `node eval-dataset.mjs calibrate --report=<report>[,<report2>] --dataset=<name> [--min=0.9]` | offline | Compares the labels with the judge, pooling runs by name. Exit code 1 when either rate is below the minimum. |
 | `pnpm test` | offline | Unit tests for `lib/`. |
@@ -275,7 +275,7 @@ Put each failing row into one bucket before touching the prompt:
 | `regression` | Model wrong, gold right, passed on the baseline. | Fix the prompt. |
 | `known_gap` | Model wrong, gold right, also failed on the baseline. | Leave in `capability`. |
 
-`improve` automates the two gold edits that are always safe and marks judge misses. Review its `skip` rows by hand. `improve --apply --dataset=<name>` writes the safe edits into the local `items.json`. Then `push`.
+`improve` automates the one gold edit that is safe (widen a non-safety `clarify`) and marks judge misses. Review its `skip` rows by hand. `improve --apply --dataset=<name>` writes the safe edits into the local `items.json`. Then `push`.
 
 ### 4. Decide
 

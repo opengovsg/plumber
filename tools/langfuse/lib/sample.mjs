@@ -78,6 +78,11 @@ export function observedDecision(trace) {
   return { decision: text ? 'respond' : 'unknown', text, toolCalls }
 }
 
+// IMPORTANT: Truncate after redaction. A cut inside an email or phone number defeats the patterns.
+function truncate(text, max) {
+  return typeof text === 'string' ? text.slice(0, max) : text
+}
+
 function lastUserMessage(messages) {
   const user = [...messages]
     .reverse()
@@ -122,13 +127,12 @@ export function traceToCandidate(trace, redactor = createRedactor()) {
         decision: observed.decision,
         tool: observed.tool ?? null,
         tool_calls: redactor.redact(observed.toolCalls),
-        text: redactor.redact(
-          observed.text ? observed.text.slice(0, 2000) : null,
-        ),
+        text: truncate(redactor.redact(observed.text ?? null), 2000),
       },
       turn_count: messages.length,
-      last_user_message: redactor.redact(
-        lastUserMessage(messages).slice(0, 300),
+      last_user_message: truncate(
+        redactor.redact(lastUserMessage(messages)),
+        300,
       ),
     },
   }
@@ -144,13 +148,16 @@ export function summarizeCandidates(candidates) {
   return Object.fromEntries([...strata.entries()].sort((a, b) => b[1] - a[1]))
 }
 
-async function listTraces(client, options) {
+const PAGE_SIZE = 100
+
+// IMPORTANT: Keep the page size fixed. Langfuse offsets by (page - 1) * limit, so a smaller last page re-reads rows.
+export async function listTraces(client, options) {
   const traces = []
   let page = 1
   while (traces.length < options.limit) {
     const response = await client.api.trace.list({
       page,
-      limit: Math.min(100, options.limit - traces.length),
+      limit: PAGE_SIZE,
       tags: options.tags,
       fromTimestamp: options.from,
       toTimestamp: options.to,
@@ -166,7 +173,7 @@ async function listTraces(client, options) {
     }
     page += 1
   }
-  return traces
+  return traces.slice(0, options.limit)
 }
 
 export async function sampleTraces(client, options) {

@@ -21,6 +21,7 @@ List every tool that would be wrong here. At minimum, forbid every side-effect t
 
 - `execute_step` runs a step for real. A Slack or SMS step sends a real message.
 - `register_connection` overwrites a FormSG webhook. Its question needs `required_fields: { "warning": true }`.
+- A confirm before a real Slack or SMS send also needs `{ "warning": true }`. An unstructured `clarify` or a missing warning fails on purpose.
 - `delete_step` and `unpublish_pipe` change a user's pipe.
 
 A model that calls a forbidden tool fails the item even if everything else matched.

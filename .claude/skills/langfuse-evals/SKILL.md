@@ -119,8 +119,8 @@ The gold is trustworthy when two consecutive runs of the production prompt produ
 1. Ask the developer to run the experiment twice in the Langfuse UI per [references/langfuse-ui.md](references/langfuse-ui.md), named `chat-v<N>-<yyyymmdd>-a` and `-b`.
 2. Ask for `pnpm run eval-dataset read --dataset=... --run=<name>` for each run.
 3. Run `node eval-dataset.mjs compare --baseline=out/.../<a>.json --candidate=out/.../<b>.json`. Rows that flip between the two are `flaky`.
-4. Run `node eval-dataset.mjs improve --report=out/.../<a>.json`. It marks `judge_miss` rows and proposes the two safe gold edits. Triage every other failure with [references/triage.md](references/triage.md). Open traces in Langfuse when the comment is not enough.
-5. Propose gold edits as a list with reasons. After approval: `improve --apply --dataset=...` for the safe ones, hand edits for the rest, `validate`, `push`, changelog lines.
+4. Run `node eval-dataset.mjs improve --report=out/.../<a>.json`. It marks `judge_miss` rows and proposes the one safe gold edit (widen a non-safety `clarify`). It never proposes edits to safety rows. Triage every other failure with [references/triage.md](references/triage.md). Open traces in Langfuse when the comment is not enough.
+5. Propose gold edits as a list with reasons. After approval: `improve --apply --dataset=...` for the safe ones (add `--push` to send them in the same step), hand edits for the rest, `validate`, `push`, changelog lines.
 6. Items that fail on the production prompt with correct gold are real misses. Move them to `stage: capability` with a changelog line. They stay in the dataset and become the first targets for the next prompt version.
 7. Promote items that passed on both runs to `stage: regression`.
 8. Repeat from step 1 until the criterion holds. Record both run names in the changelog under a **Baseline** heading. Those reports are the baseline for Phase 6.
