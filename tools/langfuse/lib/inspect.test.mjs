@@ -22,6 +22,6 @@ test('summarises shapes without item content', () => {
     '"contract"': 1,
   })
   const text = formatInspection(report)
-  assert.match(text, /suite values:\n  "journey": 1/)
+  assert.match(text, /suite values:\n {2}"journey": 1/)
   assert.doesNotMatch(text, /Facility booking/)
 })

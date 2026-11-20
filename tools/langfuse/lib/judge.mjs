@@ -89,7 +89,9 @@ export function templateSkeleton(
 
 /** Joins a generation input (string, message array or object) into one text. */
 export function generationText(input) {
-  if (typeof input === 'string') return input
+  if (typeof input === 'string') {
+    return input
+  }
   if (Array.isArray(input)) {
     return input
       .map((message) =>

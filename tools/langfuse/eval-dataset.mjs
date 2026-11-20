@@ -389,7 +389,8 @@ function validateCommand(flags) {
       tools,
     )
     const totalForbidden = readJson(itemsFile).reduce(
-      (sum, item) => sum + (expectedOutputOf(item)?.must_not_tools?.length ?? 0),
+      (sum, item) =>
+        sum + (expectedOutputOf(item)?.must_not_tools?.length ?? 0),
       0,
     )
     if (removed.length > 0 && removed.length === totalForbidden) {

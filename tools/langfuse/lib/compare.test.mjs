@@ -57,7 +57,7 @@ test('pairs rows and classifies flips', () => {
   assert.equal(slice.gate, true)
   assert.match(
     formatCompare(result),
-    /Broken \(pass -> fail\):\n- c  trace v2_c  judge said no/,
+    /Broken \(pass -> fail\):\n- c {2}trace v2_c {2}judge said no/,
   )
 })
 

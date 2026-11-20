@@ -41,7 +41,9 @@ function parseArgs(argv) {
   const flags = {}
   for (const arg of rest) {
     const match = /^--([^=]+)=(.*)$/.exec(arg)
-    if (match) flags[match[1]] = match[2]
+    if (match) {
+      flags[match[1]] = match[2]
+    }
   }
   return {
     name,
@@ -78,7 +80,9 @@ async function listEvaluators(credentials) {
   let cursor
   do {
     const query = new URLSearchParams({ limit: '100' })
-    if (cursor) query.set('cursor', cursor)
+    if (cursor) {
+      query.set('cursor', cursor)
+    }
     const page = await getJson(
       credentials,
       `/api/public/v2/evaluators?${query}`,
@@ -93,7 +97,9 @@ async function findVersion(credentials, evaluatorId, version) {
   let cursor
   do {
     const query = new URLSearchParams({ limit: '100' })
-    if (cursor) query.set('cursor', cursor)
+    if (cursor) {
+      query.set('cursor', cursor)
+    }
     const page = await getJson(
       credentials,
       `/api/public/v2/evaluators/${evaluatorId}/versions?${query}`,
@@ -101,7 +107,9 @@ async function findVersion(credentials, evaluatorId, version) {
     const hit = (page.data ?? page.versions ?? []).find(
       (entry) => Number(entry.version) === version,
     )
-    if (hit) return hit
+    if (hit) {
+      return hit
+    }
     cursor = page.meta?.nextCursor ?? page.nextCursor ?? null
   } while (cursor)
   throw new Error(`Evaluator ${evaluatorId} has no version ${version}.`)
@@ -206,7 +214,9 @@ async function main() {
   try {
     evaluators = await listEvaluators(credentials)
   } catch (error) {
-    if (error.status !== 404) throw error
+    if (error.status !== 404) {
+      throw error
+    }
     console.log(
       'This Langfuse has no /v2/evaluators endpoint. Reading the newest judge execution trace instead.',
     )
@@ -215,7 +225,9 @@ async function main() {
       `Source: ${source}.`,
     ])
     console.log(`Saved ${name} (from ${source}) to ${outPath}`)
-    if (diff) showDiff(diff, prompt)
+    if (diff) {
+      showDiff(diff, prompt)
+    }
     return
   }
 
@@ -257,7 +269,9 @@ async function main() {
   }
   const outPath = saveJudge(outDir, name, resolvedVersion, prompt, notes)
   console.log(`Saved ${name} v${resolvedVersion} to ${outPath}`)
-  if (diff) showDiff(diff, prompt)
+  if (diff) {
+    showDiff(diff, prompt)
+  }
 }
 
 main().catch((error) => {

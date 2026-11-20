@@ -8,7 +8,10 @@ const PATTERNS = [
   { kind: 'NRIC', regex: /\b[STFGM]\d{7}[A-Z]\b/gi },
   { kind: 'SECRET', regex: /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}/g },
   { kind: 'SECRET', regex: /\b(?:xox[abprs]|sk|pk)-[A-Za-z0-9-]{10,}/g },
-  { kind: 'SECRET', regex: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g },
+  {
+    kind: 'SECRET',
+    regex: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g,
+  },
   { kind: 'PHONE', regex: /(?<!\d)(?:\+65[ -]?)?[3689]\d{3}[ -]?\d{4}(?!\d)/g },
 ]
 
