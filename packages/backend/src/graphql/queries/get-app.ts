@@ -38,11 +38,14 @@ const getSharedConnections = async (
       // in the rare case that the connection was deleted or not found
       // flowConnection.connection is null, which will throw error
       // when we attempt to assign the description
-      .filter((flowConnection) => flowConnection?.connection)
-      .map((flowConnection) =>
-        Object.assign(flowConnection?.connection, {
-          description: 'This connection can only be used in this pipe.',
-        }),
+      .flatMap((flowConnection) =>
+        flowConnection.connection
+          ? [
+              Object.assign(flowConnection.connection, {
+                description: 'This connection can only be used in this pipe.',
+              }),
+            ]
+          : [],
       ),
   }
 }
@@ -73,6 +76,9 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
       }
     }
 
+    if (!app.auth.getSystemAddedConnections) {
+      throw new Error('System-added app does not list its connections')
+    }
     const connections = await app.auth.getSystemAddedConnections(
       context.currentUser,
     )
@@ -92,7 +98,7 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
      * it is not provided at the 'My Apps' page, so no need to fetch shared connections
      */
 
-    if (params.flowId) {
+    if (flowId) {
       const { sharedConnections: sharedConnectionsFromFlow, flowRole } =
         await getSharedConnections(context, flowId, key, false)
 

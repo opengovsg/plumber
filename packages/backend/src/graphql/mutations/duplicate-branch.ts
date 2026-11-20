@@ -18,6 +18,22 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
   context,
 ) => {
   const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const flowId = input.flow?.id
+  const flowUpdatedAt = input.flow?.updatedAt
+  const firstPreviousStepId = input.previousStep?.id
+  if (!flowId || !flowUpdatedAt) {
+    throw new BadUserInputError('Missing flow')
+  }
+  if (!firstPreviousStepId) {
+    throw new BadUserInputError('Missing previousStep')
+  }
+  if (!input.steps) {
+    throw new BadUserInputError('Missing steps')
+  }
+  const inputSteps = input.steps
 
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
@@ -27,17 +43,20 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
     const flow = await context.currentUser
       .withAccessibleFlows({ trx, requiredRole: 'editor' })
       .findOne({
-        id: input.flow.id,
+        id: flowId,
       })
       .throwIfNotFound()
 
-    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     // create all the steps in the transaction so that if any fails
     // this entire query fails
     const newSteps: Step[] = []
-    let previousStepId = input.previousStep.id
-    for (const branchStep of input.steps) {
+    let previousStepId = firstPreviousStepId
+    for (const branchStep of inputSteps) {
+      if (!branchStep) {
+        throw new BadUserInputError('Missing step')
+      }
       const { connection, key, appKey, parameters, config } = branchStep
 
       // if connectionId is specified, verify that the connection exists
@@ -83,14 +102,14 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
       const sanitizedConfig = sanitizeServerSideConfig(config as IStepConfig)
 
       const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
-        key,
-        appKey,
+        key: key ?? undefined,
+        appKey: appKey ?? undefined,
         type: 'action',
         position: previousStep.position + 1,
-        parameters,
-        connectionId: connection?.id,
+        parameters: parameters ?? undefined,
+        connectionId: connection?.id ?? undefined,
         config: sanitizedConfig,
-        version: getStepVersion(appKey, key),
+        version: getStepVersion(appKey ?? undefined, key ?? undefined),
       })
 
       newSteps.push(step)
@@ -107,7 +126,7 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
     await remapEndStepIdsOnDuplicateBranch({
       trx,
       flow,
-      previousStepId: input.previousStep.id,
+      previousStepId: firstPreviousStepId,
       newSteps,
     })
 

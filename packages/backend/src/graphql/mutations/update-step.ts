@@ -19,16 +19,41 @@ const updateStep: MutationResolvers['updateStep'] = async (
   context,
 ) => {
   const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const {
+    id,
+    appKey,
+    key,
+    connection: inputConnection,
+    flow: inputFlow,
+    parameters: inputParameters,
+  } = input
+  if (!id) {
+    throw new BadUserInputError('Missing id')
+  }
+  if (!appKey || !key) {
+    throw new BadUserInputError('Missing appKey or key')
+  }
+  if (!inputConnection) {
+    throw new BadUserInputError('Missing connection')
+  }
+  if (!inputFlow?.id || !inputFlow.updatedAt) {
+    throw new BadUserInputError('Missing flow')
+  }
+  if (!inputParameters) {
+    throw new BadUserInputError('Missing parameters')
+  }
+  const flowId = inputFlow.id
+  const flowUpdatedAt = inputFlow.updatedAt
 
-  const triggerOrAction = await App.findTriggerOrActionByKey(
-    input.appKey,
-    input.key,
-  )
+  const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
   if (!triggerOrAction) {
     logger.error({
       event: 'updateStep: no such trigger or action',
-      appKey: input.appKey,
-      key: input.key,
+      appKey,
+      key,
     })
     throw new BadUserInputError('No such trigger or action')
   }
@@ -37,32 +62,29 @@ const updateStep: MutationResolvers['updateStep'] = async (
     const step = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .findOne({
-        'steps.id': input.id,
-        'steps.flow_id': input.flow.id,
+        'steps.id': id,
+        'steps.flow_id': flowId,
       })
 
     if (!step) {
       throw new BadUserInputError('Step not found')
     }
 
-    step.flow.assertNotUpdatedSince(
-      input.flow.updatedAt,
-      context.currentUser.id,
-    )
+    step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
-    if (input.connection.id) {
+    if (inputConnection.id) {
       // if connectionId is specified, verify that the connection exists
       // this prevents editors from adding their own connections, only flow connections can be added
       const connection = await getConnection({
         context,
-        connectionId: input.connection.id,
-        flowId: input.flow.id,
+        connectionId: inputConnection.id,
+        flowId,
         includeOwnConnections: step.flow.role === 'owner',
         trx,
       })
 
       // we check that the connection exists and is the same app
-      if (!connection || connection.key !== input.appKey) {
+      if (!connection || connection.key !== appKey) {
         throw new BadUserInputError('Connection not found')
       }
     }
@@ -74,12 +96,12 @@ const updateStep: MutationResolvers['updateStep'] = async (
       if (action?.hiddenFromUser) {
         throw new BadUserInputError('Action can only be updated by system')
       }
-      action?.validateStepParameters?.(input.parameters)
+      action?.validateStepParameters?.(inputParameters)
     }
 
     const shouldInvalidate =
-      step.key !== input.key ||
-      step.appKey !== input.appKey ||
+      step.key !== key ||
+      step.appKey !== appKey ||
       input.status === 'incomplete'
 
     const stepName = input?.config?.stepName ?? step?.config?.stepName
@@ -91,30 +113,28 @@ const updateStep: MutationResolvers['updateStep'] = async (
       trx,
       step,
       inputConfig: input.config,
-      flowId: input.flow.id,
+      flowId,
     })
 
-    let parameters = input.parameters
+    let parameters = inputParameters
     let version = step.version
 
     // transform the parameters if the step has a stepTransformer
-    const transformer = input.key
-      ? apps[input.appKey]?.stepTransformer
-      : undefined
+    const transformer = apps[appKey]?.stepTransformer
     if (transformer) {
       parameters = transformer.transformStepParameters(
-        input.key,
-        input.parameters,
+        key,
+        inputParameters,
         version,
       )
-      version = transformer.getLatestStepVersion(input.key)
+      version = transformer.getLatestStepVersion(key)
     }
 
     const updatedStep = await Step.query(trx)
-      .patchAndFetchById(input.id, {
-        key: input.key,
-        appKey: input.appKey,
-        connectionId: input.connection.id,
+      .patchAndFetchById(id, {
+        key,
+        appKey,
+        connectionId: inputConnection.id,
         parameters,
         version,
         status: shouldInvalidate ? 'incomplete' : step.status,
@@ -140,10 +160,10 @@ const updateStep: MutationResolvers['updateStep'] = async (
      * Other connections:
      * 1. add the connection to the flow connections table
      */
-    const appKey = updatedStep?.appKey
+    const updatedAppKey = updatedStep?.appKey
 
     // tiles special handling
-    if (appKey === 'tiles' && updatedStep?.parameters?.tableId) {
+    if (updatedAppKey === 'tiles' && updatedStep?.parameters?.tableId) {
       await addFlowTableConnection({
         flowId: updatedStep.flowId,
         tableId: updatedStep.parameters.tableId as string,

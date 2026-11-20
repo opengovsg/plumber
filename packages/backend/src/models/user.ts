@@ -32,9 +32,9 @@ const ROLE_STMT = `
 class User extends Base {
   id!: string
   email!: string
-  otpHash?: string
+  otpHash?: string | null
   otpAttempts!: number
-  otpSentAt?: Date
+  otpSentAt?: Date | null
   connections?: Connection[]
   flows?: Flow[]
   steps?: Step[]

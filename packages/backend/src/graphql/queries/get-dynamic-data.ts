@@ -27,8 +27,9 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
   if (!step || !step.appKey) {
     return null
   }
+  const { appKey } = step
 
-  const app = apps[step.appKey]
+  const app = apps[appKey]
   const connection = step.connection
 
   // if app requires connection, only proceed if connection has been set up
@@ -57,7 +58,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
     user: shouldUseOwnerUser ? step.flow.user : context.currentUser,
   })
 
-  const command = app.dynamicData.find(
+  const command = app.dynamicData?.find(
     (data) => data.key === dynamicDataKey,
   ) as IDynamicData | undefined
 
@@ -123,11 +124,12 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
             'flow_connections.flow_id': step.flowId,
           })
 
+        const { parameterKey } = APP_CONNECTION_FIELDS[appKey]
         const allowedValues = flowConnections
           .map((flowConnection) => {
-            return flowConnection.metadata[
-              APP_CONNECTION_FIELDS[step.appKey].parameterKey
-            ]
+            return parameterKey
+              ? flowConnection.metadata[parameterKey]
+              : undefined
           })
           .filter((value) => value !== undefined)
           .flat()

@@ -104,7 +104,7 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
         : GroupStatusType.Failure,
     errorDetails: hasError ? {} : null,
     execution,
-    jobId: groupingStep?.jobId,
+    jobId: groupingStep?.jobId ?? undefined,
   })
 
   const groupStatusIcon = useMemo(() => {

@@ -2,7 +2,7 @@
  * TODO: remove this file and reuse test connection endpoint
  */
 
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
 import { getConnection } from '@/services/connection'
@@ -14,17 +14,26 @@ const verifyConnection: MutationResolvers['verifyConnection'] = async (
   params,
   context,
 ) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
-    .findById(params.input.flowId)
+    .findById(input.flowId)
     .throwIfNotFound()
 
   let connection = await getConnection({
     context,
-    connectionId: params.input.id,
-    flowId: params.input.flowId,
+    connectionId: input.id,
+    flowId: input.flowId,
     includeOwnConnections: flow.role === 'owner',
   })
+
+  if (!connection) {
+    throw new BadUserInputError('Connection not found')
+  }
 
   // GUARD: Prevent updating personal connections owned by others
   if (
@@ -39,6 +48,9 @@ const verifyConnection: MutationResolvers['verifyConnection'] = async (
   const app = await App.findOneByKey(connection.key)
   const $ = await globalVariable({ connection, app, user: context.currentUser })
 
+  if (!app.auth?.verifyCredentials) {
+    throw new Error('App does not support credential verification')
+  }
   await app.auth.verifyCredentials($)
 
   // First-time add still needs this write (verified starts false). Skip when

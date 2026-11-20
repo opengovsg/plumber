@@ -106,7 +106,7 @@ describe('Auth helpers', () => {
         },
       )
       const result = parseAdminToken(token)
-      expect(result.userEmail).toEqual('coffee@plumber.local')
+      expect(result!.userEmail).toEqual('coffee@plumber.local')
     })
 
     it('does not accept tokens past a certain age', () => {
@@ -130,7 +130,7 @@ describe('Auth helpers', () => {
         'email',
         'coffee@plumber.local',
       )
-      expect(result.id).toEqual('test-user-id')
+      expect(result!.id).toEqual('test-user-id')
     })
   })
 
@@ -409,6 +409,25 @@ describe('Auth helpers', () => {
 
       expect(mocks.findById).toHaveBeenCalledWith('user-1')
       expect(result).toEqual({ id: 'user-1' })
+    })
+
+    it('returns null when the user no longer exists', async () => {
+      const token = signToken({ userId: 'user-1' })
+      const req = { cookies: { 'plumber.sid': token } } as any
+      mocks.redisExists.mockResolvedValueOnce(0)
+      mocks.findById.mockResolvedValueOnce(undefined)
+
+      await expect(getLoggedInUser(req)).resolves.toBeNull()
+    })
+
+    it('propagates a failed user lookup', async () => {
+      const token = signToken({ userId: 'user-1' })
+      const req = { cookies: { 'plumber.sid': token } } as any
+      const error = new Error('Database unavailable')
+      mocks.redisExists.mockResolvedValueOnce(0)
+      mocks.findById.mockRejectedValueOnce(error)
+
+      await expect(getLoggedInUser(req)).rejects.toBe(error)
     })
 
     it('returns null for a token revoked by a prior logout', async () => {
