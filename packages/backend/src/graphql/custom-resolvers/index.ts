@@ -3,6 +3,7 @@ import ExecutionStep from './execution-step'
 import Flow, { FlowErrorConfig } from './flow'
 import FlowCollaborator from './flow-collaborator'
 import TableMetadata from './table-metadata'
+import Template from './template'
 
 /**
  * Want to create a new resolver or modify an existing resolver?
@@ -22,4 +23,5 @@ export default {
   Flow,
   FlowCollaborator,
   FlowErrorConfig,
+  Template,
 }
