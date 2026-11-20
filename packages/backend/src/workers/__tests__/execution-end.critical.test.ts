@@ -12,6 +12,7 @@ import type { IActionJobData, StepErrorKind } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import RetriableError from '@/errors/retriable-error'
 import StepError, { keepErrorKindViaCause } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 
@@ -100,6 +101,24 @@ describe('execution end count on a failed action job', () => {
     await handleFailedJob(JOB, makeFinalError(stepError), 'queue')
 
     expect(getCountedOutcomes()).toEqual([outcome])
+  })
+
+  it('counts a third-party RetriableError that ran out of attempts as third_party', async () => {
+    const lastAttemptJob = { ...JOB, attemptsMade: MAXIMUM_JOB_ATTEMPTS }
+    const retriableError = new RetriableError({
+      error: 'e',
+      delayInMs: 'default',
+      delayType: 'step',
+      kind: 'third-party',
+    })
+
+    await handleFailedJob(
+      lastAttemptJob as unknown as JobPro<IActionJobData>,
+      retriableError,
+      'queue',
+    )
+
+    expect(getCountedOutcomes()).toEqual(['third_party'])
   })
 
   it.each([

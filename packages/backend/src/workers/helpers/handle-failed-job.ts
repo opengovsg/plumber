@@ -72,7 +72,7 @@ export async function handleFailedJob(
   const willRetryJob =
     !(err instanceof UnrecoverableError) && // Not an unrecoverable error
     failedJob.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
-  const kind = getStepErrorKind(err instanceof StepError ? err : err.cause)
+  const kind = getFailedJobKind(err)
 
   // Monitors read this log rather than spans, because logs are not sampled.
   logger.error(
@@ -86,7 +86,7 @@ export async function handleFailedJob(
       attemptsStarted: failedJob.attemptsStarted,
       workerVersion: appConfig.version,
       willRetry: willRetryJob,
-      kind: getFailedJobKind(err),
+      kind,
       appKey: willRetryJob ? undefined : await findAppKey(stepId),
     },
   )
