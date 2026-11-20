@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEMPLATES } from '@/db/storage'
 import createTemplateFromFlow from '@/graphql/mutations/create-template-from-flow'
@@ -9,6 +9,8 @@ import Step from '@/models/step'
 import Template from '@/models/template'
 import User from '@/models/user'
 import Context from '@/types/express/context'
+
+vi.mock('@/helpers/plumpro', () => ({ isPlumPro: async () => true }))
 
 describe('createTemplateFromFlow', () => {
   let owner: User

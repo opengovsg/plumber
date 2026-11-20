@@ -4,14 +4,14 @@ import type { ITemplate } from '@plumber/types'
 import { useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
-import { TemplateIcon } from '@/helpers/flow-templates'
+import { getTemplateIconName, TemplateIcon } from '@/helpers/flow-templates'
 
 interface TemplateTileProps {
-  template: ITemplate
+  template: ITemplate & { isBuiltIn?: boolean }
 }
 
 export default function TemplateTile({ template }: TemplateTileProps) {
-  const { id, name, description, iconName, tags } = template
+  const { id, name, description, iconName, tags, isBuiltIn } = template
   const navigate = useNavigate()
 
   const isDemoTemplate = tags?.some((tag) => tag === 'demo')
@@ -21,7 +21,10 @@ export default function TemplateTile({ template }: TemplateTileProps) {
     <Tile
       icon={() => (
         <Box py={2}>
-          <TemplateIcon iconName={iconName} fontSize="2rem" />
+          <TemplateIcon
+            iconName={getTemplateIconName({ id, iconName, isBuiltIn })}
+            fontSize="2rem"
+          />
         </Box>
       )}
       badge={

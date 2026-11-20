@@ -17,12 +17,12 @@ import { useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
-import { TemplateIcon } from '@/helpers/flow-templates'
+import { getTemplateIconName, TemplateIcon } from '@/helpers/flow-templates'
 
 import TemplateBody from './components/TemplateBody'
 
 interface TemplateProps {
-  template: ITemplate
+  template: ITemplate & { isBuiltIn?: boolean }
   apps: IApp[]
 }
 
@@ -32,7 +32,7 @@ export default function TemplateModal(props: TemplateProps) {
   const navigate = useNavigate()
   const goToTemplatesPage = () => navigate(URLS.TEMPLATES)
 
-  const { id, name, description, iconName, tags, steps } = template
+  const { id, name, description, iconName, tags, steps, isBuiltIn } = template
 
   const isDemoTemplate = tags?.some((tag) => tag === 'demo')
 
@@ -70,7 +70,9 @@ export default function TemplateModal(props: TemplateProps) {
             <Flex alignItems="center" columnGap={4}>
               <Hide below="md">
                 <Box bg="primary.100" p={2} borderRadius="base">
-                  <TemplateIcon iconName={iconName} />
+                  <TemplateIcon
+                    iconName={getTemplateIconName({ id, iconName, isBuiltIn })}
+                  />
                 </Box>
               </Hide>
 

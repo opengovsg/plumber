@@ -18,6 +18,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-router-dom')>()),
   useNavigate: () => vi.fn(),
 }))
+vi.mock('@/hooks/useIsPlumPro', () => ({ default: () => true }))
 
 import ThemeProvider from '@/components/ThemeProvider'
 
