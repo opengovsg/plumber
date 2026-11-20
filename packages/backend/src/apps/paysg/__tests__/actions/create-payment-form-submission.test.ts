@@ -51,7 +51,7 @@ describe('create payment form submission', () => {
   })
 
   it('posts to the form submission URL', async () => {
-    await action.run($)
+    await action.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/v1/payment-services/:paymentServiceId/forms/:formId/submissions',
@@ -69,7 +69,7 @@ describe('create payment form submission', () => {
   it('throws a config StepError when a field is invalid', async () => {
     $.step.parameters.formId = 'https://example.com/forms/sample-form-id'
 
-    await expect(action.run($)).rejects.toMatchObject({
+    await expect(action.run!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining(
         '"name":"Invalid payment form link under set up step"',
@@ -88,7 +88,7 @@ describe('create payment form submission', () => {
       const httpError = makeHttpError({ status })
       mocks.httpPost.mockRejectedValueOnce(httpError as never)
 
-      await expect(action.run($)).rejects.toMatchObject({
+      await expect(action.run!($)).rejects.toMatchObject({
         kind,
         cause: httpError,
       })

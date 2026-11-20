@@ -46,7 +46,7 @@ describe('create row', () => {
   })
 
   it('inserts the row', async () => {
-    await createRowAction.run($)
+    await createRowAction.run!($)
 
     expect(mocks.executeStatement).toHaveBeenCalledWith(
       'INSERT INTO `my_table` (`name`) VALUES (:val0)',
@@ -59,7 +59,7 @@ describe('create row', () => {
   it('throws a config StepError when parameters are invalid', async () => {
     $.step.parameters = { tableName: 'my_table', rowData: [] }
 
-    await expect(createRowAction.run($)).rejects.toMatchObject({
+    await expect(createRowAction.run!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining(
         '"name":"Ensure your values are correct"',
@@ -73,7 +73,7 @@ describe('create row', () => {
       new Error('Failed to connect to Databricks'),
     )
 
-    const error = await createRowAction.run($).catch((e) => e)
+    const error = await createRowAction.run!($).catch((e) => e)
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({
@@ -88,7 +88,7 @@ describe('create row', () => {
       new Error('[UNRESOLVED_COLUMN] column `name` cannot be resolved'),
     )
 
-    const error = await createRowAction.run($).catch((e) => e)
+    const error = await createRowAction.run!($).catch((e) => e)
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({
@@ -102,7 +102,7 @@ describe('create row', () => {
   it('throws a third-party StepError when fetching the result fails', async () => {
     mocks.fetchAll.mockRejectedValue(new Error('Operation timed out'))
 
-    await expect(createRowAction.run($)).rejects.toMatchObject({
+    await expect(createRowAction.run!($)).rejects.toMatchObject({
       kind: 'third-party',
       message: expect.stringContaining('"name":"Failed to create row"'),
     })

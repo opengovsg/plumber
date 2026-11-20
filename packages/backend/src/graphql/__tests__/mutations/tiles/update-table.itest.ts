@@ -16,7 +16,7 @@ import {
 } from './table.mock'
 import { checkIfTableHasColumn } from './tiles-pg-helper'
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'update table mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -89,7 +89,7 @@ describe.each([['ddb'], ['pg']])(
         })
 
         const updatedTable = await updateTable(
-          null,
+          {},
           {
             input: {
               id: dummyTable.id,

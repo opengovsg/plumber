@@ -52,7 +52,7 @@ describe('create case', () => {
   })
 
   it('creates a case', async () => {
-    await createCaseAction.run($)
+    await createCaseAction.run!($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: { data: { caseRef: '261007-00001', uuid: 'case-uuid-1' } },
@@ -64,7 +64,7 @@ describe('create case', () => {
       { field: 'Email', fieldType: 'email', value: 'not-an-email' },
     ]
 
-    await expect(createCaseAction.run($)).rejects.toMatchObject({
+    await expect(createCaseAction.run!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining(
         'caseFields: Invalid email for field: Email',
@@ -76,7 +76,7 @@ describe('create case', () => {
   it('tags an empty case type as config', async () => {
     $.step.parameters.caseType = ''
 
-    await expect(createCaseAction.run($)).rejects.toMatchObject({
+    await expect(createCaseAction.run!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining('caseType: Case type empty'),
     })
@@ -85,7 +85,7 @@ describe('create case', () => {
   it('tags an unexpected create response as internal', async () => {
     httpPost.mockResolvedValueOnce({ data: { data: { uuid: 'case-uuid-1' } } })
 
-    await expect(createCaseAction.run($)).rejects.toMatchObject({
+    await expect(createCaseAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
       message: expect.stringContaining('"name":"data:'),
     })
@@ -105,7 +105,7 @@ describe('create case', () => {
       }),
     )
 
-    await expect(createCaseAction.run($)).rejects.toMatchObject({
+    await expect(createCaseAction.run!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining('Invalid or missing values for: Email'),
     })
@@ -116,7 +116,7 @@ describe('create case', () => {
       makeHttpError({ status: 504, data: '<html>Gateway Timeout</html>' }),
     )
 
-    await expect(createCaseAction.run($)).rejects.toMatchObject({
+    await expect(createCaseAction.run!($)).rejects.toMatchObject({
       kind: 'third-party',
     })
   })
@@ -126,7 +126,7 @@ describe('create case', () => {
     onTestFinished(() => logError.mockRestore())
     httpPost.mockRejectedValueOnce(makeHttpError({ status: 504 }))
 
-    await expect(createCaseAction.run($)).rejects.toThrow()
+    await expect(createCaseAction.run!($)).rejects.toThrow()
 
     expect(logError).toHaveBeenCalledWith('Failed to create case on GatherSG', {
       event: 'gathersg-create-case-failed',
@@ -139,7 +139,7 @@ describe('create case', () => {
   it('tags an unexpected case type response as internal', async () => {
     httpGet.mockResolvedValueOnce({ data: {} })
 
-    await expect(createCaseAction.run($)).rejects.toMatchObject({
+    await expect(createCaseAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
       message: expect.stringContaining('An error occurred:'),
     })

@@ -94,7 +94,7 @@ describe('verifyConnection', () => {
       )
 
       expect(result).toBeDefined()
-      expect(result.id).toBe(ownerConnection.id)
+      expect(result!.id).toBe(ownerConnection.id)
     })
 
     it('should allow editor to verify a flow connection', async () => {
@@ -107,7 +107,7 @@ describe('verifyConnection', () => {
       )
 
       expect(result).toBeDefined()
-      expect(result.id).toBe(collaboratorConnection.id)
+      expect(result!.id).toBe(collaboratorConnection.id)
     })
 
     it('should not allow viewer to verify connection', async () => {
@@ -143,7 +143,7 @@ describe('verifyConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(ownerConnection.id)
+      expect(result!.id).toBe(ownerConnection.id)
       expect(verifyCredentials).toHaveBeenCalledOnce()
     })
 
@@ -181,7 +181,7 @@ describe('verifyConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(collaboratorConnection.id)
+      expect(result!.id).toBe(collaboratorConnection.id)
       expect(verifyCredentials).toHaveBeenCalledOnce()
     })
 
@@ -267,8 +267,8 @@ describe('verifyConnection', () => {
       )
 
       const updated = await Connection.query().findById(ownerConnection.id)
-      expect(updated.verified).toBe(true)
-      expect(updated.draft).toBe(false)
+      expect(updated!.verified).toBe(true)
+      expect(updated!.draft).toBe(false)
     })
 
     it('should not rewrite verified or draft when they are already set', async () => {
@@ -278,15 +278,15 @@ describe('verifyConnection', () => {
       })
 
       await verifyConnection(
-        null,
+        {},
         { input: { id: ownerConnection.id, flowId: testFlow.id } },
         context,
       )
 
       const updated = await Connection.query().findById(ownerConnection.id)
-      expect(updated.verified).toBe(true)
-      expect(updated.draft).toBe(false)
-      expect(updated.updatedAt).toEqual(alreadyVerified.updatedAt)
+      expect(updated!.verified).toBe(true)
+      expect(updated!.draft).toBe(false)
+      expect(updated!.updatedAt).toEqual(alreadyVerified.updatedAt)
     })
 
     it('should call verifyCredentials exactly once', async () => {

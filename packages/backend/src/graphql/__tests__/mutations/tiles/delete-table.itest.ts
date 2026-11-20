@@ -16,7 +16,7 @@ import {
   generateMockTableColumns,
 } from './table.mock'
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'delete table mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context

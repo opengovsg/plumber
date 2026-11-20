@@ -132,7 +132,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Carol', '50')) },
     ]
 
-    await createTableRowAction.runBatch(jobs)
+    await createTableRowAction.runBatch!(jobs)
 
     // Header read once, rows written in a single POST.
     expect(getCalls()).toHaveLength(1)
@@ -158,7 +158,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Carol', '50')) },
     ]
 
-    await createTableRowAction.runBatch(jobs)
+    await createTableRowAction.runBatch!(jobs)
 
     // sheetRowNumber = HEADER_ROW_INDEX + 1 + (firstIndex + i) + 1
     //               = 9 + 1 + (3 + i) + 1 = 14 + i
@@ -178,7 +178,7 @@ describe('createTableRow runBatch', () => {
       $: makeGlobalVariable(rowParameters('=HYPERLINK("http://evil")', '1')),
     }
 
-    await createTableRowAction.runBatch([job])
+    await createTableRowAction.runBatch!([job])
 
     const [, , postConfig] = postCalls()[0]
     expect(postConfig.data.values[0][0]).toBe(`'=HYPERLINK("http://evil")`)
@@ -201,7 +201,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Bob', '40')) },
     ]
 
-    await expect(createTableRowAction.runBatch(jobs)).rejects.toThrow(
+    await expect(createTableRowAction.runBatch!(jobs)).rejects.toThrow(
       'Graph POST failed',
     )
     expect(jobs[0].$.setActionItem).not.toHaveBeenCalled()
@@ -220,7 +220,7 @@ describe('createTableRow runBatch', () => {
       },
     ]
 
-    const results = await createTableRowAction.runBatch(jobs)
+    const results = await createTableRowAction.runBatch!(jobs)
 
     // The valid job committed; the bad one was reported failed and excluded.
     expect(results[0]).toEqual({ status: 'success' })
@@ -257,7 +257,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Carol', '50')) },
     ]
 
-    const results = await createTableRowAction.runBatch(jobs)
+    const results = await createTableRowAction.runBatch!(jobs)
 
     // The bad-column job is isolated; the whole batch is NOT sunk.
     expect(results[0]).toEqual({ status: 'success' })
@@ -302,7 +302,7 @@ describe('createTableRow runBatch', () => {
       },
     ]
 
-    const results = await createTableRowAction.runBatch(jobs)
+    const results = await createTableRowAction.runBatch!(jobs)
 
     expect(results[0].status).toBe('failed')
     // No valid jobs => no session, no POST.
@@ -318,7 +318,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Carol', '50')) },
     ]
 
-    await createTableRowAction.runBatch(jobs)
+    await createTableRowAction.runBatch!(jobs)
 
     // One access check authorizes the entire batch (every job shares one
     // connection), and all three rows land in the single POST.
@@ -342,7 +342,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Bob', '40')) },
     ]
 
-    const results = await createTableRowAction.runBatch(jobs)
+    const results = await createTableRowAction.runBatch!(jobs)
 
     // The batch shares one connection, so access is checked once and a denial
     // isolates every job - no session, no POST, no outputs.
@@ -375,7 +375,7 @@ describe('createTableRow runBatch', () => {
       { $: makeGlobalVariable(rowParameters('Bob', '40')) },
     ]
 
-    await expect(createTableRowAction.runBatch(jobs)).rejects.toBeInstanceOf(
+    await expect(createTableRowAction.runBatch!(jobs)).rejects.toBeInstanceOf(
       RetriableError,
     )
     // No isolation, no write: the throw routes to the worker's retry path.
@@ -401,7 +401,7 @@ describe('createTableRow runBatch', () => {
         { $: makeGlobalVariable(rowParameters('Bob', '40'), identityOverride) },
       ]
 
-      await expect(createTableRowAction.runBatch(jobs)).rejects.toThrow(
+      await expect(createTableRowAction.runBatch!(jobs)).rejects.toThrow(
         /different access identities/,
       )
       expect(mocks.validateCanAccessFile).not.toHaveBeenCalled()
@@ -421,7 +421,7 @@ describe('createTableRow runBatch', () => {
       },
     ]
 
-    await expect(createTableRowAction.runBatch(jobs)).rejects.toThrow(
+    await expect(createTableRowAction.runBatch!(jobs)).rejects.toThrow(
       /different files or tables/,
     )
     expect(mocks.acquire).not.toHaveBeenCalled()
@@ -434,16 +434,16 @@ describe('createTableRow runBatch', () => {
 
     const jobs = [{ $: makeGlobalVariable(rowParameters('Alice', '30')) }]
 
-    const error = await createTableRowAction
-      .runBatch(jobs)
-      .catch((err: unknown) => err)
+    const error = await createTableRowAction.runBatch!(jobs).catch(
+      (err: unknown) => err,
+    )
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({ kind: 'config' })
     expect(postCalls()).toHaveLength(0)
   })
 
   it('is a no-op for an empty batch', async () => {
-    await expect(createTableRowAction.runBatch([])).resolves.toEqual([])
+    await expect(createTableRowAction.runBatch!([])).resolves.toEqual([])
     expect(mocks.acquire).not.toHaveBeenCalled()
   })
 })
@@ -459,7 +459,7 @@ describe('createTableRow run (single-row delegation)', () => {
   it('delegates to runBatch and produces one row with the right sheetRowNumber', async () => {
     const $ = makeGlobalVariable(rowParameters('Solo', '99'))
 
-    await createTableRowAction.run($)
+    await createTableRowAction.run!($)
 
     expect(postCalls()).toHaveLength(1)
     const [, , postConfig] = postCalls()[0]

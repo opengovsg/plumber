@@ -207,7 +207,7 @@ describe('upsert flow collaborator', () => {
         (fc) => fc.connectionId === connectionId,
       )
       expect(slackConnection).toBeDefined()
-      expect(slackConnection.metadata).toEqual({})
+      expect(slackConnection!.metadata).toEqual({})
 
       // Check tiles connection: table id is the connection id
       const tilesConnection = flowConnections.find(
@@ -519,14 +519,14 @@ describe('upsert flow collaborator', () => {
         (tc) => tc.tableId === tilesTableId1,
       )
       expect(table1Collaborator).toBeDefined()
-      expect(table1Collaborator.role).toBe('editor')
+      expect(table1Collaborator!.role).toBe('editor')
 
       // Check second table collaborator
       const table2Collaborator = tableCollaborators.find(
         (tc) => tc.tableId === tilesTableId2,
       )
       expect(table2Collaborator).toBeDefined()
-      expect(table2Collaborator.role).toBe('editor')
+      expect(table2Collaborator!.role).toBe('editor')
     })
 
     it('should add table collaborators with viewer role when collaborator is viewer', async () => {
@@ -944,7 +944,7 @@ describe('upsert flow collaborator', () => {
         user_id: oldOwner.id,
       })
       expect(tileCollaborator).toBeDefined()
-      expect(tileCollaborator.role).toBe('owner')
+      expect(tileCollaborator!.role).toBe('owner')
     })
 
     it('should succeed when adding Tile owner as viewer (flow was transferred, owner became viewer)', async () => {
@@ -1006,14 +1006,14 @@ describe('upsert flow collaborator', () => {
         user_id: oldOwner.id,
       })
       expect(flowCollab).toBeDefined()
-      expect(flowCollab.role).toBe('viewer')
+      expect(flowCollab!.role).toBe('viewer')
 
       // Verify Tile ownership was NOT changed
       const tileCollab = await TableCollaborator.query().findOne({
         table_id: sharedTileId,
         user_id: oldOwner.id,
       })
-      expect(tileCollab.role).toBe('owner')
+      expect(tileCollab!.role).toBe('owner')
     })
   })
 })

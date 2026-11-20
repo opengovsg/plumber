@@ -168,9 +168,13 @@ describe('lettersg requestErrorHandler', () => {
     async (code) => {
       mockAdapter
         .onPost('/v1/letters')
-        .reply((config: InternalAxiosRequestConfig) =>
+        .reply((config) =>
           Promise.reject(
-            AxiosError.from(new Error(`read ${code}`), code, config),
+            AxiosError.from(
+              new Error(`read ${code}`),
+              code,
+              config as InternalAxiosRequestConfig,
+            ),
           ),
         )
 
@@ -186,8 +190,14 @@ describe('lettersg requestErrorHandler', () => {
     async (code) => {
       mockAdapter
         .onPost('/v1/letters')
-        .reply((config: InternalAxiosRequestConfig) =>
-          Promise.reject(AxiosError.from(new Error(code), code, config)),
+        .reply((config) =>
+          Promise.reject(
+            AxiosError.from(
+              new Error(code),
+              code,
+              config as InternalAxiosRequestConfig,
+            ),
+          ),
         )
 
       const error = await catchStepError(createLetter())

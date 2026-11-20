@@ -222,7 +222,7 @@ describe('retryExecutionStep mutation', () => {
       const updatedExecutionStep = await ExecutionStep.query().findById(
         mockExecutionStep.id,
       )
-      expect(updatedExecutionStep.jobId).toBeNull()
+      expect(updatedExecutionStep!.jobId).toBeNull()
     })
 
     it('should retry job successfully when job exists', async () => {
@@ -274,7 +274,7 @@ describe('retryExecutionStep mutation', () => {
       const updatedExecution = await Execution.query().findById(
         mockExecution.id,
       )
-      expect(updatedExecution.status).toBeNull()
+      expect(updatedExecution!.status).toBeNull()
     })
   })
 
@@ -287,7 +287,7 @@ describe('retryExecutionStep mutation', () => {
 
       const patchIterationStatusSpy = vi
         .spyOn(ExecutionStep, 'patchIterationStatus')
-        .mockResolvedValue(undefined)
+        .mockResolvedValue(undefined!)
 
       const result = await retryExecutionStep(
         {},
@@ -306,7 +306,7 @@ describe('retryExecutionStep mutation', () => {
     it('should not call patchIterationStatus when no iteration metadata', async () => {
       const patchIterationStatusSpy = vi
         .spyOn(ExecutionStep, 'patchIterationStatus')
-        .mockResolvedValue(undefined)
+        .mockResolvedValue(undefined!)
 
       await retryExecutionStep({}, { input: genericInputParams }, context)
 

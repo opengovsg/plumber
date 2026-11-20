@@ -34,7 +34,7 @@ describe('updateStep mutation', () => {
   let viewer: User
   let nonCollaborator: User
   let testFlow: Flow
-  let testFlowISODateString: string
+  let testFlowISODateString!: string
   let testInputTimestampString: string
   let patchAndFetchByIdSpy: ReturnType<typeof vi.fn>
   const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
@@ -874,8 +874,8 @@ describe('updateStep endStepId config merge', () => {
   ): Promise<Step[]> {
     return testFlow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: spec.parameters ?? {},
@@ -890,7 +890,7 @@ describe('updateStep endStepId config merge', () => {
   beforeEach(async () => {
     vi.restoreAllMocks()
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
       req: null,
       currentUser: owner,

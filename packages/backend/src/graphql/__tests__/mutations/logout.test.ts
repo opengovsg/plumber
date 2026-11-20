@@ -42,7 +42,7 @@ describe('logout', () => {
       callOrder.push('delete')
     })
 
-    const result = await logout(null, {}, STUB_CONTEXT)
+    const result = await logout({}, {}, STUB_CONTEXT)
 
     expect(callOrder).toEqual(['invalidate', 'delete'])
     expect(result).toEqual({ isSso: true })
@@ -52,7 +52,7 @@ describe('logout', () => {
     mocks.getParsedAuthCookie.mockReturnValueOnce({ userId: 'user-1' })
     mocks.invalidateAuthCookie.mockRejectedValueOnce(new Error('redis down'))
 
-    await expect(logout(null, {}, STUB_CONTEXT)).rejects.toThrow('redis down')
+    await expect(logout({}, {}, STUB_CONTEXT)).rejects.toThrow('redis down')
     expect(mocks.deleteAuthCookie).not.toHaveBeenCalled()
   })
 })

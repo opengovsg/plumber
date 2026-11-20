@@ -64,14 +64,14 @@ describe('updateFlowTransferStatus replay protection', () => {
   })
 
   async function getFlowOwnerId(): Promise<string> {
-    return (await Flow.query().findById(mockFlow.id)).userId
+    return (await Flow.query().findById(mockFlow.id))!.userId
   }
 
   // Rule A
   it('does not let the new owner approve a cancelled transfer', async () => {
     context.currentUser = owner
     await updateFlowTransferStatus(
-      null,
+      {},
       { input: { id: transfer.id, status: 'cancelled' } },
       context,
     )
@@ -79,14 +79,14 @@ describe('updateFlowTransferStatus replay protection', () => {
     context.currentUser = newOwner
     await expect(
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       ),
     ).rejects.toThrow('This pipe transfer is no longer pending')
 
     expect(await getFlowOwnerId()).toBe(owner.id)
-    expect((await FlowTransfer.query().findById(transfer.id)).status).toBe(
+    expect((await FlowTransfer.query().findById(transfer.id))!.status).toBe(
       'cancelled',
     )
   })
@@ -95,14 +95,14 @@ describe('updateFlowTransferStatus replay protection', () => {
   it('does not let the new owner approve a transfer they already rejected', async () => {
     context.currentUser = newOwner
     await updateFlowTransferStatus(
-      null,
+      {},
       { input: { id: transfer.id, status: 'rejected' } },
       context,
     )
 
     await expect(
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       ),
@@ -115,7 +115,7 @@ describe('updateFlowTransferStatus replay protection', () => {
   it('does not let the new owner re-approve an approved transfer', async () => {
     context.currentUser = newOwner
     await updateFlowTransferStatus(
-      null,
+      {},
       { input: { id: transfer.id, status: 'approved' } },
       context,
     )
@@ -123,7 +123,7 @@ describe('updateFlowTransferStatus replay protection', () => {
 
     await expect(
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       ),
@@ -135,7 +135,7 @@ describe('updateFlowTransferStatus replay protection', () => {
     // First hop: owner -> newOwner.
     context.currentUser = newOwner
     await updateFlowTransferStatus(
-      null,
+      {},
       { input: { id: transfer.id, status: 'approved' } },
       context,
     )
@@ -150,7 +150,7 @@ describe('updateFlowTransferStatus replay protection', () => {
     })
     context.currentUser = owner
     await updateFlowTransferStatus(
-      null,
+      {},
       { input: { id: transferBack.id, status: 'approved' } },
       context,
     )
@@ -160,7 +160,7 @@ describe('updateFlowTransferStatus replay protection', () => {
     context.currentUser = newOwner
     await expect(
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       ),
@@ -173,7 +173,7 @@ describe('updateFlowTransferStatus replay protection', () => {
   it('does not let the old owner cancel an approved transfer', async () => {
     context.currentUser = newOwner
     await updateFlowTransferStatus(
-      null,
+      {},
       { input: { id: transfer.id, status: 'approved' } },
       context,
     )
@@ -181,13 +181,13 @@ describe('updateFlowTransferStatus replay protection', () => {
     context.currentUser = owner
     await expect(
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'cancelled' } },
         context,
       ),
     ).rejects.toThrow('This pipe transfer is no longer pending')
 
-    expect((await FlowTransfer.query().findById(transfer.id)).status).toBe(
+    expect((await FlowTransfer.query().findById(transfer.id))!.status).toBe(
       'approved',
     )
   })
@@ -197,12 +197,12 @@ describe('updateFlowTransferStatus replay protection', () => {
     context.currentUser = newOwner
     const results = await Promise.allSettled([
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       ),
       updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       ),

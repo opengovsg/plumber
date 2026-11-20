@@ -232,7 +232,7 @@ describe('makeActionWorker', () => {
         string,
         (job: unknown) => Promise<void>,
       ][]
-      return calls.at(-1)[1]
+      return calls.at(-1)![1]
     }
 
     const groupLimitedQueueConfig = {

@@ -22,7 +22,7 @@ const ddbCreateTableRowsSpy: ReturnType<typeof vi.spyOn> = vi.spyOn(
   'createTableRows',
 )
 
-describe.each([['pg'], ['ddb']])(
+describe.each<[DatabaseType]>([['pg'], ['ddb']])(
   'create rows mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context

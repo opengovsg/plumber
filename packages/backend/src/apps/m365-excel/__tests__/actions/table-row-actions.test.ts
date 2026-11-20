@@ -69,7 +69,7 @@ beforeEach(() => {
 describe('getTableRows', () => {
   it('throws a config StepError on invalid parameters', async () => {
     const error = await catchStepError(
-      getTableRowsAction.run(
+      getTableRowsAction.run!(
         makeGlobalVariable({ ...lookupParameters, filters: [] }),
       ),
     )
@@ -86,14 +86,14 @@ describe('getTableRows', () => {
       headerSheetRowIndex: 0,
     })
     const error = await catchStepError(
-      getTableRowsAction.run(makeGlobalVariable(lookupParameters, true)),
+      getTableRowsAction.run!(makeGlobalVariable(lookupParameters, true)),
     )
     expect(error.kind).toBe('config')
   })
 
   it('throws a config StepError when the lookup column does not exist', async () => {
     const error = await catchStepError(
-      getTableRowsAction.run(
+      getTableRowsAction.run!(
         makeGlobalVariable({
           ...lookupParameters,
           filters: [{ lookupColumn: 'Missing', lookupValue: 'x' }],
@@ -107,7 +107,7 @@ describe('getTableRows', () => {
 describe('getTableRow', () => {
   it('throws a config StepError on invalid parameters', async () => {
     const error = await catchStepError(
-      getTableRowAction.run(
+      getTableRowAction.run!(
         makeGlobalVariable({ ...lookupParameters, tableId: 'bad' }),
       ),
     )
@@ -123,7 +123,7 @@ describe('updateTableRow', () => {
 
   it('throws a config StepError on invalid parameters', async () => {
     const error = await catchStepError(
-      updateTableRowAction.run(
+      updateTableRowAction.run!(
         makeGlobalVariable({ ...updateParameters, columnsToUpdate: [] }),
       ),
     )
@@ -132,7 +132,7 @@ describe('updateTableRow', () => {
 
   it('throws a config StepError when a column to update does not exist', async () => {
     const error = await catchStepError(
-      updateTableRowAction.run(
+      updateTableRowAction.run!(
         makeGlobalVariable({
           ...updateParameters,
           columnsToUpdate: [{ columnName: 'Missing', value: 'x' }],
@@ -146,7 +146,7 @@ describe('updateTableRow', () => {
   it('throws an internal StepError when Graph returns an unexpected row after the update', async () => {
     mocks.request.mockResolvedValue({ data: { values: [] } })
     const error = await catchStepError(
-      updateTableRowAction.run(makeGlobalVariable(updateParameters)),
+      updateTableRowAction.run!(makeGlobalVariable(updateParameters)),
     )
     expect(error.kind).toBe('internal')
   })

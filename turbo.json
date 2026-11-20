@@ -23,10 +23,6 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "typecheck:strict": {
-      "dependsOn": ["^build"],
-      "outputs": []
-    },
     "build": {
       "dependsOn": ["^build"],
       "env": [

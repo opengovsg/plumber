@@ -214,7 +214,7 @@ describe('compare-calculate prototype', () => {
         },
       },
     ])('marks $case as config', async ({ parameters }) => {
-      await expect(action.run(makeGlobal(parameters))).rejects.toMatchObject({
+      await expect(action.run!(makeGlobal(parameters))).rejects.toMatchObject({
         kind: 'config',
       })
     })
@@ -223,7 +223,7 @@ describe('compare-calculate prototype', () => {
       vi.mocked(computeDifference).mockImplementationOnce(() => {
         throw new Error('boom')
       })
-      const result = action.run(
+      const result = action.run!(
         makeGlobal({
           ...validDates,
           operation: 'calculate',

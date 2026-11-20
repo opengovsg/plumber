@@ -19,7 +19,7 @@ import {
 const pgUpdateRowSpy = vi.spyOn(pgTableRowFunctions, 'updateTableRow')
 const ddbUpdateRowSpy = vi.spyOn(ddbTableRowFunctions, 'updateTableRow')
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'update row mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -104,9 +104,9 @@ describe.each([['ddb'], ['pg']])(
         includeTimestamps: true,
       })
       expect(updatedId).toBe(rowToUpdate.rowId)
-      expect(updatedRow.data).toEqual(newData)
+      expect(updatedRow!.data).toEqual(newData)
       // check that createdAt does not change
-      if ('createdAt' in updatedRow && 'createdAt' in originalRow) {
+      if ('createdAt' in updatedRow! && 'createdAt' in originalRow!) {
         expect(Number(updatedRow.createdAt)).toEqual(
           Number(originalRow.createdAt),
         )
@@ -152,11 +152,11 @@ describe.each([['ddb'], ['pg']])(
         context,
       )
 
-      const { data: updatedRowData } = await getRawRowById({
+      const { data: updatedRowData } = (await getRawRowById({
         rowId: rowToUpdate.rowId,
         tableId: dummyTable.id,
         columnIds: dummyColumnIds,
-      })
+      }))!
       expect(updatedId).toBe(rowToUpdate.rowId)
       for (const column of dummyColumnIds.slice(0, 2)) {
         expect(updatedRowData[column]).toBeNull()

@@ -18,7 +18,7 @@ vi.mock('@/helpers/launch-darkly', () => ({
   getLdFlagValue: mocks.getLdFlagValue,
 }))
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'update table collaborators: %s',
   (databaseType: DatabaseType) => {
     let context: Context

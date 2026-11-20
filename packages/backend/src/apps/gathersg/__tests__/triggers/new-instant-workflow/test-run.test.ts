@@ -11,7 +11,7 @@ describe('newInstantWorkflow testRun', () => {
       pushTriggerItem: vi.fn(),
     } as unknown as IGlobalVariable
 
-    await expect(trigger.testRun($)).rejects.toMatchObject({
+    await expect(trigger.testRun!($)).rejects.toMatchObject({
       kind: 'config',
       message: expect.stringContaining('Encryption key is not valid'),
     })

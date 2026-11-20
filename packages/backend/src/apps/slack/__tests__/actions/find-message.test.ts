@@ -42,7 +42,7 @@ describe('find message', () => {
       data: { ok: true, messages: { matches: [match] } },
     })
 
-    await findMessageAction.run($)
+    await findMessageAction.run!($)
 
     expect(mocks.setActionItem).toHaveBeenCalledWith({ raw: match })
   })
@@ -52,7 +52,7 @@ describe('find message', () => {
     async (code) => {
       mocks.httpGet.mockResolvedValueOnce({ data: { ok: false, error: code } })
 
-      const error = await findMessageAction.run($).catch((e) => e)
+      const error = await findMessageAction.run!($).catch((e) => e)
 
       expect(error).toBeInstanceOf(StepError)
       expect(error).toMatchObject({ kind: 'config' })
@@ -65,7 +65,7 @@ describe('find message', () => {
       data: { ok: false, error: 'internal_error' },
     })
 
-    await expect(findMessageAction.run($)).rejects.toMatchObject({
+    await expect(findMessageAction.run!($)).rejects.toMatchObject({
       kind: 'third-party',
     })
   })
@@ -80,7 +80,7 @@ describe('find message', () => {
       },
     })
 
-    const error = await findMessageAction.run($).catch((e) => e)
+    const error = await findMessageAction.run!($).catch((e) => e)
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({ kind: 'config' })
@@ -96,7 +96,7 @@ describe('find message', () => {
   ])('throws an internal StepError for %o', async (data) => {
     mocks.httpGet.mockResolvedValueOnce({ data: { ok: false, ...data } })
 
-    await expect(findMessageAction.run($)).rejects.toMatchObject({
+    await expect(findMessageAction.run!($)).rejects.toMatchObject({
       kind: 'internal',
     })
   })

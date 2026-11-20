@@ -40,7 +40,7 @@ describe('send a message to channel', () => {
     const data = { ok: true, ts: '1.0' }
     mocks.httpPost.mockResolvedValueOnce({ data })
 
-    await sendMessageToChannelAction.run($)
+    await sendMessageToChannelAction.run!($)
 
     expect(mocks.setActionItem).toHaveBeenCalledWith({ raw: data })
   })
@@ -61,7 +61,7 @@ describe('send a message to channel', () => {
   ])('throws a config StepError for %s', async (code) => {
     mocks.httpPost.mockResolvedValueOnce({ data: { ok: false, error: code } })
 
-    const error = await sendMessageToChannelAction.run($).catch((e) => e)
+    const error = await sendMessageToChannelAction.run!($).catch((e) => e)
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({ kind: 'config' })
@@ -73,7 +73,7 @@ describe('send a message to channel', () => {
       data: { ok: false, error: 'account_inactive' },
     })
 
-    const error = await sendMessageToChannelAction.run($).catch((e) => e)
+    const error = await sendMessageToChannelAction.run!($).catch((e) => e)
 
     expect(error).toMatchObject({ kind: 'config' })
     expect(error.message).toContain(
@@ -92,7 +92,7 @@ describe('send a message to channel', () => {
   ])('throws a third-party StepError for %s', async (code) => {
     mocks.httpPost.mockResolvedValueOnce({ data: { ok: false, error: code } })
 
-    await expect(sendMessageToChannelAction.run($)).rejects.toMatchObject({
+    await expect(sendMessageToChannelAction.run!($)).rejects.toMatchObject({
       kind: 'third-party',
     })
   })
@@ -107,7 +107,7 @@ describe('send a message to channel', () => {
   ])('throws an internal StepError for %s', async (code) => {
     mocks.httpPost.mockResolvedValueOnce({ data: { ok: false, error: code } })
 
-    const error = await sendMessageToChannelAction.run($).catch((e) => e)
+    const error = await sendMessageToChannelAction.run!($).catch((e) => e)
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({ kind: 'internal' })
@@ -117,7 +117,7 @@ describe('send a message to channel', () => {
   it('throws an internal StepError when Slack omits the error code', async () => {
     mocks.httpPost.mockResolvedValueOnce({ data: { ok: false } })
 
-    const error = await sendMessageToChannelAction.run($).catch((e) => e)
+    const error = await sendMessageToChannelAction.run!($).catch((e) => e)
 
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({ kind: 'internal' })

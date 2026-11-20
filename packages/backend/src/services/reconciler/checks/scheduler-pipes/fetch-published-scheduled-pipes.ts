@@ -5,15 +5,15 @@ import BaseStep from '@/models/step/base'
 
 export interface PublishedScheduledPipe {
   flowId: string
-  publishedAt: string
+  publishedAt: string | null
   triggerKey: string
   triggerParameters: IJSONObject
 }
 
 export type ScheduledTriggerStep = Pick<
   BaseStep,
-  'flowId' | 'key' | 'parameters' | 'version'
-> & { flow: Pick<BaseStep['flow'], 'publishedAt'> }
+  'flowId' | 'parameters' | 'version'
+> & { key: string; flow: Pick<BaseStep['flow'], 'publishedAt'> }
 
 // BaseStep, not Step: Step imports every app, and some apps open Redis clients at import.
 export function buildPublishedScheduledPipesQuery() {
@@ -24,7 +24,7 @@ export function buildPublishedScheduledPipesQuery() {
     .where('steps.app_key', schedulerApp.key)
     .whereIn(
       'steps.key',
-      schedulerApp.triggers.map((trigger) => trigger.key),
+      (schedulerApp.triggers ?? []).map((trigger) => trigger.key),
     )
 }
 
@@ -35,7 +35,7 @@ export function toPublishedScheduledPipe(
 ): PublishedScheduledPipe {
   return {
     flowId: step.flowId,
-    publishedAt: step.flow.publishedAt,
+    publishedAt: step.flow.publishedAt ?? null,
     triggerKey: step.key,
     triggerParameters: stepTransformer
       ? stepTransformer.transformStepParameters(
@@ -51,5 +51,8 @@ export async function fetchPublishedScheduledPipes(): Promise<
   PublishedScheduledPipe[]
 > {
   const steps = await buildPublishedScheduledPipesQuery()
-  return steps.map((step) => toPublishedScheduledPipe(step))
+  // The query's `steps.key IN (...)` never matches a NULL key.
+  return steps
+    .filter((step): step is BaseStep & { key: string } => !!step.key)
+    .map((step) => toPublishedScheduledPipe(step))
 }

@@ -30,7 +30,7 @@ describe('telegram rate limit handler', () => {
       headers: { 'retry-after': '30' },
     })
 
-    await expect(rateLimitHandler($, error)).rejects.toBe(error)
+    await expect(rateLimitHandler!($, error)).rejects.toBe(error)
 
     expect(error.response.headers['retry-after']).toBe('75')
     expect(error.getRetryInfo()).toEqual({ retriable: true, delayInMs: 75_000 })
@@ -39,7 +39,7 @@ describe('telegram rate limit handler', () => {
   it('leaves a 429 without a numeric Retry-After unchanged', async () => {
     const error = makeHttpError({ status: 429 })
 
-    await expect(rateLimitHandler($, error)).resolves.toBeUndefined()
+    await expect(rateLimitHandler!($, error)).resolves.toBeUndefined()
 
     expect(error.getRetryInfo()).toEqual({
       retriable: true,
@@ -53,7 +53,7 @@ describe('telegram rate limit handler', () => {
       headers: { 'retry-after': '30' },
     })
 
-    await expect(rateLimitHandler($, error)).resolves.toBeUndefined()
+    await expect(rateLimitHandler!($, error)).resolves.toBeUndefined()
 
     expect(error.response.headers['retry-after']).toBe('30')
   })

@@ -84,9 +84,9 @@ describe('getDataOutMetadata - deleted questions', () => {
       }),
     )
 
-    expect(result.fields[DELETED_FIELD_ID]).toEqual({ isHidden: true })
-    expect(result.fields[DELETED_CHILD_FIELD_KEY]).toEqual({ isHidden: true })
-    expect(result.fields[CHILD_FIELD_KEY].isHidden).toBeUndefined()
+    expect(result!.fields[DELETED_FIELD_ID]).toEqual({ isHidden: true })
+    expect(result!.fields[DELETED_CHILD_FIELD_KEY]).toEqual({ isHidden: true })
+    expect(result!.fields[CHILD_FIELD_KEY].isHidden).toBeUndefined()
   })
 
   it('numbers questions as if the deleted question never existed', async () => {
@@ -96,7 +96,7 @@ describe('getDataOutMetadata - deleted questions', () => {
       }),
     )
 
-    expect(result.fields[LATER_FIELD_ID].question.label).toEqual('Question 2')
+    expect(result!.fields[LATER_FIELD_ID].question.label).toEqual('Question 2')
   })
 
   it('hides a deleted children parent that an MRF step still lists', async () => {
@@ -115,13 +115,13 @@ describe('getDataOutMetadata - deleted questions', () => {
       }),
     )
 
-    expect(result.fields[DELETED_CHILD_FIELD_KEY]).toEqual({ isHidden: true })
-    expect(result.fields[CHILD_FIELD_KEY].isHidden).toBeUndefined()
+    expect(result!.fields[DELETED_CHILD_FIELD_KEY]).toEqual({ isHidden: true })
+    expect(result!.fields[CHILD_FIELD_KEY].isHidden).toBeUndefined()
   })
 
   it('shows every answer when the trigger recorded no field IDs', async () => {
     const result = await getDataOutMetadata(createExecutionStep({}))
 
-    expect(result.fields[DELETED_FIELD_ID].isHidden).toBeUndefined()
+    expect(result!.fields[DELETED_FIELD_ID].isHidden).toBeUndefined()
   })
 })

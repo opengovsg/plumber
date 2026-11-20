@@ -88,7 +88,7 @@ describe('makeActionQueue', () => {
     makeActionQueue({ queueName: 'some-queue' })
     const onError = mocks.queueOn.mock.calls.find(
       ([event]) => event === 'error',
-    )[1] as (err: Error) => void
+    )![1] as (err: Error) => void
 
     onError(
       Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:6379'), {

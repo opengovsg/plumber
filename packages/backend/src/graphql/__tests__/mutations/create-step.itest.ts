@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 
+import type { Request, Response } from 'express'
 import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -59,15 +60,15 @@ describe('createStep mutation integration tests', async () => {
 
     const testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
     context = {
-      req: null,
-      currentUser: testUser,
-      res: null,
+      req: null as unknown as Request,
+      currentUser: testUser!,
+      res: null as unknown as Response,
       isAdminOperation: false,
     }
-    owner = testUser
+    owner = testUser!
 
     // Create a test connection
-    testConnection = await testUser
+    testConnection = await testUser!
       .$relatedQuery('connections')
       .insertAndFetch({
         key: 'postman',
@@ -77,7 +78,7 @@ describe('createStep mutation integration tests', async () => {
       })
 
     // Create a flow associated with the test user.
-    testFlow = await testUser.$relatedQuery('flows').insertAndFetch({
+    testFlow = await testUser!.$relatedQuery('flows').insertAndFetch({
       name: 'Test Flow',
       // additional flow properties as needed
       updatedBy: owner.id,
@@ -161,11 +162,11 @@ describe('createStep mutation integration tests', async () => {
 
     // Ensure the new step is returned as expected.
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendMessage')
-    expect(newStep.appKey).toBe('telegram-bot')
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendMessage')
+    expect(newStep!.appKey).toBe('telegram-bot')
     // New step's position should be previousStep.position + 1.
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
 
     // Verify overall that there are three steps related to the flow.
     const steps = await testFlow
@@ -174,7 +175,7 @@ describe('createStep mutation integration tests', async () => {
     expect(steps).toHaveLength(4)
     expect(steps.map((step) => step.id)).toEqual([
       existingSteps[0].id,
-      newStep.id,
+      newStep!.id,
       existingSteps[1].id,
       existingSteps[2].id,
     ])
@@ -196,7 +197,7 @@ describe('createStep mutation integration tests', async () => {
     const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
-    expect(newStep.position).toBe(existingSteps[2].position + 1)
+    expect(newStep!.position).toBe(existingSteps[2].position + 1)
     const steps = await testFlow
       .$relatedQuery('steps')
       .orderBy('position', 'asc')
@@ -205,7 +206,7 @@ describe('createStep mutation integration tests', async () => {
       existingSteps[0].id,
       existingSteps[1].id,
       existingSteps[2].id,
-      newStep.id,
+      newStep!.id,
     ])
     // Also, check the ordering.
     expect(steps.map((step) => step.position)).toEqual([1, 2, 3, 4])
@@ -272,11 +273,11 @@ describe('createStep mutation integration tests', async () => {
     const newStep = await createStep({}, genericNewStepParams, context)
 
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendTransactionalEmail')
-    expect(newStep.appKey).toBe('postman')
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendTransactionalEmail')
+    expect(newStep!.appKey).toBe('postman')
     // New step's position should be previousStep.position + 1.
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
   })
 
   it('editor can create a new step', async () => {
@@ -284,11 +285,11 @@ describe('createStep mutation integration tests', async () => {
     const newStep = await createStep({}, genericNewStepParams, context)
 
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendTransactionalEmail')
-    expect(newStep.appKey).toBe('postman')
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendTransactionalEmail')
+    expect(newStep!.appKey).toBe('postman')
     // New step's position should be previousStep.position + 1.
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
   })
 
   it('editor can create a new step with owner connection', async () => {
@@ -308,10 +309,10 @@ describe('createStep mutation integration tests', async () => {
 
     const newStep = await createStep({}, params, context)
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendTransactionalEmail')
-    expect(newStep.appKey).toBe('postman')
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendTransactionalEmail')
+    expect(newStep!.appKey).toBe('postman')
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
   })
 
   it('viewer should not be able to create a new step', async () => {
@@ -545,7 +546,7 @@ describe('createStep mutation integration tests', async () => {
       const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('sendTransactionalEmail')
+      expect(newStep!.key).toBe('sendTransactionalEmail')
     })
 
     it('should succeed when input.flow.updatedAt is different from flow.updatedAt for same user', async () => {
@@ -568,7 +569,7 @@ describe('createStep mutation integration tests', async () => {
       const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('sendTransactionalEmail')
+      expect(newStep!.key).toBe('sendTransactionalEmail')
     })
 
     it('should throw when input.flow.updatedAt is different from flow.updatedAt for different user', async () => {
@@ -640,7 +641,7 @@ describe('createStep mutation integration tests', async () => {
       const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('sendTransactionalEmail')
+      expect(newStep!.key).toBe('sendTransactionalEmail')
     })
   })
 })
@@ -664,8 +665,8 @@ describe('createStep endStepId write rules', () => {
   ): Promise<Step[]> {
     return testFlow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: spec.parameters ?? {},
@@ -684,11 +685,11 @@ describe('createStep endStepId write rules', () => {
     await Step.query().delete()
     await Flow.query().delete()
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
-      req: null,
+      req: null as unknown as Request,
       currentUser: owner,
-      res: null,
+      res: null as unknown as Response,
       isAdminOperation: false,
     } as unknown as Context
 
@@ -729,7 +730,7 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect(newStep.position).toBe(stepA.position + 1)
+    expect(newStep!.position).toBe(stepA.position + 1)
     expect((newStep as any).config.endStepId).toBeUndefined()
   })
 
@@ -802,8 +803,8 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect(newStep.position).toBe(stepA.position + 1)
-    expect((await reload(other.id)).position).toBe(newStep.position + 1)
+    expect(newStep!.position).toBe(stepA.position + 1)
+    expect((await reload(other.id)).position).toBe(newStep!.position! + 1)
   })
 
   it('rule 1: rolls back when previousStep is not the block endStep', async () => {
@@ -909,7 +910,7 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect(newStep.position).toBe(stepA.position + 1)
+    expect(newStep!.position).toBe(stepA.position + 1)
     expect((newStep as any).config.endStepId).toBeUndefined()
   })
 
@@ -937,7 +938,7 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep.id)
+    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep!.id)
   })
 
   it('rule 2: extends an empty (self-ref) block on the first inside-add', async () => {
@@ -963,7 +964,7 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep.id)
+    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep!.id)
   })
 
   it('rule 2: extends an empty block inside a rejection branch', async () => {
@@ -1003,11 +1004,11 @@ describe('createStep endStepId write rules', () => {
     )
 
     const block = await reload(ifThenA.id)
-    expect(block.config.endStepId).toBe(newStep.id)
+    expect(block.config.endStepId).toBe(newStep!.id)
     // IMPORTANT: preserves the approval marker and doesn't swallow the
     // pre-existing step during the pin.
     expect(block.config.approval).toEqual(rejection.approval)
-    expect(newStep.position).toBeLessThan((await reload(existing.id)).position)
+    expect(newStep!.position).toBeLessThan((await reload(existing.id)).position)
   })
 
   it('rule 2: does NOT extend when the new step is an if-then', async () => {
@@ -1144,7 +1145,7 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    expect((await reload(newStep.id)).config.endStepId).toBe(newStep.id)
+    expect((await reload(newStep!.id!)).config.endStepId).toBe(newStep!.id)
   })
 
   it('rejects the sentinel on a non-if-then step', async () => {
@@ -1204,8 +1205,8 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    const reloaded = await reload(newStep.id)
-    expect(reloaded.config.endStepId).toBe(newStep.id)
+    const reloaded = await reload(newStep!.id!)
+    expect(reloaded.config.endStepId).toBe(newStep!.id)
     expect(reloaded.config.approval).toEqual(rejection.approval)
   })
 
@@ -1234,7 +1235,7 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect((await reload(newIfThen.id)).config.endStepId).toBe(newIfThen.id)
+    expect((await reload(newIfThen!.id!)).config.endStepId).toBe(newIfThen!.id)
   })
 
   describe('opportunistic if-then V1 upgrade', () => {

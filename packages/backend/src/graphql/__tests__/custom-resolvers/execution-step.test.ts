@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import resolver from '@/graphql/custom-resolvers/execution-step'
 import ExecutionStep from '@/models/execution-step'
+import type Context from '@/types/express/context'
 
 const mocks = vi.hoisted(() => ({
   $relatedQuery: vi.fn(),
@@ -67,7 +68,11 @@ describe('execution step', () => {
         isTrigger: true,
         isAction: false,
       })
-      const result = await resolver.dataOutMetadata(executionStep, {}, null)
+      const result = await resolver.dataOutMetadata(
+        executionStep,
+        {},
+        null as unknown as Context,
+      )
       expect(result).toEqual({ stringField: 'trigger1-metadata' })
     })
 
@@ -78,7 +83,11 @@ describe('execution step', () => {
         isTrigger: false,
         isAction: true,
       })
-      const result = await resolver.dataOutMetadata(executionStep, {}, null)
+      const result = await resolver.dataOutMetadata(
+        executionStep,
+        {},
+        null as unknown as Context,
+      )
       expect(result).toEqual({ stringField: 'action1-metadata' })
     })
 
@@ -107,7 +116,11 @@ describe('execution step', () => {
           isTrigger: isTrigger,
           isAction: !isTrigger,
         })
-        const result = await resolver.dataOutMetadata(executionStep, {}, null)
+        const result = await resolver.dataOutMetadata(
+          executionStep,
+          {},
+          null as unknown as Context,
+        )
         expect(result).toEqual({
           stringField: isTrigger ? 'trigger-metadata' : 'action-metadata',
         })
@@ -123,7 +136,11 @@ describe('execution step', () => {
           isTrigger: isTrigger,
           isAction: !isTrigger,
         })
-        const result = await resolver.dataOutMetadata(executionStep, {}, null)
+        const result = await resolver.dataOutMetadata(
+          executionStep,
+          {},
+          null as unknown as Context,
+        )
         expect(result).toBeNull()
       },
     )
@@ -135,7 +152,11 @@ describe('execution step', () => {
         isTrigger: true,
         isAction: false,
       })
-      const result = await resolver.dataOutMetadata(executionStep, {}, null)
+      const result = await resolver.dataOutMetadata(
+        executionStep,
+        {},
+        null as unknown as Context,
+      )
       expect(result).toBeNull()
     })
   })

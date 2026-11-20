@@ -66,13 +66,13 @@ describe('lookupStepDefinition', () => {
       const legacy = await App.findTriggerOrActionByKey(appKey, key)
       const lookup = lookupStepDefinition(appKey, key, type)
 
-      expect(lookup.kind).toBe(legacy.hiddenFromUser ? 'hidden' : 'permitted')
+      expect(lookup.kind).toBe(legacy!.hiddenFromUser ? 'hidden' : 'permitted')
       expect(lookup).toMatchObject({
         type,
         definition: {
-          key: legacy.key,
-          name: legacy.name,
-          description: legacy.description,
+          key: legacy!.key,
+          name: legacy!.name,
+          description: legacy!.description,
         },
       })
     },

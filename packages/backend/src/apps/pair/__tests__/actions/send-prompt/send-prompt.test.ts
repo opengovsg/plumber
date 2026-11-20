@@ -54,7 +54,7 @@ describe('Send prompt action', () => {
   it('throws a config StepError for an invalid field', async () => {
     $.step.parameters.prompt = 'a'.repeat(10001)
 
-    await expect(sendPromptAction.run($)).rejects.toSatisfy(
+    await expect(sendPromptAction.run!($)).rejects.toSatisfy(
       (error) =>
         error instanceof StepError &&
         /Prompt cannot exceed 10,000 characters/.test(error.message) &&
@@ -79,7 +79,7 @@ describe('Send prompt action', () => {
         }),
       )
 
-      await expect(sendPromptAction.run($)).rejects.toSatisfy(
+      await expect(sendPromptAction.run!($)).rejects.toSatisfy(
         (error) =>
           error instanceof StepError &&
           /Failed to process prompt/.test(error.message) &&
@@ -98,7 +98,7 @@ describe('Send prompt action', () => {
       }),
     )
 
-    await expect(sendPromptAction.run($)).rejects.toBeInstanceOf(StepError)
+    await expect(sendPromptAction.run!($)).rejects.toBeInstanceOf(StepError)
     expect(mocks.logError).toHaveBeenCalledWith('Failed to generate object', {
       errorName: 'AI_APICallError',
       errorMessage: 'Output blocked by content filtering policy',

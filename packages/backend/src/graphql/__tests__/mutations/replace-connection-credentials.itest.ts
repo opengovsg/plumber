@@ -89,7 +89,7 @@ describe('replaceConnectionCredentials', () => {
     )
 
     await replaceConnectionCredentials(
-      null,
+      {},
       {
         input: {
           id: connection.id,
@@ -105,11 +105,11 @@ describe('replaceConnectionCredentials', () => {
     })
 
     const updated = await Connection.query().findById(connection.id)
-    expect(updated.formattedData).toEqual({
+    expect(updated!.formattedData).toEqual({
       token: 'new-token',
       screenName: 'New bot',
     })
-    expect(updated.verified).toBe(true)
+    expect(updated!.verified).toBe(true)
   })
 
   it('leaves the stored connection unchanged when verification fails', async () => {
@@ -118,7 +118,7 @@ describe('replaceConnectionCredentials', () => {
 
     await expect(
       replaceConnectionCredentials(
-        null,
+        {},
         {
           input: {
             id: connection.id,
@@ -130,15 +130,15 @@ describe('replaceConnectionCredentials', () => {
     ).rejects.toThrow('Invalid token')
 
     const after = await Connection.query().findById(connection.id)
-    expect(after.formattedData).toEqual(before.formattedData)
-    expect(after.verified).toBe(before.verified)
-    expect(after.updatedAt).toEqual(before.updatedAt)
+    expect(after!.formattedData).toEqual(before!.formattedData)
+    expect(after!.verified).toBe(before!.verified)
+    expect(after!.updatedAt).toEqual(before!.updatedAt)
   })
 
   it('rejects blank required credentials before verification', async () => {
     await expect(
       replaceConnectionCredentials(
-        null,
+        {},
         {
           input: {
             id: connection.id,
@@ -157,7 +157,7 @@ describe('replaceConnectionCredentials', () => {
 
     await expect(
       replaceConnectionCredentials(
-        null,
+        {},
         {
           input: {
             id: connection.id,

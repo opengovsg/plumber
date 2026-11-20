@@ -20,7 +20,7 @@ const pgDeleteTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'deleteTableRows')
 const ddbDeleteTableRowsSpy = vi.spyOn(ddbTableRowFunctions, 'deleteTableRows')
 
 const NUM_ROWS_TO_GENERATE = 35
-describe.each([['pg'], ['ddb']])(
+describe.each<[DatabaseType]>([['pg'], ['ddb']])(
   'delete rows mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context
