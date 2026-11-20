@@ -71,7 +71,7 @@ describe('Postman SMS app', () => {
 
   beforeEach(async () => {
     $ = await globalVariable({
-      connection: null,
+      connection: undefined,
       app: postmanSmsApp,
     })
   })
@@ -119,9 +119,9 @@ describe('Postman SMS app', () => {
   })
 
   it('sets the job group to the connection ID', async () => {
-    const { id: groupId } = await postmanSmsApp.queue.getGroupConfigForJob({
+    const { id: groupId } = (await postmanSmsApp.queue!.getGroupConfigForJob!({
       stepID: MOCK_STEP.id,
-    } as unknown as IActionJobData)
+    } as unknown as IActionJobData))!
 
     expect(groupId).toEqual(MOCK_STEP.connectionId)
   })

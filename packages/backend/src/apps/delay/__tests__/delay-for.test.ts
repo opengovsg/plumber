@@ -47,7 +47,7 @@ describe('Delay for action', () => {
       delayForValue: DELAY_VALUE,
     }
 
-    const result = await delayForAction.run($)
+    const result = await delayForAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayForUnit: DELAY_UNIT, delayForValue: DELAY_VALUE },
@@ -61,7 +61,7 @@ describe('Delay for action', () => {
     }
 
     // throw partial step error message
-    await expect(delayForAction.run($)).rejects.toThrow(StepError)
+    await expect(delayForAction.run!($)).rejects.toThrow(StepError)
   })
 
   it('throws a config step error if delay for value is not a number', async () => {

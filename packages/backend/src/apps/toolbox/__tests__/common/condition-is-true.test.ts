@@ -1,3 +1,4 @@
+import type { IJSONValue } from '@plumber/types'
 import { describe, expect, it } from 'vitest'
 
 import StepError from '@/errors/step'
@@ -287,7 +288,7 @@ describe('Condition is true', () => {
     expect(result).toEqual(expectedResult)
   })
 
-  it.each([
+  it.each<{ field?: IJSONValue; expectedResult: boolean }>([
     { field: '', expectedResult: true },
     { field: null, expectedResult: true },
     { field: undefined, expectedResult: true },
@@ -302,10 +303,10 @@ describe('Condition is true', () => {
     { field: {}, expectedResult: false },
   ])(
     'supports empty ($expectedResult for $field)',
-    ({ field, expectedResult }) => {
+    ({ expectedResult, ...fieldArg }) => {
       const result = conditionIsTrue(
         {
-          field,
+          ...fieldArg,
           is: 'is',
           condition: 'empty',
           text: null,

@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto'
 
+import { Request, Response } from 'express'
+
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
@@ -12,9 +14,11 @@ import Context from '@/types/express/context'
 
 export async function generateMockContext(): Promise<Context> {
   return {
-    req: null,
-    res: null,
-    currentUser: await User.query().findOne({ email: 'tester@open.gov.sg' }),
+    req: null as unknown as Request,
+    res: null as unknown as Response,
+    currentUser: (await User.query().findOne({
+      email: 'tester@open.gov.sg',
+    }))!,
     isAdminOperation: false,
   }
 }
@@ -31,9 +35,9 @@ export async function generateMockTable({
   editor: User
   viewer: User
 }> {
-  const currentUser = await User.query().findById(userId)
-  const editor = await User.query().findOne({ email: 'editor@open.gov.sg' })
-  const viewer = await User.query().findOne({ email: 'viewer@open.gov.sg' })
+  const currentUser = (await User.query().findById(userId))!
+  const editor = (await User.query().findOne({ email: 'editor@open.gov.sg' }))!
+  const viewer = (await User.query().findOne({ email: 'viewer@open.gov.sg' }))!
   const table = await currentUser.$relatedQuery('tables').insert({
     name: 'Test Table',
     role: 'owner',
@@ -41,12 +45,12 @@ export async function generateMockTable({
   })
   await TableCollaborator.query().insert([
     {
-      userId: (await User.query().findOne({ email: 'editor@open.gov.sg' })).id,
+      userId: editor.id,
       tableId: table.id,
       role: 'editor',
     },
     {
-      userId: (await User.query().findOne({ email: 'viewer@open.gov.sg' })).id,
+      userId: viewer.id,
       tableId: table.id,
       role: 'viewer',
     },
@@ -74,7 +78,7 @@ export async function generateMockFlow({
   tableId: string
   numSteps: number
 }) {
-  const currentUser = await User.query().findById(userId)
+  const currentUser = (await User.query().findById(userId))!
 
   const tableName = `test-flow-${tableId}`
   const flowRes = await currentUser.$relatedQuery('flows').insert({

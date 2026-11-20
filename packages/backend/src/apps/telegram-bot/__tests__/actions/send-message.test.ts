@@ -68,7 +68,7 @@ describe('send message', () => {
       },
     }
     mocks.httpPost.mockResolvedValueOnce(mockHttpResponse)
-    const result = await sendMessageAction.run($)
+    const result = await sendMessageAction.run!($)
     expect(result).toBeUndefined()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: mockHttpResponse.data,
@@ -80,8 +80,8 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run($)).rejects.toThrow('Empty message text')
-    await expect(sendMessageAction.run($)).rejects.toMatchObject({
+    await expect(sendMessageAction.run!($)).rejects.toThrow('Empty message text')
+    await expect(sendMessageAction.run!($)).rejects.toMatchObject({
       kind: 'config',
     })
   })
@@ -91,7 +91,9 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run($)).rejects.toThrow('Empty message text')
+    await expect(sendMessageAction.run!($)).rejects.toThrow(
+      'Empty message text',
+    )
   })
 
   it.each([
@@ -111,7 +113,7 @@ describe('send message', () => {
         },
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      const error = await sendMessageAction.run($).catch((e) => e)
+      const error = await sendMessageAction.run!($).catch((e) => e)
       expect(error).toBeInstanceOf(RetriableError)
       expect(error).toMatchObject({ kind: 'third-party' })
     },
@@ -127,7 +129,7 @@ describe('send message', () => {
       code: 'ETIMEDOUT',
     })
     mocks.httpPost.mockRejectedValueOnce(httpError)
-    const error = await sendMessageAction.run($).catch((e) => e)
+    const error = await sendMessageAction.run!($).catch((e) => e)
     expect(error).toBeInstanceOf(RetriableError)
     expect(error).toMatchObject({ kind: 'third-party' })
   })
@@ -139,7 +141,7 @@ describe('send message', () => {
 
     const httpError = makeHttpError({ status: 504 })
     mocks.httpPost.mockRejectedValueOnce(httpError)
-    const error = await sendMessageAction.run($).catch((e) => e)
+    const error = await sendMessageAction.run!($).catch((e) => e)
     expect(error).toBeInstanceOf(RetriableError)
     expect(error).toMatchObject({ kind: 'third-party' })
   })
@@ -182,7 +184,7 @@ describe('send message', () => {
         statusText: 'Bad request',
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      await expect(sendMessageAction.run($)).rejects.toMatchObject({
+      await expect(sendMessageAction.run!($)).rejects.toMatchObject({
         message: expect.stringContaining(stepErrorName),
         kind: 'config',
         cause: httpError,
@@ -215,7 +217,7 @@ describe('send message', () => {
     })
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    const error = await sendMessageAction.run($).catch((e) => e)
+    const error = await sendMessageAction.run!($).catch((e) => e)
     expect(error).toBeInstanceOf(RetriableError)
     expect(error.kind).toBeUndefined()
   })
@@ -227,7 +229,7 @@ describe('send message', () => {
 
     const httpError = makeHttpError({ status: 403 })
     mocks.httpPost.mockRejectedValueOnce(httpError)
-    await expect(sendMessageAction.run($)).rejects.toMatchObject({
+    await expect(sendMessageAction.run!($)).rejects.toMatchObject({
       message: expect.stringContaining('Forbidden'),
       kind: 'config',
       cause: httpError,
@@ -244,7 +246,7 @@ describe('send message', () => {
       headers: { 'retry-after': '60' },
     })
     mocks.httpPost.mockRejectedValueOnce(httpError)
-    const error = await sendMessageAction.run($).catch((e) => e)
+    const error = await sendMessageAction.run!($).catch((e) => e)
     expect(error).toBeInstanceOf(StepError)
     expect(error).toMatchObject({
       message: expect.stringContaining('Rate limit exceeded'),
@@ -264,7 +266,7 @@ describe('send message', () => {
       data: { ok: false, error_code: 401, description: 'Unauthorized' },
     })
     mocks.httpPost.mockRejectedValueOnce(httpError)
-    await expect(sendMessageAction.run($)).rejects.toMatchObject({
+    await expect(sendMessageAction.run!($)).rejects.toMatchObject({
       message: expect.stringContaining('Invalid bot token'),
       kind: 'config',
       cause: httpError,
@@ -286,7 +288,7 @@ describe('send message', () => {
 
       const httpError = makeHttpError({ status, code })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      await expect(sendMessageAction.run($)).rejects.toMatchObject({
+      await expect(sendMessageAction.run!($)).rejects.toMatchObject({
         kind: 'third-party',
         cause: httpError,
       })
@@ -318,7 +320,7 @@ describe('send message', () => {
         code,
       })
       mocks.httpPost.mockRejectedValueOnce(httpError)
-      const error = await sendMessageAction.run($).catch((e) => e)
+      const error = await sendMessageAction.run!($).catch((e) => e)
       expect(error).toBe(httpError)
       expect(error).toBeInstanceOf(HttpError)
     },

@@ -99,7 +99,7 @@ describe('get case details', () => {
   })
 
   it('downloads attachment, uploads to s3, and stores s3Id', async () => {
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
       urlPathParams: { caseUuid: MOCK_CASE_UUID },
@@ -159,7 +159,7 @@ describe('get case details', () => {
       },
     }))
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(mocks.putObject).not.toHaveBeenCalled()
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -196,7 +196,7 @@ describe('get case details', () => {
       throw new Error('attachment download failed')
     })
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'Failed to process attachment attach-uuid-1',
     )
   })
@@ -218,7 +218,7 @@ describe('get case details', () => {
       },
     }))
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'exceeds maximum size',
     )
     expect(mocks.putObject).not.toHaveBeenCalled()
@@ -268,7 +268,7 @@ describe('get case details', () => {
         `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID_2}/${MOCK_ATTACHMENT_NAME_2}`,
       )
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpGet).toHaveBeenCalledWith(
       '/cases/:caseUuid/attachments/:attachmentUuid',
@@ -307,7 +307,7 @@ describe('get case details', () => {
   })
 
   it('skips search when the value is a case uuid', async () => {
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect($.http.post).not.toHaveBeenCalled()
     expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
@@ -325,7 +325,7 @@ describe('get case details', () => {
     $.http.post = httpPost as unknown as typeof $.http.post
     $.step.parameters.caseUuid = MOCK_CASE_REF
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpPost).toHaveBeenCalledWith('/cases/search', {
       caseRefs: [MOCK_CASE_REF],
@@ -345,7 +345,7 @@ describe('get case details', () => {
     })) as unknown as typeof $.http.post
     $.step.parameters.caseUuid = MOCK_CASE_REF
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'More than one case found for case ref 261007-00001',
     )
     expect(httpGet).not.toHaveBeenCalled()
@@ -357,7 +357,7 @@ describe('get case details', () => {
     })) as unknown as typeof $.http.post
     $.step.parameters.caseUuid = MOCK_CASE_REF
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'No case found for case ref 261007-00001',
     )
     expect(httpGet).not.toHaveBeenCalled()
@@ -366,7 +366,7 @@ describe('get case details', () => {
   it('throws when the value is neither a case uuid nor a case ref', async () => {
     $.step.parameters.caseUuid = 'not-a-case'
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'Please enter a valid case uuid or case ref',
     )
     expect(httpGet).not.toHaveBeenCalled()
@@ -380,7 +380,7 @@ describe('get case details', () => {
       })
       httpGet.mockRejectedValueOnce(error)
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'config',
         cause: error,
         message: expect.stringContaining(
@@ -399,7 +399,7 @@ describe('get case details', () => {
       const error = makeHttpError({ status: 404, data })
       httpGet.mockRejectedValueOnce(error)
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'internal',
         cause: error,
       })
@@ -413,7 +413,7 @@ describe('get case details', () => {
         }),
       )
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'config',
       })
     })
@@ -425,7 +425,7 @@ describe('get case details', () => {
       })
       httpGet.mockRejectedValueOnce(error)
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'third-party',
         cause: error,
       })
@@ -434,7 +434,7 @@ describe('get case details', () => {
     it('tags a case without fields as internal', async () => {
       httpGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'internal',
         message: expect.stringContaining('No data found for case'),
       })
@@ -446,7 +446,7 @@ describe('get case details', () => {
     ])('tags a %s case identifier as config', async (_label, value) => {
       $.step.parameters.caseUuid = value
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'config',
       })
     })
@@ -454,7 +454,7 @@ describe('get case details', () => {
     it('tags an unexpected error as internal', async () => {
       httpGet.mockRejectedValueOnce(new Error('boom'))
 
-      await expect(getCaseDetailsAction.run($)).rejects.toMatchObject({
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
         kind: 'internal',
         message: expect.stringContaining("An error occurred: 'boom'"),
       })
@@ -465,7 +465,7 @@ describe('get case details', () => {
       onTestFinished(() => logError.mockRestore())
       httpGet.mockRejectedValueOnce(new Error('boom'))
 
-      await expect(getCaseDetailsAction.run($)).rejects.toThrow()
+      await expect(getCaseDetailsAction.run!($)).rejects.toThrow()
 
       const fields = {
         errorName: 'Error',

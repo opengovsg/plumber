@@ -67,7 +67,7 @@ export async function generateMockStep(
 ) {
   return await Step.query().insert({
     key,
-    appKey,
+    appKey: appKey ?? undefined,
     type,
     flowId,
     position,

@@ -40,6 +40,11 @@ vi.mock('@/helpers/logger', () => ({
 
 import action from '../../actions/mrf-submission/index'
 
+// Optional on IRawAction because other actions may omit them, but this action
+// always defines both.
+const run = action.run!
+const testRun = action.testRun!
+
 function createMockGlobalVariable(
   overrides: Partial<Record<string, unknown>> = {},
 ): IGlobalVariable {
@@ -87,7 +92,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.testRun($)).rejects.toMatchObject({
+      await expect(testRun($)).rejects.toMatchObject({
         message: expect.stringContaining('"name":"Misconfigured MRF step"'),
         kind: 'internal',
       })
@@ -106,7 +111,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.testRun($)).rejects.toMatchObject({
+      await expect(testRun($)).rejects.toMatchObject({
         message: expect.stringContaining('"name":"Misconfigured MRF step"'),
         kind: 'internal',
       })
@@ -121,7 +126,7 @@ describe('mrf-submission action', () => {
       })
       mocks.executionStepQueryFindOne.mockResolvedValue(null)
 
-      await action.testRun($)
+      await testRun($)
 
       expect($.setActionItem).toHaveBeenCalledWith({ raw: null })
     })
@@ -142,7 +147,7 @@ describe('mrf-submission action', () => {
         metadata: mockMetadata,
       })
 
-      await action.testRun($)
+      await testRun($)
 
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: mockDataOut,
@@ -160,7 +165,7 @@ describe('mrf-submission action', () => {
         metadata: {},
       })
 
-      await action.testRun($)
+      await testRun($)
 
       expect($.setActionItem).toHaveBeenCalledWith({ raw: null })
     })
@@ -184,7 +189,7 @@ describe('mrf-submission action', () => {
         metadata: {},
       })
 
-      await action.testRun($)
+      await testRun($)
 
       // workflow-step-002 is not in completed steps (only index 0)
       expect($.setActionItem).toHaveBeenCalledWith({ raw: null })
@@ -211,7 +216,7 @@ describe('mrf-submission action', () => {
         metadata: { someKey: 'value' },
       })
 
-      await action.testRun($)
+      await testRun($)
 
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: mockDataOut,
@@ -264,7 +269,7 @@ describe('mrf-submission action', () => {
       const $ = createMockGlobalVariable()
       setupRunMocks({ flowSteps: [] })
 
-      await expect(action.run($)).rejects.toMatchObject({
+      await expect(run($)).rejects.toMatchObject({
         message: expect.stringContaining(
           '"name":"Previous executable step not found"',
         ),
@@ -276,7 +281,7 @@ describe('mrf-submission action', () => {
       const $ = createMockGlobalVariable()
       setupRunMocks({ executionSteps: [] })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -289,7 +294,7 @@ describe('mrf-submission action', () => {
         executionSteps: [{ stepId: PREVIOUS_STEP.id, isFailed: true }],
       })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -303,7 +308,7 @@ describe('mrf-submission action', () => {
         null,
       )
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -321,7 +326,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.run($)).rejects.toMatchObject({
+      await expect(run($)).rejects.toMatchObject({
         message: expect.stringContaining(
           '"name":"Invalid MRF data: submitted steps are not valid"',
         ),
@@ -340,7 +345,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      await expect(action.run($)).rejects.toMatchObject({
+      await expect(run($)).rejects.toMatchObject({
         message: expect.stringContaining(
           '"name":"Invalid MRF data: unable to find submitted step"',
         ),
@@ -364,7 +369,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toBeUndefined()
     })
@@ -386,7 +391,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toBeUndefined()
     })
@@ -408,7 +413,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toBeUndefined()
     })
@@ -438,7 +443,7 @@ describe('mrf-submission action', () => {
         .mockReturnValueOnce(flowStepsChain)
         .mockReturnValueOnce(rejectStepChain)
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toEqual({
         nextStep: {
@@ -472,7 +477,7 @@ describe('mrf-submission action', () => {
         .mockReturnValueOnce(flowStepsChain)
         .mockReturnValueOnce(rejectStepChain)
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toEqual({
         nextStep: { command: 'stop-execution' },
@@ -508,7 +513,7 @@ describe('mrf-submission action', () => {
         },
       })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toBeUndefined()
     })
@@ -535,7 +540,7 @@ describe('mrf-submission action', () => {
         ],
       })
 
-      const result = await action.run($)
+      const result = await run($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },

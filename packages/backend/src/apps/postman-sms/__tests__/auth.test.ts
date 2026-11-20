@@ -56,7 +56,7 @@ describe('Postman SMS auth', () => {
       $.auth.data.screenName = 'My Campaign'
       mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Test)
 
-      await verifyCredentials($)
+      await verifyCredentials!($)
       expect(mocks.authSet).toHaveBeenCalledWith(
         expect.objectContaining({
           screenName: '[TEST] My Campaign',
@@ -68,14 +68,14 @@ describe('Postman SMS auth', () => {
       $.auth.data.screenName = '[TEST] My Campaign'
       mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Test)
 
-      await verifyCredentials($)
+      await verifyCredentials!($)
       expect(mocks.authSet).not.toHaveBeenCalled()
     })
 
     it('Does not modify the label for campaigns in prod', async () => {
       mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Prod)
 
-      await verifyCredentials($)
+      await verifyCredentials!($)
       expect(mocks.authSet).not.toHaveBeenCalled()
     })
   })
