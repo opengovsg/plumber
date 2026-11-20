@@ -2,6 +2,7 @@ import { useQuery } from '@apollo/client'
 import { Box, Flex, Grid, Icon, Image, Text } from '@chakra-ui/react'
 import { Badge, Link } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
+import { useFeatureFlagEnabled, usePostHog } from 'posthog-js/react'
 import { useContext, useState } from 'react'
 import { BiGroup } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
@@ -31,6 +32,7 @@ const SEARCH_RESULTS_COUNT = 5
 const COMMUNITY_SKELETON_COUNT = 3
 // Matches the left padding of PageTitle so content lines up with the heading.
 const GUTTER = { base: 2, md: 8 }
+const COMMUNITY_TEMPLATES_FLAG = 'templates_early_access'
 
 type ListedTemplate = ITemplate & { isBuiltIn?: boolean }
 
@@ -72,7 +74,6 @@ export default function Templates(): JSX.Element {
   // we do this to avoid adding extra flags or parameters into the query
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const isPairEnabled = getFlagValue('app_pair') as boolean
-  const isEarlyAccessEnabled = getFlagValue('templates_early_access') as boolean
   const templates: ListedTemplate[] =
     data?.getTemplates?.filter((template: ITemplate) => {
       if (isPairEnabled) {
@@ -86,6 +87,11 @@ export default function Templates(): JSX.Element {
   const template = templates?.find((template) => template.id === templateId)
 
   const { data: apps, loading: appsLoading } = useApps()
+  const posthog = usePostHog()
+  const earlyAccessFlag = useFeatureFlagEnabled(COMMUNITY_TEMPLATES_FLAG)
+  const isEarlyAccessEnabled = earlyAccessFlag === true
+  const enrolInEarlyAccess = () =>
+    posthog.updateEarlyAccessFeatureEnrollment(COMMUNITY_TEMPLATES_FLAG, true)
 
   const [searchQuery, setSearchQuery] = useState('')
   const isSearching = searchQuery.trim() !== ''
@@ -105,6 +111,7 @@ export default function Templates(): JSX.Element {
   const communityTemplates = templates.filter((template) => !template.isBuiltIn)
   const showCommunity =
     isEarlyAccessEnabled && (isLoading || communityTemplates.length > 0)
+  const showCommunitySkeleton = earlyAccessFlag === false
 
   return (
     <>
@@ -185,7 +192,9 @@ export default function Templates(): JSX.Element {
                   />
                 </TemplateSection>
               ) : (
-                <CommunityTemplatesSkeleton onTurnOn={console.log} />
+                showCommunitySkeleton && (
+                  <CommunityTemplatesSkeleton onTurnOn={enrolInEarlyAccess} />
+                )
               )}
             </>
           )}
@@ -209,8 +218,8 @@ export default function Templates(): JSX.Element {
       </Container>
 
       {template && <TemplateModal template={template} apps={apps} />}
-      <OptInDialog onOptIn={console.log} />
-      <EarlyAccessModal onTurnOn={console.log} />
+      <OptInDialog onOptIn={enrolInEarlyAccess} />
+      <EarlyAccessModal onTurnOn={enrolInEarlyAccess} />
     </>
   )
 }
