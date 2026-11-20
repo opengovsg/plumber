@@ -45,7 +45,8 @@ class App {
       const app = await this.findOneByKey(appKey)
       return (
         app.triggers?.find((trigger) => trigger.key === key) ||
-        app.actions?.find((action) => action.key === key)
+        app.actions?.find((action) => action.key === key) ||
+        null
       )
     } catch {
       logger.error({
@@ -59,11 +60,11 @@ class App {
   }
 
   static getAllAppsWithFunctions = memoize(async () => {
-    return await this.findAll(null, false)
+    return await this.findAll(undefined, false)
   })
 
   static getAllAppsWithConnections = memoize(async () => {
-    const allApps = await this.findAll(null, false)
+    const allApps = await this.findAll(undefined, false)
     return allApps.filter((app) => app.auth)
   })
 }
