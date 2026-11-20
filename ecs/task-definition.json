@@ -32,6 +32,12 @@
       "name": "worker",
       "cpu": 1024,
       "command": ["node", "packages/backend/dist/worker.js"],
+      "environment": [
+        {
+          "name": "DD_SPAN_SAMPLING_RULES",
+          "value": "[{\"service\":\"plumber\",\"name\":\"workers.flow\",\"sample_rate\":1.0}]"
+        }
+      ],
       "essential": true,
       "stopTimeout": 120,
       "logConfiguration": {
