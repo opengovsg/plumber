@@ -13,7 +13,7 @@ import {
   parseOperand,
 } from './logic'
 
-function getParams($: Parameters<IRawAction['run']>[0]) {
+function getParams($: Parameters<NonNullable<IRawAction['run']>>[0]) {
   try {
     return paramsSchema.parse($.step.parameters)
   } catch (error) {
@@ -136,7 +136,7 @@ const action: IRawAction = {
         throw error
       }
       throw new StepError({
-        name: `Error processing dates: '${error.message}'`,
+        name: `Error processing dates: '${error instanceof Error ? error.message : String(error)}'`,
         solution:
           'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
         kind: 'internal',
