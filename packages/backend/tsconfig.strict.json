@@ -373,6 +373,25 @@
     "src/models/tiles/pg/__tests__/table-row-query.itest.ts",
     "src/models/tiles/pg/__tests__/table-row-filtering.itest.ts",
     "src/graphql/__tests__/mutations/tiles/table.mock.ts",
-    "src/graphql/__tests__/mutations/flow.mock.ts"
+    "src/graphql/__tests__/mutations/flow.mock.ts",
+    "src/apps/m365-excel/__tests__/actions/get-table-rows.itest.ts",
+    "src/apps/tiles/__tests__/actions/create-row.itest.ts",
+    "src/apps/tiles/__tests__/actions/find-single-row.itest.ts",
+    "src/apps/tiles/__tests__/actions/update-row.itest.ts",
+    "src/apps/tiles/__tests__/actions/find-multiple-row.itest.ts",
+    "src/apps/formsg/__tests__/triggers/remove-mrf-steps.itest.ts",
+    "src/apps/formsg/__tests__/triggers/create-mrf-steps.itest.ts",
+    "src/apps/formsg/__tests__/actions/mrf-submission.critical.itest.ts",
+    "src/apps/formsg/__tests__/actions/mrf-submission.itest.ts",
+    "src/models/tiles/dynamodb/__tests__/table-row/functions.itest.ts",
+    "src/models/tiles/pg/__tests__/table-functions.itest.ts",
+    "src/models/tiles/pg/__tests__/table-column-functions.itest.ts",
+    "src/models/tiles/pg/__tests__/table-row-update.itest.ts",
+    "src/models/tiles/pg/__tests__/table-row-delete.itest.ts",
+    "src/models/tiles/pg/__tests__/table-row-create.itest.ts",
+    "src/models/__tests__/flow-collaborators.itest.ts",
+    "src/models/__tests__/flow-connections.itest.ts",
+    "src/models/__tests__/table-collaborators.itest.ts",
+    "src/models/__tests__/step.itest.ts"
   ]
 }
