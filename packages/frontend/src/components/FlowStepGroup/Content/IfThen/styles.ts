@@ -1,34 +1,5 @@
 import { FlexProps } from '@chakra-ui/react'
 
-export const ifThenStyles = {
-  addBranchButton: {
-    alignItems: 'center',
-    bg: 'white',
-    borderWidth: '1px',
-    borderColor: 'base.divider.medium',
-    borderRadius: 'lg',
-    gap: 2,
-    justifyContent: 'flex-start',
-    overflow: 'hidden',
-    px: 4,
-    py: 2,
-    variant: 'outline',
-    w: 'full',
-    _hover: {
-      bg: 'interaction.muted.neutral.hover',
-    },
-    _active: {
-      bg: 'interaction.muted.neutral.active',
-    },
-    _disabled: {
-      borderColor: 'base.divider.light',
-      color: 'base.content.medium',
-      cursor: 'not-allowed',
-      _hover: { bg: 'white' },
-    },
-  },
-}
-
 /**
  * `boxSize` alone isn't enough: IconButton's own size sets a larger
  * min-width/min-height that wins, so both are pinned here too — the same way
@@ -60,23 +31,7 @@ export const blockActionsOverlayStyles = {
  */
 export const BLOCK_ACTIONS_OVERLAY_WIDTH_PX = 92
 
-export const branchStyles = {
-  container: {
-    alignItems: 'center',
-    bg: '#f8f9f9',
-    borderRadius: 'lg',
-    direction: 'column' as FlexProps['direction'],
-    overflow: 'hidden',
-    px: 3,
-    py: 3,
-    w: '100%',
-  },
-}
-
-/**
- * The card a condition block (IF / CONTINUE IF / REPEAT) draws, distinct from
- * `branchStyles` which an if-then V1 branch still uses.
- */
+/** The card a condition block (IF / CONTINUE IF / REPEAT) draws. */
 export const conditionBlockStyles = {
   // No padding of its own, so the header can sit flush.
   container: {

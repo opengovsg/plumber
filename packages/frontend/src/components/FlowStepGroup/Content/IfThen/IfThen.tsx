@@ -328,7 +328,6 @@ export default function IfThen({
                         <Flex w="100%" flexDir="column">
                           <GroupStepWithAddButton
                             step={step}
-                            asConditionBlock
                             canAddStep={!isSoleBlankPlaceholder}
                             isLastStep={isLastStep}
                             isOverlay={isOverlay}

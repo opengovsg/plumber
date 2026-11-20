@@ -3,7 +3,7 @@ import { PartialModelObject, raw } from 'objection'
 
 import {
   repairEndStepsOnReorder,
-  upgradeIfThenV1BlocksIfEnabled,
+  upgradeIfThenV1Blocks,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
@@ -107,10 +107,9 @@ const updateStepPositions: NonNullable<
       )
     }
 
-    // Opportunistically pin any legacy if-then block in the flow to its
-    // current extent, if the if-then-then flag is on for the pipe owner, so
-    // its extent gets locked in before this reorder can silently change it.
-    await upgradeIfThenV1BlocksIfEnabled(trx, flow, allSteps)
+    // Pins any legacy if-then block to its current extent before this reorder
+    // can silently change it.
+    await upgradeIfThenV1Blocks(trx, flow, allSteps)
     // Re-reads (positions are still pre-patch) so any block just pinned
     // above is reflected as V2 below.
     // IMPORTANT: otherwise the repair pass wouldn't see its own

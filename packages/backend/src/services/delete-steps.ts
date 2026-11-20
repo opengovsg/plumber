@@ -8,7 +8,7 @@ import {
 import { isIfThenStep, isIfThenV2 } from '@/apps/toolbox/common/constants'
 import {
   repairEndStepsOnDeleteStep,
-  upgradeIfThenV1BlocksIfEnabled,
+  upgradeIfThenV1Blocks,
 } from '@/apps/toolbox/common/validate-end-step'
 import { hasStepReference } from '@/helpers/check-step-parameters'
 import logger from '@/helpers/logger'
@@ -32,7 +32,7 @@ export async function deleteStepsInTransaction({
 }): Promise<void> {
   // Pin other legacy If blocks so the repair pass can shrink them. The
   // deleted If keeps its derived extent, resolved in stepsRemovedWith.
-  await upgradeIfThenV1BlocksIfEnabled(
+  await upgradeIfThenV1Blocks(
     trx,
     flow,
     await flow.$relatedQuery('steps', trx).orderBy('position', 'asc'),

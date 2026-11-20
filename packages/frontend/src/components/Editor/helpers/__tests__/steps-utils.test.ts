@@ -6,7 +6,6 @@ import {
   deriveIfThenV1EndStep,
   getEligibleVariableStepIds,
   hasEmptyIfThenV2Block,
-  hasIfThenV2Block,
   isBlankPlaceholderStep,
   isIfThenBlockRegionConfined,
   isStepInsideForEachBody,
@@ -718,42 +717,6 @@ describe('isStepInsideForEachBody', () => {
     const steps = [block, b1]
 
     expect(isStepInsideForEachBody(b1, steps, GROUPING_ACTIONS)).toBe(false)
-  })
-})
-
-describe('hasIfThenV2Block', () => {
-  it('is true for a populated if-then V2 block', () => {
-    const block = markedIfThen('block', 's2')
-    const s2 = plain('s2')
-
-    expect(hasIfThenV2Block([block, s2])).toBe(true)
-  })
-
-  it('is true for an empty (self-referencing) if-then V2 block', () => {
-    const block = markedIfThen('block', 'block')
-
-    expect(hasIfThenV2Block([block])).toBe(true)
-  })
-
-  it('is false for a marker-less if-then shaped like real GraphQL data', () => {
-    const ifThenA = nullMarkerIfThen('ifThenA')
-
-    expect(hasIfThenV2Block([ifThenA])).toBe(false)
-  })
-
-  it('is false for a flow with no if-then step at all', () => {
-    const s1 = plain('s1')
-    const s2 = plain('s2')
-
-    expect(hasIfThenV2Block([s1, s2])).toBe(false)
-  })
-
-  it('is true when only one of several if-thens carries a marker', () => {
-    const ifThenA = nullMarkerIfThen('ifThenA')
-    const block = markedIfThen('block', 'b1')
-    const b1 = plain('b1')
-
-    expect(hasIfThenV2Block([ifThenA, block, b1])).toBe(true)
   })
 })
 

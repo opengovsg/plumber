@@ -17,8 +17,6 @@ export const SGID_FEATURE_FLAG = 'sgid-login'
  * missing) hides it. Replaces the old boolean 'ogp-sso-enabled' flag.
  */
 export const ONEGOV_FEATURE_FLAG = 'onegov-enabled'
-export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
-export const IF_THEN_THEN_FEATURE_FLAG = 'feature_if_then_then'
 export const PLUMPRO_FEATURE_FLAG = 'plumpro'
 
 /**

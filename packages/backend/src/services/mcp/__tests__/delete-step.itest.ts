@@ -18,8 +18,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
-  // The If block flag stays on. Legacy pipes are pinned when a step is deleted.
-  getLdFlagValue: vi.fn().mockResolvedValue(true),
 }))
 
 describe('deleteStepService', () => {

@@ -1,18 +1,13 @@
 import { Box, Spinner } from '@chakra-ui/react'
 import { useContext } from 'react'
 
-import { useIfThenV1Initializer } from '@/helpers/toolbox'
-
 import { FlowStepConfigurationContext } from './FlowStepConfigurationContext'
 
 export default function LoadingOverlay(): JSX.Element {
   const { modalState } = useContext(FlowStepConfigurationContext)
   const { isLoading } = modalState
-  const [_, isInitializingIfThen] = useIfThenV1Initializer()
 
-  const isModalLoading = isLoading || isInitializingIfThen
-
-  if (!isModalLoading) {
+  if (!isLoading) {
     return <></>
   }
 

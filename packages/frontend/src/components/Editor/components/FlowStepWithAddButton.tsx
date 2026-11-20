@@ -20,21 +20,16 @@ export default function FlowStepWithAddButton({
     isDisabled = false,
     showEmptyAction = false,
   },
-  asConditionBlock = false,
 }: {
   step: IStep
   isLastStep: boolean
   isNested?: boolean
-  stepsBeforeGroup: IStep[]
-  groupedSteps: IStep[][]
   allowReorder: boolean
   addButtonProps: {
     isHidden: boolean
     isDisabled: boolean
     showEmptyAction: boolean
   }
-  /** Draw an only-continue-if step as a CONTINUE IF condition block. */
-  asConditionBlock?: boolean
 }) {
   const { disabledMrfStepToDisplay } = useContext(MrfContext)
   const { isOverlay, isSorting } = useContext(SortableItemContext)
@@ -43,7 +38,7 @@ export default function FlowStepWithAddButton({
 
   return (
     <>
-      {asConditionBlock && isOnlyContinueIfStep(step) ? (
+      {isOnlyContinueIfStep(step) ? (
         <OnlyContinueIf
           step={step}
           isLastStep={isLastStep}

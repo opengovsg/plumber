@@ -8,7 +8,9 @@ import {
 export default function getStepName(
   allApps: IApp[],
   step: IStep | undefined,
-  isIfThenV2Enabled = false,
+  // The editor hides an if-then V1 step's branchName input, so its title
+  // carries the name instead.
+  combineV1BranchName = false,
 ) {
   if (!step) {
     return {
@@ -24,10 +26,7 @@ export default function getStepName(
     const isV2 = step.config?.endStepId != null
     const branchName = step.parameters?.branchName as string | undefined
 
-    // Edge case: If-then V2 is enabled and viewer is looking at a V1 if-then.
-    // V1 if-thens may have both stepname and branch names - we combine them if
-    // thats the case.
-    if (!isV2 && isIfThenV2Enabled && branchName) {
+    if (!isV2 && combineV1BranchName && branchName) {
       return {
         stepName: customStepName
           ? `${branchName} (${customStepName})`
