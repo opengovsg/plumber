@@ -177,9 +177,10 @@ export function useChatStream(options: UseChatStreamOptions) {
   // the conversation — every tool result and data-pipeState part (the only
   // places real step IDs ever appeared) is gone. Without this, the model has
   // no ground truth for step IDs on its first post-refresh turn and guesses.
-  // Fires once per mount only — after that, the live conversation carries its
-  // own tool-call history forward same as before.
-  const hasSentPipeContextRef = useRef(false)
+  // Built once per chat, then resent on every request so the prompt-cache
+  // prefix stays stable and a clarifying question does not drop it.
+  const hasBuiltPipeContextRef = useRef(false)
+  const pipeContextMessageRef = useRef<CustomUIMessage | null>(null)
 
   // Track step readiness from data-isChatReady annotation
   // Initialize based on whether initialMessages contains a ready message.
@@ -238,18 +239,16 @@ export function useChatStream(options: UseChatStreamOptions) {
         return response
       },
       prepareSendMessagesRequest: ({ messages }) => {
-        // First request since mount: if a pipe already has real step IDs
+        // First request of this chat: if a pipe already has real step IDs
         // (data-pipeState survived in the persisted draft) but this mount's
         // own conversation history doesn't carry them (post-refresh), resync
         // the model with just the ID mapping it needs — not the full step
         // config — so it doesn't have to guess a step_id for tool calls like
         // get_dynamic_data.
-        const pipeContextMsgs: CustomUIMessage[] = []
-        if (!hasSentPipeContextRef.current) {
-          hasSentPipeContextRef.current = true
-          const currentSteps = outputRef.current?.pipeId
-            ? outputRef.current?.steps
-            : undefined
+        if (!hasBuiltPipeContextRef.current) {
+          hasBuiltPipeContextRef.current = true
+          const pipeId = outputRef.current?.pipeId
+          const currentSteps = pipeId ? outputRef.current?.steps : undefined
           const configuredSteps = Array.isArray(currentSteps)
             ? currentSteps.filter(
                 (s: { appKey?: string; key?: string }) => s.appKey && s.key,
@@ -264,22 +263,27 @@ export function useChatStream(options: UseChatStreamOptions) {
                 ) => `${i + 1}. ${s.appKey}/${s.key} (${s.type}) — id: ${s.id}`,
               )
               .join('\n')
-            pipeContextMsgs.push({
+            pipeContextMessageRef.current = {
               id: 'pipe-context-resync',
-              role: 'assistant' as const,
+              // IMPORTANT: Bedrock rejects a conversation that starts with an assistant message, as a new chat would.
+              role: initialMessagesRef.current?.length
+                ? ('assistant' as const)
+                : ('user' as const),
               parts: [
                 {
                   type: 'text' as const,
-                  text: `[Internal resync — do not mention this to the user] Current pipe steps and their real IDs, for use as step_id in tool calls:\n${stepIdMapping}`,
+                  text: `[Internal resync — do not mention this to the user] Pipe id: ${pipeId}\nCurrent pipe steps and their real IDs, for use as step_id in tool calls:\n${stepIdMapping}`,
                 },
               ],
-            })
+            }
           }
         }
 
         const allMessages = buildRequestMessages({
           initialMessages: initialMessagesRef.current,
-          pipeContextMessages: pipeContextMsgs,
+          pipeContextMessages: pipeContextMessageRef.current
+            ? [pipeContextMessageRef.current]
+            : [],
           messages,
         })
 
@@ -612,6 +616,9 @@ export function useChatStream(options: UseChatStreamOptions) {
     setIsReady(false)
     setIsLastTurnAborted(false)
     setHasExceededSizeLimit(false)
+    // A new chat that keeps the pipe needs its step ids resent.
+    hasBuiltPipeContextRef.current = false
+    pipeContextMessageRef.current = null
   }, [setMessages])
 
   // Wrapper for sendMessage that matches the expected signature

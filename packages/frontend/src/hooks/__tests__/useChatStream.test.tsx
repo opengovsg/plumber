@@ -21,12 +21,13 @@ vi.mock('@opengovsg/design-system-react', () => ({ useToast: () => toast }))
 vi.mock('@/hooks/useSessionExpiredToast', () => ({
   useSessionExpiredToast: () => vi.fn(),
 }))
+const context = vi.hoisted(() => ({ output: {} as Record<string, unknown> }))
 vi.mock('@/pages/AiBuilder/AiBuilderContext', () => ({
   useAiBuilderContext: () => ({
-    output: {},
+    output: context.output,
     chatId: 'chat-1',
     ddSessionId: '',
-    refetchTestExecutionSteps: vi.fn(),
+    refetchTestExecutionSteps: vi.fn().mockResolvedValue(undefined),
   }),
 }))
 
@@ -163,5 +164,41 @@ describe('useChatStream', () => {
 
     act(() => hook.resetChat())
     await waitForState(() => expect(hook.hasExceededSizeLimit).toBe(false))
+  })
+
+  it('resends pipe step ids as a user message when a new chat starts', async () => {
+    context.output = {
+      pipeId: 'pipe-1',
+      steps: [{ id: 'step-1', appKey: 'formsg', key: 'new', type: 'trigger' }],
+    }
+    function Probe() {
+      hook = useChatStream({})
+      return null
+    }
+    act(() => root.render(<Probe />))
+    fetchMock.mockResolvedValue(new Response('Too large', { status: 413 }))
+    const firstMessage = (call: number) =>
+      JSON.parse(fetchMock.mock.calls[call][1].body).messages[0]
+
+    act(() => hook.sendMessage('Add a step'))
+    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    act(() => hook.sendMessage('Add another step'))
+    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    act(() => hook.resetChat())
+    act(() => hook.sendMessage('Continue building my pipe.'))
+    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    for (const call of [0, 1, 2]) {
+      expect(firstMessage(call)).toMatchObject({
+        id: 'pipe-context-resync',
+        role: 'user',
+        parts: [
+          {
+            text: expect.stringMatching(/Pipe id: pipe-1\n[\s\S]*step-1/),
+          },
+        ],
+      })
+    }
+    context.output = {}
   })
 })

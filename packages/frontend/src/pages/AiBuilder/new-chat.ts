@@ -4,6 +4,8 @@ import type { AIBuilderDraftState } from './AiBuilderContext'
 // pre-fills the input with it so the user can carry the idea into the new conversation.
 const CONTINUATION_PROMPT_REGEX = /<code[^>]*>([\s\S]*?)<\/code>/
 
+export const CONTINUE_PIPE_PROMPT = 'Continue building my pipe.'
+
 /**
  * Extract the continuation prompt from an assistant message's <code> block, if present.
  */
@@ -29,3 +31,27 @@ export const createNewChatDraft = (
   output: { trigger: '', actions: '', name: 'Build with AI', traceId: '' },
   chatId: crypto.randomUUID(),
 })
+
+/**
+ * Builds a new chat that keeps the current pipe.
+ *
+ * Used when the old chat grew too large to send. No summary turn can run then, so the pipe carries the progress.
+ * The new chat's first request resends the pipe's step ids (see useChatStream).
+ */
+export const createNewChatDraftKeepingPipe = (
+  previous: Pick<
+    AIBuilderDraftState,
+    'flowName' | 'output' | 'parameterLabelsByStepId'
+  >,
+): AIBuilderDraftState => {
+  if (!previous.output?.pipeId) {
+    return createNewChatDraft()
+  }
+  return {
+    ...createNewChatDraft(),
+    flowName: previous.flowName,
+    chatInput: CONTINUE_PIPE_PROMPT,
+    output: previous.output,
+    parameterLabelsByStepId: previous.parameterLabelsByStepId,
+  }
+}
