@@ -93,14 +93,6 @@ describe('getStepErrorKind', () => {
   it.each([
     { label: 'plain Error', error: new Error('{"kind":"config"}') },
     { label: 'HttpError', error: HTTP_ERROR },
-    {
-      label: 'RetriableError without kind',
-      error: new RetriableError({
-        error: { kind: 'config' },
-        delayInMs: 'default',
-        delayType: 'step',
-      }),
-    },
     { label: 'UserFacingError', error: new UserFacingError('bad input') },
     { label: 'object with kind', error: { kind: 'config' } },
     { label: 'null', error: null },

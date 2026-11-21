@@ -11,7 +11,7 @@ interface RetriableErrorParams {
   /** Optional override for the max number of job attempts before failing. */
   maxAttempts?: number
   /** IMPORTANT: only labels the failure log, and never changes retry decisions. */
-  kind?: StepErrorKind
+  kind: StepErrorKind
 }
 
 /**
@@ -42,7 +42,7 @@ export default class RetriableError extends BaseError {
   delayInMs: number
   delayType: RetriableErrorParams['delayType']
   maxAttempts?: number
-  readonly kind?: StepErrorKind
+  readonly kind: StepErrorKind
 
   constructor({
     error,

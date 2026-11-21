@@ -14,11 +14,9 @@ import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 
-// A RetriableError created to retry an HTTP failure has no kind and carries its StepError as cause.
+// An UnrecoverableError that replaced the original error carries it as cause.
 function getFailedJobKind(err: Error): StepErrorKind {
-  const hasOwnKind =
-    err instanceof StepError ||
-    (err instanceof RetriableError && err.kind !== undefined)
+  const hasOwnKind = err instanceof StepError || err instanceof RetriableError
   return getStepErrorKind(hasOwnKind ? err : err.cause)
 }
 

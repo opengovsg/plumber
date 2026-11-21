@@ -251,6 +251,7 @@ export function throwPostmanStepError({
         error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'queue',
+        kind: 'internal',
       })
     case 'INVALID-ATTACHMENT':
       throw new StepError({
@@ -282,6 +283,7 @@ export function throwPostmanStepError({
           error: `Retrying ${errorMessage}`,
           delayInMs: 'default',
           delayType: 'step',
+          kind: 'third-party',
         })
       }
 

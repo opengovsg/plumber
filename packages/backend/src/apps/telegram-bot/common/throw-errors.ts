@@ -84,6 +84,8 @@ export async function throwSendMessageError(
             error: `Upgrade from current chat id: ${oldChatId} to supergroup chat id: ${newChatId} and retry`,
             delayInMs: 'default',
             delayType: 'step',
+            // The user's group chat became a supergroup.
+            kind: 'config',
           })
         }
         // for test runs, still throw back stepError
