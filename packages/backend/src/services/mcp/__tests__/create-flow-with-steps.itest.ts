@@ -186,7 +186,7 @@ describe('createFlowWithStepsService', () => {
     })
   })
 
-  it('auto-initialises branchName and depth for toolbox/ifThen steps', async () => {
+  it('auto-initialises branchName for toolbox/ifThen steps', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
       email: `create-pipe-ifthen-${randomUUID()}@example.com`,
@@ -233,11 +233,9 @@ describe('createFlowWithStepsService', () => {
     const [, branch1, _, branch2] = result.steps
     expect(branch1.parameters).toMatchObject({
       branchName: 'Branch 1',
-      depth: 0,
     })
     expect(branch2.parameters).toMatchObject({
       branchName: 'Branch 2',
-      depth: 0,
     })
   })
 
@@ -277,7 +275,6 @@ describe('createFlowWithStepsService', () => {
     const [, branch] = result.steps
     expect(branch.parameters).toMatchObject({
       branchName: 'High Priority',
-      depth: 0,
     })
   })
 
@@ -502,7 +499,7 @@ describe('createFlowWithStepsService', () => {
           key: 'ifThen',
           type: 'action',
           position: 2,
-          parameters: { branchName: 'High Priority', depth: 0 },
+          parameters: { branchName: 'High Priority' },
         },
         {
           appKey: 'postman',

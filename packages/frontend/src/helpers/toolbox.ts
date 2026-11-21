@@ -70,9 +70,7 @@ export function useIfThenV2Initializer(): [
               id: currStep.flowId,
               updatedAt: currStep.flow.updatedAt,
             },
-            parameters: {
-              depth: 0,
-            },
+            parameters: {},
             connection: {
               id: null,
             },

@@ -157,10 +157,9 @@ function parseRawWorkflowData(text: string): IFlowSteps {
           // stepName → step title label (max 64 chars); falls back to key if omitted
           stepName: String(step.stepName ?? step.key ?? '').slice(0, 64),
         },
-        // if-then requires parameters with depth and branchName for branch labelling
+        // if-then requires parameters with branchName for branch labelling
         ...(isIfThen && {
           parameters: {
-            depth: 0,
             branchName: String(step.branchName ?? 'Branch'),
           },
           ...(step.ifThenChildCount !== undefined && {

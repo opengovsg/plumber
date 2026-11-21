@@ -25,19 +25,6 @@ const action: IRawAction = {
       variables: false,
     },
     {
-      // This is computed by the front-end when adding a step.
-      key: 'depth',
-      type: 'string' as const,
-      label: 'FILE A BUG IF YOU SEE THIS',
-
-      // Always hidden
-      hiddenIf: {
-        op: 'always_true',
-      },
-      required: false,
-      variables: false,
-    },
-    {
       label: 'Conditions',
       key: 'conditions',
       type: 'grouped-multirow' as const,

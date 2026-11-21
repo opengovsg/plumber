@@ -75,7 +75,7 @@ describe('toProposalSteps', () => {
       {
         ...action('ifThen', { approvalBranch: 'reject', ifThenChildCount: 2 }),
         appKey: 'toolbox',
-        parameters: { depth: 0, branchName: 'Urgent' },
+        parameters: { branchName: 'Urgent' },
       },
       action('urgentEmail', { approvalBranch: 'reject' }),
       action('urgentSms', { approvalBranch: 'reject' }),

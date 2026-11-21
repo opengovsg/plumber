@@ -24,7 +24,6 @@ const actionStepSchema = z.object({
   }),
   parameters: z
     .object({
-      depth: z.literal(0),
       branchName: z.string(),
     })
     .optional(),
