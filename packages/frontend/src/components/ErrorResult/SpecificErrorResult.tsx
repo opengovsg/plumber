@@ -55,12 +55,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
 
           <SupportContactMessage />
 
-          {details && (
-            <ErrorDetailsCollapse
-              details={details}
-              buttonText="View http error details below."
-            />
-          )}
+          {details && <ErrorDetailsCollapse details={details} />}
 
           {!isTestRun && partialRetry && executionStepId && (
             <Button

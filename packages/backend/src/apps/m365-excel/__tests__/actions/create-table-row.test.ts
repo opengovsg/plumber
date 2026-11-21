@@ -16,8 +16,13 @@ const mocks = vi.hoisted(() => ({
   validateCanAccessFile: vi.fn(),
   extractAuthData: vi.fn(),
   constructRow: vi.fn(),
+  loggerError: vi.fn(),
   realConstructRow:
     undefined as unknown as (typeof import('../../common/workbook-helpers/tables'))['constructMsGraphValuesArrayForRowWrite'],
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.loggerError, info: vi.fn(), warn: vi.fn() },
 }))
 
 vi.mock('../../common/workbook-session', () => ({
@@ -376,6 +381,7 @@ describe('createTableRow runBatch', () => {
     [
       'a plain Error from the access check',
       () => mocks.validateCanAccessFile.mockRejectedValue(new Error('boom')),
+      'boom',
     ],
     [
       'a ZodError from the auth data',
@@ -383,25 +389,65 @@ describe('createTableRow runBatch', () => {
         mocks.extractAuthData.mockImplementation(() =>
           z.object({ a: z.string() }).parse(undefined),
         ),
+      '✖ Invalid input: expected object, received undefined',
     ],
-  ])('wraps %s in an internal StepError for every job', async (_, arrange) => {
-    arrange()
+  ])(
+    'wraps %s in an internal StepError for every job',
+    async (_, arrange, expectedMessage) => {
+      arrange()
+      const jobs = [
+        { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+        { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+      ]
+
+      const results = await createTableRowAction.runBatch!(jobs)
+
+      results.forEach((r) => {
+        const { error } = r as { status: 'failed'; error: StepError }
+        expect(r.status).toBe('failed')
+        expect(error).toBeInstanceOf(StepError)
+        expect(error.kind).toBe('internal')
+        expect(error.cause).toBeInstanceOf(Error)
+        expect(error.cause).not.toBeInstanceOf(StepError)
+        expect(JSON.parse(error.message).details).toEqual({
+          error: expectedMessage,
+        })
+      })
+      expect(mocks.acquire).not.toHaveBeenCalled()
+    },
+  )
+
+  it('logs one diagnostic for an unexpected access-check error shared by the batch', async () => {
+    mocks.validateCanAccessFile.mockRejectedValue(new Error('boom'))
     const jobs = [
       { $: makeGlobalVariable(rowParameters('Alice', '30')) },
       { $: makeGlobalVariable(rowParameters('Bob', '40')) },
     ]
 
-    const results = await createTableRowAction.runBatch!(jobs)
+    await createTableRowAction.runBatch!(jobs)
 
-    results.forEach((r) => {
-      const { error } = r as { status: 'failed'; error: StepError }
-      expect(r.status).toBe('failed')
-      expect(error).toBeInstanceOf(StepError)
-      expect(error.kind).toBe('internal')
-      expect(error.cause).toBeInstanceOf(Error)
-      expect(error.cause).not.toBeInstanceOf(StepError)
+    expect(mocks.loggerError).toHaveBeenCalledOnce()
+    const [, fields] = mocks.loggerError.mock.calls[0]
+    expect(fields).toEqual({
+      event: 'm365-excel-create-table-row-unexpected-error',
+      errorName: 'Error',
+      errorMessage: 'boom',
+      flowId: 'flow-id',
+      stepId: 'step-id',
+      executionId: 'execution-id',
     })
-    expect(mocks.acquire).not.toHaveBeenCalled()
+  })
+
+  it('does not log a StepError from the access check', async () => {
+    mocks.validateCanAccessFile.mockRejectedValue(
+      new StepError({ name: 'Denied', solution: 'Fix it', kind: 'config' }),
+    )
+
+    await createTableRowAction.runBatch!([
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+    ])
+
+    expect(mocks.loggerError).not.toHaveBeenCalled()
   })
 
   it('wraps a non-StepError row-build failure in an internal StepError', async () => {
@@ -424,6 +470,7 @@ describe('createTableRow runBatch', () => {
     expect(error).toBeInstanceOf(StepError)
     expect(error.kind).toBe('internal')
     expect(error.cause).toBe(buildError)
+    expect(JSON.parse(error.message).details).toEqual({ error: 'unexpected' })
   })
 
   it('rethrows a transient access-check error so the whole batch retries', async () => {

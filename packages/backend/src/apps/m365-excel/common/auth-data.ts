@@ -4,6 +4,8 @@ import z from 'zod'
 import { isM365TenantKey } from '@/config/app-env-vars/m365'
 import StepError, { GenericSolution } from '@/errors/step'
 
+import { toInternalStepError } from './internal-step-error'
+
 const authDataSchema = z.object({
   tenantKey: z.string().refine(isM365TenantKey),
   folderId: z.string().toUpperCase(),
@@ -24,12 +26,9 @@ export function extractAuthDataWithPlumberFolder($: IGlobalVariable): AuthData {
 
   const result = authDataSchema.safeParse(authData)
   if (result.success === false) {
-    throw new StepError({
+    throw toInternalStepError($, result.error, {
       name: 'M365 connection data is invalid',
-      solution:
-        'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
-      kind: 'internal',
-      cause: result.error,
+      event: 'm365-excel-malformed-auth-data',
     })
   }
   return result.data
