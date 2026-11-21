@@ -1445,6 +1445,7 @@ export type StepErrorKind = 'config' | 'third-party' | 'internal'
 export interface IStepError {
   name: string
   solution: string
+  // Optional because errorDetails saved before kind existed have none.
   kind?: StepErrorKind
   details?: IJSONObject
   partialRetry?: {

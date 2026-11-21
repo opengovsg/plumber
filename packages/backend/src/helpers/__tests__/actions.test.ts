@@ -408,19 +408,24 @@ describe('action helper functions', () => {
     describe('other error type handling', () => {
       it.each([
         {
-          stepError: new StepError(
-            'http-step-error',
-            'test solution',
-            makeHttpError({
+          stepError: new StepError({
+            name: 'http-step-error',
+            solution: 'test solution',
+            kind: 'internal',
+            cause: makeHttpError({
               headers: {
                 'retry-after': '15',
               },
             }),
-          ),
+          }),
           isRetried: true,
         },
         {
-          stepError: new StepError('non-http-step-error', 'test solution'),
+          stepError: new StepError({
+            name: 'non-http-step-error',
+            solution: 'test solution',
+            kind: 'internal',
+          }),
           isRetried: false,
         },
       ])(
@@ -442,7 +447,12 @@ describe('action helper functions', () => {
       it.each([
         new StepError({ name: 'n', solution: 's', kind: 'config' }),
         new StepError({ name: 'n', solution: 's', kind: 'third-party' }),
-        new StepError('n', 's', EMPTY_HTTP_ERROR),
+        new StepError({
+          name: 'n',
+          solution: 's',
+          kind: 'internal',
+          cause: EMPTY_HTTP_ERROR,
+        }),
       ])(
         'attaches the StepError as a non-enumerable cause of the UnrecoverableError',
         (stepError) => {
