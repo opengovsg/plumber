@@ -250,6 +250,7 @@ const handleChatStream = observe(
                 data: { stepId, parameters, parameterLabels },
               })
             },
+            rawMessages,
           )
 
           const result = withAiTelemetryContext(
