@@ -35,6 +35,8 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
+import AiErrorFix, { clearStepFixNotice } from './AiErrorFix'
+import { readCheckStepError } from './step-error-fix'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
@@ -127,6 +129,7 @@ export default function FlowStepTestController(
     isTrigger,
     isMrfStep,
     selectedActionOrTrigger,
+    stepName,
     substeps,
     isAiStep,
   } = useStepMetadata(step)
@@ -234,6 +237,15 @@ export default function FlowStepTestController(
     isSameAppAndAppKey(step, currentTestExecutionStep) &&
     !lastErrorDetails &&
     !shouldTestStepAgain
+  const checkStepError = lastErrorDetails
+    ? readCheckStepError(lastErrorDetails)
+    : null
+
+  useEffect(() => {
+    if (isTestExecuting) {
+      clearStepFixNotice(step.id)
+    }
+  }, [isTestExecuting, step.id])
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -426,7 +438,34 @@ export default function FlowStepTestController(
           <VStack w="100%" gap={2}>
             {lastErrorDetails && (
               <Box w="100%">
-                <ErrorResult errorDetails={lastErrorDetails} isTestRun={true} />
+                {checkStepError && step.appKey && step.key && !readOnly ? (
+                  <AiErrorFix.Provider
+                    key={`${step.id}:${checkStepError.errorName}`}
+                    stepId={step.id}
+                    appKey={step.appKey}
+                    appName={
+                      allApps.find((app) => app.key === step.appKey)?.name ??
+                      step.appKey
+                    }
+                    stepKey={step.key}
+                    stepName={stepName || step.key}
+                    errorName={checkStepError.errorName}
+                    errorSolution={checkStepError.errorSolution}
+                  >
+                    <ErrorResult
+                      errorDetails={lastErrorDetails}
+                      isTestRun={true}
+                      titleAction={<AiErrorFix.Action isDisabled={isDirty} />}
+                    >
+                      <AiErrorFix.Status />
+                    </ErrorResult>
+                  </AiErrorFix.Provider>
+                ) : (
+                  <ErrorResult
+                    errorDetails={lastErrorDetails}
+                    isTestRun={true}
+                  />
+                )}
               </Box>
             )}
             <HStack w="100%" justifyContent="flex-end">

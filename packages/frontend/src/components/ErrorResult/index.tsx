@@ -1,4 +1,5 @@
 import { IJSONObject, IStepError } from '@plumber/types'
+import type { ReactNode } from 'react'
 
 import GenericErrorResult from './GenericErrorResult'
 import SpecificErrorResult from './SpecificErrorResult'
@@ -12,17 +13,29 @@ interface ErrorResultProps {
   errorDetails: IStepError | IJSONObject
   isTestRun: boolean
   executionStepId?: string
+  children?: ReactNode
+  titleAction?: ReactNode
 }
 
 export default function ErrorResult(props: ErrorResultProps) {
-  const { errorDetails, isTestRun, executionStepId } = props
+  const { children, errorDetails, isTestRun, executionStepId, titleAction } =
+    props
   return isStepError(errorDetails) ? (
     <SpecificErrorResult
       executionStepId={executionStepId}
       errorDetails={errorDetails}
       isTestRun={isTestRun}
-    />
+      titleAction={titleAction}
+    >
+      {children}
+    </SpecificErrorResult>
   ) : (
-    <GenericErrorResult errorDetails={errorDetails} isTestRun={isTestRun} />
+    <GenericErrorResult
+      errorDetails={errorDetails}
+      isTestRun={isTestRun}
+      titleAction={titleAction}
+    >
+      {children}
+    </GenericErrorResult>
   )
 }
