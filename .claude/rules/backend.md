@@ -83,13 +83,10 @@ The backend has three error families. Do not add a new family.
 
 ### `StepError`
 
-- Construct it with options: `new StepError({ name, solution, kind, cause })`. `cause` is an optional `HttpError`.
-- The positional constructor `new StepError(name, solution, error, extraProperties)` is `@deprecated`. Never use it in new code.
-- Never migrate existing call sites. Humans migrate them, one app per PR.
-- `kind` stays optional until every call site is migrated. New code always passes it.
+- Construct it with options: `new StepError({ name, solution, kind, cause })`. `kind` is required. `cause` is optional.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
-- The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
-- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` or `RetriableError` without `kind` and any other error return `internal`.
+- The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`). `IStepError.kind` stays optional, because older saved rows have none.
+- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `RetriableError` without `kind` and any non-`StepError` return `internal`.
 - `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) adds `event: 'action-job-failed'`, `willRetry`, `kind` and `appKey` to its per-attempt error log. Monitors read it with `@willRetry:false`, because logs are not sampled.
 - The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError` with `kind`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `keepErrorKindViaCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
 - A `RetriableError` takes an optional `kind` for its final failure once retries run out. Its `kind` never changes retry decisions, even `config`.
