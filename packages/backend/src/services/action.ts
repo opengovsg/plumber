@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import type {
   IActionRunResult,
   IGlobalVariable,
+  IJSONObject,
   TestRunStepMetadata,
 } from '@plumber/types'
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
@@ -132,14 +133,28 @@ export function setActionOutputError($: IGlobalVariable, error: unknown): void {
     })
   } else {
     const message = getErrorMessage(error)
-    try {
-      const parsedError = JSON.parse(message)
-      $.actionOutput.error = parsedError
-      logger.error('Action error', parsedError)
-    } catch {
-      $.actionOutput.error = { error: message }
-      logger.error('Action error', { error: message })
+    const errorDetails = parseJsonObject(message) ?? { error: message }
+    $.actionOutput.error = errorDetails
+    logger.error('Action error', errorDetails)
+  }
+}
+
+/**
+ * errorDetails accepts only a JSON object, but some messages are other JSON, e.g. a ZodError message is an array.
+ */
+function parseJsonObject(message: string): IJSONObject | null {
+  try {
+    const parsed: unknown = JSON.parse(message)
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as IJSONObject
     }
+    return null
+  } catch {
+    return null
   }
 }
 
