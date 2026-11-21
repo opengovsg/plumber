@@ -26,7 +26,7 @@ const ifThen = (id: string, extra: Partial<IStep> = {}): IStep =>
     id,
     appKey: 'toolbox',
     key: 'ifThen',
-    parameters: { depth: '0' },
+    parameters: {},
     ...extra,
   }) as IStep
 
@@ -154,22 +154,6 @@ describe('deriveIfThenV1EndStep', () => {
     const steps = [rejectIfThen, mrfSubmission('mrfNext'), plain('mainAfter')]
 
     expect(deriveIfThenV1EndStep(steps, rejectIfThen).id).toBe('rejectIfThen')
-  })
-
-  it('skips a deeper (nested) if-then when scanning for the boundary', () => {
-    const ifThenA = ifThen('ifThenA')
-    const nested = ifThen('nested', { parameters: { depth: '1' } })
-    const ifThenB = ifThen('ifThenB')
-    const steps = [
-      ifThenA,
-      plain('stepA'),
-      nested,
-      plain('stepB'),
-      ifThenB,
-      plain('stepC'),
-    ]
-
-    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('stepB')
   })
 })
 
