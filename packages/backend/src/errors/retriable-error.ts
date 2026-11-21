@@ -1,4 +1,5 @@
-import type { StepErrorKind } from '@plumber/types'
+import type { IJSONObject, StepErrorKind } from '@plumber/types'
+import { z } from 'zod'
 
 import BaseError from './base'
 
@@ -10,8 +11,29 @@ interface RetriableErrorParams {
   delayType: 'step' | 'group' | 'queue'
   /** Optional override for the max number of job attempts before failing. */
   maxAttempts?: number
-  /** IMPORTANT: only labels the failure log, and never changes retry decisions. */
+  /** IMPORTANT: labels the final failure only, and never changes retry decisions. */
   kind?: StepErrorKind
+}
+
+const jsonObjectSchema = z.record(z.string(), z.unknown())
+
+// The saved step error comes from the message, and the for-each count reads kind there.
+function addKind(
+  error: RetriableErrorParams['error'],
+  kind: StepErrorKind,
+): IJSONObject {
+  if (typeof error !== 'string') {
+    return { ...error, kind }
+  }
+  try {
+    const parsed = jsonObjectSchema.safeParse(JSON.parse(error))
+    if (parsed.success) {
+      return { ...(parsed.data as IJSONObject), kind }
+    }
+  } catch {
+    // A plain string message is not JSON.
+  }
+  return { error, kind }
 }
 
 /**
@@ -51,7 +73,7 @@ export default class RetriableError extends BaseError {
     maxAttempts,
     kind,
   }: RetriableErrorParams) {
-    super(error)
+    super(kind === undefined ? error : addKind(error, kind))
 
     this.delayInMs = delayInMs === 'default' ? DEFAULT_DELAY_MS : delayInMs
     this.delayType = delayType
