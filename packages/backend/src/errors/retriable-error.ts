@@ -10,7 +10,7 @@ interface RetriableErrorParams {
   delayType: 'step' | 'group' | 'queue'
   /** Optional override for the max number of job attempts before failing. */
   maxAttempts?: number
-  /** IMPORTANT: only labels the failure log, and never changes retry decisions. */
+  /** IMPORTANT: labels the final failure only, and never changes retry decisions. */
   kind: StepErrorKind
 }
 
@@ -51,7 +51,8 @@ export default class RetriableError extends BaseError {
     maxAttempts,
     kind,
   }: RetriableErrorParams) {
-    super(error)
+    // The for-each count reads kind from the saved step error, which comes from the message.
+    super(typeof error === 'string' ? { error, kind } : { ...error, kind })
 
     this.delayInMs = delayInMs === 'default' ? DEFAULT_DELAY_MS : delayInMs
     this.delayType = delayType
