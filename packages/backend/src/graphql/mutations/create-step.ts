@@ -173,8 +173,11 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
       trx,
     })
 
+    // Blank placeholder cleanup can shift this step's position after insert.
+    const persistedStep = await step.$query(trx)
+
     return {
-      ...step,
+      ...persistedStep,
       flowId: flow.id,
       flow: {
         updatedAt: updatedFlow.updatedAt,

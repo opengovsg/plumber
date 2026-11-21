@@ -759,12 +759,7 @@ describe('createStep endStepId write rules', () => {
     await expect(reload(blankChild.id)).rejects.toThrow()
     const reloadedIfThenA = await reload(ifThenA.id)
     expect(reloadedIfThenA.config.endStepId).toBe(ifThenA.id)
-    // IMPORTANT: reloaded, not the mutation's own return value — the
-    // cleanup's position shift runs after the insert this resolver's
-    // response was captured from, so the response's own `position` is
-    // stale by one.
-    const reloadedNewStep = await reload((newStep as any).id)
-    expect(reloadedNewStep.position).toBe(reloadedIfThenA.position + 1)
+    expect(newStep!.position).toBe(reloadedIfThenA.position + 1)
 
     const steps = await testFlow
       .$relatedQuery('steps')
