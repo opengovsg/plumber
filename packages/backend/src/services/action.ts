@@ -97,20 +97,29 @@ async function enqueueFirstForEachStep({
 }
 
 /**
- * error may be anything thrown (including null/undefined), not just an Error
- * instance, so message extraction can't assume `.message` exists. A bare
- * String(error) would turn a null error into the valid-JSON string "null"
- * (silently clearing actionOutput.error below) and an undefined error into
- * the unhelpful literal string "undefined".
+ * errorDetails accepts only a JSON object, but some messages are other JSON, e.g. a ZodError message is an array.
  */
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
+function getErrorDetails(error: unknown): IJSONObject {
+  // A thrown value may be null or undefined, and String(undefined) is unhelpful.
+  const message =
+    error instanceof Error
+      ? error.message
+      : error === null || error === undefined
+        ? 'Unknown error'
+        : String(error)
+  try {
+    const parsed: unknown = JSON.parse(message)
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as IJSONObject
+    }
+  } catch {
+    // A non-JSON message falls through to the default below.
   }
-  if (error === null || error === undefined) {
-    return 'Unknown error'
-  }
-  return String(error)
+  return { error: message }
 }
 
 /**
@@ -132,29 +141,9 @@ export function setActionOutputError($: IGlobalVariable, error: unknown): void {
       statusText: error.response.statusText,
     })
   } else {
-    const message = getErrorMessage(error)
-    const errorDetails = parseJsonObject(message) ?? { error: message }
+    const errorDetails = getErrorDetails(error)
     $.actionOutput.error = errorDetails
     logger.error('Action error', errorDetails)
-  }
-}
-
-/**
- * errorDetails accepts only a JSON object, but some messages are other JSON, e.g. a ZodError message is an array.
- */
-function parseJsonObject(message: string): IJSONObject | null {
-  try {
-    const parsed: unknown = JSON.parse(message)
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-    ) {
-      return parsed as IJSONObject
-    }
-    return null
-  } catch {
-    return null
   }
 }
 
