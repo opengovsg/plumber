@@ -44,8 +44,11 @@ export default class StepError extends Error {
 }
 
 export function getStepErrorKind(error: unknown): StepErrorKind {
-  if (error instanceof StepError || error instanceof RetriableError) {
-    // Unmigrated call sites have no kind yet, and an unknown cause counts as a Plumber bug.
+  if (error instanceof StepError) {
+    return error.kind
+  }
+  if (error instanceof RetriableError) {
+    // Running out of retries is a Plumber bug unless the thrower chose a kind.
     return error.kind ?? 'internal'
   }
   return 'internal'
