@@ -18,8 +18,9 @@ reference docs below cover what a single model file won't tell you.
 
 Hard rules (non-negotiable):
 
-- **Never write to the database.** All validation runs read-only (see step 5) — never `INSERT` /
-  `UPDATE` / `DELETE`, never skip the `READ ONLY` wrapper.
+- **Write only inside a rolled-back transaction.** Insert test data only into the local Postgres
+  container, via `docker exec`, inside `BEGIN … ROLLBACK` (see step 5). Never `COMMIT`.
+- **Never write through any other connection** (e.g. the TablePlus MCP tools). It may point at prod.
 - **Ask, don't guess, on genuine ambiguity** — (not an exhaustive list) e.g. an unclear "active," an
   unspecified Grafana panel design, or a display name that doesn't uniquely resolve to one
   `(app_key, type, key)`.
@@ -78,12 +79,14 @@ if it's ambiguous; this is a real design decision, not something inferable from 
 
 ### 5. Validate locally
 
-Validate the query read-only against the Postgres container brought up by `pnpm run setup` (the human
+Validate the query against the Postgres container brought up by `pnpm run setup` (the human
 runs this themselves — don't start it yourself; if it doesn't seem to be running, ask). Run `psql`
 inside that container via `docker exec`, rather than a locally-installed client — find the running
 container's name with `docker ps` (it's derived from the `postgres` service in
 [docker-compose.dev.yml](../../../packages/backend/docker-compose.dev.yml)), and read the database and
 user from the same file.
+
+#### 5a. Check syntax (always)
 
 Wrap in a read-only transaction:
 
@@ -98,8 +101,19 @@ substitute a literal timestamp for each macro first (see
 [reference/grafana.md](reference/grafana.md)) — `psql` doesn't expand them there. Self-correct on
 error, up to a few retries; if it still fails, report the error rather than guessing further.
 
-State plainly that counts of 0 are expected against this container's (test-only) data — the SQL's
-correctness is what's being validated, not the numbers it returns there.
+This only proves the SQL compiles. Counts of 0 are expected against this container's (test-only) data.
+
+#### 5b. Check results with test data
+
+Do this whenever the query filters on JSON contents, pattern matches, or joins whose wrong form
+still compiles. Insert test rows, run the query and roll back, all in one `psql` session. Follow
+[reference/fixtures.md](reference/fixtures.md).
+
+- Include rows the query must count and rows it must skip.
+- Write the expected result as a SQL comment before running. A query that returns nothing passes
+  silently otherwise.
+- For a lone predicate (e.g. a regex or JSON path), an inline `VALUES` list is enough. It needs no
+  writes.
 
 ### 6. Output
 
