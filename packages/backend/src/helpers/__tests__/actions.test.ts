@@ -243,6 +243,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'queue',
+              kind: 'internal',
             }),
             context: {
               ...MOCK_CONTEXT,
@@ -269,6 +270,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'queue',
+              kind: 'internal',
             }),
             context: MOCK_CONTEXT,
           }),
@@ -294,6 +296,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'group',
+              kind: 'internal',
             }),
             context: {
               ...MOCK_CONTEXT,
@@ -320,6 +323,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'group',
+              kind: 'internal',
             }),
             context: MOCK_CONTEXT,
           }),
@@ -334,6 +338,7 @@ describe('action helper functions', () => {
           error: 'test error',
           delayInMs: 100,
           delayType: 'group',
+          kind: 'internal',
         })
 
         expect(() =>
@@ -347,12 +352,7 @@ describe('action helper functions', () => {
         ).toThrow(error)
       })
 
-      it.each<StepErrorKind | undefined>([
-        'config',
-        'third-party',
-        'internal',
-        undefined,
-      ])('retries a RetriableError with kind %s', (kind) => {
+      it.each<StepErrorKind>(['config', 'third-party', 'internal'])('retries a RetriableError with kind %s', (kind) => {
         const error = new RetriableError({
           error: 'test error',
           delayInMs: 100,
@@ -592,6 +592,7 @@ describe('action helper functions', () => {
             error: 'test error',
             delayInMs: 100,
             delayType: 'step',
+            kind: 'internal',
           }),
           expectedTagValue: 'true',
         },

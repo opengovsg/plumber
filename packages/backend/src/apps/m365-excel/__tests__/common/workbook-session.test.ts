@@ -79,6 +79,7 @@ describe('WorkbookSession', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'internal',
       })
       vi.mocked($.http.post).mockRejectedValue(retriableError)
 

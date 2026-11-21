@@ -179,6 +179,7 @@ describe('create letter from template', () => {
     const retriableError = new RetriableError({
       error: 'Retrying ETIMEDOUT from LettersSG',
       delayType: 'step',
+      kind: 'internal',
       delayInMs: 'default',
     })
     mocks.downloadAndStoreAttachmentInS3.mockRejectedValueOnce(retriableError)

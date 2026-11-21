@@ -367,6 +367,7 @@ describe('createTableRow runBatch', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
