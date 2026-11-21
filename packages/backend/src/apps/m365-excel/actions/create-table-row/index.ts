@@ -47,6 +47,22 @@ function parseRowParams($: IGlobalVariable) {
   return parametersParseResult.data
 }
 
+/**
+ * The batch worker records a per-job failure as-is, so it must already carry a kind.
+ */
+function toStepError(error: unknown): StepError {
+  if (error instanceof StepError) {
+    return error
+  }
+  return new StepError({
+    name: 'Could not add a row to your Excel table.',
+    solution:
+      'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+    kind: 'internal',
+    cause: error,
+  })
+}
+
 // Performs a single multi-row insert for a batch of createTableRow jobs that
 // all target the same file + table. Each job carries its own `$` (its own
 // step / params / execution) and gets its own `sheetRowNumber` output.
@@ -82,7 +98,7 @@ async function runBatch(
     try {
       parsed.push({ index, $, params: parseRowParams($) })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = { status: 'failed', error: toStepError(error) }
     }
   })
 
@@ -162,7 +178,7 @@ async function runBatch(
       throw error
     }
     for (const { index } of parsed) {
-      results[index] = { status: 'failed', error }
+      results[index] = { status: 'failed', error: toStepError(error) }
     }
     return results
   }
@@ -230,7 +246,7 @@ async function runBatch(
       )
       writable.push({ index, $ })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = { status: 'failed', error: toStepError(error) }
     }
   })
 
