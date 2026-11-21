@@ -1,13 +1,14 @@
 import { IGlobalVariable } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { createSession } from './create-client'
+import { resolveDatabricksCredentials } from './resolve-credentials'
 
 export async function checkSchemaExists($: IGlobalVariable): Promise<boolean> {
   // Open the session without an initialSchema; getSchemas() would fail against
   // a schema that doesn't exist yet.
+  const credentials = resolveDatabricksCredentials('legacy')
   const { session, endSession } = await createSession($, { skipSchema: true })
 
   try {
@@ -17,7 +18,7 @@ export async function checkSchemaExists($: IGlobalVariable): Promise<boolean> {
       throw new Error('No connections found')
     }
     const operation = await session.getSchemas({
-      catalogName: databricksConfig.catalog,
+      catalogName: credentials.catalog,
       schemaName,
     })
     const schemas = await operation.fetchAll()
