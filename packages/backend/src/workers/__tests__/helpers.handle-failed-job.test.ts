@@ -109,7 +109,6 @@ describe('handleFailedJob failure log', () => {
   })
 
   it.each([
-    { label: 'a StepError without kind', cause: new StepError('n', 's') },
     { label: 'a non-StepError cause', cause: new Error('boom') },
     { label: 'no cause', cause: undefined },
   ])('logs internal for $label', async ({ cause }) => {

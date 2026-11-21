@@ -1,7 +1,6 @@
 /**
  * Business rules:
  * - "`config` never retries, unless its cause is an `HttpError` that `handleHttpError` retries."
- * - "A `StepError` without `kind` keeps today's retry behavior."
  */
 import type { IActionJobData, StepErrorKind } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
@@ -97,7 +96,6 @@ describe('handleFailedStepAndThrow retry rules', () => {
           : UnrecoverableError
         const errors = [
           httpError,
-          new StepError('n', 's', httpError),
           ...(['config', 'third-party', 'internal'] as const).map(
             (kind) =>
               new StepError({
@@ -179,11 +177,4 @@ describe('handleFailedStepAndThrow retry rules', () => {
       expect(addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
     },
   )
-
-  it('still retries a StepError without kind caused by a retriable HTTP error', () => {
-    const error = new StepError('n', 's', makeHttpError({ status: 504 }))
-
-    expect(runWith(error)).toBeInstanceOf(RetriableError)
-    expect(addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
-  })
 })

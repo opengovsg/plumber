@@ -1,6 +1,5 @@
 import { IJSONObject, IStepError, StepErrorKind } from '@plumber/types'
 
-import HttpError from './http'
 import RetriableError from './retriable-error'
 
 //
@@ -14,46 +13,18 @@ export enum GenericSolution {
 export interface StepErrorOptions {
   name: string
   solution: string
-  kind?: StepErrorKind
+  kind: StepErrorKind
   // Not always an HttpError: SDK errors (e.g. SES) are kept so their kind can still be classified.
   cause?: unknown
 }
 
 export default class StepError extends Error {
-  readonly kind?: StepErrorKind
+  readonly kind: StepErrorKind
 
   constructor(
-    options: StepErrorOptions,
+    { name, solution, kind, cause }: StepErrorOptions,
     extraProperties?: Record<string, unknown>,
-  )
-  /** @deprecated Pass a `StepErrorOptions` object with a `kind` instead. */
-  constructor(
-    name: string,
-    solution: string,
-    error?: HttpError,
-    extraProperties?: Record<string, unknown>,
-  )
-  constructor(
-    nameOrOptions: string | StepErrorOptions,
-    solutionOrExtraProperties?: string | Record<string, unknown>,
-    positionalError?: HttpError,
-    positionalExtraProperties?: Record<string, unknown>,
   ) {
-    // Unmigrated call sites can pass an undefined name from an API response body.
-    const isPositional =
-      typeof nameOrOptions !== 'object' || nameOrOptions === null
-    const { name, solution, kind, cause } = isPositional
-      ? {
-          name: nameOrOptions as string,
-          solution: solutionOrExtraProperties as string,
-          kind: undefined,
-          cause: positionalError,
-        }
-      : nameOrOptions
-    const extraProperties = isPositional
-      ? positionalExtraProperties
-      : (solutionOrExtraProperties as Record<string, unknown> | undefined)
-
     const stepError: IStepError = {
       name,
       solution,
