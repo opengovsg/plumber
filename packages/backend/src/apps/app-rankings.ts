@@ -15,6 +15,7 @@ import formsgApp from './formsg'
 import gathersgApp from './gathersg'
 import lettersgApp from './lettersg'
 import m365ExcelApp from './m365-excel'
+import manualApp from './manual'
 import pairApp from './pair'
 import paysgApp from './paysg'
 import postmanApp from './postman'
@@ -32,6 +33,7 @@ export const TRIGGER_APPS_RANKING = [
   formsgApp.key,
   schedulerApp.key,
   webhookApp.key,
+  manualApp.key,
   gathersgApp.key,
 ]
 

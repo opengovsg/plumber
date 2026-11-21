@@ -35,6 +35,7 @@ import retryExecutionStep from './mutations/retry-execution-step'
 import retryPartialStep from './mutations/retry-partial-step'
 import startSsoLogin from './mutations/start-sso-login'
 import tilesMutationResolvers from './mutations/tiles'
+import triggerFlowManually from './mutations/trigger-flow-manually'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
 import updateFlowConfig from './mutations/update-flow-config'
@@ -79,6 +80,7 @@ export default {
   createFlowWithSteps,
   updateFlowStatus,
   updateFlowConfig,
+  triggerFlowManually,
   upsertFlowCollaborator,
   deleteFlowCollaborator,
   deleteFlowConnection,
