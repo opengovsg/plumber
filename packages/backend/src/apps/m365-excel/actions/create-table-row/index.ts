@@ -13,6 +13,7 @@ import {
   TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import { validateCanAccessFile } from '../../common/file-privacy'
+import { toInternalStepError } from '../../common/internal-step-error'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -45,6 +46,19 @@ function parseRowParams($: IGlobalVariable) {
     })
   }
   return parametersParseResult.data
+}
+
+/**
+ * The batch worker records a per-job failure as-is, so it must already carry a kind.
+ */
+function wrapUnexpectedJobError($: IGlobalVariable, error: unknown): StepError {
+  if (error instanceof StepError) {
+    return error
+  }
+  return toInternalStepError($, error, {
+    name: 'Could not add a row to your Excel table.',
+    event: 'm365-excel-create-table-row-unexpected-error',
+  })
 }
 
 // Performs a single multi-row insert for a batch of createTableRow jobs that
@@ -82,7 +96,10 @@ async function runBatch(
     try {
       parsed.push({ index, $, params: parseRowParams($) })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
@@ -161,8 +178,9 @@ async function runBatch(
     if (error instanceof RetriableError) {
       throw error
     }
+    const stepError = wrapUnexpectedJobError(firstJob, error)
     for (const { index } of parsed) {
-      results[index] = { status: 'failed', error }
+      results[index] = { status: 'failed', error: stepError }
     }
     return results
   }
@@ -230,7 +248,10 @@ async function runBatch(
       )
       writable.push({ index, $ })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
