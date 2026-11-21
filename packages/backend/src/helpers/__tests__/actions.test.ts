@@ -497,6 +497,45 @@ describe('action helper functions', () => {
         expect(Object.keys(thrown as Error)).not.toContain('cause')
       })
 
+      it.each<{ executionError: unknown; kind: StepErrorKind }>([
+        {
+          executionError: new StepError({
+            name: 'n',
+            solution: 's',
+            kind: 'config',
+            cause: makeHttpError({ status: 429 }),
+          }),
+          kind: 'config',
+        },
+        {
+          executionError: new StepError({
+            name: 'n',
+            solution: 's',
+            kind: 'third-party',
+            cause: makeHttpError({ status: 504 }),
+          }),
+          kind: 'third-party',
+        },
+        { executionError: makeHttpError({ status: 504 }), kind: 'internal' },
+      ])(
+        'gives the RetriableError for a retriable HTTP error the kind $kind',
+        ({ executionError, kind }) => {
+          let thrown: unknown
+          try {
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError,
+              context: MOCK_CONTEXT,
+            })
+          } catch (e) {
+            thrown = e
+          }
+
+          expect(thrown).toBeInstanceOf(RetriableError)
+          expect((thrown as RetriableError).kind).toBe(kind)
+        },
+      )
+
       it.each<{ errorDetails: IJSONObject; executionError: unknown }>([
         {
           errorDetails: {
