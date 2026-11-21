@@ -13,6 +13,7 @@ import {
   TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import { validateCanAccessFile } from '../../common/file-privacy'
+import { toInternalStepError } from '../../common/internal-step-error'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -50,16 +51,13 @@ function parseRowParams($: IGlobalVariable) {
 /**
  * The batch worker records a per-job failure as-is, so it must already carry a kind.
  */
-function toStepError(error: unknown): StepError {
+function wrapUnexpectedJobError($: IGlobalVariable, error: unknown): StepError {
   if (error instanceof StepError) {
     return error
   }
-  return new StepError({
+  return toInternalStepError($, error, {
     name: 'Could not add a row to your Excel table.',
-    solution:
-      'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
-    kind: 'internal',
-    cause: error,
+    event: 'm365-excel-create-table-row-unexpected-error',
   })
 }
 
@@ -98,7 +96,10 @@ async function runBatch(
     try {
       parsed.push({ index, $, params: parseRowParams($) })
     } catch (error) {
-      results[index] = { status: 'failed', error: toStepError(error) }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
@@ -177,8 +178,9 @@ async function runBatch(
     if (error instanceof RetriableError) {
       throw error
     }
+    const stepError = wrapUnexpectedJobError(firstJob, error)
     for (const { index } of parsed) {
-      results[index] = { status: 'failed', error: toStepError(error) }
+      results[index] = { status: 'failed', error: stepError }
     }
     return results
   }
@@ -246,7 +248,10 @@ async function runBatch(
       )
       writable.push({ index, $ })
     } catch (error) {
-      results[index] = { status: 'failed', error: toStepError(error) }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
