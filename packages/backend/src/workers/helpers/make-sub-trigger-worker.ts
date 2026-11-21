@@ -11,6 +11,7 @@ import HttpError from '@/errors/http'
 import { keepErrorKindViaCause } from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import { countExecutionEnd } from '@/helpers/execution-end'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
@@ -141,7 +142,8 @@ export function makeSubTriggerWorker(
         }
 
         if (!nextStep) {
-          await Execution.setStatus(executionId, 'success')
+          const ended = await Execution.setStatus(executionId, 'success')
+          countExecutionEnd(ended, 'success')
           return
         }
 
