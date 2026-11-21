@@ -12,7 +12,9 @@ export default defineConfig({
     maxWorkers: integrationMaxWorkers,
     coverage: {
       enabled: true,
-      include: ['packages/{backend,backend-archive,frontend}/src/**/*.{ts,tsx}'],
+      include: [
+        'packages/{backend,backend-archive,frontend}/src/**/*.{ts,tsx}',
+      ],
       exclude: [
         '**/*.test.{ts,tsx}',
         '**/*.itest.{ts,tsx}',
@@ -25,6 +27,7 @@ export default defineConfig({
       ...backendUnitProjects,
       'packages/backend-archive/vitest.config.ts',
       ...integrationProjects,
+      'packages/backend-archive/vitest.config.integration.ts',
     ],
   },
 })
