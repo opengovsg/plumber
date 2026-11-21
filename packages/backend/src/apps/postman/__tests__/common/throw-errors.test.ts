@@ -307,16 +307,17 @@ describe('throwPostmanStepError', () => {
   )
 
   it.each([
-    ['RATE-LIMITED' as const, makeHttpError({ status: 429 })],
+    ['RATE-LIMITED' as const, 'internal', makeHttpError({ status: 429 })],
     [
       'ERROR' as const,
+      'third-party',
       makeHttpError({ code: 'ECONNRESET', message: 'socket hang up' }),
     ],
-  ])('keeps %s as a RetriableError without kind', (status, error) => {
+  ])('retries %s as a RetriableError with kind %s', (status, kind, error) => {
     const thrown = catchThrown({ status, error })
 
     expect(thrown).toBeInstanceOf(RetriableError)
-    expect((thrown as RetriableError).kind).toBeUndefined()
+    expect(thrown).toMatchObject({ kind })
   })
 })
 

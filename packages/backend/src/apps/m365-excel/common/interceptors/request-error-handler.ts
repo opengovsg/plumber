@@ -23,6 +23,7 @@ const handleIntermittentError: MaybeThrowingHandler = ($, error) => {
       error: `Retrying ETIMEDOUT ${error.message} from M365 Excel`,
       delayType: 'step',
       delayInMs: 'default',
+      kind: 'third-party',
     })
   }
 }
@@ -57,6 +58,7 @@ const handle404: ThrowingHandler = ($, error) => {
     error: 'Retrying HTTP 404 from M365 Excel',
     delayType: 'step',
     delayInMs: 'default',
+    kind: 'third-party',
   })
 }
 
@@ -82,6 +84,7 @@ const handle429: ThrowingHandler = ($, error) => {
       error: 'Retrying HTTP 429 from Excel endpoint',
       delayType: 'group',
       delayInMs: retryAfterMs,
+      kind: 'internal',
     })
   }
 
@@ -103,6 +106,7 @@ const handle429: ThrowingHandler = ($, error) => {
     error: 'Rate limited by Microsoft Graph.',
     delayType: 'queue',
     delayInMs: retryAfterMs,
+    kind: 'internal',
   })
 }
 
@@ -132,6 +136,7 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
     // From past data, 503s happen only for a single request, so we can just
     // retry this individual step instead of jamming the group.
     delayType: 'step',
+    kind: 'third-party',
   })
 }
 
@@ -218,6 +223,7 @@ const handle509: ThrowingHandler = function ($, error) {
     error: 'Bandwidth limited by Microsoft Graph.',
     delayType: 'queue',
     delayInMs: retryAfterMs,
+    kind: 'internal',
   })
 }
 

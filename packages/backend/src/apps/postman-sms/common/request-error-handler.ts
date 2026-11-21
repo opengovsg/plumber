@@ -19,6 +19,7 @@ const handle429: ThrowingHandler = (_, error): never => {
     // the throughput that the campaign supports, so we throw step error here instead of group
     delayType: 'step',
     delayInMs: retryAfterMs,
+    kind: 'internal',
   })
 }
 

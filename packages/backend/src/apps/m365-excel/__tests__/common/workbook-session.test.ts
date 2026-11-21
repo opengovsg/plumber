@@ -103,9 +103,11 @@ describe('WorkbookSession', () => {
       )
       const session = await WorkbookSession.acquire($, 'file-id')
 
-      await expect(session.request('/tables', 'get')).rejects.toBeInstanceOf(
-        RetriableError,
-      )
+      const error = await session
+        .request('/tables', 'get')
+        .catch((err: unknown) => err)
+      expect(error).toBeInstanceOf(RetriableError)
+      expect(error).toMatchObject({ kind: 'third-party' })
       expect(mocks.clearSessionIdFromRedis).toHaveBeenCalledOnce()
     })
 

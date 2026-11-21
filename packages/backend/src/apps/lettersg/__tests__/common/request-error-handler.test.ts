@@ -4,6 +4,7 @@ import MockAdapter from 'axios-mock-adapter'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import HttpError from '@/errors/http'
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import createHttpClient from '@/helpers/http-client'
 
@@ -217,5 +218,16 @@ describe('lettersg requestErrorHandler', () => {
     const error = await catchStepError($.http.post('/v1/letters', {}))
 
     expect(error.kind).toBe('internal')
+  })
+
+  it('retries a temporary PDF failure as third-party', async () => {
+    mockAdapter
+      .onPost('/v1/letters')
+      .reply(503, { message: 'Temporarily unable to create PDF' })
+
+    const error = await createLetter().catch((err: unknown) => err)
+
+    expect(error).toBeInstanceOf(RetriableError)
+    expect(error).toMatchObject({ kind: 'third-party' })
   })
 })

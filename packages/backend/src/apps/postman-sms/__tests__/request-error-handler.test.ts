@@ -27,7 +27,7 @@ describe('Postman SMS request error handler', () => {
   })
 
   describe('HTTP 429 (Too Many Requests)', () => {
-    it('throws `step` RetriableError with default delay and no kind when retry-after header is missing', async () => {
+    it('throws an internal `step` RetriableError with default delay when retry-after header is missing', async () => {
       const error = makeHttpError({
         message: 'Request failed with status code 429',
         status: 429,
@@ -39,7 +39,7 @@ describe('Postman SMS request error handler', () => {
       await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
-        kind: undefined,
+        kind: 'internal',
       })
     })
   })
