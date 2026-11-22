@@ -90,27 +90,33 @@ describe('WorkbookSession', () => {
   })
 
   describe('request', () => {
-    it('retries and clears the session when Graph invalidates it', async () => {
-      vi.mocked($.http.request).mockRejectedValue(
-        makeHttpError({
-          status: 400,
-          data: {
-            error: {
-              code: 'InvalidSession',
-              innerError: { code: 'invalidSessionReCreatable' },
+    it.each([
+      { code: 'invalidSessionReCreatable', kind: 'third-party' },
+      { code: 'invalidSessionUnsupportedWorkbook', kind: 'config' },
+    ])(
+      'retries and clears the session when Graph invalidates it with $code',
+      async ({ code, kind }) => {
+        vi.mocked($.http.request).mockRejectedValue(
+          makeHttpError({
+            status: 400,
+            data: {
+              error: {
+                code: 'InvalidSession',
+                innerError: { code },
+              },
             },
-          },
-        }),
-      )
-      const session = await WorkbookSession.acquire($, 'file-id')
+          }),
+        )
+        const session = await WorkbookSession.acquire($, 'file-id')
 
-      const error = await session
-        .request('/tables', 'get')
-        .catch((err: unknown) => err)
-      expect(error).toBeInstanceOf(RetriableError)
-      expect(error).toMatchObject({ kind: 'third-party' })
-      expect(mocks.clearSessionIdFromRedis).toHaveBeenCalledOnce()
-    })
+        const error = await session
+          .request('/tables', 'get')
+          .catch((err: unknown) => err)
+        expect(error).toBeInstanceOf(RetriableError)
+        expect(error).toMatchObject({ kind })
+        expect(mocks.clearSessionIdFromRedis).toHaveBeenCalledOnce()
+      },
+    )
 
     it('converts any other HttpError to a StepError with its cause', async () => {
       const httpError = makeHttpError({

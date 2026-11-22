@@ -173,7 +173,11 @@ export default class WorkbookSession {
         error: 'Excel session was invalidated',
         delayInMs: 'default',
         delayType: 'step',
-        kind: 'third-party',
+        // The user's workbook is too large or uses features Graph rejects.
+        kind:
+          graphApiInnerError === 'invalidSessionUnsupportedWorkbook'
+            ? 'config'
+            : 'third-party',
       })
     }
   }
