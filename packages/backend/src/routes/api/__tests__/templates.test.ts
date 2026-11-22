@@ -2,16 +2,12 @@ import type { Request, Response } from 'express'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  getUserVisibleTemplates: vi.fn(),
-  isPostHogFlagEnabled: vi.fn(),
+  getVisibleTemplates: vi.fn(),
   searchTemplates: vi.fn(),
 }))
 vi.mock('@/db/storage', () => ({ TEMPLATES: [] }))
-vi.mock('@/helpers/posthog', () => ({
-  isPostHogFlagEnabled: mocks.isPostHogFlagEnabled,
-}))
-vi.mock('@/helpers/get-user-visible-templates', () => ({
-  getUserVisibleTemplates: mocks.getUserVisibleTemplates,
+vi.mock('@/helpers/get-visible-templates', () => ({
+  getVisibleTemplates: mocks.getVisibleTemplates,
 }))
 vi.mock('@/services/template-search', () => ({
   searchTemplates: mocks.searchTemplates,
@@ -40,21 +36,26 @@ describe('template search endpoint', () => {
     vi.clearAllMocks()
   })
 
-  it("searches the current user's personal templates once they opt in", async () => {
-    mocks.isPostHogFlagEnabled.mockResolvedValue(true)
-    const templates = [{ id: 'personal-template-id' }]
-    mocks.getUserVisibleTemplates.mockResolvedValue(templates)
-    mocks.searchTemplates.mockResolvedValue(['personal-template-id'])
+  it('returns the matching template ids', async () => {
+    const templates = [
+      {
+        id: 'community-template-id',
+        name: 'Mine',
+        description: '',
+        steps: [] as unknown[],
+      },
+    ]
+    mocks.getVisibleTemplates.mockResolvedValue(templates)
+    mocks.searchTemplates.mockResolvedValue(['community-template-id'])
 
     const res = await search({ query: 'my template' })
 
-    expect(mocks.getUserVisibleTemplates).toHaveBeenCalledWith('user-id')
     expect(mocks.searchTemplates).toHaveBeenCalledWith({
       query: 'my template',
       templates,
     })
     expect(res.json).toHaveBeenCalledWith({
-      data: { templateIds: ['personal-template-id'] },
+      data: { templateIds: ['community-template-id'] },
     })
   })
 })

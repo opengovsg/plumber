@@ -216,7 +216,7 @@ export async function createFlowFromTemplate(
 ): Promise<Flow> {
   const template =
     TEMPLATES.find((template) => template.id === templateId) ??
-    (await Template.findOneForUser(user.id, templateId))
+    (await Template.findOneById(templateId))
   // prevents user from creating any new template
   if (!template) {
     throw new Error('Invalid template id input')

@@ -53,12 +53,14 @@ class Template extends Base {
     },
   })
 
-  static async findAllForUser(userId: string): Promise<ITemplate[]> {
+  /**
+   * Community templates are shared with every user.
+   */
+  static async findAll(): Promise<ITemplate[]> {
     const templates = await this.query()
-      .where({ user_id: userId })
       .withGraphFetched({ templateSteps: true })
       .orderBy('created_at', 'desc')
-    // One malformed template must not hide the user's other templates.
+    // One malformed template must not hide the other templates.
     return templates.flatMap((template) => {
       const result = templateSchema.safeParse(template.toTemplateData())
       if (!result.success) {
@@ -73,16 +75,13 @@ class Template extends Base {
     })
   }
 
-  static async findOneForUser(
-    userId: string,
-    templateId: string,
-  ): Promise<ITemplate | undefined> {
+  static async findOneById(templateId: string): Promise<ITemplate | undefined> {
     // Postgres rejects non-uuid values for uuid columns.
     if (!z.string().uuid().safeParse(templateId).success) {
       return undefined
     }
     const template = await this.query()
-      .findOne({ id: templateId, user_id: userId })
+      .findById(templateId)
       .withGraphFetched({ templateSteps: true })
     return template && templateSchema.parse(template.toTemplateData())
   }

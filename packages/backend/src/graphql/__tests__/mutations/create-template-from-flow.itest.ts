@@ -32,7 +32,7 @@ describe('createTemplateFromFlow', () => {
     } as unknown as Context
   })
 
-  it('saves the template and its steps with step id placeholders', async () => {
+  it('saves the template and its steps without step variables', async () => {
     const flow = await owner.$relatedQuery('flows').insertAndFetch({
       name: 'Source Flow',
       updatedBy: owner.id,
@@ -81,7 +81,7 @@ describe('createTemplateFromFlow', () => {
         appKey: 'postman',
         eventKey: 'sendTransactionalEmail',
         config: {},
-        parameters: { body: 'Hi {{step.<<step_id_1>>.fields.a.answer}}' },
+        parameters: { body: 'Hi ' },
       },
     ])
   })
@@ -158,18 +158,7 @@ describe('createTemplateFromFlow', () => {
     expect(templates.map((template) => template.id)).not.toContain(templateId)
   })
 
-  it('hides a user template from other users', async () => {
-    const { templateId } = await seedTemplate()
-    const otherUser = await User.query().insertAndFetch({
-      email: `other-${Date.now()}@open.gov.sg`,
-    })
-
-    await expect(createFlowFromTemplate(templateId, otherUser)).rejects.toThrow(
-      'Invalid template id input',
-    )
-  })
-
-  it('creates a flow from a user template with fresh step ids', async () => {
+  it('creates a flow from a user template', async () => {
     const { templateId } = await seedTemplate()
 
     const newFlow = await createFlowFromTemplate(templateId, owner)
@@ -180,9 +169,7 @@ describe('createTemplateFromFlow', () => {
       'newSubmission',
       'sendTransactionalEmail',
     ])
-    expect(steps[1].parameters).toEqual({
-      body: `Hi {{step.${steps[0].id}.fields.a.answer}}`,
-    })
+    expect(steps[1].parameters).toEqual({ body: 'Hi ' })
   })
 
   it('injects template step config alongside generated template guidance', async () => {

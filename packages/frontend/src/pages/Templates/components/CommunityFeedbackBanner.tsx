@@ -4,7 +4,7 @@ import { BiTestTube } from 'react-icons/bi'
 
 import * as URLS from '@/config/urls'
 
-export default function EarlyAccessBanner(): JSX.Element {
+export default function CommunityFeedbackBanner(): JSX.Element {
   return (
     <Flex
       alignItems="center"
@@ -21,7 +21,7 @@ export default function EarlyAccessBanner(): JSX.Element {
       <Icon as={BiTestTube} boxSize={5} color="primary.600" />
       <Flex flexDir="column" flex={1} minW="12rem">
         <Text textStyle="subhead-2" color="base.content.strong">
-          You’re seeing this because you joined early access
+          Community templates are new
         </Text>
         <Text textStyle="body-2" color="base.content.medium">
           Made by other public officers. Tell us if they’re useful.

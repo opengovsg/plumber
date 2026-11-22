@@ -1,5 +1,5 @@
 import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
-import { Badge, Link } from '@opengovsg/design-system-react'
+import { Link } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
 import { BiGroup } from 'react-icons/bi'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -10,16 +10,10 @@ import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
 import { useApps } from '@/hooks/useApps'
-import {
-  COMMUNITY_TEMPLATES_EARLY_ACCESS,
-  useEarlyAccess,
-} from '@/hooks/useEarlyAccess'
 
 import TemplateModal from '../Template'
-import CommunityTemplatesSkeleton from './components/CommunityTemplatesSkeleton'
-import EarlyAccessBanner from './components/EarlyAccessBanner'
-import EarlyAccessModal from './components/EarlyAccessModal'
-import OptInDialog from './components/OptInDialog'
+import CommunityFeedbackBanner from './components/CommunityFeedbackBanner'
+import CommunityTemplatesModal from './components/CommunityTemplatesModal'
 import TemplateResults from './components/TemplateResults'
 import TemplateSection from './components/TemplateSection'
 import type { ListedTemplate } from './helpers/get-search-results'
@@ -45,13 +39,6 @@ export default function Templates(): JSX.Element {
   } = useTemplateBrowser()
   const { data: apps, loading: appsLoading } = useApps()
 
-  const {
-    isEnabled: isEarlyAccessEnabled,
-    isLoading: isEarlyAccessLoading,
-    setEnrolled: setEarlyAccessEnrolled,
-  } = useEarlyAccess(COMMUNITY_TEMPLATES_EARLY_ACCESS)
-  const enrolInEarlyAccess = () => setEarlyAccessEnrolled(true)
-
   const { templateId } = useParams()
   const template = templates.find((template) => template.id === templateId)
 
@@ -63,9 +50,7 @@ export default function Templates(): JSX.Element {
   const communityTemplates = listedTemplates.filter(
     (template) => !template.isBuiltIn,
   )
-  const showCommunity =
-    isEarlyAccessEnabled && (isLoading || communityTemplates.length > 0)
-  const canOptInToEarlyAccess = !isEarlyAccessLoading && !isEarlyAccessEnabled
+  const showCommunity = isLoading || communityTemplates.length > 0
   const onSelectTemplate = (template: ITemplate) =>
     navigate(URLS.TEMPLATE(template.id))
 
@@ -117,7 +102,7 @@ export default function Templates(): JSX.Element {
                 />
               </TemplateSection>
 
-              {showCommunity ? (
+              {showCommunity && (
                 <TemplateSection
                   icon={
                     <Icon
@@ -127,19 +112,10 @@ export default function Templates(): JSX.Element {
                     />
                   }
                   title="From the community"
-                  badge={
-                    <Badge
-                      bg="primary.100"
-                      color="primary.600"
-                      textTransform="uppercase"
-                    >
-                      Early access
-                    </Badge>
-                  }
                   count={isLoading ? undefined : communityTemplates.length}
                   description="Templates from other public officers. Review each step before you use it."
                 >
-                  <EarlyAccessBanner />
+                  <CommunityFeedbackBanner />
                   <TemplateResults
                     templates={communityTemplates}
                     isLoading={isLoading}
@@ -150,10 +126,6 @@ export default function Templates(): JSX.Element {
                     gap={6}
                   />
                 </TemplateSection>
-              ) : (
-                canOptInToEarlyAccess && (
-                  <CommunityTemplatesSkeleton onTurnOn={enrolInEarlyAccess} />
-                )
               )}
             </>
           )}
@@ -177,9 +149,9 @@ export default function Templates(): JSX.Element {
       </Container>
 
       {template && <TemplateModal template={template} apps={apps} />}
-      <OptInDialog onOptIn={enrolInEarlyAccess} />
-      {canOptInToEarlyAccess && (
-        <EarlyAccessModal onTurnOn={enrolInEarlyAccess} />
+      {/* Only once there are community templates to point at. */}
+      {!templatesLoading && communityTemplates.length > 0 && (
+        <CommunityTemplatesModal />
       )}
     </>
   )

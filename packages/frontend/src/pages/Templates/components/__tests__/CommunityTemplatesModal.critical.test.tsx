@@ -3,13 +3,13 @@
 // afterwards, it should never show
 import { createRoot, type Root } from 'react-dom/client'
 import { act } from 'react-dom/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import ThemeProvider from '@/components/ThemeProvider'
 
-import EarlyAccessModal from '../EarlyAccessModal'
+import CommunityTemplatesModal from '../CommunityTemplatesModal'
 
-const MODAL_TITLE = 'Try community templates?'
+const MODAL_TITLE = 'Introducing community templates'
 
 let root: Root | undefined
 
@@ -18,7 +18,7 @@ async function renderModal(): Promise<void> {
   await act(async () => {
     root?.render(
       <ThemeProvider>
-        <EarlyAccessModal onTurnOn={vi.fn()} />
+        <CommunityTemplatesModal />
       </ThemeProvider>,
     )
   })
@@ -41,7 +41,7 @@ afterEach(async () => {
   await unmountModal()
 })
 
-describe('early access modal', () => {
+describe('community templates modal', () => {
   it('shows on the first load of the page', async () => {
     await renderModal()
 

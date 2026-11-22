@@ -1,19 +1,18 @@
 import { randomUUID } from 'crypto'
 
 /**
- * Collaborator template rules:
- * - Editors and viewers can save an accessible pipe as their own template.
- * - The template drops file, table, and secret parameters.
- * - Pipes created from that template do not receive them either.
- * - Owners keep every parameter except the source Tiles table and column IDs.
- *
- * Template rules for every role:
+ * Community template rules. Every user can see every community template, so
+ * these hold for owners, editors and viewers alike:
+ * - Any role can save an accessible pipe as a template.
+ * - The template drops file, table and secret parameters.
+ * - The template drops every step variable, keeping the text around it.
+ * - Pipes created from that template do not receive any of these either.
  * - The template never keeps the source Tiles table and column IDs.
  * - The template keeps the source tile's name and column names, but no rows.
  * - It keeps them only if the user converting the pipe can access the tile now.
  *   Otherwise the template treats the tile as deleted.
  * - Pipes created from that template get a new empty tile with those columns.
- *   Steps and variables that used the source tile use the new tile instead.
+ *   Steps that used the source tile use the new tile instead.
  * - The template drops admin overrides, template guidance and AI Builder config.
  * - Pipes created from that template do not receive them either.
  */
@@ -126,25 +125,6 @@ async function seedFlow(): Promise<void> {
   ])
 }
 
-// Pipe collaborators get tile access through addFlowTableConnection.
-async function addCollaborator(role: IFlowCollabRole): Promise<User> {
-  const user = await User.query().insert({
-    email: `${randomUUID()}@open.gov.sg`,
-  })
-  await FlowCollaborator.query().insert({
-    flowId: flow.id,
-    userId: user.id,
-    role,
-    updatedBy: owner.id,
-  })
-  await TableCollaborator.query().insert({
-    tableId: sourceTile.id,
-    userId: user.id,
-    role,
-  })
-  return user
-}
-
 function expectNoSourceTileIds(parameters: Record<string, unknown>[]): void {
   const serialized = JSON.stringify(parameters)
   for (const id of [sourceTile.id, ...sourceTile.columns.map((c) => c.id)]) {
@@ -166,23 +146,46 @@ function expectSanitized(parameters: Record<string, unknown>[]): void {
   expect(customApi.customHeaders).toEqual([
     { key: 'Content-Type', value: 'application/json' },
   ])
+  expect(JSON.stringify(parameters)).not.toContain('{{step.')
 }
 
-describe.each<IFlowCollabRole>(['editor', 'viewer'])(
+async function userWithRole(role: IFlowCollabRole): Promise<User> {
+  if (role === 'owner') {
+    return owner
+  }
+  const user = await User.query().insert({
+    email: `${randomUUID()}@open.gov.sg`,
+  })
+  await FlowCollaborator.query().insert({
+    flowId: flow.id,
+    userId: user.id,
+    role,
+    updatedBy: owner.id,
+  })
+  // Pipe collaborators get tile access through addFlowTableConnection.
+  await TableCollaborator.query().insert({
+    tableId: sourceTile.id,
+    userId: user.id,
+    role,
+  })
+  return user
+}
+
+describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
   'createTemplateFromFlow by a %s',
   (role) => {
-    let collaborator: User
+    let user: User
 
     beforeEach(async () => {
       await seedFlow()
-      collaborator = await addCollaborator(role)
+      user = await userWithRole(role)
     })
 
     const exportTemplate = () =>
       createTemplateFromFlow(
         {},
         { input: { flowId: flow.id } },
-        contextFor(collaborator),
+        contextFor(user),
       )
 
     it('returns sanitized template parameters', async () => {
@@ -198,25 +201,28 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
         .findById(id)
         .withGraphFetched({ templateSteps: true })
         .throwIfNotFound()
-      expect(template.userId).toBe(collaborator.id)
+      expect(template.userId).toBe(user.id)
       const stored = [...template.templateSteps]
         .map(({ data }) => data)
         .sort((a, b) => a.position - b.position)
       expectSanitized(stored.map((step) => step.parameters ?? {}))
     })
 
-    it('lists sanitized parameters in the collaborator templates', async () => {
+    it('lists sanitized parameters to every user', async () => {
       const { id } = await exportTemplate()
+      const otherUser = await User.query().insert({
+        email: `${randomUUID()}@open.gov.sg`,
+      })
 
-      const templates = await getTemplates({}, {}, contextFor(collaborator))
+      const templates = await getTemplates({}, {}, contextFor(otherUser))
       const template = templates.find((t) => t.id === id)!
       expectSanitized(template.steps.map((step) => step.parameters ?? {}))
     })
 
-    it('creates pipes without the owner parameters', async () => {
+    it('creates pipes without the source parameters or variables', async () => {
       const { id } = await exportTemplate()
 
-      const newFlow = await createFlowFromTemplate(id, collaborator)
+      const newFlow = await createFlowFromTemplate(id, user)
       const steps = await newFlow.$relatedQuery('steps').orderBy('position')
       expectSanitized(steps.map((step) => step.parameters))
     })
@@ -227,31 +233,10 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       const steps = await flow.$relatedQuery('steps').orderBy('position')
       expect(steps[0].parameters.encryptionKey).toBe('gather-secret')
       expect(steps[2].parameters.fileId).toBe('file-1')
+      expect(steps[3].parameters.data).toContain('{{step.')
     })
   },
 )
-
-describe('createTemplateFromFlow by the owner', () => {
-  beforeEach(seedFlow)
-
-  const exportTemplate = () =>
-    createTemplateFromFlow(
-      {},
-      { input: { flowId: flow.id } },
-      contextFor(owner),
-    )
-
-  it('keeps every parameter except the source Tiles table and column IDs', async () => {
-    const result = await exportTemplate()
-
-    const parameters = result.steps.map((step) => step.parameters ?? {})
-    const [gather, , excel, customApi] = parameters
-    expectNoSourceTileIds(parameters)
-    expect(gather.encryptionKey).toBe('gather-secret')
-    expect(excel.fileId).toBe('file-1')
-    expect(customApi.customHeaders).toHaveLength(2)
-  })
-})
 
 describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
   'createTemplateFromFlow tiles by a %s',
@@ -260,7 +245,7 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
 
     beforeEach(async () => {
       await seedFlow()
-      user = role === 'owner' ? owner : await addCollaborator(role)
+      user = await userWithRole(role)
     })
 
     const exportTemplate = () =>
@@ -273,14 +258,14 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
     it('keeps the source tile name and column names without rows', async () => {
       const { id } = await exportTemplate()
 
-      const template = (await Template.findOneForUser(user.id, id))!
+      const template = (await Template.findOneById(id))!
       expect(template.steps[1].templateData).toEqual({
         name: 'Owner tile',
         columns: ['Name', 'Amount (SGD)'],
       })
     })
 
-    it('creates pipes with a new empty tile that steps and variables use', async () => {
+    it('creates pipes with a new empty tile that steps use', async () => {
       const { id } = await exportTemplate()
 
       const newFlow = await createFlowFromTemplate(id, user)
@@ -295,13 +280,10 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
         'Name',
         'Amount (SGD)',
       ])
-      const [nameColumn, amountColumn] = newTile.columns
+      const [nameColumn] = newTile.columns
       expect(steps[1].parameters.rowData).toEqual([
-        expect.objectContaining({ columnId: nameColumn.id }),
+        { columnId: nameColumn.id, cellValue: '' },
       ])
-      expect(steps[3].parameters.data).toBe(
-        `{{step.${steps[1].id}.row.${amountColumn.id}}}`,
-      )
     })
 
     it('drops the Tiles table and column IDs when the source tile is deleted', async () => {
@@ -337,7 +319,7 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
       const { id, steps } = await exportTemplate()
 
       expectTileDropped(steps)
-      const template = (await Template.findOneForUser(user.id, id))!
+      const template = (await Template.findOneById(id))!
       expect(JSON.stringify(template.steps)).not.toContain(
         'Renamed after removal',
       )
@@ -365,9 +347,7 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
       const { id, steps } = await exportTemplate()
 
       expectTileDropped(steps)
-      const serialized = JSON.stringify(
-        (await Template.findOneForUser(user.id, id))!.steps,
-      )
+      const serialized = JSON.stringify((await Template.findOneById(id))!.steps)
       for (const privateValue of [
         'Private tile',
         'Secret column',
@@ -387,7 +367,7 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
 
     beforeEach(async () => {
       await seedFlow()
-      user = role === 'owner' ? owner : await addCollaborator(role)
+      user = await userWithRole(role)
     })
 
     it('drops admin overrides, template guidance and AI Builder config', async () => {
