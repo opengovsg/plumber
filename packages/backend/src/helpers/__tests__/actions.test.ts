@@ -352,23 +352,26 @@ describe('action helper functions', () => {
         ).toThrow(error)
       })
 
-      it.each<StepErrorKind>(['config', 'third-party', 'internal'])('retries a RetriableError with kind %s', (kind) => {
-        const error = new RetriableError({
-          error: 'test error',
-          delayInMs: 100,
-          delayType: 'step',
-          kind,
-        })
+      it.each<StepErrorKind>(['config', 'third-party', 'internal'])(
+        'retries a RetriableError with kind %s',
+        (kind) => {
+          const error = new RetriableError({
+            error: 'test error',
+            delayInMs: 100,
+            delayType: 'step',
+            kind,
+          })
 
-        expect(() =>
-          handleFailedStepAndThrow({
-            errorDetails: {},
-            executionError: error,
-            context: MOCK_CONTEXT,
-          }),
-        ).toThrow(error)
-        expect(mocks.addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
-      })
+          expect(() =>
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            }),
+          ).toThrow(error)
+          expect(mocks.addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
+        },
+      )
 
       it.each<RetriableError['delayType']>(['step', 'group', 'queue'])(
         'hides the RetriableError as the cause once %s retries run out',
