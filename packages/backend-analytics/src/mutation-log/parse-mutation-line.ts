@@ -168,12 +168,18 @@ export function extractIds(
     entity === target ? asId(input.id) : null
   const firstOf = (value: unknown) =>
     Array.isArray(value) ? asId(value[0]) : null
+  // The editor sends a reorder without its pipe. The server checks all steps share one, so the first step's pipe is the pipe.
+  const firstStepPosition = (value: unknown) =>
+    Array.isArray(value) ? nestedId(value[0]) : null
 
   return {
     flow_id: asId(input.flowId) ?? nestedId(input.flow) ?? inputId('flow'),
     step_id:
       asId(input.stepId) ??
       (rootField === 'deleteStep' ? firstOf(input.ids) : null) ??
+      (rootField === 'updateStepPositions'
+        ? firstStepPosition(input.stepPositions)
+        : null) ??
       inputId('step'),
     table_id:
       asId(input.tableId) ?? asId(variables?.tableId) ?? inputId('table'),

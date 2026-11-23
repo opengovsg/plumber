@@ -82,6 +82,20 @@ describe('extractIds', () => {
       { input: { ids: ['s1', 's2'], flow: { id: 'f1' } } },
       { flow_id: 'f1', step_id: 's1' },
     ],
+    // The editor's useReorderSteps payload, which has no pipe id.
+    [
+      'updateStepPositions',
+      {
+        input: {
+          stepPositions: [
+            { id: 's2', position: 2 },
+            { id: 's3', position: 3 },
+          ],
+          flow: { updatedAt: '2026-11-04T15:59:00.000Z' },
+        },
+      },
+      { step_id: 's2' },
+    ],
     ['executeStep', { input: { stepId: 's1' } }, { step_id: 's1' }],
     ['updateConnection', { input: { id: 'c1' } }, { connection_id: 'c1' }],
     [
