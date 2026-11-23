@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { NotFoundError } from 'objection'
+import { NotFoundError, type PartialModelObject } from 'objection'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import cronTimes from '@/apps/scheduler/common/cron-times'
@@ -151,10 +151,30 @@ describe('updateFlowStatus', () => {
     expect(fakeFlow.getTriggerStep).not.toHaveBeenCalled()
   })
 
+  // Publishing validates the steps it reads under the flow lock, not
+  // fakeFlow.steps.
+  const seedSteps = async (steps: PartialModelObject<Step>[]) => {
+    await Step.query().where('flow_id', fakeFlow.id).hardDelete()
+    await Step.query().insert(
+      steps.map((step) => ({
+        flowId: fakeFlow.id,
+        type: 'action' as const,
+        status: 'completed' as const,
+        parameters: {},
+        ...step,
+      })),
+    )
+  }
+  const triggerStep = {
+    type: 'trigger' as const,
+    position: 1,
+    appKey: 'scheduler',
+    key: 'everyHour',
+  }
+
   it('throws an error when activating a flow with non-contiguous step positions', async () => {
-    // Prepare a flow with steps that are not contiguous.
     fakeFlow.active = false
-    fakeFlow.steps = [{ position: 1 }, { position: 3 }]
+    await seedSteps([triggerStep, { position: 3, appKey: 'custom-api' }])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
@@ -163,8 +183,8 @@ describe('updateFlowStatus', () => {
 
   it('throws an error when publishing a flow with more than one for-each step', async () => {
     fakeFlow.active = false
-    fakeFlow.steps = [
-      { position: 1 },
+    await seedSteps([
+      triggerStep,
       {
         position: 2,
         appKey: TOOLBOX_APP_KEY,
@@ -177,7 +197,7 @@ describe('updateFlowStatus', () => {
         key: TOOLBOX_ACTIONS.FOR_EACH,
         config: {},
       },
-    ]
+    ])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
@@ -186,8 +206,8 @@ describe('updateFlowStatus', () => {
 
   it('throws an error when publishing a flow with 2 for-each step in the same branch', async () => {
     fakeFlow.active = false
-    fakeFlow.steps = [
-      { position: 1 },
+    await seedSteps([
+      triggerStep,
       {
         position: 2,
         appKey: TOOLBOX_APP_KEY,
@@ -200,7 +220,7 @@ describe('updateFlowStatus', () => {
         key: TOOLBOX_ACTIONS.FOR_EACH,
         config: { approval: { branch: 'reject', stepId: 'mrf1' } },
       },
-    ]
+    ])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
@@ -209,8 +229,8 @@ describe('updateFlowStatus', () => {
 
   it('should not throw an error when publishing a flow with 2 for-each step in different branches', async () => {
     fakeFlow.active = false
-    fakeFlow.steps = [
-      { position: 1 },
+    await seedSteps([
+      triggerStep,
       {
         position: 2,
         appKey: TOOLBOX_APP_KEY,
@@ -223,7 +243,7 @@ describe('updateFlowStatus', () => {
         key: TOOLBOX_ACTIONS.FOR_EACH,
         config: { approval: { branch: 'reject', stepId: 'mrf1' } },
       },
-    ]
+    ])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
@@ -232,17 +252,18 @@ describe('updateFlowStatus', () => {
 
   it('throws when publishing a flow with an empty (self-referencing) if-then block', async () => {
     fakeFlow.active = false
-    fakeFlow.steps = [
-      { id: 't', position: 1, config: {} },
+    const blockId = randomUUID()
+    await seedSteps([
+      triggerStep,
       {
-        id: 'block',
+        id: blockId,
         position: 2,
         appKey: TOOLBOX_APP_KEY,
         key: TOOLBOX_ACTIONS.IF_THEN,
-        config: { endStepId: 'block' },
+        config: { endStepId: blockId },
       },
-      { id: 's3', position: 3, config: {} },
-    ]
+      { position: 3, appKey: 'custom-api', config: {} },
+    ])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
@@ -251,17 +272,16 @@ describe('updateFlowStatus', () => {
 
   it('throws when publishing a flow with a dangling if-then marker', async () => {
     fakeFlow.active = false
-    fakeFlow.steps = [
-      { id: 't', position: 1, config: {} },
+    await seedSteps([
+      triggerStep,
       {
-        id: 'block',
         position: 2,
         appKey: TOOLBOX_APP_KEY,
         key: TOOLBOX_ACTIONS.IF_THEN,
-        config: { endStepId: 'ghost' },
+        config: { endStepId: randomUUID() },
       },
-      { id: 's3', position: 3, config: {} },
-    ]
+      { position: 3, appKey: 'custom-api', config: {} },
+    ])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
@@ -270,17 +290,17 @@ describe('updateFlowStatus', () => {
 
   it('publishes a flow with a valid non-empty if-then block', async () => {
     fakeFlow.active = false
-    fakeFlow.steps = [
-      { id: 't', position: 1, config: {} },
+    const endStepId = randomUUID()
+    await seedSteps([
+      triggerStep,
       {
-        id: 'block',
         position: 2,
         appKey: TOOLBOX_APP_KEY,
         key: TOOLBOX_ACTIONS.IF_THEN,
-        config: { endStepId: 's3' },
+        config: { endStepId },
       },
-      { id: 's3', position: 3, config: {} },
-    ]
+      { id: endStepId, position: 3, appKey: 'custom-api', config: {} },
+    ])
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),

@@ -138,9 +138,11 @@ class Flow extends BaseFlow {
 
     const oldFlow = opt.old as Flow
 
-    const incompleteStep = await oldFlow.$relatedQuery('steps').findOne({
-      status: 'incomplete',
-    })
+    const incompleteStep = await oldFlow
+      .$relatedQuery('steps', queryContext.transaction)
+      .findOne({
+        status: 'incomplete',
+      })
 
     if (incompleteStep) {
       throw new ValidationError({
@@ -149,7 +151,10 @@ class Flow extends BaseFlow {
       })
     }
 
-    const allSteps = await oldFlow.$relatedQuery('steps')
+    const allSteps = await oldFlow.$relatedQuery(
+      'steps',
+      queryContext.transaction,
+    )
 
     if (allSteps.length < 2) {
       throw new ValidationError({
@@ -162,8 +167,8 @@ class Flow extends BaseFlow {
     return
   }
 
-  async getTriggerStep(): Promise<Step> {
-    const triggerStep = await this.$relatedQuery('steps').findOne({
+  async getTriggerStep(trx?: Transaction): Promise<Step> {
+    const triggerStep = await this.$relatedQuery('steps', trx).findOne({
       type: 'trigger',
     })
     if (!triggerStep) {
