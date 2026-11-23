@@ -69,7 +69,11 @@ async function assertConnectionsAreLive(
     .select('connection_id')
     .where('flow_id', flowId)
     .whereNotNull('connection_id')
-  const connectionIds = [...new Set(steps.map((step) => step.connectionId))]
+  const connectionIds = [
+    ...new Set(
+      steps.flatMap((step) => (step.connectionId ? [step.connectionId] : [])),
+    ),
+  ]
   if (connectionIds.length === 0) {
     return
   }

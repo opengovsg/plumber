@@ -406,10 +406,12 @@ describe('updateFlowStatus', () => {
         formattedData: { screenName: 'Test connection' },
         verified: true,
       })
-      const actionStep = await Step.query().findOne({
-        flow_id: fakeFlow.id,
-        type: 'action',
-      })
+      const actionStep = await Step.query()
+        .findOne({
+          flow_id: fakeFlow.id,
+          type: 'action',
+        })
+        .throwIfNotFound()
       await Step.query()
         .findById(actionStep.id)
         .patch({ connectionId: connection.id })
