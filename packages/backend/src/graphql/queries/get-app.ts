@@ -121,6 +121,19 @@ const getApp: NonNullable<QueryResolvers['getApp']> = async (
     const connections = await context.currentUser
       .$relatedQuery('connections')
       .select('connections.*')
+      .select(
+        // Mirrors the published-pipe guard in the deleteConnection mutation.
+        Connection.knex().raw(
+          `exists (
+            select 1 from steps
+            join flows on flows.id = steps.flow_id
+            where steps.connection_id = connections.id
+              and steps.deleted_at is null
+              and flows.deleted_at is null
+              and flows.active = true
+          ) as "hasPublishedFlows"`,
+        ),
+      )
       .fullOuterJoinRelated('steps')
       .where({
         'connections.key': params.key,

@@ -1,4 +1,11 @@
-import { Menu, MenuButton, MenuItem, MenuList, Portal } from '@chakra-ui/react'
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Portal,
+  Tooltip,
+} from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import * as React from 'react'
 import { BiDotsHorizontalRounded } from 'react-icons/bi'
@@ -16,14 +23,21 @@ type ContextMenuProps = {
   // Whether the app's auth opted into credential editing.
   // Comes from the backend via GetAppConnections.
   supportsConnectionEdit?: boolean
+  // Deleting a connection used by a published pipe strands its executions.
+  hasPublishedFlows?: boolean
   onMenuItemClick: (event: React.MouseEvent, action: Action) => void
 }
 
 export default function ContextMenu(
   props: ContextMenuProps,
 ): React.ReactElement {
-  const { appKey, connectionId, supportsConnectionEdit, onMenuItemClick } =
-    props
+  const {
+    appKey,
+    connectionId,
+    supportsConnectionEdit,
+    hasPublishedFlows,
+    onMenuItemClick,
+  } = props
 
   const createActionHandler = React.useCallback(
     (action: Action) => {
@@ -67,12 +81,19 @@ export default function ContextMenu(
             </MenuItem>
           ) : null}
 
-          <MenuItem
-            onClick={createActionHandler({ type: 'delete' })}
-            color="red.500"
+          <Tooltip
+            label="Unpublish the pipes using this connection or switch their connection before deleting."
+            isDisabled={!hasPublishedFlows}
+            placement="left"
           >
-            Delete
-          </MenuItem>
+            <MenuItem
+              onClick={createActionHandler({ type: 'delete' })}
+              color="red.500"
+              isDisabled={hasPublishedFlows}
+            >
+              Delete
+            </MenuItem>
+          </Tooltip>
         </MenuList>
       </Portal>
     </Menu>

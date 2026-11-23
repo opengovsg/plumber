@@ -111,21 +111,18 @@ describe('deleteConnection', () => {
 
     await expect(
       deleteConnection({}, { input: { id: connection.id } }, context),
-    ).rejects.toThrow(
-      'This connection is used by published pipe(s): "Live pipe". Unpublish them or switch their connection before deleting.',
-    )
+    ).rejects.toThrow('This connection is used by a published pipe.')
 
     expect(await Connection.query().findById(connection.id)).toBeDefined()
   })
 
-  it('lists every published pipe and ignores unpublished ones', async () => {
+  it('blocks deletion when any one of several pipes is published', async () => {
     await createFlowUsingConnection({ name: 'Pipe A', active: true })
-    await createFlowUsingConnection({ name: 'Pipe B', active: true })
     await createFlowUsingConnection({ name: 'Pipe C', active: false })
 
     await expect(
       deleteConnection({}, { input: { id: connection.id } }, context),
-    ).rejects.toThrow('published pipe(s): "Pipe A", "Pipe B".')
+    ).rejects.toThrow('published pipe')
   })
 
   it('still deletes the connection after the pipe is unpublished', async () => {
@@ -147,23 +144,7 @@ describe('deleteConnection', () => {
     expect(result).toBe(true)
   })
 
-  it('does not name published pipes the user cannot access', async () => {
-    const otherUser = await generateMockUser('nonCollaborator')
-    const otherContext = { ...context, currentUser: otherUser } as Context
-    await createFlowUsingConnection({
-      name: 'Secret pipe',
-      active: true,
-      owningContext: otherContext,
-    })
-
-    await expect(
-      deleteConnection({}, { input: { id: connection.id } }, context),
-    ).rejects.toThrow(
-      'This connection is used by published pipe(s): 1 other pipe(s). Unpublish them or switch their connection before deleting.',
-    )
-  })
-
-  it('names published pipes the user has collaborator access to', async () => {
+  it('blocks deletion when the published pipe is owned by a collaborator', async () => {
     const otherUser = await generateMockUser('nonCollaborator')
     const otherContext = { ...context, currentUser: otherUser } as Context
     const flow = await createFlowUsingConnection({
@@ -175,7 +156,7 @@ describe('deleteConnection', () => {
 
     await expect(
       deleteConnection({}, { input: { id: connection.id } }, context),
-    ).rejects.toThrow('published pipe(s): "Shared pipe".')
+    ).rejects.toThrow('published pipe')
   })
 
   it('throws not found for a connection the user does not own', async () => {

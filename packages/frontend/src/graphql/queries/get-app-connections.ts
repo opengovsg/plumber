@@ -12,6 +12,7 @@ export const GET_APP_CONNECTIONS = gql`
         key
         verified
         flowCount
+        hasPublishedFlows
         editableLabel
         environment {
           id
