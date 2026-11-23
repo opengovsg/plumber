@@ -4,7 +4,7 @@ import {
   MenuItem,
   MenuList,
   Portal,
-  Tooltip,
+  Text,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import * as React from 'react'
@@ -38,6 +38,8 @@ export default function ContextMenu(
     hasPublishedFlows,
     onMenuItemClick,
   } = props
+
+  const deleteHintId = React.useId()
 
   const createActionHandler = React.useCallback(
     (action: Action) => {
@@ -81,19 +83,30 @@ export default function ContextMenu(
             </MenuItem>
           ) : null}
 
-          <Tooltip
-            label="Unpublish the pipes using this connection or switch their connection before deleting."
-            isDisabled={!hasPublishedFlows}
-            placement="left"
+          <MenuItem
+            onClick={createActionHandler({ type: 'delete' })}
+            color="red.500"
+            isDisabled={hasPublishedFlows}
+            // Keeps the item in keyboard navigation so its reason is reachable.
+            // Chakra still blocks the click while isDisabled is set.
+            isFocusable
+            aria-describedby={hasPublishedFlows ? deleteHintId : undefined}
           >
-            <MenuItem
-              onClick={createActionHandler({ type: 'delete' })}
-              color="red.500"
-              isDisabled={hasPublishedFlows}
+            Delete
+          </MenuItem>
+          {hasPublishedFlows ? (
+            <Text
+              id={deleteHintId}
+              px={3}
+              pb={2}
+              maxW="xs"
+              textStyle="caption-2"
+              color="base.content.medium"
             >
-              Delete
-            </MenuItem>
-          </Tooltip>
+              Unpublish the pipes using this connection or switch their
+              connection before deleting.
+            </Text>
+          ) : null}
         </MenuList>
       </Portal>
     </Menu>

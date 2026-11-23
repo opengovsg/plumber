@@ -1,4 +1,4 @@
-import { useLazyQuery, useMutation } from '@apollo/client'
+import { ServerError, useLazyQuery, useMutation } from '@apollo/client'
 import {
   Box,
   Card,
@@ -24,6 +24,7 @@ import * as URLS from '@/config/urls'
 import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
+import { useSessionExpiredToast } from '@/hooks/useSessionExpiredToast'
 
 type AppConnectionRowProps = {
   connection: IConnection
@@ -32,6 +33,7 @@ type AppConnectionRowProps = {
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const toast = useToast()
+  const showSessionExpiredToast = useSessionExpiredToast()
   const navigate = useNavigate()
 
   const [verificationVisible, setVerificationVisible] = useState(false)
@@ -93,6 +95,12 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
       },
       onError: (error) => {
         onDialogClose()
+        // autoSnackbar: false also skips the shared 401 handler, so show the
+        // session-expired toast here to keep its sign-in action.
+        if ((error.networkError as ServerError | null)?.statusCode === 401) {
+          showSessionExpiredToast()
+          return
+        }
         toast({
           title: 'Unable to delete connection',
           description: parseGraphqlError(error).message,
@@ -103,7 +111,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         })
       },
     })
-  }, [deleteConnection, id, toast, onDialogClose])
+  }, [deleteConnection, id, toast, showSessionExpiredToast, onDialogClose])
 
   const onConfirmEdit = useCallback(() => {
     onDialogClose()
