@@ -8,6 +8,21 @@ It has no entry point of its own. The archival task in [`backend-archive`](../ba
 
 ---
 
+## What the export writes
+
+Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run.
+
+| Table           | One row per                                       |
+| --------------- | ------------------------------------------------- |
+| `flow_transfer` | Pipe ownership transfer.                          |
+| `dim_user`      | User, including soft-deleted users. Holds emails. |
+
+The export writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket. PostHog reads a bucket only if someone attaches it.
+
+Timestamps use the Parquet `TIMESTAMP(isAdjustedToUTC=true, MILLIS)` type, so DuckDB and ClickHouse read them as UTC.
+
+---
+
 ## Agency mapping
 
 Two files in `data/` map email domains to agencies. The export reads them at runtime.
@@ -28,18 +43,21 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 
 ---
 
----
-
 ## Running tests
 
+Run checks through Turbo, as CI does.
+
 ```bash
-pnpm --filter backend-analytics run test:unit
+pnpm exec turbo run typecheck --filter=backend-analytics
+pnpm exec turbo run test:unit --filter=backend-analytics
 ```
 
 The integration tests run each export query against Postgres 18, migrated with `packages/backend`'s migrations. They need Docker running.
 
 ```bash
-pnpm --filter backend-analytics run test:integration
+pnpm exec turbo run test:integration --filter=backend-analytics
 ```
+
+The script migrates a fresh database on each run. A watch or UI session migrates only when it starts, so restart it after editing a migration.
 
 A migration that renames or drops a column an export reads fails these tests in CI. Add an `*.itest.ts` for every new export table.

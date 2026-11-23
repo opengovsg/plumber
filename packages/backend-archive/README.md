@@ -176,7 +176,7 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ## Exporting analytics tables
 
-The archival task writes the silver analytics tables to S3 each night, before it archives. The export code lives in [`backend-analytics`](../backend-analytics/README.md). This package runs it. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`.
+The archival task runs the analytics export each night, before it archives. Archival must not delete executions before the export reads them. [`backend-analytics`](../backend-analytics/README.md) holds the export code and describes what it writes.
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
@@ -314,13 +314,14 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 
 ## Running tests
 
+Run checks through Turbo. It builds `backend-analytics` first, and this package imports that build. The bare package scripts fail with `TS2307` on a clean checkout.
+
 ```bash
-pnpm --filter backend-archive run test:unit
+pnpm exec turbo run typecheck --filter=backend-archive
+pnpm exec turbo run test:unit --filter=backend-archive
 ```
 
 The analytics export tests live in [`backend-analytics`](../backend-analytics/README.md#running-tests).
-
-The script migrates a fresh database on each run. A watch or UI session migrates only when it starts, so restart it after editing a migration.
 
 ---
 

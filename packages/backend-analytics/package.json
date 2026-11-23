@@ -1,6 +1,6 @@
 {
   "name": "backend-analytics",
-  "version": "1.104.0",
+  "version": "1.106.0",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,7 @@
     "prebuild": "rimraf ./dist",
     "build": "tsc -p tsconfig.build.json",
     "test:unit": "vitest --config ./vitest.config.ts",
-    "test:integration": "vitest --config ./vitest.config.integration.ts",
+    "test:integration": "vitest run --config ./vitest.config.integration.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "format": "oxfmt --check .",

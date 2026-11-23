@@ -124,16 +124,17 @@ function nextVersion(version, kind) {
 const current = JSON.parse(fs.readFileSync('package.json', 'utf8')).version
 const next = nextVersion(current, bump)
 const pattern = new RegExp(`("version"\\s*:\\s*")${current.replaceAll('.', '\\.')}(")`)
-for (const file of files) {
-  const pkg = JSON.parse(fs.readFileSync(file, 'utf8'))
-  if (pkg.version !== current) {
-    throw new Error(`${file} is ${pkg.version}, expected ${current}`)
-  }
+const updates = files.map((file) => {
   const text = fs.readFileSync(file, 'utf8')
+  const { version } = JSON.parse(text)
+  if (version !== current) {
+    throw new Error(`${file} is ${version}, expected ${current}`)
+  }
   const updated = text.replace(pattern, `$1${next}$2`)
   if (updated === text) throw new Error(`version field not found in ${file}`)
-  fs.writeFileSync(file, updated)
-}
+  return [file, updated]
+})
+for (const [file, updated] of updates) fs.writeFileSync(file, updated)
 process.stdout.write(next)
 EOF
 )
@@ -143,8 +144,9 @@ git tag "v$NEW"
 ```
 
 The server reads `packages/backend/package.json` at startup. If that file stays
-on the old version, production still reports the old version. The script aborts
-when any of the six files has already drifted from the root version.
+on the old version, production still reports the old version. The script checks
+all six files before it writes any. It aborts with no file changed when one has
+drifted from the root version.
 
 ### 5. Verify
 
