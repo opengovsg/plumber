@@ -171,7 +171,9 @@ async function start() {
     // The exclusive create makes a concurrent start lose instead of overwriting this record.
     writeFileSync(statePath, `${JSON.stringify(state)}\n`, { flag: 'wx' })
   } catch (error) {
-    if (child.pid) process.kill(-child.pid, 'SIGTERM')
+    if (child.pid) {
+      process.kill(-child.pid, 'SIGTERM')
+    }
     fail(
       error.code === 'EEXIST'
         ? 'another start is in progress in this worktree.'
