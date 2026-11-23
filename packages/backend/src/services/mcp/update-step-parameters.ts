@@ -6,6 +6,7 @@ import type {
 } from '@plumber/types'
 
 import apps from '@/apps'
+import { APP_KEY as DATABRICKS_APP_KEY } from '@/apps/databricks/common/constants'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
@@ -77,6 +78,26 @@ async function fetchFormSchemaForStep(
   }
 
   return fetchFormSchema($, formId)
+}
+
+// Same wording as the editor's Databricks connection modal.
+const DATABRICKS_NOT_ONBOARDED_MESSAGE =
+  "The Govtech Data Platform requires onboarding before use. It looks like you're not onboarded yet. To get access, join the #ask-cdo channel on GovTech Slack, click the Onboarding Request button and follow the instructions, then try again. For more information, refer to https://go.gov.sg/gdp-onboarding."
+
+// The AI builder must not bind a Databricks connection whose schema does not exist yet.
+async function isDatabricksConnectionVerified(
+  user: User,
+  stepId: string,
+  connectionId: string,
+): Promise<boolean> {
+  const step = await Step.query().findById(stepId).throwIfNotFound()
+  const connection = await Connection.query()
+    .findById(connectionId)
+    .throwIfNotFound()
+  const flow = await Flow.query().findById(step.flowId).throwIfNotFound()
+  const app = apps[DATABRICKS_APP_KEY]
+  const $ = await globalVariable({ connection, app, flow, user })
+  return !!(await app.auth?.isStillVerified?.($))
 }
 
 export async function updateStepParametersService({
@@ -282,6 +303,20 @@ export async function updateStepParametersService({
         }
         result.step.connectionId = connectionId
         result.connectionRegistered = true
+      } catch (err) {
+        result.connectionError =
+          err instanceof Error ? err.message : String(err)
+      }
+    } else if (rawApp?.key === DATABRICKS_APP_KEY) {
+      try {
+        if (await isDatabricksConnectionVerified(user, stepId, connectionId)) {
+          await Step.query()
+            .patchAndFetchById(stepId, { connectionId })
+            .throwIfNotFound()
+          result.step.connectionId = connectionId
+        } else {
+          result.connectionError = DATABRICKS_NOT_ONBOARDED_MESSAGE
+        }
       } catch (err) {
         result.connectionError =
           err instanceof Error ? err.message : String(err)

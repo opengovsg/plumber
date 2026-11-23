@@ -18,6 +18,11 @@ const mocks = vi.hoisted(() => ({
   fetchFormSchema: vi.fn(),
   globalVariable: vi.fn().mockResolvedValue({}),
   parseFormIdFormat: vi.fn().mockReturnValue('abc123'),
+  databricksIsStillVerified: vi.fn(),
+}))
+
+vi.mock('@/apps/databricks/auth/is-still-verified', () => ({
+  default: mocks.databricksIsStillVerified,
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -1004,5 +1009,122 @@ describe('no connectionRegistrationType — connectionId set directly', () => {
 
     const dbStep = await Step.query().findById(actionStep.id)
     expect(dbStep?.connectionId).toBe(connection.id)
+  })
+})
+
+describe('Databricks connection verification', () => {
+  let user: User
+  let actionStepId: string
+  let pipeId: string
+  let connectionId: string
+
+  beforeEach(async () => {
+    mocks.databricksIsStillVerified.mockReset()
+    mocks.globalVariable.mockClear()
+
+    user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `databricks-verify-${randomUUID()}@example.com`,
+    })
+
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'databricks',
+      userId: user.id,
+      verified: false,
+      draft: false,
+      formattedData: { screenName: 'databricks_user', generation: 'new' },
+    })
+    connectionId = connection.id
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Databricks Verify Test',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'databricks',
+          key: 'createDatabricksTableRow',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-databricks-verify',
+    })
+
+    pipeId = flow.id
+    actionStepId = flow.steps[1].id
+  })
+
+  it('does not bind an unverified connection and returns the onboarding message', async () => {
+    mocks.databricksIsStillVerified.mockResolvedValue(false)
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toContain(
+      'The Govtech Data Platform requires onboarding before use.',
+    )
+    expect(result.connectionError).toContain('https://go.gov.sg/gdp-onboarding')
+    expect(result.step.connectionId).toBeNull()
+    expect(mocks.globalVariable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connection: expect.objectContaining({ id: connectionId }),
+        user,
+      }),
+    )
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+
+  it('binds a verified connection', async () => {
+    mocks.databricksIsStillVerified.mockResolvedValue(true)
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toBeUndefined()
+    expect(result.step.connectionId).toBe(connectionId)
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBe(connectionId)
+  })
+
+  it('does not bind when the check throws', async () => {
+    mocks.databricksIsStillVerified.mockRejectedValue(
+      new Error('Failed to check schema existence in Databricks'),
+    )
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toBe(
+      'Failed to check schema existence in Databricks',
+    )
+    expect(result.step.connectionId).toBeNull()
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
   })
 })
