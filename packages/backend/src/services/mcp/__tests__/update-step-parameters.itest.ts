@@ -19,7 +19,10 @@ const mocks = vi.hoisted(() => ({
   globalVariable: vi.fn().mockResolvedValue({}),
   parseFormIdFormat: vi.fn().mockReturnValue('abc123'),
   databricksIsStillVerified: vi.fn(),
+  withTimeout: vi.fn(),
 }))
+
+vi.mock('@/helpers/with-timeout', () => ({ withTimeout: mocks.withTimeout }))
 
 vi.mock('@/apps/databricks/auth/is-still-verified', () => ({
   default: mocks.databricksIsStillVerified,
@@ -1021,6 +1024,8 @@ describe('Databricks connection verification', () => {
   beforeEach(async () => {
     mocks.databricksIsStillVerified.mockReset()
     mocks.globalVariable.mockClear()
+    mocks.withTimeout.mockReset()
+    mocks.withTimeout.mockImplementation((promise: Promise<unknown>) => promise)
 
     user = await User.query().insertAndFetch({
       id: randomUUID(),
@@ -1106,9 +1111,9 @@ describe('Databricks connection verification', () => {
     expect(dbStep?.connectionId).toBe(connectionId)
   })
 
-  it('does not bind when the check throws', async () => {
+  it('does not bind when the check throws, and hides the raw error', async () => {
     mocks.databricksIsStillVerified.mockRejectedValue(
-      new Error('Failed to check schema existence in Databricks'),
+      new Error('getaddrinfo ENOTFOUND internal-db.example'),
     )
 
     const result = await updateStepParametersService({
@@ -1120,7 +1125,31 @@ describe('Databricks connection verification', () => {
     })
 
     expect(result.connectionError).toBe(
-      'Failed to check schema existence in Databricks',
+      "Plumber couldn't check your Databricks access. Try again in a few minutes.",
+    )
+    expect(result.step.connectionId).toBeNull()
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+
+  it('does not bind when the check times out', async () => {
+    mocks.databricksIsStillVerified.mockResolvedValue(true)
+    mocks.withTimeout.mockRejectedValueOnce(
+      new Error('Timed out after 20000ms'),
+    )
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(mocks.withTimeout).toHaveBeenCalledWith(expect.any(Promise), 20_000)
+    expect(result.connectionError).toBe(
+      "Plumber couldn't check your Databricks access. Try again in a few minutes.",
     )
     expect(result.step.connectionId).toBeNull()
 
