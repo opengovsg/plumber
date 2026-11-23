@@ -14,6 +14,7 @@ const AI_FLOW = '00000000-0000-0000-0000-0000000000f1'
 const COPY_FLOW = '00000000-0000-0000-0000-0000000000f2'
 const MANUAL_FLOW = '00000000-0000-0000-0000-0000000000f3'
 const OLD_FLOW = '00000000-0000-0000-0000-0000000000f4'
+const SUGGESTED_STEP = '00000000-0000-0000-0000-0000000000e2'
 const COPY_DELETED_AT = new Date('2026-11-12T00:00:00.000Z')
 
 describe('pipe tables against the migrated schema', () => {
@@ -42,7 +43,12 @@ describe('pipe tables against the migrated schema', () => {
             traceId: 'trace-1',
             suggested: [
               { position: 1, appKey: 'formsg', key: 'newSubmission' },
-              { position: 2, appKey: 'tiles', key: 'createTileRow' },
+              {
+                position: 2,
+                appKey: 'tiles',
+                key: 'createTileRow',
+                stepId: SUGGESTED_STEP,
+              },
             ],
           },
         },
@@ -163,10 +169,15 @@ describe('pipe tables against the migrated schema', () => {
       expect.objectContaining({
         flow_id: AI_FLOW,
         position: 1,
+        step_id: null,
         app_key: 'formsg',
         action_key: 'newSubmission',
       }),
-      expect.objectContaining({ flow_id: AI_FLOW, position: 2 }),
+      expect.objectContaining({
+        flow_id: AI_FLOW,
+        position: 2,
+        step_id: SUGGESTED_STEP,
+      }),
     ])
   })
 })

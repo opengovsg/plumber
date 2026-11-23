@@ -12,10 +12,13 @@ It has no entry point of its own. The archival task in [`backend-archive`](../ba
 
 Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run.
 
-| Table           | One row per                                       |
-| --------------- | ------------------------------------------------- |
-| `flow_transfer` | Pipe ownership transfer.                          |
-| `dim_user`      | User, including soft-deleted users. Holds emails. |
+| Table                | One row per                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `flow_transfer`      | Pipe ownership transfer.                                                              |
+| `dim_user`           | User, including soft-deleted users. Holds emails.                                     |
+| `flow_stage`         | Pipe, with its creator, owner and creation path.                                      |
+| `flow_access`        | User with access to a pipe: owner, editor or viewer.                                  |
+| `flow_ai_suggestion` | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position. |
 
 The export writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket. PostHog reads a bucket only if someone attaches it.
 

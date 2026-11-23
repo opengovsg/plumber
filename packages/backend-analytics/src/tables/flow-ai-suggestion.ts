@@ -5,6 +5,7 @@ import type { SilverTable } from '../silver-table'
 const flowAiSuggestionRowSchema = z.object({
   flow_id: z.string(),
   position: z.number().int(),
+  step_id: z.string().nullable(),
   app_key: z.string().nullable(),
   action_key: z.string().nullable(),
   ai_trace_id: z.string().nullable(),
@@ -14,11 +15,13 @@ export type FlowAiSuggestionRow = z.infer<typeof flowAiSuggestionRowSchema>
 
 // Diffing these against flow_step shows how much users change what the AI Builder proposed.
 // IMPORTANT: the browser builder saves suggestions only from #2576. An AI pipe with no rows here is unknown, not zero.
+// IMPORTANT: join flow_step on step_id, never position. An MRF pipe's stage steps shift every saved position. A null step_id predates step id capture.
 // The CASE guards jsonb_array_elements, which fails on a non-array value.
 const FLOW_AI_SUGGESTION_SQL = `
   SELECT
     f.id AS flow_id,
     (s ->> 'position')::int AS position,
+    s ->> 'stepId' AS step_id,
     s ->> 'appKey' AS app_key,
     s ->> 'key' AS action_key,
     f.config -> 'aiBuilderConfig' ->> 'traceId' AS ai_trace_id
@@ -38,6 +41,7 @@ export const flowAiSuggestionTable: SilverTable<FlowAiSuggestionRow> = {
   columns: {
     flow_id: 'STRING',
     position: 'INT64',
+    step_id: 'STRING',
     app_key: 'STRING',
     action_key: 'STRING',
     ai_trace_id: 'STRING',
