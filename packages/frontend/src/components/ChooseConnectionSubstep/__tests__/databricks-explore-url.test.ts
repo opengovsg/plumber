@@ -21,7 +21,6 @@ describe('databricksExploreUrl', () => {
 
   it('returns null when env is empty', () => {
     expect(databricksExploreUrl('user_example_com', '')).toBeNull()
-    expect(databricksExploreUrl('user_example_com', null)).toBeNull()
     expect(databricksExploreUrl('user_example_com', undefined)).toBeNull()
   })
 
@@ -60,5 +59,34 @@ describe('databricksExploreUrl', () => {
         }),
       ),
     ).toBeNull()
+  })
+
+  it('returns null when hostname carries a path, query or userinfo', () => {
+    for (const hostname of [
+      'evil.example.com/x',
+      'evil.example.com?x=1',
+      'user@evil.example.com',
+    ]) {
+      expect(
+        databricksExploreUrl(
+          'user_example_com',
+          JSON.stringify({ hostname, catalog: 'main' }),
+        ),
+      ).toBeNull()
+    }
+  })
+
+  it('encodes catalog and screenName as single path segments', () => {
+    const url = databricksExploreUrl(
+      'a/b',
+      JSON.stringify({
+        hostname: 'example.cloud.databricks.com',
+        catalog: 'c?d',
+      }),
+    )
+
+    expect(url).toBe(
+      'https://example.cloud.databricks.com/explore/data/c%3Fd/a%2Fb',
+    )
   })
 })

@@ -8,19 +8,22 @@ const databricksEnvSchema = z.object({
 
 export function databricksExploreUrl(
   screenName: string,
-  env: string | null | undefined,
+  env?: string,
 ): string | null {
-  let parsed: unknown
   try {
-    parsed = JSON.parse(env ?? '{}')
+    const { hostname, catalog } = databricksEnvSchema.parse(
+      JSON.parse(env ?? '{}'),
+    )
+    const url = new URL(`https://${hostname}`)
+    // Rejects a hostname that smuggles in a path, query or userinfo.
+    if (url.host !== hostname) {
+      return null
+    }
+    url.pathname = ['explore', 'data', catalog, screenName]
+      .map(encodeURIComponent)
+      .join('/')
+    return url.toString()
   } catch {
     return null
   }
-
-  const result = databricksEnvSchema.safeParse(parsed)
-  if (!result.success) {
-    return null
-  }
-
-  return `https://${result.data.hostname}/explore/data/${result.data.catalog}/${screenName}`
 }
