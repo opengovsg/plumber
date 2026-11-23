@@ -127,4 +127,12 @@ describe('the committed mapping files', () => {
       expect(committed.domains.get(canonical)).toBe(canonical)
     }
   })
+
+  // Plumber treats all three as legacy SWDA identities (m365-excel file-privacy.ts).
+  it.each(['ssg.gov.sg', 'wsg.gov.sg', 'ssg-wsg.gov.sg'])(
+    'map the legacy SWDA domain %s to SWDA',
+    (domain) => {
+      expect(committed.domains.get(domain)).toBe('swda.gov.sg')
+    },
+  )
 })
