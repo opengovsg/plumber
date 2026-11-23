@@ -31,7 +31,13 @@ describe('flow_step against the migrated schema', () => {
     await db.raw('TRUNCATE users, flows, steps CASCADE')
     await db('users').insert({ id: OWNER, email: 'owner@tech.gov.sg' })
     await db('flows').insert([
-      { id: FLOW_A, name: 'a', user_id: OWNER },
+      // Made from a template, so its steps can show a setup guide.
+      {
+        id: FLOW_A,
+        name: 'a',
+        user_id: OWNER,
+        config: { templateConfig: { templateId: 'reminder' } },
+      },
       { id: FLOW_B, name: 'b', user_id: OWNER },
     ])
     const step = (id: string, flowId: string, updatedAt: string) => ({
@@ -54,7 +60,7 @@ describe('flow_step against the migrated schema', () => {
           stepName: 'Save the row',
           endStepId: STEP_OTHER_FLOW,
           approval: { branch: 'reject', stepId: STEP_DELETED },
-          templateConfig: { appEventKey: 'tiles.createTileRow' },
+          templateConfig: { appEventKey: 'tiles_createTileRow' },
           aiBuilderConfig: [
             { traceId: 't2', tool: 'update_step_parameters' },
             { traceId: 't1', tool: 'create_step' },
@@ -62,11 +68,18 @@ describe('flow_step against the migrated schema', () => {
           ],
         },
       },
+      // The reminder template stores a config for a scheduler step, which the editor shows no guide for.
       {
         ...step(STEP_DELETED, FLOW_A, '2026-11-09T16:00:00.000Z'),
+        app_key: 'scheduler',
+        key: 'everyDay',
+        config: { templateConfig: { appEventKey: 'scheduler_everyDay' } },
         deleted_at: new Date('2026-11-09T16:00:00.000Z'),
       },
-      step(STEP_NEXT_DAY, FLOW_A, '2026-11-10T16:00:00.000Z'),
+      {
+        ...step(STEP_NEXT_DAY, FLOW_A, '2026-11-10T16:00:00.000Z'),
+        config: { templateConfig: { customTemplate: 'Pick your table' } },
+      },
       {
         ...step(STEP_OTHER_FLOW, FLOW_B, '2026-11-10T08:00:00.000Z'),
         parameters: { tableId: { id: 'table-x', note: 'not a resource' } },
@@ -92,7 +105,8 @@ describe('flow_step against the migrated schema', () => {
     expect(rows[0]).toMatchObject({
       resource_id: 'table-1',
       ai_tools: 'create_step,update_step_parameters',
-      has_setup_guide: true,
+      has_setup_guide_config: true,
+      shows_setup_guide: true,
       has_step_name: true,
       if_then_end_step_id: STEP_OTHER_FLOW,
       approval_reject_step_id: STEP_DELETED,
@@ -100,7 +114,8 @@ describe('flow_step against the migrated schema', () => {
     })
     expect(rows[1]).toMatchObject({
       ai_tools: null,
-      has_setup_guide: false,
+      has_setup_guide_config: true,
+      shows_setup_guide: false,
       has_step_name: false,
       if_then_end_step_id: null,
       approval_reject_step_id: null,
@@ -110,7 +125,8 @@ describe('flow_step against the migrated schema', () => {
     // The AI builder leaves an empty templateConfig, which shows no guide.
     // A structured parameter never becomes a resource id.
     expect(rows[2]).toMatchObject({
-      has_setup_guide: false,
+      has_setup_guide_config: false,
+      shows_setup_guide: false,
       has_step_name: false,
       resource_id: null,
     })
@@ -134,5 +150,7 @@ describe('flow_step against the migrated schema', () => {
       [STEP_LAST_SECOND, STEP_DELETED],
       [STEP_NEXT_DAY, STEP_OTHER_FLOW],
     ])
+    // A custom guide shows whatever the step's app-event.
+    expect(pages[1][0].shows_setup_guide).toBe(true)
   })
 })
