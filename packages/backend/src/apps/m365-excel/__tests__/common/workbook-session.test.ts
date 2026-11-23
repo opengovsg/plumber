@@ -93,6 +93,7 @@ describe('WorkbookSession', () => {
     it.each([
       { code: 'invalidSessionReCreatable', kind: 'third-party' },
       { code: 'invalidSessionUnsupportedWorkbook', kind: 'config' },
+      { code: 'invalidSessionNotFound', kind: 'config' },
     ])(
       'retries and clears the session when Graph invalidates it with $code',
       async ({ code, kind }) => {
