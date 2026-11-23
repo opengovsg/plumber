@@ -1,6 +1,7 @@
 import type { IConnection } from '@plumber/types'
 
 import { DATABRICKS_APP_KEY } from '../constants'
+import { databricksGeneration } from './databricks-reconnect-connections'
 
 export type ConnectionDropdownOption = {
   label: string
@@ -40,10 +41,8 @@ export const optionGenerator = (
   }
 
   const name = screenName ?? 'Unnamed'
-  // Rows saved before generation existed omit the field.
   const label =
-    appKey === DATABRICKS_APP_KEY &&
-    (connection?.generation == null || connection.generation === 'legacy')
+    appKey === DATABRICKS_APP_KEY && databricksGeneration(connection) !== 'new'
       ? `[DEPRECATED] ${name}`
       : name
 

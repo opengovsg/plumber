@@ -11,8 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EditorContext } from '@/contexts/Editor'
 
-import { DATABRICKS_APP_KEY } from '../FlowStepConfigurationModal/constants'
-import ChooseConnectionSubstep from './index'
+import { DATABRICKS_APP_KEY } from '../../FlowStepConfigurationModal/constants'
+import ChooseConnectionSubstep from '../index'
 
 vi.mock('@/contexts/Editor', async () => {
   const { createContext } = await import('react')

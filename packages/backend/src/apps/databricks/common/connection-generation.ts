@@ -1,4 +1,4 @@
-// TODO: Delete the legacy Databricks path after every user has moved.
+// TODO(PLU-1172): Delete the legacy Databricks path after every user has moved.
 export const DATABRICKS_GENERATIONS = ['legacy', 'new'] as const
 
 export type DatabricksGeneration = (typeof DATABRICKS_GENERATIONS)[number]
