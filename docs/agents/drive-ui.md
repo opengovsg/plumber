@@ -33,7 +33,7 @@ Do not run `pnpm run setup` or `pnpm run dev`. Both need 1Password.
 node scripts/sample-dev-server.mjs start
 ```
 
-It prints the backend and frontend URLs once both are ready. If this worktree's server already runs, it prints `already running` and the same URLs.
+It prints the backend and frontend URLs once both are ready. If this worktree's server already runs, it waits for it to be ready, then prints `already running` and the same URLs. `status` prints `running`, `starting` or `not running`.
 
 It refuses to start when another process holds this worktree's ports. Ask the user before you stop that process.
 
@@ -50,10 +50,10 @@ Use a fresh browser context, such as a new incognito context or a new Playwright
    ```
 
 2. Open `<frontend>/login`. Fill the email field and choose `Get OTP`.
-3. Read the OTP. The backend prints it to the log instead of sending an email.
+3. Read the OTP. The backend prints it to the log instead of sending an email. Use the email from step 1.
 
    ```sh
-   node scripts/sample-dev-server.mjs otp <email>
+   node scripts/sample-dev-server.mjs otp "agent-1a2b3c4d5e6f@open.gov.sg"
    ```
 
 4. Fill the field labelled `Enter OTP sent to <email>` and choose `Verify OTP`.
@@ -81,6 +81,6 @@ Stop the server you started. Leave the Docker containers running.
 node scripts/sample-dev-server.mjs stop
 ```
 
-It stops only a server this script started in this worktree.
+It stops only a server this script started in this worktree. If the ports stay in use afterwards, it exits 1. Ask the user then.
 
 The backend's LaunchDarkly client runs offline, so backend flags use their code fallback values. The frontend still reads real flags from the LaunchDarkly dev environment.

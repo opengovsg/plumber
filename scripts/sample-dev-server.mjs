@@ -3,7 +3,7 @@
  *
  * Each command works from a fresh shell, so agents need not keep PIDs or log paths between tool calls.
  */
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import {
   closeSync,
@@ -50,13 +50,21 @@ async function isPortTaken(port) {
 
 // A start time plus command line pins the process, so a recycled PID never matches.
 function describeProcess(pid) {
-  try {
-    return execFileSync('ps', ['-o', 'lstart=,command=', '-p', String(pid)], {
-      encoding: 'utf8',
-    }).trim()
-  } catch {
+  if (!Number.isInteger(pid) || pid <= 0) {
     return undefined
   }
+  // A fixed zone and locale keep lstart stable across shells. -ww stops truncation.
+  const result = spawnSync(
+    'ps',
+    ['-ww', '-o', 'lstart=,command=', '-p', String(pid)],
+    { encoding: 'utf8', env: { ...process.env, TZ: 'UTC', LC_ALL: 'C' } },
+  )
+  if (result.error || result.stderr.trim()) {
+    fail(
+      `cannot inspect processes with ps. ${result.error?.message ?? result.stderr.trim()}`,
+    )
+  }
+  return result.stdout.trim() || undefined
 }
 
 function readOwnedServer() {
@@ -64,12 +72,35 @@ function readOwnedServer() {
     return undefined
   }
   const state = JSON.parse(readFileSync(statePath, 'utf8'))
-  if (describeProcess(state.pid) === state.process) {
+  if (state.process && describeProcess(state.pid) === state.process) {
     return state
   }
   // The recorded server is gone, so its state file is stale.
   rmSync(statePath)
   return undefined
+}
+
+function isReady({ backendPort, frontendPort }) {
+  // The log is truncated on start, so these lines can only come from this run.
+  const log = readLog()
+  return (
+    log.includes(`Server is listening on ${backendPort}`) &&
+    log.includes(`Local:   http://localhost:${frontendPort}/`)
+  )
+}
+
+async function waitUntilReady(state) {
+  const deadline = Date.now() + READY_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    if (isReady(state)) {
+      return true
+    }
+    if (!readOwnedServer()) {
+      fail(`the server exited during start. See ${logPath}.`)
+    }
+    await sleep(1000)
+  }
+  return false
 }
 
 function printUrls({ backendPort, frontendPort }) {
@@ -93,6 +124,9 @@ async function getLinkedWorktreePorts() {
 async function start() {
   const running = readOwnedServer()
   if (running) {
+    if (!(await waitUntilReady(running))) {
+      fail(`the running server is not ready. See ${logPath}.`)
+    }
     out('already running')
     printUrls(running)
     return
@@ -130,27 +164,28 @@ async function start() {
     process: describeProcess(child.pid),
     ...ports,
   }
-  writeFileSync(statePath, `${JSON.stringify(state)}\n`)
-
-  // The log is truncated on start, so these lines can only come from this run.
-  const backendReady = `Server is listening on ${ports.backendPort}`
-  const frontendReady = `Local:   http://localhost:${ports.frontendPort}/`
-  const deadline = Date.now() + READY_TIMEOUT_MS
-  while (Date.now() < deadline) {
-    const log = readLog()
-    if (log.includes(backendReady) && log.includes(frontendReady)) {
-      printUrls(ports)
-      return
+  try {
+    if (!state.process) {
+      throw new Error('could not record the server process.')
     }
-    if (!readOwnedServer()) {
-      fail(`the server exited during start. See ${logPath}.`)
-    }
-    await sleep(1000)
+    // The exclusive create makes a concurrent start lose instead of overwriting this record.
+    writeFileSync(statePath, `${JSON.stringify(state)}\n`, { flag: 'wx' })
+  } catch (error) {
+    if (child.pid) process.kill(-child.pid, 'SIGTERM')
+    fail(
+      error.code === 'EEXIST'
+        ? 'another start is in progress in this worktree.'
+        : error.message,
+    )
   }
-  await stop()
-  fail(
-    `the server was not ready after ${READY_TIMEOUT_MS / 1000}s. See ${logPath}.`,
-  )
+
+  if (!(await waitUntilReady(state))) {
+    await stop()
+    fail(
+      `the server was not ready after ${READY_TIMEOUT_MS / 1000}s. See ${logPath}.`,
+    )
+  }
+  printUrls(ports)
 }
 
 function status() {
@@ -159,8 +194,19 @@ function status() {
     out('not running')
     return
   }
-  out('running')
+  out(isReady(running) ? 'running' : 'starting')
   printUrls(running)
+}
+
+async function waitFor(check, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (await check()) {
+      return true
+    }
+    await sleep(500)
+  }
+  return false
 }
 
 async function stop() {
@@ -172,16 +218,19 @@ async function stop() {
 
   // with-sample-env relays SIGTERM, so turbo shuts its tasks down cleanly.
   process.kill(running.pid, 'SIGTERM')
-  const deadline = Date.now() + STOP_TIMEOUT_MS
-  while (Date.now() < deadline) {
-    if (describeProcess(running.pid) !== running.process) {
-      break
-    }
-    await sleep(500)
-  }
-  if (describeProcess(running.pid) === running.process) {
-    // The detached child leads its own process group, so this reaches turbo's tasks too.
+  const isGone = () => describeProcess(running.pid) !== running.process
+  if (!(await waitFor(isGone, STOP_TIMEOUT_MS))) {
     process.kill(-running.pid, 'SIGKILL')
+  }
+
+  // IMPORTANT: turbo runs each task in its own process group, so a SIGKILL above can miss them.
+  const portsFree = async () =>
+    !(await isPortTaken(running.backendPort)) &&
+    !(await isPortTaken(running.frontendPort))
+  if (!(await waitFor(portsFree, STOP_TIMEOUT_MS))) {
+    fail(
+      `ports ${running.backendPort} and ${running.frontendPort} are still in use after stopping. Ask the user.`,
+    )
   }
   rmSync(statePath, { force: true })
   out('stopped')
