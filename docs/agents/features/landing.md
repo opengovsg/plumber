@@ -18,7 +18,7 @@ Landing is the public home page. A visitor reads the headline and opens sign-in.
 
 Preconditions:
 
-- The browser is not signed in.
+- The browser context is fresh and signed out. A signed-in session skips the public page.
 
 - **Open home.** Go to `/`. The heading `The easiest no-code automation tool for public service` is visible. The page title is `Plumber`.
 - **Get started.** Choose the link `Get started`. The button `Get OTP` is visible.

@@ -1,6 +1,6 @@
 ---
 name: drive-plumber-ui
-description: Start Plumber's dev server in this worktree and use the frontend the way a user would. Use when asked to run, open, screenshot, click through, or manually test the Plumber UI, or to confirm a change works in the real app.
+description: Start Plumber's dev server in this worktree and use the frontend the way a user would. Use when asked to run, open, screenshot, click through or test the Plumber UI. Also use it to confirm a change works in the real app.
 ---
 
 # Drive the Plumber UI
