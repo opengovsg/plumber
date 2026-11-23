@@ -116,6 +116,27 @@
           }
         ]
       }
+    },
+    {
+      // Analytics days are Singapore days, and only sgt-day.ts sets that zone.
+      "files": ["packages/backend-analytics/src/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "luxon",
+                "message": "Use the Singapore day helpers in sgt-day.ts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/backend-analytics/src/sgt-day.ts"],
+      "rules": { "no-restricted-imports": "off" }
     }
   ]
 }
