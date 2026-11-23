@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import type { S3Client } from '@aws-sdk/client-s3'
@@ -41,8 +41,11 @@ export function s3Sink(s3Client: S3Client, bucket: string): SilverSink {
 export function localDirSink(dir: string): SilverSink {
   return async (key, body) => {
     const filePath = path.join(dir, key)
-    await mkdir(path.dirname(filePath), { recursive: true })
-    await writeFile(filePath, body)
+    await mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 })
+    await writeFile(filePath, body, { mode: 0o600 })
+    // IMPORTANT: dim_user holds emails. writeFile sets the mode only on a new
+    // file, so chmod also covers a file left by an earlier run.
+    await chmod(filePath, 0o600)
   }
 }
 

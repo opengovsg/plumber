@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { chmod, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -109,6 +109,26 @@ describe('writeSilverTables to a local folder', () => {
         path.join(dir, 'silver/test_table/current.parquet'),
       )
       expect(body.subarray(0, 4).toString()).toBe('PAR1')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps the files readable only by the invoking user', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    const tableDir = path.join(dir, 'silver/test_table')
+    const filePath = path.join(tableDir, 'current.parquet')
+    const mode = async (p: string) => (await stat(p)).mode & 0o777
+    const write = () =>
+      writeSilverTables({ db, tables: [testTable], sink: localDirSink(dir) })
+    try {
+      await write()
+      expect(await mode(tableDir)).toBe(0o700)
+      expect(await mode(filePath)).toBe(0o600)
+
+      await chmod(filePath, 0o644)
+      await write()
+      expect(await mode(filePath)).toBe(0o600)
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

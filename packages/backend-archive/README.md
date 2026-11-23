@@ -191,13 +191,20 @@ Pass exactly one of `--out` and `--s3`.
 To export production data to your own machine, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine). Then:
 
 ```bash
-pnpm --filter backend-archive run analytics:export-local --tables flow_transfer,dim_user --out ./analytics-out
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:export-local --tables flow_transfer,dim_user --out "$OUT"
 ```
 
-`dim_user` holds email addresses. Keep the folder on your machine and delete it after the upload. Check a file with DuckDB:
+`dim_user` holds email addresses. `mktemp -d` creates a private folder outside the repo, so `git add` cannot stage the files. The export writes them readable only by you. Check a file with DuckDB:
 
 ```bash
-duckdb -c "DESCRIBE SELECT * FROM read_parquet('analytics-out/silver/dim_user/current.parquet')"
+duckdb -c "DESCRIBE SELECT * FROM read_parquet('$OUT/silver/dim_user/current.parquet')"
+```
+
+Delete the folder after the upload:
+
+```bash
+rm -rf "$OUT"
 ```
 
 ---
