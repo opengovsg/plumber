@@ -13,6 +13,13 @@ const authDataSchema = z.object({
 
 export type AuthData = z.infer<typeof authDataSchema>
 
+/**
+ * Lets a best-effort caller fall back on bad auth data without logging it twice.
+ */
+export function parseAuthData($: IGlobalVariable) {
+  return authDataSchema.safeParse($.auth?.data)
+}
+
 export function extractAuthDataWithPlumberFolder($: IGlobalVariable): AuthData {
   const authData = $.auth?.data
   // Config because the user deleted the connection or never set one.
@@ -24,7 +31,7 @@ export function extractAuthDataWithPlumberFolder($: IGlobalVariable): AuthData {
     })
   }
 
-  const result = authDataSchema.safeParse(authData)
+  const result = parseAuthData($)
   if (result.success === false) {
     throw toInternalStepError($, result.error, {
       name: 'M365 connection data is invalid',

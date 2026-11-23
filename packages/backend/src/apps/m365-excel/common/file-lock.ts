@@ -2,7 +2,7 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'
 
-import { extractAuthDataWithPlumberFolder } from './auth-data'
+import { parseAuthData } from './auth-data'
 
 //
 // Lock-key derivation for m365-excel actions.
@@ -28,14 +28,17 @@ export const getLockKey = async (
     return null
   }
 
+  // Skip locking so the action's run path records and logs the real auth error.
+  const authData = parseAuthData($)
+  if (authData.success === false) {
+    return null
+  }
+
   try {
-    const authData = extractAuthDataWithPlumberFolder($)
-    const tenant = getM365TenantInfo(authData.tenantKey)
+    const tenant = getM365TenantInfo(authData.data.tenantKey)
     return `${tenant.id}:${fileId}`
   } catch {
-    // Can't derive the tenant (e.g. malformed / missing auth). Skip locking and
-    // let the action's run path surface and record the real error, preserving
-    // the pre-lock failure behavior.
+    // Same as bad auth: the run path surfaces the missing tenant config.
     return null
   }
 }
