@@ -26,3 +26,4 @@ Name controls by role and accessible name, so any browser tool can follow the st
 - [Create a pipe](./create-pipe.md): name a pipe from the empty pipes page and reopen it.
 - [Templates](./templates.md): the templates list.
 - [Executions](./executions.md): the executions page before any pipe exists.
+- [Toolbox placement](./toolbox-placement.md): which Toolbox actions the step picker allows inside If and Repeat blocks.
