@@ -60,24 +60,28 @@ function describeProcess(pid) {
     { encoding: 'utf8', env: { ...process.env, TZ: 'UTC', LC_ALL: 'C' } },
   )
   if (result.error || result.stderr.trim()) {
-    fail(
+    throw new Error(
       `cannot inspect processes with ps. ${result.error?.message ?? result.stderr.trim()}`,
     )
   }
   return result.stdout.trim() || undefined
 }
 
-function readOwnedServer() {
-  if (!existsSync(statePath)) {
-    return undefined
+function readState() {
+  return existsSync(statePath)
+    ? JSON.parse(readFileSync(statePath, 'utf8'))
+    : undefined
+}
+
+function writeState(state, flag = 'w') {
+  writeFileSync(statePath, `${JSON.stringify(state)}\n`, { flag })
+}
+
+// Drops the state file only if it still belongs to this run.
+function clearState(runId) {
+  if (readState()?.runId === runId) {
+    rmSync(statePath, { force: true })
   }
-  const state = JSON.parse(readFileSync(statePath, 'utf8'))
-  if (state.process && describeProcess(state.pid) === state.process) {
-    return state
-  }
-  // The recorded server is gone, so its state file is stale.
-  rmSync(statePath)
-  return undefined
 }
 
 function isReady({ backendPort, frontendPort }) {
@@ -89,18 +93,33 @@ function isReady({ backendPort, frontendPort }) {
   )
 }
 
-async function waitUntilReady(state) {
-  const deadline = Date.now() + READY_TIMEOUT_MS
-  while (Date.now() < deadline) {
-    if (isReady(state)) {
-      return true
-    }
-    if (!readOwnedServer()) {
-      fail(`the server exited during start. See ${logPath}.`)
-    }
-    await sleep(1000)
+async function arePortsBusy({ backendPort, frontendPort }) {
+  return (await isPortTaken(backendPort)) || (await isPortTaken(frontendPort))
+}
+
+/**
+ * Reads the worktree's server state and drops records whose processes are gone.
+ *
+ * IMPORTANT: a failed stop keeps its record while the ports stay busy, so no command reports the server gone too early.
+ */
+async function classify() {
+  const state = readState()
+  if (!state) {
+    return { phase: 'none' }
   }
-  return false
+  if (state.stopFailed) {
+    if (await arePortsBusy(state)) {
+      return { phase: 'stop-incomplete', state }
+    }
+  } else if (state.pid) {
+    if (describeProcess(state.pid) === state.process) {
+      return { phase: isReady(state) ? 'running' : 'starting', state }
+    }
+  } else if (describeProcess(state.claimant) === state.claimantProcess) {
+    return { phase: 'claimed', state }
+  }
+  clearState(state.runId)
+  return { phase: 'none' }
 }
 
 function printUrls({ backendPort, frontendPort }) {
@@ -121,14 +140,45 @@ async function getLinkedWorktreePorts() {
   }
 }
 
+async function waitFor(check, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (await check()) {
+      return true
+    }
+    await sleep(500)
+  }
+  return false
+}
+
+// Waits for the run that owns the state file to become ready.
+async function waitForRun(runId) {
+  return waitFor(async () => {
+    const { phase, state } = await classify()
+    if (
+      state?.runId !== runId ||
+      !['claimed', 'starting', 'running'].includes(phase)
+    ) {
+      throw new Error(`the server exited during start. See ${logPath}.`)
+    }
+    return phase === 'running'
+  }, READY_TIMEOUT_MS)
+}
+
 async function start() {
-  const running = readOwnedServer()
-  if (running) {
-    if (!(await waitUntilReady(running))) {
+  // Fails before anything launches when this shell cannot inspect processes.
+  describeProcess(process.pid)
+
+  const current = await classify()
+  if (current.phase === 'stop-incomplete') {
+    fail('a previous stop left the ports in use. Ask the user.')
+  }
+  if (current.phase !== 'none') {
+    if (!(await waitForRun(current.state.runId))) {
       fail(`the running server is not ready. See ${logPath}.`)
     }
     out('already running')
-    printUrls(running)
+    printUrls(current.state)
     return
   }
 
@@ -141,7 +191,25 @@ async function start() {
     }
   }
 
+  // Claim the worktree before touching the log, so a concurrent start cannot clobber this run.
   mkdirSync(tmpDir, { recursive: true })
+  const runId = randomBytes(8).toString('hex')
+  const claim = {
+    runId,
+    claimant: process.pid,
+    claimantProcess: describeProcess(process.pid),
+    ...ports,
+  }
+  try {
+    writeState(claim, 'wx')
+  } catch (error) {
+    fail(
+      error.code === 'EEXIST'
+        ? 'another start is in progress in this worktree.'
+        : error.message,
+    )
+  }
+
   const logFd = openSync(logPath, 'w')
   const child = spawn(
     process.execPath,
@@ -159,30 +227,22 @@ async function start() {
   closeSync(logFd)
   child.unref()
 
-  const state = {
-    pid: child.pid,
-    process: describeProcess(child.pid),
-    ...ports,
-  }
   try {
-    if (!state.process) {
+    const signature = describeProcess(child.pid)
+    if (!signature) {
       throw new Error('could not record the server process.')
     }
-    // The exclusive create makes a concurrent start lose instead of overwriting this record.
-    writeFileSync(statePath, `${JSON.stringify(state)}\n`, { flag: 'wx' })
+    writeState({ ...claim, pid: child.pid, process: signature })
   } catch (error) {
     if (child.pid) {
       process.kill(-child.pid, 'SIGTERM')
     }
-    fail(
-      error.code === 'EEXIST'
-        ? 'another start is in progress in this worktree.'
-        : error.message,
-    )
+    clearState(runId)
+    fail(error.message)
   }
 
-  if (!(await waitUntilReady(state))) {
-    await stop()
+  if (!(await waitForRun(runId))) {
+    await stopRun(runId)
     fail(
       `the server was not ready after ${READY_TIMEOUT_MS / 1000}s. See ${logPath}.`,
     )
@@ -190,51 +250,59 @@ async function start() {
   printUrls(ports)
 }
 
-function status() {
-  const running = readOwnedServer()
-  if (!running) {
-    out('not running')
-    return
+async function status() {
+  const { phase, state } = await classify()
+  const labels = {
+    none: 'not running',
+    claimed: 'starting',
+    starting: 'starting',
+    running: 'running',
+    'stop-incomplete': 'stop incomplete, ports still in use',
   }
-  out(isReady(running) ? 'running' : 'starting')
-  printUrls(running)
+  out(labels[phase])
+  if (state) {
+    printUrls(state)
+  }
 }
 
-async function waitFor(check, timeoutMs) {
-  const deadline = Date.now() + timeoutMs
-  while (Date.now() < deadline) {
-    if (await check()) {
-      return true
+// Stops one run, so a timed-out start never touches a newer server.
+async function stopRun(runId) {
+  const { phase, state } = await classify()
+  if (state?.runId !== runId) {
+    return
+  }
+  if (phase === 'claimed') {
+    fail('a start is in progress. Run stop again once it finishes.')
+  }
+
+  if (phase === 'starting' || phase === 'running') {
+    // with-sample-env relays SIGTERM, so turbo shuts its tasks down cleanly.
+    process.kill(state.pid, 'SIGTERM')
+    const isGone = () => describeProcess(state.pid) !== state.process
+    if (!(await waitFor(isGone, STOP_TIMEOUT_MS))) {
+      process.kill(-state.pid, 'SIGKILL')
     }
-    await sleep(500)
-  }
-  return false
-}
-
-async function stop() {
-  const running = readOwnedServer()
-  if (!running) {
-    out('not running')
-    return
-  }
-
-  // with-sample-env relays SIGTERM, so turbo shuts its tasks down cleanly.
-  process.kill(running.pid, 'SIGTERM')
-  const isGone = () => describeProcess(running.pid) !== running.process
-  if (!(await waitFor(isGone, STOP_TIMEOUT_MS))) {
-    process.kill(-running.pid, 'SIGKILL')
   }
 
   // IMPORTANT: turbo runs each task in its own process group, so a SIGKILL above can miss them.
-  const portsFree = async () =>
-    !(await isPortTaken(running.backendPort)) &&
-    !(await isPortTaken(running.frontendPort))
-  if (!(await waitFor(portsFree, STOP_TIMEOUT_MS))) {
+  if (
+    !(await waitFor(async () => !(await arePortsBusy(state)), STOP_TIMEOUT_MS))
+  ) {
+    writeState({ ...state, stopFailed: true })
     fail(
-      `ports ${running.backendPort} and ${running.frontendPort} are still in use after stopping. Ask the user.`,
+      `ports ${state.backendPort} and ${state.frontendPort} are still in use after stopping. Ask the user.`,
     )
   }
-  rmSync(statePath, { force: true })
+  clearState(runId)
+}
+
+async function stop() {
+  const { phase, state } = await classify()
+  if (phase === 'none') {
+    out('not running')
+    return
+  }
+  await stopRun(state.runId)
   out('stopped')
 }
 
@@ -266,4 +334,8 @@ const commands = { start, status, stop, email, otp: () => otp(arg) }
 if (!commands[command]) {
   fail(USAGE)
 }
-await commands[command]()
+try {
+  await commands[command]()
+} catch (error) {
+  fail(error.message)
+}
