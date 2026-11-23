@@ -154,8 +154,8 @@ const updateFlowTransferStatus: NonNullable<
       )
       .map((step) => step.id)
 
-    // IMPORTANT: Run these reads before the flow lock. They use their own pool
-    // connections, which step writers queued on the lock may be holding.
+    // IMPORTANT: Run this read before the flow lock. It uses its own pool
+    // connection, which step writers queued on the lock may be holding.
     // get the connections and tables to be shared
     // intentionally exclude m365-excel as the connection will be nullified
     // and it should retain the user_id in the connections table
@@ -164,25 +164,6 @@ const updateFlowTransferStatus: NonNullable<
     )
     const sharedConnections = connectionDetails.connection
     const sharedTables = connectionDetails.table
-    await Promise.all(
-      sharedTables.map(async (tableId) => {
-        try {
-          // the old owner should have the permissions to add the new owner as an editor of the table
-          await TableCollaborator.hasAccess(
-            flowTransfer.oldOwnerId,
-            tableId,
-            'editor',
-          )
-        } catch (e) {
-          if (e instanceof ForbiddenError) {
-            throw new Error(
-              'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
-            )
-          }
-          throw new Error(String(e))
-        }
-      }),
-    )
 
     await Step.lockFlow(flow.id, trx)
     const numExcelNullified = await Step.query(trx)
@@ -288,6 +269,26 @@ const updateFlowTransferStatus: NonNullable<
             ) {
               throw new Error(String(e))
             }
+          }
+
+          // The old owner must be able to add the new owner as an editor.
+          // IMPORTANT: Lock after the grant above. Tile ownership transfer
+          // locks the new owner's row before the old owner's, so this order
+          // cannot deadlock with it.
+          try {
+            await TableCollaborator.lockAccess(
+              flowTransfer.oldOwnerId,
+              tableId,
+              'editor',
+              trx,
+            )
+          } catch (e) {
+            if (e instanceof ForbiddenError) {
+              throw new Error(
+                'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
+              )
+            }
+            throw e
           }
 
           // always return the table

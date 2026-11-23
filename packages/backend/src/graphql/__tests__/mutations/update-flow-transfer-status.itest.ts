@@ -18,6 +18,20 @@ import Context from '@/types/express/context'
 import { generateMockFlow, generateMockUser } from './flow.mock'
 import { generateMockContext, generateMockTable } from './tiles/table.mock'
 
+async function waitForLockWaiters(count: number): Promise<void> {
+  for (let attempt = 0; attempt < 120; attempt++) {
+    const { rows } = await Flow.knex().raw<{ rows: { count: number }[] }>(
+      `SELECT count(*)::int AS count FROM pg_stat_activity
+       WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+    )
+    if (rows[0].count >= count) {
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  throw new Error(`Timed out waiting for ${count} lock waiters`)
+}
+
 describe('updateFlowTransferStatus', () => {
   let context: Context
   let owner: User
@@ -310,9 +324,9 @@ describe('updateFlowTransferStatus', () => {
         status: 'completed',
       })
 
-      // Spy on hasAccess to verify it's called with correct parameters
+      // Spy on lockAccess to verify it's called with correct parameters
       const hasAccessSpy = vi
-        .spyOn(TableCollaborator, 'hasAccess')
+        .spyOn(TableCollaborator, 'lockAccess')
         .mockResolvedValue(undefined)
 
       const addCollaboratorSpy = vi
@@ -329,11 +343,12 @@ describe('updateFlowTransferStatus', () => {
 
       expect(result.status).toBe('approved')
 
-      // Verify hasAccess was called with old owner's ID and 'editor' role
+      // Verify lockAccess was called with old owner's ID and 'editor' role
       expect(hasAccessSpy).toHaveBeenCalledWith(
         owner.id, // oldOwnerId
         table.id, // tableId
         'editor', // required role
+        expect.anything(), // trx
       )
 
       // Verify addCollaborator was called to add new owner as editor
@@ -367,10 +382,10 @@ describe('updateFlowTransferStatus', () => {
         status: 'completed',
       })
 
-      // Mock hasAccess to throw ForbiddenError (old owner doesn't have access)
+      // Mock lockAccess to throw ForbiddenError (old owner doesn't have access)
       const { ForbiddenError } = await import('@/errors/graphql-errors')
       const hasAccessSpy = vi
-        .spyOn(TableCollaborator, 'hasAccess')
+        .spyOn(TableCollaborator, 'lockAccess')
         .mockRejectedValue(
           new ForbiddenError(
             'You do not have sufficient permissions for this tile',
@@ -392,6 +407,55 @@ describe('updateFlowTransferStatus', () => {
       )
 
       hasAccessSpy.mockRestore()
+    })
+
+    it('rejects when the old owner loses Tile access while approval waits on the flow lock', async () => {
+      const { table } = await generateMockTable({
+        userId: owner.id,
+        databaseType: 'pg',
+      })
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: mockFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        position: 2,
+        parameters: { rowData: [], tableId: table.id },
+        status: 'completed',
+      })
+
+      context.currentUser = newOwner
+      const gate = await Flow.startTransaction()
+      let approval!: Promise<FlowTransfer | Error>
+      try {
+        await Step.lockFlow(mockFlow.id, gate)
+        approval = Promise.resolve(
+          updateFlowTransferStatus(
+            {},
+            { input: { id: transfer.id, status: 'approved' } },
+            context,
+          ),
+        ).catch((error: Error) => error)
+        await waitForLockWaiters(1)
+        await TableCollaborator.query()
+          .where({ table_id: table.id, user_id: owner.id })
+          .delete()
+      } finally {
+        await gate.rollback()
+        await approval
+      }
+
+      const error = await approval
+      expect(error).toBeInstanceOf(Error)
+      expect((error as Error).message).toBe(
+        'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
+      )
+      const newOwnerCollaborator = await TableCollaborator.query().findOne({
+        table_id: table.id,
+        user_id: newOwner.id,
+      })
+      expect(newOwnerCollaborator).toBeUndefined()
     })
   })
 })

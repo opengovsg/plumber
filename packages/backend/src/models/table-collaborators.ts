@@ -10,6 +10,31 @@ import User from './user'
 
 const TILE_COLLAB_ROLES = ['owner', 'editor', 'viewer']
 
+function assertRole(
+  collaborator: TableCollaborator | undefined,
+  role: ITableCollabRole,
+  $?: IGlobalVariable,
+): void {
+  if (
+    !collaborator ||
+    TILE_COLLAB_ROLES.indexOf(collaborator.role) >
+      TILE_COLLAB_ROLES.indexOf(role)
+  ) {
+    if ($) {
+      throw new StepError({
+        name: 'You do not have sufficient permissions for this tile',
+        solution: `Please ensure that you are ${
+          role === 'viewer' ? 'a' : 'an'
+        } ${role} of this tile.`,
+        kind: 'config',
+      })
+    }
+    throw new ForbiddenError(
+      'You do not have sufficient permissions for this tile',
+    )
+  }
+}
+
 class TableCollaborator extends Base {
   userId!: string
   tableId!: string
@@ -67,24 +92,26 @@ class TableCollaborator extends Base {
       user_id: userId,
       table_id: tableId,
     })
-    if (
-      !collaborator ||
-      TILE_COLLAB_ROLES.indexOf(collaborator.role) >
-        TILE_COLLAB_ROLES.indexOf(role)
-    ) {
-      if ($) {
-        throw new StepError({
-          name: 'You do not have sufficient permissions for this tile',
-          solution: `Please ensure that you are ${
-            role === 'viewer' ? 'a' : 'an'
-          } ${role} of this tile.`,
-          kind: 'config',
-        })
-      }
-      throw new ForbiddenError(
-        'You do not have sufficient permissions for this tile',
-      )
-    }
+    assertRole(collaborator, role, $)
+  }
+
+  /**
+   * Checks access and keeps the collaborator row locked until `trx` ends.
+   * This stops a concurrent revocation from committing before the caller's grant.
+   */
+  static lockAccess = async (
+    userId: string,
+    tableId: string,
+    role: ITableCollabRole,
+    trx: Transaction,
+  ): Promise<void | never> => {
+    const collaborator = await this.query(trx)
+      .findOne({
+        user_id: userId,
+        table_id: tableId,
+      })
+      .forShare()
+    assertRole(collaborator, role)
   }
 
   static upgradeOrInsertCollaborator = async ({
