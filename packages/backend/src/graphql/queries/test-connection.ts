@@ -1,9 +1,8 @@
 import apps from '@/apps'
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
-import logger from '@/helpers/logger'
 import User from '@/models/user'
-import { getConnection } from '@/services/connection'
+import { getConnection, verifyConnection } from '@/services/connection'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -48,6 +47,10 @@ const testConnection: QueryResolvers['testConnection'] = async (
     userRole = 'owner'
   }
 
+  if (!connection) {
+    throw new BadUserInputError('Connection not found')
+  }
+
   const app = apps[connection.key]
   let $ = await globalVariable({
     connection,
@@ -69,30 +72,13 @@ const testConnection: QueryResolvers['testConnection'] = async (
     })
   }
 
-  // Verify connection
-  let isStillVerified
-  let errorMessage
-  try {
-    isStillVerified = !!(await app.auth.isStillVerified($))
-  } catch (err) {
-    isStillVerified = false
-    errorMessage = err.message
-    logger.error(`Error verifying CONNECTION ID: ${connectionId}`, {
-      event: 'test-connection',
-      flowId: flowId,
-      errMessage: err.message,
-      errStack: err.stack,
-    })
-  }
-
-  // Testing should not bump updatedAt when the connection is already in the
-  // same verified state. Auth data changes are persisted by $.auth.set only
-  // when the merged payload actually differs.
-  if (connection.verified !== isStillVerified) {
-    connection = await connection.$query().patchAndFetch({
-      verified: isStillVerified,
-    })
-  }
+  const { isStillVerified, errorMessage } = await verifyConnection({
+    app,
+    $,
+    connection,
+    connectionId,
+    flowId,
+  })
 
   // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
   if (!isStillVerified || !flowId || !supportsConnectionRegistration) {

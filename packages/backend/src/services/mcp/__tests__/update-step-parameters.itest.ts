@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
+import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -18,6 +19,14 @@ const mocks = vi.hoisted(() => ({
   fetchFormSchema: vi.fn(),
   globalVariable: vi.fn().mockResolvedValue({}),
   parseFormIdFormat: vi.fn().mockReturnValue('abc123'),
+  databricksIsStillVerified: vi.fn(),
+  withTimeout: vi.fn(),
+}))
+
+vi.mock('@/helpers/with-timeout', () => ({ withTimeout: mocks.withTimeout }))
+
+vi.mock('@/apps/databricks/auth/is-still-verified', () => ({
+  default: mocks.databricksIsStillVerified,
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -1004,5 +1013,185 @@ describe('no connectionRegistrationType — connectionId set directly', () => {
 
     const dbStep = await Step.query().findById(actionStep.id)
     expect(dbStep?.connectionId).toBe(connection.id)
+  })
+})
+
+describe('Databricks connection verification', () => {
+  let user: User
+  let actionStepId: string
+  let pipeId: string
+  let connectionId: string
+
+  beforeEach(async () => {
+    mocks.databricksIsStillVerified.mockReset()
+    mocks.globalVariable.mockClear()
+    mocks.withTimeout.mockReset()
+    mocks.withTimeout.mockImplementation((promise: Promise<unknown>) => promise)
+
+    user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `databricks-verify-${randomUUID()}@example.com`,
+    })
+
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'databricks',
+      userId: user.id,
+      verified: false,
+      draft: false,
+      formattedData: { screenName: 'databricks_user', generation: 'new' },
+    })
+    connectionId = connection.id
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Databricks Verify Test',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'databricks',
+          key: 'createDatabricksTableRow',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-databricks-verify',
+    })
+
+    pipeId = flow.id
+    actionStepId = flow.steps[1].id
+  })
+
+  it('does not bind an unverified connection and returns the onboarding message', async () => {
+    mocks.databricksIsStillVerified.mockResolvedValue(false)
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toContain(
+      'The Govtech Data Platform requires onboarding before use.',
+    )
+    expect(result.connectionError).toContain('https://go.gov.sg/gdp-onboarding')
+    expect(result.step.connectionId).toBeNull()
+    expect(mocks.globalVariable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connection: expect.objectContaining({ id: connectionId }),
+        user,
+      }),
+    )
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
+    const dbConnection = await Connection.query().findById(connectionId)
+    expect(dbConnection?.verified).toBe(false)
+  })
+
+  it('binds a verified connection and saves the verified flag', async () => {
+    mocks.databricksIsStillVerified.mockResolvedValue(true)
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toBeUndefined()
+    expect(result.step.connectionId).toBe(connectionId)
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBe(connectionId)
+    const dbConnection = await Connection.query().findById(connectionId)
+    expect(dbConnection?.verified).toBe(true)
+  })
+
+  it('treats a thrown check as unverified, like the editor, and hides the raw error', async () => {
+    mocks.databricksIsStillVerified.mockRejectedValue(
+      new Error('getaddrinfo ENOTFOUND internal-db.example'),
+    )
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toContain(
+      'The Govtech Data Platform requires onboarding before use.',
+    )
+    expect(result.connectionError).not.toContain('internal-db.example')
+    expect(result.step.connectionId).toBeNull()
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+
+  it('does not bind when the check times out, even if it finishes late', async () => {
+    const { withTimeout } = await vi.importActual<
+      typeof import('@/helpers/with-timeout')
+    >('@/helpers/with-timeout')
+    mocks.withTimeout.mockImplementationOnce((promise: Promise<boolean>) =>
+      withTimeout(promise, 10),
+    )
+    let finishCheck: (verified: boolean) => void = () => undefined
+    mocks.databricksIsStillVerified.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        finishCheck = resolve
+      }),
+    )
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(mocks.withTimeout).toHaveBeenCalledWith(expect.any(Promise), 20_000)
+    expect(result.connectionError).toBe(
+      "Plumber couldn't check your Databricks access. Try again in a few minutes.",
+    )
+    expect(result.step.connectionId).toBeNull()
+
+    finishCheck(true)
+    await vi.waitFor(async () => {
+      const dbConnection = await Connection.query().findById(connectionId)
+      expect(dbConnection?.verified).toBe(true)
+    })
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+
+  it('keeps the published-pipe error when the pipe is published during the check', async () => {
+    mocks.databricksIsStillVerified.mockImplementationOnce(async () => {
+      await Flow.knex().table('flows').where('id', pipeId).update({
+        active: true,
+      })
+      return true
+    })
+
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId,
+        stepId: actionStepId,
+        parameters: {},
+        connectionId,
+      }),
+    ).rejects.toMatchObject({ type: 'editingPublishedPipeError' })
   })
 })

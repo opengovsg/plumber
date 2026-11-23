@@ -6,16 +6,20 @@ import type {
 } from '@plumber/types'
 
 import apps from '@/apps'
+import { APP_KEY as DATABRICKS_APP_KEY } from '@/apps/databricks/common/constants'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
 import globalVariable from '@/helpers/global-variable'
+import logger from '@/helpers/logger'
+import { withTimeout } from '@/helpers/with-timeout'
 import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { verifyConnection } from '@/services/connection'
 
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
@@ -77,6 +81,39 @@ async function fetchFormSchemaForStep(
   }
 
   return fetchFormSchema($, formId)
+}
+
+// Same wording as the editor's Databricks connection modal.
+const DATABRICKS_NOT_ONBOARDED_MESSAGE =
+  "The Govtech Data Platform requires onboarding before use. It looks like you're not onboarded yet. Join the #ask-cdo channel on GovTech Slack. Click the Onboarding Request button and follow the instructions. Then try again. For more information, refer to https://go.gov.sg/gdp-onboarding."
+
+const DATABRICKS_VERIFY_FAILED_MESSAGE =
+  "Plumber couldn't check your Databricks access. Try again in a few minutes."
+
+// A cold token cache waits on Databricks OAuth and SQL with no timeout of their own.
+const DATABRICKS_VERIFY_TIMEOUT_MS = 20_000
+
+// The AI builder must not bind a Databricks connection whose schema does not exist yet.
+async function isDatabricksConnectionVerified(
+  user: User,
+  stepId: string,
+  connectionId: string,
+): Promise<boolean> {
+  const step = await Step.query().findById(stepId).throwIfNotFound()
+  const connection = await Connection.query()
+    .findById(connectionId)
+    .throwIfNotFound()
+  const flow = await Flow.query().findById(step.flowId).throwIfNotFound()
+  const app = apps[DATABRICKS_APP_KEY]
+  const $ = await globalVariable({ connection, app, flow, user })
+  const { isStillVerified } = await verifyConnection({
+    app,
+    $,
+    connection,
+    connectionId,
+    flowId: flow.id,
+  })
+  return isStillVerified
 }
 
 export async function updateStepParametersService({
@@ -285,6 +322,34 @@ export async function updateStepParametersService({
       } catch (err) {
         result.connectionError =
           err instanceof Error ? err.message : String(err)
+      }
+    } else if (rawApp?.key === DATABRICKS_APP_KEY) {
+      let verified: boolean | null
+      try {
+        verified = await withTimeout(
+          isDatabricksConnectionVerified(user, stepId, connectionId),
+          DATABRICKS_VERIFY_TIMEOUT_MS,
+        )
+      } catch (err) {
+        logger.error('AI builder could not verify a Databricks connection', {
+          event: 'ai-builder-databricks-verify-error',
+          errorMessage: err instanceof Error ? err.message : String(err),
+          stepId,
+          connectionId,
+        })
+        verified = null
+      }
+
+      // The write stays outside the try so a published-pipe rejection keeps its own error.
+      if (verified === null) {
+        result.connectionError = DATABRICKS_VERIFY_FAILED_MESSAGE
+      } else if (!verified) {
+        result.connectionError = DATABRICKS_NOT_ONBOARDED_MESSAGE
+      } else {
+        await Step.query()
+          .patchAndFetchById(stepId, { connectionId })
+          .throwIfNotFound()
+        result.step.connectionId = connectionId
       }
     } else {
       await Step.query()
