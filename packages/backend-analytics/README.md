@@ -19,6 +19,7 @@ Each table becomes one Parquet file at `silver/<table>/current.parquet`, replace
 | `flow_stage`         | Pipe, with its creator, owner and creation path.                                      |
 | `flow_access`        | User with access to a pipe: owner, editor or viewer.                                  |
 | `flow_ai_suggestion` | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position. |
+| `action_catalog`     | Trigger or action in the app registry, removed ones included.                         |
 
 The export writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket. PostHog reads a bucket only if someone attaches it.
 
