@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { chmod, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -6,12 +6,16 @@ import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { localDirCompletionStore } from '../completion-stores'
 import {
   exportSilverTables,
   localDirSink,
   selectSilverTables,
+  writeAllSilverTables,
   writeSilverTables,
 } from '../export-silver-tables'
+import logger from '../logger'
+import type { SilverChangeTable } from '../silver-change-tables'
 import type { SilverTable } from '../silver-table'
 
 vi.mock('../logger')
@@ -48,6 +52,7 @@ describe('exportSilverTables', () => {
         appEnv,
         bucket: 'analytics-bucket',
         tables: [testTable],
+        changeTables: [],
       })
 
       expect(testTable.fetchRows).not.toHaveBeenCalled()
@@ -66,6 +71,7 @@ describe('exportSilverTables', () => {
         appEnv,
         bucket: 'analytics-bucket',
         tables: [testTable],
+        changeTables: [],
       })
 
       expect(s3.send).toHaveBeenCalledTimes(1)
@@ -89,6 +95,7 @@ describe('exportSilverTables', () => {
         appEnv: 'prod',
         bucket: undefined,
         tables: [testTable],
+        changeTables: [],
       }),
     ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
     expect(s3.send).not.toHaveBeenCalled()
@@ -109,6 +116,9 @@ describe('writeSilverTables to a local folder', () => {
         path.join(dir, 'silver/test_table/current.parquet'),
       )
       expect(body.subarray(0, 4).toString()).toBe('PAR1')
+      expect(await readdir(path.join(dir, 'silver/test_table'))).toEqual([
+        'current.parquet',
+      ])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -135,11 +145,88 @@ describe('writeSilverTables to a local folder', () => {
   })
 })
 
+describe('writeAllSilverTables', () => {
+  it('writes every other table after one fails, then fails the run', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    const failing: SilverTable<TestRow> = {
+      ...testTable,
+      name: 'dim_user',
+      fetchRows: vi.fn(async () => {
+        throw new Error('query failed')
+      }),
+    }
+    const changeTable: SilverChangeTable<{ id: string }> = {
+      name: 'flow_step',
+      version: 1,
+      columns: { id: 'STRING' },
+      async *fetchPages() {
+        yield [{ id: 'step-1' }]
+      },
+    }
+    try {
+      await expect(
+        writeAllSilverTables({
+          db,
+          sink: localDirSink(dir),
+          store: localDirCompletionStore(dir),
+          tables: [failing, testTable],
+          changeTables: [changeTable],
+        }),
+      ).rejects.toThrow('Analytics tables failed: dim_user')
+
+      expect((await readdir(path.join(dir, 'silver'))).sort()).toEqual([
+        'flow_step',
+        'test_table',
+      ])
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'analytics.export.table.error',
+          table: 'dim_user',
+        }),
+      )
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'analytics.export.coverage',
+          job: 'flow_step',
+        }),
+      )
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('localDirSink', () => {
+  it('publishes one complete file when two writers share a key', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    try {
+      const sink = localDirSink(dir)
+      const first = Buffer.alloc(4_000_000, 'a')
+      const second = Buffer.alloc(4_000_000, 'b')
+      await Promise.all([
+        sink('k/day.parquet', first),
+        sink('k/day.parquet', second),
+      ])
+
+      const body = await readFile(path.join(dir, 'k/day.parquet'))
+      expect([first, second].some((written) => written.equals(body))).toBe(true)
+      expect(await readdir(path.join(dir, 'k'))).toEqual(['day.parquet'])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('selectSilverTables', () => {
-  it('returns the named tables', () => {
-    expect(
-      selectSilverTables(['dim_user', 'flow_transfer']).map((t) => t.name),
-    ).toEqual(['flow_transfer', 'dim_user'])
+  it('splits the named tables into rebuilt and change tables', () => {
+    const { tables, changeTables } = selectSilverTables([
+      'flow_step',
+      'dim_user',
+      'flow_transfer',
+    ])
+
+    expect(tables.map((t) => t.name)).toEqual(['flow_transfer', 'dim_user'])
+    expect(changeTables.map((t) => t.name)).toEqual(['flow_step'])
   })
 
   it('rejects an unknown table name', () => {

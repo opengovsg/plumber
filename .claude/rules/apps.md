@@ -14,4 +14,6 @@ IMPORTANT: Analytics labels app-actions from [packages/backend-analytics/data/ac
 pnpm --filter backend exec vitest run src/apps/__tests__/index.test.ts -u
 ```
 
-The command keeps the hand-entered columns. Then fill the new row's `resource_parameter` with the argument key that names the resource the step points at (a table, file or channel, e.g. `tableId`), or `none`. Leave `launched_at` blank for the product team to fill.
+The command keeps the hand-entered columns. Then fill the new row's `resource_parameter` with the argument key that names the resource the step points at (a table, file or channel, e.g. `tableId`), or `none`. Leave `launched_at` blank for the product team to fill. If you change an existing row's `resource_parameter`, bump `flowStepTable.version` in [packages/backend-analytics/src/tables/flow-step.ts](../../packages/backend-analytics/src/tables/flow-step.ts).
+
+IMPORTANT: Analytics reads `steps.parameters` as stored, before any `stepTransformer` runs. A transformer that renames or moves an action's `resource_parameter` argument needs the same bump. A bump makes the next nightly export rewrite the whole steps table, about 705k rows synced to PostHog once, so say so in the PR.

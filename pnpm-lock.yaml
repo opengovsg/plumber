@@ -614,6 +614,9 @@ importers:
       '@plumber/backend-models':
         specifier: workspace:*
         version: link:../backend-models
+      '@plumber/shared':
+        specifier: workspace:*
+        version: link:../shared
       hyparquet-writer:
         specifier: 0.16.12
         version: 0.16.12

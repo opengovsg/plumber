@@ -10,7 +10,7 @@ It has no entry point of its own. The archival task in [`backend-archive`](../ba
 
 ## What the export writes
 
-Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run.
+Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run, except `flow_step` (below).
 
 | Table                | One row per                                                                           |
 | -------------------- | ------------------------------------------------------------------------------------- |
@@ -20,10 +20,44 @@ Each table becomes one Parquet file at `silver/<table>/current.parquet`, replace
 | `flow_access`        | User with access to a pipe: owner, editor or viewer.                                  |
 | `flow_ai_suggestion` | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position. |
 | `action_catalog`     | Trigger or action in the app registry, removed ones included.                         |
+| `flow_step`          | Step that changed on a Singapore day. See [flow_step](#flow_step).                    |
 
 The export writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket. PostHog reads a bucket only if someone attaches it.
 
 Timestamps use the Parquet `TIMESTAMP(isAdjustedToUTC=true, MILLIS)` type, so DuckDB and ClickHouse read them as UTC.
+
+Each table is written on its own. A failed table logs `analytics.export.table.error`, and the run fails only after every other table is written, so one broken query cannot hold back `flow_step`'s short catch-up window.
+
+---
+
+## flow_step
+
+`flow_step` writes one file per Singapore day at `silver/flow_step/day=YYYY-MM-DD.parquet`, holding only the steps whose `updated_at` falls on that day. PostHog bills each row it imports, so a nightly full copy would bill every step daily. The first run writes a full copy, which spans `day=YYYY-MM-DD.part-N.parquet` files of 50,000 steps plus the unnumbered file. [Tracking finished days](#tracking-finished-days) covers missed nights. Every row carries the file's `day`. A step's current state is its row with the latest `day`, then the latest `updated_at`.
+
+A day file holds each changed step as it was at export time, not at the end of that day. So:
+
+- A missed night in the last 7 days is redone on the next run, but only to each step's current state. A step edited on both missed days appears once, on the later day. An older gap alerts and needs `--full`.
+- Edits between exports are not kept anywhere. The mutation log records who edited a step and when, but not what changed.
+- `--full` writes only yesterday, and its completion file covers every earlier day. The full copy holds every step's current state, so nothing is lost beyond the point above.
+- A finished day is never rewritten. A rerun reads each step's current `updated_at`, so it would drop steps edited since. When a finished day's files change after its completion file, the next night writes a full copy instead.
+- Approving a transfer rewrites the pipe's steps. Shared connections point at duplicated copies, and M365 Excel steps lose their connection. Those steps appear in that day's file with their new `connection_id`.
+
+Bump `flowStepTable.version` when its columns or query change, or when an existing catalog `resource_parameter` changes. The next night writes a full copy instead of a day file. That syncs every step to PostHog once, about 705k rows, so batch such changes.
+
+Columns read from `steps.config`, none of which holds user content:
+
+- `ai_tools`: the AI builder tools recorded on the step, sorted and comma-joined, such as `create_step,update_step_parameters`. It stays raw, so a new tool needs no re-export. Views decide what counts as created or edited by AI.
+- `has_setup_guide_config`: whether the step stores setup-guide configuration from a template or the AI builder. It is cleared when the step is first tested. The pipe's template is `flow_stage.template_id`.
+- `shows_setup_guide`: whether the editor shows that guide, by the editor's own rule. A custom guide always shows. Otherwise the stored app-event must match the step, be one of `SETUP_GUIDE_APP_EVENTS` in `@plumber/shared`, and the pipe must come from a template. The editor types its help messages against the same list, so the two cannot drift.
+- `has_step_name`: whether the user named the step. The name is not exported.
+- `if_then_end_step_id`: on an if-then step, the last step of its block.
+- `approval_reject_step_id`: on a step in an MRF approval step's reject path, that approval step.
+- `parameters_version`: the stored parameter format. Analytics reads `parameters` as stored, before the app's step transformer runs.
+
+Known gaps, accepted because each is rare:
+
+- **Direct writes.** `--full` rewrites a day PostHog may already have imported. A step changed by a direct write then has two rows with the same `day` and `updated_at`, and the view may pick the older one.
+- **Late writes.** The export runs at 01:00 Singapore time and reads the day before. A write stamped before midnight that becomes readable only after the export read it is never exported. That needs a transaction open past 01:00, an hour of Aurora reader lag, or an app clock an hour slow. The step then keeps its earlier state in PostHog, for example still active after a soft delete, until it changes again or `--full` runs.
 
 ---
 
@@ -54,6 +88,7 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 - After adding, renaming or removing a trigger or action, run `pnpm --filter backend exec vitest run src/apps/__tests__/index.test.ts -u` and commit the file. In CI, a stale file fails that test.
 - `launched_at` is typed by hand (`YYYY-MM-DD`, Singapore). A blank cell means nobody has entered it. Regenerating keeps every date.
 - `resource_parameter` is typed by hand. It names the argument that holds the table, file, channel or other resource a step points at, or `none`. `flow_step.resource_id` reads that argument. The test fails while a cell is blank or names an argument the app-action lacks. Regenerating keeps every value.
+  - IMPORTANT: changing an existing value does not refresh steps that have not changed since. After that change deploys, run `analytics:export --tables flow_step --full --s3` in each environment.
 
 ## Tracking finished days
 
