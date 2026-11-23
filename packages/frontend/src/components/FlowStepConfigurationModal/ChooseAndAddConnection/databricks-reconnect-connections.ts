@@ -14,10 +14,13 @@ function hasId<T extends ListedConnection>(
   return typeof connection.id === 'string' && connection.id !== ''
 }
 
+// The API returns null for an invalid stored generation. Such a row must not be auto-bound.
 export function databricksGeneration(
   connection: ListedConnection,
-): DatabricksGeneration {
-  return connection.generation === 'new' ? 'new' : 'legacy'
+): DatabricksGeneration | null {
+  return connection.generation === 'new' || connection.generation === 'legacy'
+    ? connection.generation
+    : null
 }
 
 export function pickDatabricksConnection<T extends ListedConnection>(
@@ -26,7 +29,7 @@ export function pickDatabricksConnection<T extends ListedConnection>(
   const stored = connections.filter(hasId)
   return (
     stored.find((connection) => databricksGeneration(connection) === 'new') ??
-    stored[0]
+    stored.find((connection) => databricksGeneration(connection) === 'legacy')
   )
 }
 

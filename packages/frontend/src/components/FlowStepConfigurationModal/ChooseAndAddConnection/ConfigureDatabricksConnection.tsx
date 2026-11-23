@@ -117,11 +117,12 @@ export default function ConfigureDatabricksConnection(
     },
   )
 
+  // IMPORTANT: selectedConnectionId defaults to '', so ?? would skip the fallback.
   const connectionId =
-    selectedConnectionId ??
-    pickDatabricksConnection(appConnectionsData?.getApp?.connections ?? [])
+    selectedConnectionId ||
+    (pickDatabricksConnection(appConnectionsData?.getApp?.connections ?? [])
       ?.id ??
-    ''
+      '')
 
   const { testResult, testResultLoading, testConnection } =
     useConnectionVerification({
