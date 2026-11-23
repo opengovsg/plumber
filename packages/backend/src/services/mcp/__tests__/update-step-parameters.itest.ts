@@ -1091,9 +1091,11 @@ describe('Databricks connection verification', () => {
 
     const dbStep = await Step.query().findById(actionStepId)
     expect(dbStep?.connectionId).toBeNull()
+    const dbConnection = await Connection.query().findById(connectionId)
+    expect(dbConnection?.verified).toBe(false)
   })
 
-  it('binds a verified connection', async () => {
+  it('binds a verified connection and saves the verified flag', async () => {
     mocks.databricksIsStillVerified.mockResolvedValue(true)
 
     const result = await updateStepParametersService({
@@ -1109,9 +1111,11 @@ describe('Databricks connection verification', () => {
 
     const dbStep = await Step.query().findById(actionStepId)
     expect(dbStep?.connectionId).toBe(connectionId)
+    const dbConnection = await Connection.query().findById(connectionId)
+    expect(dbConnection?.verified).toBe(true)
   })
 
-  it('does not bind when the check throws, and hides the raw error', async () => {
+  it('treats a thrown check as unverified, like the editor, and hides the raw error', async () => {
     mocks.databricksIsStillVerified.mockRejectedValue(
       new Error('getaddrinfo ENOTFOUND internal-db.example'),
     )
@@ -1124,9 +1128,10 @@ describe('Databricks connection verification', () => {
       connectionId,
     })
 
-    expect(result.connectionError).toBe(
-      "Plumber couldn't check your Databricks access. Try again in a few minutes.",
+    expect(result.connectionError).toContain(
+      'The Govtech Data Platform requires onboarding before use.',
     )
+    expect(result.connectionError).not.toContain('internal-db.example')
     expect(result.step.connectionId).toBeNull()
 
     const dbStep = await Step.query().findById(actionStepId)

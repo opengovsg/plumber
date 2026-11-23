@@ -1,5 +1,7 @@
+import type { IApp, IGlobalVariable } from '@plumber/types'
 import { Transaction } from 'objection'
 
+import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Context from '@/types/express/context'
@@ -53,4 +55,44 @@ export const getConnection = async (params: GetConnectionParams) => {
     .throwIfNotFound({ message: 'Connection not found' })
 
   return flowConnection?.connection
+}
+
+type VerifyConnectionParams = {
+  app: IApp
+  $: IGlobalVariable
+  connection: Connection
+  flowId?: string | null
+}
+
+// Shared by the editor's testConnection and the AI builder so both save the verified flag the same way.
+export async function verifyConnection({
+  app,
+  $,
+  connection,
+  flowId,
+}: VerifyConnectionParams) {
+  let isStillVerified: boolean
+  let errorMessage: string | undefined
+  try {
+    isStillVerified = !!(await app.auth.isStillVerified($))
+  } catch (err) {
+    isStillVerified = false
+    errorMessage = err.message
+    logger.error(`Error verifying CONNECTION ID: ${connection.id}`, {
+      event: 'test-connection',
+      flowId,
+      errMessage: err.message,
+      errStack: err.stack,
+    })
+  }
+
+  // Testing should not bump updatedAt when the connection is already in the
+  // same verified state. Auth data changes are persisted by $.auth.set only
+  // when the merged payload actually differs.
+  const updatedConnection =
+    connection.verified === isStillVerified
+      ? connection
+      : await connection.$query().patchAndFetch({ verified: isStillVerified })
+
+  return { connection: updatedConnection, isStillVerified, errorMessage }
 }

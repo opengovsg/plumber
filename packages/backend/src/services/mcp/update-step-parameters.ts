@@ -19,6 +19,7 @@ import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { verifyConnection } from '@/services/connection'
 
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
@@ -105,7 +106,13 @@ async function isDatabricksConnectionVerified(
   const flow = await Flow.query().findById(step.flowId).throwIfNotFound()
   const app = apps[DATABRICKS_APP_KEY]
   const $ = await globalVariable({ connection, app, flow, user })
-  return !!(await app.auth?.isStillVerified?.($))
+  const { isStillVerified } = await verifyConnection({
+    app,
+    $,
+    connection,
+    flowId: flow.id,
+  })
+  return isStillVerified
 }
 
 export async function updateStepParametersService({
