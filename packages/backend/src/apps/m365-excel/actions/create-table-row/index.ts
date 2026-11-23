@@ -5,9 +5,9 @@ import type {
 } from '@plumber/types'
 
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 
-import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
+import { type AuthData, parseAuthData } from '../../common/auth-data'
 import {
   NO_TABLES_MESSAGE,
   TEST_STEP_MAX_COLUMNS,
@@ -59,6 +59,25 @@ function wrapUnexpectedJobError($: IGlobalVariable, error: unknown): StepError {
     name: 'Could not add a row to your Excel table.',
     event: 'm365-excel-create-table-row-unexpected-error',
   })
+}
+
+function getAuthDataOrThrow($: IGlobalVariable): AuthData {
+  const result = parseAuthData($)
+  switch (result.status) {
+    case 'missing':
+      throw new StepError({
+        name: 'M365 connection is missing',
+        solution: GenericSolution.MalformedConnectionData,
+        kind: 'config',
+      })
+    case 'malformed':
+      throw toInternalStepError($, result.error, {
+        name: 'M365 connection data is invalid',
+        event: 'm365-excel-malformed-auth-data',
+      })
+    case 'ok':
+      return result.data
+  }
 }
 
 // Performs a single multi-row insert for a batch of createTableRow jobs that
@@ -170,7 +189,7 @@ async function runBatch(
     }
     await validateCanAccessFile(
       ownerEmail,
-      extractAuthDataWithPlumberFolder(firstJob),
+      getAuthDataOrThrow(firstJob),
       fileId,
       firstJob.http,
     )

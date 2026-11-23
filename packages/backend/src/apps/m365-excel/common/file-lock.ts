@@ -30,7 +30,7 @@ export const getLockKey = async (
 
   // Skip locking so the action's run path records and logs the real auth error.
   const authData = parseAuthData($)
-  if (authData.success === false) {
+  if (authData.status !== 'ok') {
     return null
   }
 

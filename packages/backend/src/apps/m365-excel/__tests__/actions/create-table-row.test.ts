@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   // runBatch authorizes file access ONCE per batch (every job in a batch shares
   // one connection). Default: access granted; the denial test overrides it.
   validateCanAccessFile: vi.fn(),
-  extractAuthData: vi.fn(),
+  parseAuthData: vi.fn(),
   constructRow: vi.fn(),
   loggerError: vi.fn(),
   realConstructRow:
@@ -35,11 +35,10 @@ vi.mock('../../common/file-privacy', () => ({
   validateCanAccessFile: mocks.validateCanAccessFile,
 }))
 
-// runBatch passes auth data (via extractAuthDataWithPlumberFolder) to
-// validateCanAccessFile. Both are mocked here, so the stub `$`'s auth need not
-// be real - extractAuthDataWithPlumberFolder returns a dummy by default.
+// runBatch passes auth data (via parseAuthData) to validateCanAccessFile.
+// Both are mocked here, so the stub `$`'s auth need not be real.
 vi.mock('../../common/auth-data', () => ({
-  extractAuthDataWithPlumberFolder: mocks.extractAuthData,
+  parseAuthData: mocks.parseAuthData,
 }))
 
 vi.mock('../../common/workbook-helpers/tables', async (importOriginal) => {
@@ -139,9 +138,9 @@ describe('createTableRow runBatch', () => {
     vi.resetAllMocks()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
-    mocks.extractAuthData.mockReturnValue({
-      tenantKey: 'tenant',
-      folderId: 'FOLDER',
+    mocks.parseAuthData.mockReturnValue({
+      status: 'ok',
+      data: { tenantKey: 'tenant', folderId: 'FOLDER' },
     })
     mocks.constructRow.mockImplementation(mocks.realConstructRow)
     mockGraph(0)
@@ -384,11 +383,12 @@ describe('createTableRow runBatch', () => {
       'boom',
     ],
     [
-      'a ZodError from the auth data',
+      'malformed auth data',
       () =>
-        mocks.extractAuthData.mockImplementation(() =>
-          z.object({ a: z.string() }).parse(undefined),
-        ),
+        mocks.parseAuthData.mockReturnValue({
+          status: 'malformed',
+          error: z.object({ a: z.string() }).safeParse(undefined).error,
+        }),
       '✖ Invalid input: expected object, received undefined',
     ],
   ])(
@@ -416,6 +416,43 @@ describe('createTableRow runBatch', () => {
       expect(mocks.acquire).not.toHaveBeenCalled()
     },
   )
+
+  it('fails every job with a config StepError when the connection is missing', async () => {
+    mocks.parseAuthData.mockReturnValue({ status: 'missing' })
+    const jobs = [
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+    ]
+
+    const results = await createTableRowAction.runBatch!(jobs)
+
+    results.forEach((r) => {
+      const { error } = r as { status: 'failed'; error: StepError }
+      expect(r.status).toBe('failed')
+      expect(error).toBeInstanceOf(StepError)
+      expect(error.kind).toBe('config')
+    })
+    expect(mocks.validateCanAccessFile).not.toHaveBeenCalled()
+    expect(mocks.loggerError).not.toHaveBeenCalled()
+  })
+
+  it('logs malformed auth data once with its own event', async () => {
+    mocks.parseAuthData.mockReturnValue({
+      status: 'malformed',
+      error: z.object({ a: z.string() }).safeParse(undefined).error,
+    })
+
+    await createTableRowAction.runBatch!([
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+    ])
+
+    expect(mocks.loggerError).toHaveBeenCalledOnce()
+    expect(mocks.loggerError.mock.calls[0][1]).toMatchObject({
+      event: 'm365-excel-malformed-auth-data',
+      errorName: 'ZodError',
+    })
+  })
 
   it('logs one diagnostic for an unexpected access-check error shared by the batch', async () => {
     mocks.validateCanAccessFile.mockRejectedValue(new Error('boom'))
@@ -571,9 +608,9 @@ describe('createTableRow run (single-row delegation)', () => {
     vi.resetAllMocks()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
-    mocks.extractAuthData.mockReturnValue({
-      tenantKey: 'tenant',
-      folderId: 'FOLDER',
+    mocks.parseAuthData.mockReturnValue({
+      status: 'ok',
+      data: { tenantKey: 'tenant', folderId: 'FOLDER' },
     })
     mocks.constructRow.mockImplementation(mocks.realConstructRow)
     mockGraph(0)
