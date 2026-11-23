@@ -148,6 +148,7 @@ tmp/
 docs/*
 !docs/adr
 !docs/WINDOWS_DEV.md
+!docs/agents
 
 .codegraph
 
