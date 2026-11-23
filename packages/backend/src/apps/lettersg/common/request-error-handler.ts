@@ -74,6 +74,7 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
       error: `Retrying ETIMEDOUT ${error.message} from LettersSG`,
       delayType: 'step',
       delayInMs: 'default',
+      kind: 'third-party',
     })
   }
 

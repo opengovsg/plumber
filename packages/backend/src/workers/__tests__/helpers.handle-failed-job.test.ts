@@ -154,34 +154,6 @@ describe('handleFailedJob failure log', () => {
     })
   })
 
-  it('logs internal for a RetriableError without kind', async () => {
-    const retriableError = new RetriableError({
-      error: 'e',
-      delayInMs: 'default',
-      delayType: 'step',
-    })
-
-    await handleFailedJob(JOB, retriableError, 'queue')
-
-    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'internal' })
-  })
-
-  it('logs the StepError kind hidden behind a RetriableError without kind', async () => {
-    const retriableError = new RetriableError({
-      error: 'e',
-      delayInMs: 'default',
-      delayType: 'step',
-    })
-    keepErrorKindViaCause(
-      retriableError,
-      new StepError({ name: 'n', solution: 's', kind: 'config' }),
-    )
-
-    await handleFailedJob(JOB, retriableError, 'queue')
-
-    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'config' })
-  })
-
   it('logs without appKey when the step lookup fails', async () => {
     mocks.findStepById.mockRejectedValue(new Error('db down'))
 

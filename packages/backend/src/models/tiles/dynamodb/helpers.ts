@@ -28,6 +28,7 @@ export function handleDynamoDBError(error: unknown): never {
           error: message,
           delayInMs: 'default',
           delayType: 'step',
+          kind: 'internal',
         })
       }
       if (

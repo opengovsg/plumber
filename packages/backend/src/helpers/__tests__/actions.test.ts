@@ -243,6 +243,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'queue',
+              kind: 'internal',
             }),
             context: {
               ...MOCK_CONTEXT,
@@ -269,6 +270,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'queue',
+              kind: 'internal',
             }),
             context: MOCK_CONTEXT,
           }),
@@ -294,6 +296,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'group',
+              kind: 'internal',
             }),
             context: {
               ...MOCK_CONTEXT,
@@ -320,6 +323,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'group',
+              kind: 'internal',
             }),
             context: MOCK_CONTEXT,
           }),
@@ -334,6 +338,7 @@ describe('action helper functions', () => {
           error: 'test error',
           delayInMs: 100,
           delayType: 'group',
+          kind: 'internal',
         })
 
         expect(() =>
@@ -347,28 +352,26 @@ describe('action helper functions', () => {
         ).toThrow(error)
       })
 
-      it.each<StepErrorKind | undefined>([
-        'config',
-        'third-party',
-        'internal',
-        undefined,
-      ])('retries a RetriableError with kind %s', (kind) => {
-        const error = new RetriableError({
-          error: 'test error',
-          delayInMs: 100,
-          delayType: 'step',
-          kind,
-        })
+      it.each<StepErrorKind>(['config', 'third-party', 'internal'])(
+        'retries a RetriableError with kind %s',
+        (kind) => {
+          const error = new RetriableError({
+            error: 'test error',
+            delayInMs: 100,
+            delayType: 'step',
+            kind,
+          })
 
-        expect(() =>
-          handleFailedStepAndThrow({
-            errorDetails: {},
-            executionError: error,
-            context: MOCK_CONTEXT,
-          }),
-        ).toThrow(error)
-        expect(mocks.addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
-      })
+          expect(() =>
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            }),
+          ).toThrow(error)
+          expect(mocks.addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
+        },
+      )
 
       it.each<RetriableError['delayType']>(['step', 'group', 'queue'])(
         'hides the RetriableError as the cause once %s retries run out',
@@ -497,6 +500,45 @@ describe('action helper functions', () => {
         expect(Object.keys(thrown as Error)).not.toContain('cause')
       })
 
+      it.each<{ executionError: unknown; kind: StepErrorKind }>([
+        {
+          executionError: new StepError({
+            name: 'n',
+            solution: 's',
+            kind: 'config',
+            cause: makeHttpError({ status: 429 }),
+          }),
+          kind: 'config',
+        },
+        {
+          executionError: new StepError({
+            name: 'n',
+            solution: 's',
+            kind: 'third-party',
+            cause: makeHttpError({ status: 504 }),
+          }),
+          kind: 'third-party',
+        },
+        { executionError: makeHttpError({ status: 504 }), kind: 'internal' },
+      ])(
+        'gives the RetriableError for a retriable HTTP error the kind $kind',
+        ({ executionError, kind }) => {
+          let thrown: unknown
+          try {
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError,
+              context: MOCK_CONTEXT,
+            })
+          } catch (e) {
+            thrown = e
+          }
+
+          expect(thrown).toBeInstanceOf(RetriableError)
+          expect((thrown as RetriableError).kind).toBe(kind)
+        },
+      )
+
       it.each<{ errorDetails: IJSONObject; executionError: unknown }>([
         {
           errorDetails: {
@@ -553,6 +595,7 @@ describe('action helper functions', () => {
             error: 'test error',
             delayInMs: 100,
             delayType: 'step',
+            kind: 'internal',
           }),
           expectedTagValue: 'true',
         },

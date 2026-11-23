@@ -556,6 +556,7 @@ describe('m365-excel batch worker (integration)', () => {
         error: 'transient graph error',
         delayInMs: 50,
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
@@ -593,6 +594,7 @@ describe('m365-excel batch worker (integration)', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 50,
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 

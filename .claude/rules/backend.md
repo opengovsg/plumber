@@ -80,24 +80,25 @@ The backend has three error families. Do not add a new family.
 - A step failure the user sees: throw `StepError` with a `kind`.
 - A user-visible failure outside a step: throw `UserFacingError`, in GraphQL resolvers and REST endpoints (e.g. AI builder) alike.
 - Exception: a GraphQL resolver that needs a client error code (e.g. `BAD_USER_INPUT`) throws a class from `errors/graphql-errors/`. They extend the library type `GraphQLError` (see "Library error types"), so they are not a new family.
-- Anything else counts as a Plumber bug. This includes a raw `HttpError` or a `RetriableError` without `kind` that ran out of retries.
+- Anything else counts as a Plumber bug. This includes a raw `HttpError` that ran out of retries.
 
 ### `StepError`
 
 - Construct it with options: `new StepError({ name, solution, kind, cause })`. `kind` is required. `cause` is optional.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
 - The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`). `IStepError.kind` stays optional, because older saved rows have none.
-- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `RetriableError` without `kind` and any non-`StepError` return `internal`.
+- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. Any error other than `StepError` or `RetriableError` returns `internal`.
 - `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) adds `event: 'action-job-failed'`, `willRetry`, `kind` and `appKey` to its per-attempt error log. Monitors read it with `@willRetry:false`, because logs are not sampled.
-- The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError` with `kind`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `keepErrorKindViaCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
-- A `RetriableError` takes an optional `kind` for its final failure once retries run out. Its `kind` never changes retry decisions, even `config`.
+- The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `keepErrorKindViaCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- A `RetriableError` requires a `kind` for its final failure once retries run out. Its `kind` never changes retry decisions, even `config`.
+- When `handleHttpError` retries an `HttpError`, its `RetriableError` takes the `kind` of the thrown error. A raw `HttpError` gives `internal`.
 
 #### Choosing `kind`
 
 The thrower chooses `kind`. Never derive it later from messages or status codes.
 
 - `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries, unless its cause is an `HttpError` that `handleHttpError` (`helpers/actions/handle-failed-step-and-throw.ts`) retries.
-  - The final failure still logs `kind: config`, because the `StepError` rides as the hidden `cause`.
+  - The final failure still logs `kind: config`, because the `RetriableError` takes the `StepError`'s `kind`.
   - `HttpError` (`errors/http.ts`) parses `Retry-After` once, in the constructor. Call `getRetryInfo()` when deciding a retry, so a `Retry-After` date's wait is measured then. Change `Retry-After` only through `setRetryAfter`.
 - `third-party`: an external service is down or unreachable (e.g. 5xx, network errors, timeouts), or another step caused the failure (see "App-specific cases"). Counts as bad, but apart from Plumber bugs.
 - `internal`: a Plumber bug. Counts as bad.
@@ -111,7 +112,7 @@ Rules for choosing:
 Special cases:
 
 - A rate limit (429, `RATE-LIMITED`) is `internal`. Plumber must drain its queues fast enough to avoid rate limits.
-- Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
+- Any error other than `StepError` or `RetriableError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
 - An error likely caused by an external API changing its format is `internal`, not `third-party` (e.g. an unexpected response body). Plumber owns keeping up with API changes.
 

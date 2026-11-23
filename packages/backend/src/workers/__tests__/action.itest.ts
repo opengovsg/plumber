@@ -163,6 +163,7 @@ describe('Action worker', () => {
           error: 'test retriable error',
           delayInMs: 10,
           delayType: 'step',
+          kind: 'internal',
         }),
       )
 

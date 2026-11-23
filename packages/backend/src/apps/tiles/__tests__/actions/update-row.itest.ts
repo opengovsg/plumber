@@ -152,6 +152,7 @@ describe.each([['ddb'], ['pg']] as const)(
         error: 'Throughput exceeds the current capacity',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(
         databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
