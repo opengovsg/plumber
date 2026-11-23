@@ -6,7 +6,7 @@ The app runs on `.env-example` placeholders. Calls to FormSG, M365, Postman, Dat
 
 ## 1. Set up the worktree
 
-Run the setup script once per worktree. Most worktree tools run it on create.
+Run the setup script once per worktree. It may already have run if the user set it as their worktree setup command.
 
 ```sh
 bash scripts/worktree-setup.sh
