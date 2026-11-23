@@ -52,6 +52,7 @@ export type CoreConfig = {
     privateKey: string
   }
   launchDarklySdkKey: string
+  launchDarklyOffline: boolean
   maxJobAttempts: number
   onboardingEmailWebhookUrl: string
   tilesPostgres: {
@@ -167,6 +168,8 @@ const coreConfig: CoreConfig = {
     'LAUNCH_DARKLY_SDK_KEY',
     process.env.LAUNCH_DARKLY_SDK_KEY,
   ),
+  // The .env-example SDK key fails LD auth, which blocks every flag read, including login.
+  launchDarklyOffline: process.env.LAUNCH_DARKLY_OFFLINE === 'true',
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
   tilesPostgres: {

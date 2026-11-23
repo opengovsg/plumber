@@ -6,7 +6,9 @@ import apps from '@/apps'
 import appConfig from '@/config/app'
 import { APP_FLAG_REGEX } from '@/config/flags'
 
-const client = init(appConfig.launchDarklySdkKey)
+const client = init(appConfig.launchDarklySdkKey, {
+  offline: appConfig.launchDarklyOffline,
+})
 
 // No top level awaits means that the 1st call _might_ need to wait a bit longer
 // for init... :(
