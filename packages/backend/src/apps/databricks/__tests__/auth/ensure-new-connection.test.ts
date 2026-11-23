@@ -15,7 +15,7 @@ vi.mock('@/models/connection', () => ({
 
 import {
   ensureDatabricksConnection,
-  isDatabricksNewEnabled,
+  newConnectionCredentials,
 } from '../../auth/ensure-new-connection'
 
 const NEW_ENV = {
@@ -38,59 +38,50 @@ function stubNewEnv() {
   }
 }
 
-describe('isDatabricksNewEnabled', () => {
-  it('returns false when the override is false', async () => {
-    vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', 'false')
-
-    await expect(isDatabricksNewEnabled('owner@example.com')).resolves.toBe(
-      false,
-    )
-    expect(getLdFlagValue).not.toHaveBeenCalled()
-  })
-
-  it('returns true outside production when the override is true', async () => {
+describe('newConnectionCredentials', () => {
+  it('returns null when the flag is off', async () => {
     stubNewEnv()
-    vi.stubEnv('APP_ENV', 'development')
-    vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', 'true')
-
-    await expect(isDatabricksNewEnabled('owner@example.com')).resolves.toBe(
-      true,
-    )
-    expect(getLdFlagValue).not.toHaveBeenCalled()
-  })
-
-  it('ignores a true override in production', async () => {
-    stubNewEnv()
-    vi.stubEnv('APP_ENV', 'prod')
-    vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', 'true')
     getLdFlagValue.mockResolvedValue(false)
 
-    await expect(isDatabricksNewEnabled('owner@example.com')).resolves.toBe(
-      false,
-    )
-    expect(getLdFlagValue).toHaveBeenCalled()
-  })
-
-  it('uses the flag when the override is empty', async () => {
-    stubNewEnv()
-    vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', '')
-    getLdFlagValue.mockResolvedValue(true)
-
-    await expect(isDatabricksNewEnabled('owner@example.com')).resolves.toBe(
-      true,
-    )
+    await expect(
+      newConnectionCredentials('owner@example.com'),
+    ).resolves.toBeNull()
     expect(getLdFlagValue).toHaveBeenCalledWith(
       'databricks-new-connection',
       'owner@example.com',
       false,
     )
   })
+
+  it('returns the new credentials when the flag is on', async () => {
+    stubNewEnv()
+    getLdFlagValue.mockResolvedValue(true)
+
+    await expect(
+      newConnectionCredentials('owner@example.com'),
+    ).resolves.toEqual({
+      serverHostname: 'new.example',
+      httpPath: '/sql/new',
+      catalog: 'new_catalog',
+      clientId: 'new-client',
+      clientSecret: 'new-client-value',
+    })
+  })
+
+  it('returns null when the flag is on but the new credentials are missing', async () => {
+    stubNewEnv()
+    vi.stubEnv('DATABRICKS_NEW_SERVER_HOSTNAME', '')
+    getLdFlagValue.mockResolvedValue(true)
+
+    await expect(
+      newConnectionCredentials('owner@example.com'),
+    ).resolves.toBeNull()
+  })
 })
 
 describe('ensureDatabricksConnection', () => {
   it('reads the gate before opening a transaction', async () => {
     stubNewEnv()
-    vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', '')
     const order: string[] = []
     getLdFlagValue.mockImplementation(async () => {
       order.push('flag')
