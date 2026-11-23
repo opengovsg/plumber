@@ -32,6 +32,6 @@ compose=(docker compose -f packages/backend/docker-compose.dev.yml)
 "${compose[@]}" up -d postgres tiles-postgres redis minio create-minio-buckets dynamodb
 "${compose[@]}" up -d --wait postgres tiles-postgres
 
-# `pnpm run migrate` prompts for a target database. The sample env limits knex to the local placeholders.
+# `pnpm run migrate` prompts for a target database. An empty env limits knex to the .env-example placeholders.
 # IMPORTANT: worktrees share one database, so a branch-only migration makes knex reject older worktrees.
-node scripts/with-sample-env.mjs pnpm --filter backend exec knex migrate:latest
+env -i PATH="$PATH" HOME="$HOME" pnpm --filter backend exec knex migrate:latest

@@ -1,10 +1,10 @@
 import '@/config/datetime'
-import appEnvConfig from './load-app-env'
 import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { posthogHost, posthogProjectToken } from '@plumber/shared'
 
+import appEnvConfig from './load-app-env'
 import { requireEnv } from './require-env'
 
 // Set from the latest release tag at image build. package.json versions are not bumped.
