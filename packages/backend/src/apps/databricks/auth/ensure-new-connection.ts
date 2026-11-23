@@ -4,6 +4,7 @@ import {
   databricksConfigSchema,
   readNewDatabricksConfig,
 } from '@/config/app-env-vars/databricks'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
 import User from '@/models/user'
@@ -14,63 +15,35 @@ import { constructSchemaNameFromEmail } from '../common/construct-schema-name'
 import { resolveDatabricksCredentials } from './resolve-credentials'
 
 const NEW_CONNECTION_FLAG = 'databricks-new-connection'
-const NEW_CONNECTION_ENV = 'DATABRICKS_NEW_CONNECTION_ENABLED'
 
-function newCredentialsAreConfigured(): boolean {
+type WorkspacePointer = { serverHostname: string; catalog: string }
+
+// Null keeps the user on the legacy workspace.
+export async function newConnectionCredentials(userEmail: string) {
+  if (!(await getLdFlagValue(NEW_CONNECTION_FLAG, userEmail, false))) {
+    return null
+  }
   const parsed = databricksConfigSchema.safeParse(readNewDatabricksConfig())
-  if (parsed.success) {
-    return true
+  if (!parsed.success) {
+    logger.error('Databricks new credentials are missing')
+    return null
   }
-  logger.error('Databricks new credentials are missing')
-  return false
-}
-
-function forceNewConnection(): boolean {
-  if (process.env[NEW_CONNECTION_ENV] !== 'true') {
-    return false
-  }
-  // Production targeting stays on the LaunchDarkly flag.
-  return process.env.APP_ENV !== 'prod'
-}
-
-export async function isDatabricksNewEnabled(
-  userEmail: string,
-): Promise<boolean> {
-  const override = process.env[NEW_CONNECTION_ENV]
-  if (override === 'false') {
-    return false
-  }
-
-  const requested =
-    forceNewConnection() ||
-    (await (
-      await import('@/helpers/launch-darkly')
-    ).getLdFlagValue(NEW_CONNECTION_FLAG, userEmail, false))
-
-  if (!requested) {
-    return false
-  }
-
-  return newCredentialsAreConfigured()
-}
-
-function connectionEnv(generation: DatabricksGeneration): string {
-  const credentials = resolveDatabricksCredentials(generation)
-  return JSON.stringify({
-    hostname: credentials.serverHostname,
-    catalog: credentials.catalog,
-  })
+  return parsed.data
 }
 
 async function insertDatabricksConnection(
   user: User,
   generation: DatabricksGeneration,
+  workspace: WorkspacePointer,
   trx: TransactionOrKnex,
 ): Promise<void> {
   await user.$relatedQuery('connections', trx).insert({
     key: APP_KEY,
     formattedData: {
-      env: connectionEnv(generation),
+      env: JSON.stringify({
+        hostname: workspace.serverHostname,
+        catalog: workspace.catalog,
+      }),
       screenName: constructSchemaNameFromEmail(user.email),
       generation,
     },
@@ -83,14 +56,15 @@ function isNewConnection(connection: Connection): boolean {
   return connection.formattedData?.generation === 'new'
 }
 
-// The first Databricks row follows the gate. ensureDatabricksNew only adds a
-// new row beside an existing legacy row.
+// A user gets at most one new row. Only step configuration passes
+// ensureDatabricksNew, so My Apps never adds a new row beside a legacy one.
 export async function ensureDatabricksConnection(
   user: User,
   ensureDatabricksNew: boolean,
 ): Promise<boolean> {
   // LaunchDarkly init can wait without a timeout. That wait must not hold a pooled connection.
-  const gateOn = await isDatabricksNewEnabled(user.email)
+  const newCredentials = await newConnectionCredentials(user.email)
+  const gateOn = newCredentials !== null
   // Two getApp calls can both see zero new rows and both insert one.
   return Connection.transaction(async (trx) => {
     await trx.raw('select pg_advisory_xact_lock(hashtext(?))', [
@@ -100,9 +74,14 @@ export async function ensureDatabricksConnection(
       .$relatedQuery('connections', trx)
       .where({ key: APP_KEY })
 
-    if (!gateOn) {
+    if (!newCredentials) {
       if (rows.length === 0) {
-        await insertDatabricksConnection(user, 'legacy', trx)
+        await insertDatabricksConnection(
+          user,
+          'legacy',
+          resolveDatabricksCredentials('legacy'),
+          trx,
+        )
       }
       return gateOn
     }
@@ -112,7 +91,7 @@ export async function ensureDatabricksConnection(
     }
 
     if (ensureDatabricksNew || rows.length === 0) {
-      await insertDatabricksConnection(user, 'new', trx)
+      await insertDatabricksConnection(user, 'new', newCredentials, trx)
     }
     return gateOn
   })

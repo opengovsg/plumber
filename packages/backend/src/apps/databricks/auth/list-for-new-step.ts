@@ -4,7 +4,7 @@ import {
   type McpConnection,
 } from '@/services/mcp/list-connections'
 
-import { parseDatabricksGeneration } from '../common/connection-generation'
+import { readDatabricksGeneration } from '../common/connection-generation'
 import { ensureDatabricksConnection } from './ensure-new-connection'
 import { loadDatabricksConnections } from './get-system-added-connections'
 
@@ -17,7 +17,7 @@ export async function listDatabricksConnectionsForNewStep(
   const visible = gateOn
     ? connections.filter(
         (connection) =>
-          parseDatabricksGeneration(connection.formattedData?.generation) ===
+          readDatabricksGeneration(connection.formattedData?.generation) ===
           'new',
       )
     : connections

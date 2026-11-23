@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import Connection from '@/models/connection'
 import User from '@/models/user'
 
@@ -11,6 +12,10 @@ import { listDatabricksConnectionsForNewStep } from '../../auth/list-for-new-ste
 import { resolveDatabricksCredentials } from '../../auth/resolve-credentials'
 import { APP_KEY } from '../../common/constants'
 import { constructSchemaNameFromEmail } from '../../common/construct-schema-name'
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: vi.fn(),
+}))
 
 const NEW_ENV = {
   DATABRICKS_NEW_SERVER_HOSTNAME: 'new.example',
@@ -27,7 +32,7 @@ function stubNewEnv() {
 }
 
 function stubGate(enabled: boolean) {
-  vi.stubEnv('DATABRICKS_NEW_CONNECTION_ENABLED', enabled ? 'true' : 'false')
+  vi.mocked(getLdFlagValue).mockResolvedValue(enabled)
 }
 
 function storesCredentials(connection: Connection): boolean {
@@ -125,6 +130,7 @@ describe('ensureDatabricksConnection', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.mocked(getLdFlagValue).mockReset()
   })
 
   it('inserts one new row when the user has zero rows and the gate is on', async () => {
