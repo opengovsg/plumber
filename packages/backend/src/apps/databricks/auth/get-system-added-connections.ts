@@ -1,6 +1,7 @@
 import type { ISystemAddedConnectionAuth } from '@plumber/types'
 
 import { databricksConfig } from '@/config/app-env-vars/databricks'
+import addHasPublishedFlows from '@/helpers/add-has-published-flows'
 import User from '@/models/user'
 
 import { APP_KEY } from '../common/constants'
@@ -15,16 +16,18 @@ const getSystemAddedConnections: NonNullable<
     )
   }
 
-  const connections = await user
-    .$relatedQuery('connections')
-    .select('connections.*')
-    .fullOuterJoinRelated('steps')
-    .where({
-      'connections.key': APP_KEY,
-    })
-    .countDistinct('steps.flow_id as flowCount')
-    .groupBy('connections.id')
-    .orderBy('created_at', 'desc')
+  const connections = await addHasPublishedFlows(
+    user
+      .$relatedQuery('connections')
+      .select('connections.*')
+      .fullOuterJoinRelated('steps')
+      .where({
+        'connections.key': APP_KEY,
+      })
+      .countDistinct('steps.flow_id as flowCount')
+      .groupBy('connections.id')
+      .orderBy('created_at', 'desc'),
+  )
 
   if (connections.length === 0) {
     const newConnection = await user
@@ -45,6 +48,7 @@ const getSystemAddedConnections: NonNullable<
       .returning('*')
 
     newConnection.flowCount = 0
+    newConnection.hasPublishedFlows = false
     connections.push(newConnection)
   }
 
