@@ -18,6 +18,9 @@ export const createSession = async (
   $: IGlobalVariable,
   options?: CreateSessionOptions,
 ) => {
+  const connection = resolveDatabricksConnection($)
+  const { credentials } = connection
+
   const client: DBSQLClient = new DBSQLClient({
     logger: {
       log(level: LogLevel, message: string) {
@@ -33,8 +36,6 @@ export const createSession = async (
     },
   })
 
-  const connection = resolveDatabricksConnection($)
-  const { credentials } = connection
   const token = await getDatabricksToken(connection)
   const connectOptions = {
     authType: 'access-token',
