@@ -27,13 +27,13 @@ nvm use && pnpm run dev:sample-env > "$LOG" 2>&1 &
 
 The log sits in this worktree's git directory, so it never shows up in `git status`. If your tool has visible terminals, run the same command there with `2>&1 | tee "$LOG"`.
 
-An early log line prints this worktree's URLs:
+The server is ready when Vite's `Local:` line shows this worktree's frontend URL:
 
-```text
-Backend: http://localhost:13000  Frontend: http://localhost:13001
+```sh
+grep -a "Local:" "$LOG" | sed 's/\x1b\[[0-9;]*m//g'
 ```
 
-The server is ready when the log shows Vite's `Local:` line. If a server for this worktree is already running, reuse it.
+If a server for this worktree is already running, reuse it.
 
 The backend rebuilds on change, and the frontend hot-reloads. If the page goes blank after a rebuild, load the URL again.
 
