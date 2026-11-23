@@ -1,3 +1,4 @@
+import { BaseFlowTransfer } from '@plumber/backend-models'
 import { z } from 'zod'
 
 import type { SilverTable } from '../silver-table'
@@ -28,16 +29,23 @@ export const flowTransferTable: SilverTable<FlowTransferRow> = {
     updated_at: 'TIMESTAMP',
   },
   fetchRows: async (db) => {
-    const rows = await db('flow_transfers')
-      .select(
-        'flow_id',
-        'old_owner_id as old_owner_user_id',
-        'new_owner_id as new_owner_user_id',
-        'status',
-        'created_at',
-        'updated_at',
-      )
+    // flow_transfers forbids soft deletes, so this only skips the soft-delete filter's column check.
+    const transfers = await BaseFlowTransfer.query(db)
+      .withSoftDeleted()
       .orderBy('created_at')
-    return z.array(flowTransferRowSchema).parse(rows)
+    return z
+      .array(flowTransferRowSchema)
+      .parse(transfers.map(toFlowTransferRow))
   },
+}
+
+export function toFlowTransferRow(transfer: BaseFlowTransfer): unknown {
+  return {
+    flow_id: transfer.flowId,
+    old_owner_user_id: transfer.oldOwnerId,
+    new_owner_user_id: transfer.newOwnerId,
+    status: transfer.status,
+    created_at: transfer.createdAt,
+    updated_at: transfer.updatedAt,
+  }
 }

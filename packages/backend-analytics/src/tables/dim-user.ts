@@ -1,3 +1,4 @@
+import { BaseUser } from '@plumber/backend-models'
 import { z } from 'zod'
 
 import {
@@ -33,28 +34,30 @@ export type DimUserRow = DimUserSqlRow & {
 // only exists from 19 Nov 2024. Creating any pipe, deleted or not, also proves the account.
 // IMPORTANT: a transfer rewrites flows.user_id, so the creator is the old owner of the pipe's
 // first approved transfer.
-const DIM_USER_SQL = `
-  SELECT
-    u.id AS user_id,
-    u.email,
-    (u.last_login_at IS NOT NULL OR f.user_id IS NOT NULL) AS is_verified,
-    u.created_at AS signup_at,
-    u.last_login_at,
-    u.deleted_at
-  FROM users u
-  LEFT JOIN (
-    SELECT DISTINCT coalesce(t.old_owner_id, fl.user_id) AS user_id
-    FROM flows fl
-    LEFT JOIN LATERAL (
-      SELECT ft.old_owner_id
-      FROM flow_transfers ft
-      WHERE ft.flow_id = fl.id AND ft.status = 'approved'
-      ORDER BY ft.created_at
-      LIMIT 1
-    ) t ON true
-  ) f ON f.user_id = u.id
-  ORDER BY u.created_at
+const VERIFIED_CREATORS_SQL = `
+  SELECT DISTINCT coalesce(t.old_owner_id, fl.user_id) AS user_id
+  FROM flows fl
+  LEFT JOIN LATERAL (
+    SELECT ft.old_owner_id
+    FROM flow_transfers ft
+    WHERE ft.flow_id = fl.id AND ft.status = 'approved'
+    ORDER BY ft.created_at
+    LIMIT 1
+  ) t ON true
 `
+
+type UserWithVerification = BaseUser & { isVerified: boolean }
+
+export function toDimUserSqlRow(user: UserWithVerification): unknown {
+  return {
+    user_id: user.id,
+    email: user.email,
+    is_verified: user.isVerified,
+    signup_at: user.createdAt,
+    last_login_at: user.lastLoginAt ?? null,
+    deleted_at: user.deletedAt,
+  }
+}
 
 type DomainCounts = Map<string, number>
 
@@ -124,8 +127,28 @@ export function createDimUserTable(
       deleted_at: 'TIMESTAMP',
     },
     fetchRows: async (db) => {
-      const result = await db.raw(DIM_USER_SQL)
-      const rows = z.array(dimUserSqlRowSchema).parse(result.rows)
+      const users = await BaseUser.query(db)
+        .withSoftDeleted()
+        .select(
+          'users.id',
+          'users.email',
+          'users.created_at',
+          'users.last_login_at',
+          'users.deleted_at',
+          db.raw(
+            '(users.last_login_at IS NOT NULL OR f.user_id IS NOT NULL) AS is_verified',
+          ),
+        )
+        .leftJoin(
+          db.raw(`(${VERIFIED_CREATORS_SQL}) AS f`),
+          'f.user_id',
+          'users.id',
+        )
+        .orderBy('users.created_at')
+        .castTo<UserWithVerification[]>()
+      const rows = z
+        .array(dimUserSqlRowSchema)
+        .parse(users.map(toDimUserSqlRow))
       return addAgency(rows, getMapping())
     },
   }
