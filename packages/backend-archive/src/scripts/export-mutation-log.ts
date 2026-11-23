@@ -2,19 +2,19 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 
 import {
+  claimLocalExportDir,
+  createLogsClient,
   dbFlowIdResolver,
   exportMutationLog,
-  localDirSink,
+  exportMutationLogToDir,
   logsInsightsFetcher,
   previousSgtDay,
   sgtDaysBetween,
-  writeMutationLogDays,
 } from 'backend-analytics'
 
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'
-import { logsClient } from '@/helpers/archival/logs-client'
 import { checkMutationLogBackfill } from '@/helpers/archival/mutation-log-backfill'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
@@ -24,6 +24,8 @@ const USAGE = `Usage: analytics:mutation-log --from YYYY-MM-DD [--to YYYY-MM-DD]
   --log-group  Server log group, with --out only. Default: ANALYTICS_REQUEST_LOG_GROUP. Skips the database lookups, since the reader may be another environment.
   --out        Write the files under this local folder. Runs in any APP_ENV. Reads steps through the database reader.
   --s3         Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only. Finished days only.`
+
+const logsClient = createLogsClient('ap-southeast-1')
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -60,12 +62,18 @@ async function main(): Promise<void> {
     if (!lookUpIds) {
       logger.warn({ event: 'analytics.mutation_log.local.lookups_skipped' })
     }
-    await writeMutationLogDays({
+    await claimLocalExportDir(dir, {
+      appEnv: archivalConfig.appEnv,
+      host: archivalConfig.postgresReaderHost,
+      database: archivalConfig.postgresDatabase,
+      logGroup,
+    })
+    await exportMutationLogToDir({
+      dir,
       fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
       resolveFlowIds: lookUpIds
         ? dbFlowIdResolver(archivalDbReader)
         : async () => new Map(),
-      sink: localDirSink(dir),
       days,
     })
     logger.info({ event: 'analytics.mutation_log.local.done', dir, days })

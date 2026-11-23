@@ -129,14 +129,16 @@ const exportSourceSchema = z.object({
   appEnv: z.string(),
   host: z.string(),
   database: z.string(),
+  // Only the mutation log reads a log group, so a silver export leaves it unset.
+  logGroup: z.string().optional(),
 })
 
 export type ExportSource = z.infer<typeof exportSourceSchema>
 
 const LOCAL_SOURCE_KEY = `${COMPLETION_PREFIX}source.json`
 
-const describe = ({ appEnv, host, database }: ExportSource) =>
-  `${appEnv} (${host}/${database})`
+const describe = ({ appEnv, host, database, logGroup }: ExportSource) =>
+  `${appEnv} (${host}/${database}${logGroup ? `, ${logGroup}` : ''})`
 
 /**
  * Ties a local export folder to the database that first wrote it.
@@ -165,10 +167,22 @@ export async function claimLocalExportDir(
   if (
     claimed.appEnv !== source.appEnv ||
     claimed.host !== source.host ||
-    claimed.database !== source.database
+    claimed.database !== source.database ||
+    (claimed.logGroup !== undefined &&
+      source.logGroup !== undefined &&
+      claimed.logGroup !== source.logGroup)
   ) {
     throw new Error(
       `${dir} holds an export from ${describe(claimed)}, but this run reads ${describe(source)}. Use a new folder.`,
+    )
+  }
+  if (claimed.logGroup === undefined && source.logGroup !== undefined) {
+    await writeFile(
+      file,
+      JSON.stringify({ ...claimed, logGroup: source.logGroup }),
+      {
+        mode: 0o600,
+      },
     )
   }
 }

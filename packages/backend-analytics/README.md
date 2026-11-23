@@ -90,6 +90,14 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 - `resource_parameter` is typed by hand. It names the argument that holds the table, file, channel or other resource a step points at, or `none`. `flow_step.resource_id` reads that argument. The test fails while a cell is blank or names an argument the app-action lacks. Regenerating keeps every value.
   - IMPORTANT: changing an existing value does not refresh steps that have not changed since. After that change deploys, run `analytics:export --tables flow_step --full --s3` in each environment.
 
+## mutation_log
+
+The mutation log writes one Parquet file per Singapore day at `bronze/mutation_log/day=YYYY-MM-DD/current.parquet`, from the server request log. A rerun of a day overwrites that day's file. [Tracking finished days](#tracking-finished-days) covers missed nights. It writes only when `APP_ENV` is `prod` or `staging`.
+
+Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `connection_id`, `app_key`, `action_key`, `resource_id` and `http_status`. `operation` is the mutation's root field, such as `updateFlow`. `app_key`, `action_key` and `resource_id` are set for `updateStep` only, from the call's `appKey`, `key` and the parameter the action catalog names in `resource_parameter`. A templated resource is null. No other variable is kept, since step parameters can hold user content.
+
+Each row records a request, not its outcome. GraphQL returns resolver errors with HTTP 200, so a rejected `updateStep` looks like a saved one. Treat `app_key`, `action_key` and `resource_id` as attempted changes, and read saved state from `flow_step`. A mutation whose root selection is a fragment spread gets no `operation`. Plumber's frontend never sends one. The editor's `deleteStep` sends only step ids, so a row with a `step_id` and no `flow_id` gets its pipe from `steps.flow_id` through the database reader, deleted steps included. The day's `rowsWithFlowFromStep` counts them. Morgan logs variables with every `"` turned into `'`, so an apostrophe directly before `,` `:` `}` or `]` makes them unparseable. The ids are then recovered from their fixed place in the editor's `updateStep` input, other ids and `resource_id` stay null, and the day's `rowsWithUnreadableVariables` counts those rows. Lines logged before the request log carried a user id have no `user_id`.
+
 ## Tracking finished days
 
 An export written as one file set per Singapore day marks each finished day with a completion file. The code lives in `src/day-completion.ts`.

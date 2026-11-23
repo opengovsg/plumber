@@ -1,4 +1,5 @@
 import {
+  createLogsClient,
   exportMutationLog,
   exportSilverTables,
   previousSgtDay,
@@ -7,11 +8,12 @@ import {
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb, archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'
-import { logsClient } from '@/helpers/archival/logs-client'
 import { runArchivalLoop } from '@/helpers/archival/run-archival-loop'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
 const controller = new AbortController()
+// Archival waits for this export, so a stalled Logs Insights query must not hold it up past this.
+const MUTATION_LOG_DEADLINE_MS = 30 * 60 * 1_000
 
 process.on('SIGTERM', () => {
   logger.info({ event: 'archival.run.sigterm' })
@@ -48,12 +50,16 @@ async function runMutationLogExport(): Promise<boolean> {
   try {
     await exportMutationLog({
       db: archivalDbReader,
-      logsClient,
+      logsClient: createLogsClient('ap-southeast-1'),
       s3Client: archiveS3Client,
       appEnv: archivalConfig.appEnv,
       bucket: archivalConfig.analyticsBucket,
       logGroup: archivalConfig.analyticsRequestLogGroup,
       days: { through: previousSgtDay(new Date()) },
+      signal: AbortSignal.any([
+        controller.signal,
+        AbortSignal.timeout(MUTATION_LOG_DEADLINE_MS),
+      ]),
     })
     return true
   } catch (err) {

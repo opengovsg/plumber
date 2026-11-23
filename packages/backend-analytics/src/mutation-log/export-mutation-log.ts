@@ -4,7 +4,10 @@ import { BaseStep } from '@plumber/backend-models'
 import type { Knex } from 'knex'
 import { z } from 'zod'
 
-import { s3CompletionStore } from '../completion-stores'
+import {
+  localDirCompletionStore,
+  s3CompletionStore,
+} from '../completion-stores'
 import {
   type CompletionSource,
   type JobState,
@@ -15,6 +18,7 @@ import {
 } from '../day-completion'
 import {
   EXPORT_APP_ENVS,
+  localDirSink,
   s3Sink,
   type SilverSink,
 } from '../export-silver-tables'
@@ -81,8 +85,9 @@ export type FetchDayLines = (window: {
 export function logsInsightsFetcher(
   client: Pick<CloudWatchLogsClient, 'send'>,
   logGroup: string,
+  signal?: AbortSignal,
 ): FetchDayLines {
-  return (window) => fetchMutationLines({ client, logGroup, ...window })
+  return (window) => fetchMutationLines({ client, logGroup, signal, ...window })
 }
 
 // Maps step ids to their pipe ids. The editor's deleteStep sends step ids without the pipe.
@@ -215,6 +220,8 @@ interface ExportMutationLogParams {
   logGroup: string | undefined
   // `through` redoes every day in the catch-up window, up to that day, with no current completion file.
   days: string[] | { through: string }
+  // Aborting fails the days still unwritten, so a stalled Logs Insights call cannot hold up archival.
+  signal?: AbortSignal
 }
 
 export async function exportMutationLog({
@@ -225,6 +232,7 @@ export async function exportMutationLog({
   bucket,
   logGroup,
   days,
+  signal,
 }: ExportMutationLogParams): Promise<void> {
   if (!EXPORT_APP_ENVS.has(appEnv)) {
     logger.info({ event: 'analytics.mutation_log.skipped', appEnv })
@@ -252,7 +260,7 @@ export async function exportMutationLog({
     },
     async (state) => {
       await writeMutationLogDays({
-        fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
+        fetchDayLines: logsInsightsFetcher(logsClient, logGroup, signal),
         resolveFlowIds: dbFlowIdResolver(db),
         sink,
         state,
@@ -262,5 +270,40 @@ export async function exportMutationLog({
         source: Array.isArray(days) ? 'backfill' : 'nightly',
       })
     },
+  )
+}
+
+interface ExportMutationLogToDirParams {
+  dir: string
+  fetchDayLines: FetchDayLines
+  resolveFlowIds: ResolveFlowIds
+  days: string[]
+}
+
+// Keeps completion files in the folder, so a local run passes the same version checks as the nightly export.
+export async function exportMutationLogToDir({
+  dir,
+  fetchDayLines,
+  resolveFlowIds,
+  days,
+}: ExportMutationLogToDirParams): Promise<void> {
+  const sink = localDirSink(dir)
+  await runWithCoverage(
+    {
+      job: MUTATION_LOG_TABLE,
+      yesterday: previousSgtDay(new Date()),
+      firstDay: [...days].sort()[0],
+      version: MUTATION_LOG_VERSION,
+      store: localDirCompletionStore(dir),
+      sink,
+    },
+    (state) =>
+      writeMutationLogDays({
+        fetchDayLines,
+        resolveFlowIds,
+        sink,
+        state,
+        days,
+      }),
   )
 }

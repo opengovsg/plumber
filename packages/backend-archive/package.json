@@ -23,7 +23,6 @@
     "analytics:mutation-log-local": "pnpm run build:deps && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/export-mutation-log.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "catalog:",
     "@aws-sdk/client-s3": "catalog:",
     "backend-analytics": "workspace:*",
     "dotenv": "catalog:",

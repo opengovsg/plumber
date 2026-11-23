@@ -6,11 +6,14 @@ import type { S3Client } from '@aws-sdk/client-s3'
 import { parquetMetadata, parquetReadObjects } from 'hyparquet'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { readJobState } from '../../day-completion'
+import { localDirCompletionStore } from '../../completion-stores'
+import { loadJobState, readJobState } from '../../day-completion'
 import { localDirSink } from '../../export-silver-tables'
 import {
   exportMutationLog,
+  exportMutationLogToDir,
   MUTATION_LOG_ROW_GROUP_SIZE,
+  MUTATION_LOG_TABLE,
   sortForFlowSearch,
   writeMutationLogDays,
 } from '../export-mutation-log'
@@ -273,5 +276,29 @@ describe('exportMutationLog', () => {
         days: ['2026-11-05'],
       }),
     ).rejects.toThrow('ANALYTICS_REQUEST_LOG_GROUP')
+  })
+})
+
+describe('exportMutationLogToDir', () => {
+  it('marks each written day complete in the folder', async () => {
+    dir = await mkdtemp(path.join(tmpdir(), 'mutation-log-'))
+
+    await exportMutationLogToDir({
+      dir,
+      fetchDayLines: async () => [],
+      resolveFlowIds: noFlows,
+      days: ['2026-11-04', '2026-11-05'],
+    })
+
+    const { completions, startDay } = await loadJobState(
+      localDirCompletionStore(dir),
+      MUTATION_LOG_TABLE,
+      '2026-11-05',
+    )
+    expect(startDay).toBe('2026-11-04')
+    expect(completions.map(({ day }) => day).sort()).toEqual([
+      '2026-11-04',
+      '2026-11-05',
+    ])
   })
 })

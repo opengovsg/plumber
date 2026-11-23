@@ -212,11 +212,9 @@ rm -rf "$OUT"
 
 ## Extracting the mutation log
 
-The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It runs a CloudWatch Logs Insights query on `ANALYTICS_REQUEST_LOG_GROUP` and writes one Parquet file per Singapore day to `bronze/mutation_log/day=YYYY-MM-DD/current.parquet`. A rerun of a day overwrites that day's file. [Tracking finished days](#tracking-finished-days) covers missed nights. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`. It writes only when `APP_ENV` is `prod` or `staging`.
+The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It queries `ANALYTICS_REQUEST_LOG_GROUP` with CloudWatch Logs Insights. [`backend-analytics`](../backend-analytics/README.md#mutation_log) describes the rows it writes. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`.
 
-Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `connection_id`, `app_key`, `action_key`, `resource_id` and `http_status`. `operation` is the mutation's root field, such as `updateFlow`. `app_key`, `action_key` and `resource_id` are set for `updateStep` only, from the call's `appKey`, `key` and the parameter the action catalog names in `resource_parameter`. A templated resource is null. No other variable is kept, since step parameters can hold user content.
-
-Each row records a request, not its outcome. GraphQL returns resolver errors with HTTP 200, so a rejected `updateStep` looks like a saved one. Treat `app_key`, `action_key` and `resource_id` as attempted changes, and read saved state from `flow_step`. A mutation whose root selection is a fragment spread gets no `operation`. Plumber's frontend never sends one. The editor's `deleteStep` sends only step ids, so a row with a `step_id` and no `flow_id` gets its pipe from `steps.flow_id` through the database reader, deleted steps included. The day's `rowsWithFlowFromStep` counts them. Morgan logs variables with every `"` turned into `'`, so an apostrophe directly before `,` `:` `}` or `]` makes them unparseable. The ids are then recovered from their fixed place in the editor's `updateStep` input, other ids and `resource_id` stay null, and the day's `rowsWithUnreadableVariables` counts those rows. Lines logged before the request log carried a user id have no `user_id`.
+The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night.
 
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 
@@ -228,15 +226,16 @@ Each row records a request, not its outcome. GraphQL returns resolver errors wit
 | `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                                                                                                |
 | `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. Finished days only, since a completion file marks the day done. Reads `ANALYTICS_REQUEST_LOG_GROUP`, so the source matches the bucket's environment. |
 
+A local folder also records its log group in `bronze/_completion/source.json`. A later run with another log group stops before writing.
+
 The query reads AWS credentials from the default chain. To try one day against production from your own machine:
 
 ```bash
-pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out ./mutation-log-out
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out "$OUT"
 ```
 
 Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.
-
----
 
 ## Counting archived steps by app and action
 
