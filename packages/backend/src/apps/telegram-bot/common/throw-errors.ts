@@ -84,8 +84,8 @@ export async function throwSendMessageError(
             error: `Upgrade from current chat id: ${oldChatId} to supergroup chat id: ${newChatId} and retry`,
             delayInMs: 'default',
             delayType: 'step',
-            // The user's group chat became a supergroup.
-            kind: 'config',
+            // Telegram can upgrade a group without the user noticing, so Plumber owns handling it.
+            kind: 'internal',
           })
         }
         // for test runs, still throw back stepError

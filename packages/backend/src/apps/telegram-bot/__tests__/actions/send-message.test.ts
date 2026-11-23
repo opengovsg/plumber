@@ -202,7 +202,7 @@ describe('send message', () => {
         parameters: { migrate_to_chat_id: -123 }
     },
 */
-  it('should throw config retriable error for supergroup if execution is not test run', async () => {
+  it('should throw internal retriable error for supergroup if execution is not test run', async () => {
     $.step.parameters.text = 'test message'
     $.step.parameters.chatId = '123' // old chat id
     $.step.parameters.disableNotification = null
@@ -221,7 +221,7 @@ describe('send message', () => {
 
     const error = await sendMessageAction.run!($).catch((e) => e)
     expect(error).toBeInstanceOf(RetriableError)
-    expect(error.kind).toBe('config')
+    expect(error.kind).toBe('internal')
   })
 
   it('should throw config step error for 403 error code', async () => {
