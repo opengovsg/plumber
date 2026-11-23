@@ -2,11 +2,12 @@ import type { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import type { S3Client } from '@aws-sdk/client-s3'
 import { BaseStep } from '@plumber/backend-models'
 import type { Knex } from 'knex'
-import { DateTime } from 'luxon'
 import { z } from 'zod'
 
+import { s3CompletionStore } from '../completion-stores'
 import {
   type CompletionSource,
+  type JobState,
   markDayComplete,
   planDays,
   runWithCoverage,
@@ -18,7 +19,7 @@ import {
   type SilverSink,
 } from '../export-silver-tables'
 import logger from '../logger'
-import { s3KeyLister } from '../silver-change-tables'
+import { previousSgtDay, sgtDayWindow } from '../sgt-day'
 import {
   buildBronzeDayKey,
   encodeParquet,
@@ -67,39 +68,6 @@ export function sortForFlowSearch(rows: MutationLogRow[]): MutationLogRow[] {
     }
     return a.ts.getTime() - b.ts.getTime()
   })
-}
-
-const ZONE = 'Asia/Singapore'
-const DAY_FORMAT = 'yyyy-MM-dd'
-
-export function sgtDayWindow(day: string): { startMs: number; endMs: number } {
-  const start = DateTime.fromFormat(day, DAY_FORMAT, { zone: ZONE })
-  if (!start.isValid) {
-    throw new Error(`Invalid day "${day}". Use YYYY-MM-DD.`)
-  }
-  return {
-    startMs: start.toMillis(),
-    endMs: start.plus({ days: 1 }).toMillis(),
-  }
-}
-
-export function previousSgtDay(now: Date): string {
-  return DateTime.fromJSDate(now, { zone: ZONE })
-    .minus({ days: 1 })
-    .toFormat(DAY_FORMAT)
-}
-
-export function sgtDaysBetween(from: string, to: string): string[] {
-  const start = DateTime.fromFormat(from, DAY_FORMAT, { zone: ZONE })
-  const end = DateTime.fromFormat(to, DAY_FORMAT, { zone: ZONE })
-  if (!start.isValid || !end.isValid || end < start) {
-    throw new Error(`Invalid day range ${from} to ${to}`)
-  }
-  const days: string[] = []
-  for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-    days.push(day.toFormat(DAY_FORMAT))
-  }
-  return days
 }
 
 // Bump when a day's files change. The next night replays the last 7 days from the log, which is append-only.
@@ -167,6 +135,7 @@ interface WriteMutationLogDaysParams {
   fetchDayLines: FetchDayLines
   resolveFlowIds: ResolveFlowIds
   sink: SilverSink
+  state: JobState
   days: string[]
   source?: CompletionSource
   parameterByAction?: Record<string, string>
@@ -176,16 +145,23 @@ export async function writeMutationLogDays({
   fetchDayLines,
   resolveFlowIds,
   sink,
+  state,
   days,
   source = 'backfill',
   parameterByAction = resourceParameters(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
-  await writeEachDay(
-    MUTATION_LOG_TABLE,
-    days,
-    (day) => day,
-    async (day) => {
-      const lines = await fetchDayLines(sgtDayWindow(day))
+  await writeEachDay({
+    job: MUTATION_LOG_TABLE,
+    state,
+    version: MUTATION_LOG_VERSION,
+    items: days,
+    dayOf: (day) => day,
+    write: async (day) => {
+      const { start, end } = sgtDayWindow(day)
+      const lines = await fetchDayLines({
+        startMs: start.getTime(),
+        endMs: end.getTime(),
+      })
       const parsedRows = lines
         .map((line) => toMutationLogRow(line, parameterByAction))
         .filter((row): row is MutationLogRow => row !== null)
@@ -227,7 +203,7 @@ export async function writeMutationLogDays({
         outputs: [key],
       })
     },
-  )
+  })
 }
 
 interface ExportMutationLogParams {
@@ -267,8 +243,11 @@ export async function exportMutationLog({
     {
       job: MUTATION_LOG_TABLE,
       yesterday,
+      firstDay: Array.isArray(days)
+        ? ([...days].sort()[0] ?? yesterday)
+        : yesterday,
       version: MUTATION_LOG_VERSION,
-      listKeys: s3KeyLister(s3Client, bucket),
+      store: s3CompletionStore(s3Client, bucket),
       sink,
     },
     async (state) => {
@@ -276,6 +255,7 @@ export async function exportMutationLog({
         fetchDayLines: logsInsightsFetcher(logsClient, logGroup),
         resolveFlowIds: dbFlowIdResolver(db),
         sink,
+        state,
         days: Array.isArray(days)
           ? days
           : planDays(state, yesterday, MUTATION_LOG_VERSION).days,

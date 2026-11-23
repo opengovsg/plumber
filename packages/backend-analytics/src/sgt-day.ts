@@ -48,3 +48,13 @@ export function sgtDaysAfter(after: string, through: string): string[] {
   }
   return days
 }
+
+// Every day from `from` through `to`. Throws when the range is backwards.
+export function sgtDaysBetween(from: string, to: string): string[] {
+  const start = parseDay(from)
+  const end = parseDay(to)
+  if (end < start) {
+    throw new Error(`Invalid day range ${from} to ${to}`)
+  }
+  return sgtDaysAfter(addSgtDays(from, -1), to)
+}

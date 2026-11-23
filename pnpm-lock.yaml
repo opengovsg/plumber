@@ -164,9 +164,6 @@ settings:
 
 catalogs:
   default:
-    '@aws-sdk/client-cloudwatch-logs':
-      specifier: 3.1027.0
-      version: 3.1027.0
     '@aws-sdk/client-s3':
       specifier: 3.1027.0
       version: 3.1027.0
@@ -612,7 +609,7 @@ importers:
   packages/backend-analytics:
     dependencies:
       '@aws-sdk/client-cloudwatch-logs':
-        specifier: 'catalog:'
+        specifier: 3.1027.0
         version: 3.1027.0
       '@aws-sdk/client-s3':
         specifier: 'catalog:'

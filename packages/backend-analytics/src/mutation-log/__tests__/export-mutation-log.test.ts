@@ -6,13 +6,11 @@ import type { S3Client } from '@aws-sdk/client-s3'
 import { parquetMetadata, parquetReadObjects } from 'hyparquet'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { readJobState } from '../../day-completion'
 import { localDirSink } from '../../export-silver-tables'
 import {
   exportMutationLog,
   MUTATION_LOG_ROW_GROUP_SIZE,
-  previousSgtDay,
-  sgtDaysBetween,
-  sgtDayWindow,
   sortForFlowSearch,
   writeMutationLogDays,
 } from '../export-mutation-log'
@@ -30,39 +28,8 @@ afterEach(async () => {
   }
 })
 
-describe('Singapore days', () => {
-  it('maps a day to its UTC window', () => {
-    expect(sgtDayWindow('2026-11-05')).toEqual({
-      startMs: Date.parse('2026-11-04T16:00:00.000Z'),
-      endMs: Date.parse('2026-11-05T16:00:00.000Z'),
-    })
-  })
-
-  it('picks the previous Singapore day, not the previous UTC day', () => {
-    // 01:30 on 7 Nov in Singapore is still 6 Nov in UTC.
-    expect(previousSgtDay(new Date('2026-11-06T17:30:00.000Z'))).toBe(
-      '2026-11-06',
-    )
-  })
-
-  it('lists every day in a range', () => {
-    expect(sgtDaysBetween('2026-10-30', '2026-11-02')).toEqual([
-      '2026-10-30',
-      '2026-10-31',
-      '2026-11-01',
-      '2026-11-02',
-    ])
-  })
-
-  it.each([
-    ['2026-11-05', '2026-11-04'],
-    ['5 Nov', '2026-11-05'],
-  ])('rejects the range %s to %s', (from, to) => {
-    expect(() => sgtDaysBetween(from, to)).toThrow()
-  })
-})
-
 const noFlows = async () => new Map<string, string>()
+const state = readJobState([])
 
 describe('writeMutationLogDays', () => {
   it("fills a deleted step's pipe from its step id", async () => {
@@ -85,6 +52,7 @@ describe('writeMutationLogDays', () => {
       resolveFlowIds,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
+      state,
     })
 
     // An uppercase id is looked up in Postgres's lowercase form and logged as sent.
@@ -125,9 +93,13 @@ describe('writeMutationLogDays', () => {
       resolveFlowIds: noFlows,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
+      state,
     })
 
-    expect(fetchDayLines).toHaveBeenCalledWith(sgtDayWindow('2026-11-05'))
+    expect(fetchDayLines).toHaveBeenCalledWith({
+      startMs: Date.parse('2026-11-04T16:00:00.000Z'),
+      endMs: Date.parse('2026-11-05T16:00:00.000Z'),
+    })
     const file = await readFile(
       path.join(dir, 'bronze/mutation_log/day=2026-11-05/current.parquet'),
     )
@@ -167,6 +139,7 @@ describe('writeMutationLogDays', () => {
           written.push(key)
         },
         days: ['2026-11-05'],
+        state,
         source: 'nightly',
       })
 
@@ -239,6 +212,7 @@ describe('the mutation log file layout', () => {
       resolveFlowIds: noFlows,
       sink: localDirSink(dir),
       days: ['2026-11-05'],
+      state,
     })
 
     const file = await readFile(

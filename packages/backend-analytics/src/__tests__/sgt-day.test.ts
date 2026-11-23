@@ -4,6 +4,7 @@ import {
   addSgtDays,
   previousSgtDay,
   sgtDaysAfter,
+  sgtDaysBetween,
   sgtDayWindow,
 } from '../sgt-day'
 
@@ -34,5 +35,16 @@ describe('Singapore days', () => {
   it('moves a day forward or back across a month', () => {
     expect(addSgtDays('2026-10-31', 1)).toBe('2026-11-01')
     expect(addSgtDays('2026-11-01', -6)).toBe('2026-10-26')
+  })
+
+  it('lists every day in a range, and rejects a backwards or malformed one', () => {
+    expect(sgtDaysBetween('2026-10-30', '2026-11-02')).toEqual([
+      '2026-10-30',
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-02',
+    ])
+    expect(() => sgtDaysBetween('2026-11-05', '2026-11-04')).toThrow()
+    expect(() => sgtDaysBetween('5 Nov', '2026-11-05')).toThrow()
   })
 })
