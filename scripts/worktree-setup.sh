@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prepares a new worktree so an agent can run `pnpm run dev:sample-env` without 1Password.
-# Orca and Cursor run this as the repo's worktree setup script.
+# It starts shared Docker services, so a worktree tool runs it only when the user opts in.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
