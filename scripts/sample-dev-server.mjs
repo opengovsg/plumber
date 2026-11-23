@@ -84,12 +84,15 @@ function clearState(runId) {
   }
 }
 
-function isReady({ backendPort, frontendPort }) {
+// The markers prove this run booted. The live ports catch a backend that crashed after a later edit.
+async function isReady({ backendPort, frontendPort }) {
   // The log is truncated on start, so these lines can only come from this run.
   const log = readLog()
   return (
     log.includes(`Server is listening on ${backendPort}`) &&
-    log.includes(`Local:   http://localhost:${frontendPort}/`)
+    log.includes(`Local:   http://localhost:${frontendPort}/`) &&
+    (await isPortTaken(backendPort)) &&
+    (await isPortTaken(frontendPort))
   )
 }
 
@@ -113,7 +116,7 @@ async function classify() {
     }
   } else if (state.pid) {
     if (describeProcess(state.pid) === state.process) {
-      return { phase: isReady(state) ? 'running' : 'starting', state }
+      return { phase: (await isReady(state)) ? 'running' : 'starting', state }
     }
   } else if (describeProcess(state.claimant) === state.claimantProcess) {
     return { phase: 'claimed', state }
@@ -254,8 +257,8 @@ async function status() {
   const { phase, state } = await classify()
   const labels = {
     none: 'not running',
-    claimed: 'starting',
-    starting: 'starting',
+    claimed: 'not ready',
+    starting: 'not ready',
     running: 'running',
     'stop-incomplete': 'stop incomplete, ports still in use',
   }
