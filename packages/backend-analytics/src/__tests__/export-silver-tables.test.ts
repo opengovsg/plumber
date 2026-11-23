@@ -14,7 +14,7 @@ import {
 } from '../export-silver-tables'
 import type { SilverTable } from '../silver-table'
 
-vi.mock('@/helpers/archival/logger')
+vi.mock('../logger')
 
 type TestRow = { id: string; created_at: Date }
 

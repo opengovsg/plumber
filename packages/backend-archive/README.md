@@ -176,7 +176,7 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ## Exporting analytics tables
 
-The archival task writes the silver analytics tables to S3 each night, before it archives. It writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket, and PostHog reads a bucket only if someone attaches it. Each table becomes one Parquet file at `silver/<table>/current.parquet`.
+The archival task runs the analytics export each night, before it archives. Archival must not delete executions before the export reads them. [`backend-analytics`](../backend-analytics/README.md) holds the export code and describes what it writes.
 
 `analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
 
@@ -206,26 +206,6 @@ Delete the folder after the upload:
 ```bash
 rm -rf "$OUT"
 ```
-
----
-
-## Agency mapping
-
-Two files in `data/` map email domains to agencies. The export reads them at runtime.
-
-| File                 | Columns                                | Holds                                                                      |
-| -------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
-| `agencies.csv`       | `canonical`, `agency_name`, `category` | One row per agency. `canonical` is its main email domain.                  |
-| `agency-domains.csv` | `domain`, `canonical`                  | One row per email domain, including subdomains, renamed domains and typos. |
-
-A domain with no row falls back to its parent domain. `gt.tech.gov.sg` tries `tech.gov.sg`. The lookup never falls back to `gov.sg`, `edu.sg`, `com.sg` or `sg`. A domain that still has no match is `unclassified`. `dim_user` takes `agency`, `agency_name` and `agency_category` from this lookup. Its `is_internal` is true for every domain that maps to OGP.
-
-Each `dim_user` export logs two lists with verified-user counts:
-
-- `analytics.agency.unclassified`: domains with no match. Add a row for any you can identify.
-- `analytics.agency.fallback`: domains that matched only through a parent domain.
-
-IMPORTANT: the files are public. Add only government domains and public bodies. Never add user counts.
 
 ---
 
@@ -334,19 +314,14 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 
 ## Running tests
 
-```bash
-pnpm --filter backend-archive run test:unit
-```
-
-The integration tests run each analytics export query against Postgres 18, migrated with `packages/backend`'s migrations. They need Docker running.
+Run checks through Turbo. It builds `backend-analytics` first, and this package imports that build. The bare package scripts fail with `TS2307` on a clean checkout.
 
 ```bash
-pnpm --filter backend-archive run test:integration
+pnpm exec turbo run typecheck --filter=backend-archive
+pnpm exec turbo run test:unit --filter=backend-archive
 ```
 
-A migration that renames or drops a column an export reads fails these tests in CI. Add an `*.itest.ts` for every new export table.
-
-The script migrates a fresh database on each run. A watch or UI session migrates only when it starts, so restart it after editing a migration.
+The analytics export tests live in [`backend-analytics`](../backend-analytics/README.md#running-tests).
 
 ---
 
