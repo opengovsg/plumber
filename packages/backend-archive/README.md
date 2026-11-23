@@ -189,6 +189,8 @@ The archival task runs the analytics export each night, before it archives. Arch
 
 Pass exactly one of `--out` and `--s3`.
 
+A local folder belongs to the database that first wrote it. The first run records `APP_ENV`, the reader host and the database in `bronze/_completion/source.json`. A later run against another database stops before writing, because the folder's completion files would make it skip days.
+
 To export production data to your own machine, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine). Then:
 
 ```bash

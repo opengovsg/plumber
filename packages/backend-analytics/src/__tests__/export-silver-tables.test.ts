@@ -6,12 +6,16 @@ import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { localDirCompletionStore } from '../completion-stores'
 import {
   exportSilverTables,
   localDirSink,
   selectSilverTables,
+  writeAllSilverTables,
   writeSilverTables,
 } from '../export-silver-tables'
+import logger from '../logger'
+import type { SilverChangeTable } from '../silver-change-tables'
 import type { SilverTable } from '../silver-table'
 
 vi.mock('../logger')
@@ -135,6 +139,57 @@ describe('writeSilverTables to a local folder', () => {
       await chmod(filePath, 0o644)
       await write()
       expect(await mode(filePath)).toBe(0o600)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('writeAllSilverTables', () => {
+  it('writes every other table after one fails, then fails the run', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    const failing: SilverTable<TestRow> = {
+      ...testTable,
+      name: 'dim_user',
+      fetchRows: vi.fn(async () => {
+        throw new Error('query failed')
+      }),
+    }
+    const changeTable: SilverChangeTable<{ id: string }> = {
+      name: 'flow_step',
+      version: 1,
+      columns: { id: 'STRING' },
+      async *fetchPages() {
+        yield [{ id: 'step-1' }]
+      },
+    }
+    try {
+      await expect(
+        writeAllSilverTables({
+          db,
+          sink: localDirSink(dir),
+          store: localDirCompletionStore(dir),
+          tables: [failing, testTable],
+          changeTables: [changeTable],
+        }),
+      ).rejects.toThrow('Analytics tables failed: dim_user')
+
+      expect((await readdir(path.join(dir, 'silver'))).sort()).toEqual([
+        'flow_step',
+        'test_table',
+      ])
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'analytics.export.table.error',
+          table: 'dim_user',
+        }),
+      )
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'analytics.export.coverage',
+          job: 'flow_step',
+        }),
+      )
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

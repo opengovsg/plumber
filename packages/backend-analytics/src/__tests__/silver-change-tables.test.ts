@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -6,10 +6,11 @@ import { parquetReadObjects } from 'hyparquet'
 import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { localDirCompletionStore } from '../completion-stores'
+import { type DayCompletion, readJobState } from '../day-completion'
 import { localDirSink } from '../export-silver-tables'
 import { type SgtDayWindow, sgtDayWindow } from '../sgt-day'
 import {
-  localDirKeyLister,
   planChangeFiles,
   type SilverChangeTable,
   writeSilverChangeTables,
@@ -69,15 +70,31 @@ describe('planChangeFiles', () => {
     ],
   ])('plans %s', (_case, completions, full, version, expected) => {
     expect(
-      planChangeFiles(
-        { completions, startDay: null },
-        '2026-11-10',
-        full,
-        version,
-      ),
+      planChangeFiles(state(completions), '2026-11-10', full, version),
     ).toEqual(expected)
   })
+
+  it('plans a full copy when a finished day was dropped as outdated', () => {
+    const listed = state([baseline, done])
+    expect(
+      planChangeFiles(
+        { ...listed, completions: [baseline] },
+        '2026-11-10',
+        false,
+        1,
+      ),
+    ).toEqual([{ day: '2026-11-10', full: true }])
+  })
 })
+
+function state(completions: DayCompletion[]) {
+  return readJobState(
+    completions.map(
+      ({ day, version, full }) =>
+        `bronze/_completion/flow_step/day=${day}.v${version}${full ? '.full' : ''}.json`,
+    ),
+  )
+}
 
 describe('writeSilverChangeTables', () => {
   it('writes a full first copy, then one file per missed day', async () => {
@@ -109,7 +126,7 @@ describe('writeSilverChangeTables', () => {
           )
           return sink(key, body)
         },
-        listKeys: localDirKeyLister(dir!),
+        store: localDirCompletionStore(dir!),
         tables: [table],
         yesterday,
       })
@@ -161,28 +178,67 @@ describe('writeSilverChangeTables', () => {
         yield [{ id: 'step-2' }]
       },
     }
-    const listKeys = localDirKeyLister(dir)
+    const store = localDirCompletionStore(dir)
+    const listKeys = async () =>
+      (await store.list('bronze/_completion/flow_step/'))
+        .map((object) => object.key)
+        .sort()
     const write = () =>
       writeSilverChangeTables({
         db: {} as Knex,
         sink: localDirSink(dir!),
-        listKeys,
+        store,
         tables: [table],
         yesterday: '2026-11-08',
       })
 
-    await expect(write()).rejects.toThrow(
-      'flow_step: 1 day(s) failed: 2026-11-08',
-    )
-    expect(await listKeys('bronze/_completion/flow_step/')).toEqual([
+    await expect(write()).rejects.toThrow('Analytics tables failed: flow_step')
+    expect(await listKeys()).toEqual([
       'bronze/_completion/flow_step/start=2026-11-08.json',
     ])
 
     fail = false
     await write()
-    expect((await listKeys('bronze/_completion/flow_step/')).sort()).toEqual([
+    expect(await listKeys()).toEqual([
       'bronze/_completion/flow_step/day=2026-11-08.v1.full.json',
       'bronze/_completion/flow_step/start=2026-11-08.json',
     ])
+  })
+
+  it('writes a new full copy after a finished day file changes', async () => {
+    dir = await mkdtemp(path.join(tmpdir(), 'change-tables-'))
+    const fulls: boolean[] = []
+    const table: SilverChangeTable<{ id: string }> = {
+      name: 'flow_step',
+      version: 1,
+      columns: { id: 'STRING' },
+      async *fetchPages(_db, window) {
+        fulls.push(window === null)
+        yield [{ id: 'step-1' }]
+      },
+    }
+    const write = (yesterday: string) =>
+      writeSilverChangeTables({
+        db: {} as Knex,
+        sink: localDirSink(dir!),
+        store: localDirCompletionStore(dir!),
+        tables: [table],
+        yesterday,
+      })
+
+    await write('2026-11-08')
+    await write('2026-11-09')
+    // A later write to the 9 Nov file, as an interrupted rewrite leaves it.
+    const later = new Date(Date.now() + 60_000)
+    await utimes(
+      path.join(dir, 'silver/flow_step/day=2026-11-09.parquet'),
+      later,
+      later,
+    )
+    await write('2026-11-10')
+    // The 10 Nov full copy covers 9 Nov, so the next night is a day file again.
+    await write('2026-11-11')
+
+    expect(fulls).toEqual([true, false, true, false])
   })
 })

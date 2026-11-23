@@ -9,4 +9,7 @@ export {
   writeAllSilverTables,
   writeSilverTables,
 } from './export-silver-tables'
-export { localDirKeyLister } from './silver-change-tables'
+export {
+  claimLocalExportDir,
+  localDirCompletionStore,
+} from './completion-stores'

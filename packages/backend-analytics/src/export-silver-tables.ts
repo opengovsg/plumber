@@ -5,13 +5,12 @@ import path from 'node:path'
 import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 
-import type { CompletionSource } from './day-completion'
+import { s3CompletionStore } from './completion-stores'
+import type { CompletionSource, CompletionStore } from './day-completion'
 import logger from './logger'
 import { previousSgtDay } from './sgt-day'
 import {
   type SilverChangeTable,
-  type SilverKeyLister,
-  s3KeyLister,
   writeSilverChangeTables,
 } from './silver-change-tables'
 import {
@@ -27,6 +26,7 @@ import { flowAiSuggestionTable } from './tables/flow-ai-suggestion'
 import { flowStageTable } from './tables/flow-stage'
 import { flowStepTable } from './tables/flow-step'
 import { flowTransferTable } from './tables/flow-transfer'
+import { writeEachTable } from './write-each-table'
 
 export const SILVER_TABLES: SilverTable<SilverRow>[] = [
   flowTransferTable,
@@ -103,7 +103,7 @@ export async function writeSilverTables({
   sink,
   tables = SILVER_TABLES,
 }: WriteSilverTablesParams): Promise<void> {
-  for (const table of tables) {
+  await writeEachTable(tables, async (table) => {
     const rows = await table.fetchRows(db)
     const body = encodeSilverTable(table, rows)
     const key = buildSilverKey(table.name)
@@ -115,11 +115,11 @@ export async function writeSilverTables({
       rows: rows.length,
       bytes: body.length,
     })
-  }
+  })
 }
 
 interface WriteAllSilverTablesParams extends WriteSilverTablesParams {
-  listKeys: SilverKeyLister
+  store: CompletionStore
   changeTables?: SilverChangeTable<SilverRow>[]
   // Rewrites each change table as a full copy, after a direct database write.
   full?: boolean
@@ -130,28 +130,37 @@ interface WriteAllSilverTablesParams extends WriteSilverTablesParams {
 export async function writeAllSilverTables({
   db,
   sink,
-  listKeys,
+  store,
   tables = SILVER_TABLES,
   changeTables = SILVER_CHANGE_TABLES,
   full = false,
   source = 'nightly',
   now = new Date(),
 }: WriteAllSilverTablesParams): Promise<void> {
-  await writeSilverTables({ db, sink, tables })
+  // A failed snapshot table must not hold back the change tables, whose catch-up window is short.
+  const errors: Error[] = []
+  await writeSilverTables({ db, sink, tables }).catch((err: Error) => {
+    errors.push(err)
+  })
   await writeSilverChangeTables({
     db,
     sink,
-    listKeys,
+    store,
     tables: changeTables,
     yesterday: previousSgtDay(now),
     full,
     source,
+  }).catch((err: Error) => {
+    errors.push(err)
   })
+  if (errors.length > 0) {
+    throw new Error(errors.map((err) => err.message).join('. '))
+  }
 }
 
 interface ExportSilverTablesParams extends Omit<
   WriteAllSilverTablesParams,
-  'sink' | 'listKeys'
+  'sink' | 'store'
 > {
   s3Client: S3Client
   appEnv: string
@@ -174,6 +183,6 @@ export async function exportSilverTables({
   await writeAllSilverTables({
     ...params,
     sink: s3Sink(s3Client, bucket),
-    listKeys: s3KeyLister(s3Client, bucket),
+    store: s3CompletionStore(s3Client, bucket),
   })
 }

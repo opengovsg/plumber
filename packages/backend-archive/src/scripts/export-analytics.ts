@@ -2,8 +2,9 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 
 import {
+  claimLocalExportDir,
   exportSilverTables,
-  localDirKeyLister,
+  localDirCompletionStore,
   localDirSink,
   SILVER_CHANGE_TABLES,
   SILVER_TABLES,
@@ -41,6 +42,11 @@ async function main(): Promise<void> {
 
   if (values.out) {
     const dir = path.resolve(values.out)
+    await claimLocalExportDir(dir, {
+      appEnv: archivalConfig.appEnv,
+      host: archivalConfig.postgresReaderHost,
+      database: archivalConfig.postgresDatabase,
+    })
     await writeAllSilverTables({
       db: archivalDbReader,
       tables,
@@ -48,7 +54,7 @@ async function main(): Promise<void> {
       full: values.full,
       source: 'backfill',
       sink: localDirSink(dir),
-      listKeys: localDirKeyLister(dir),
+      store: localDirCompletionStore(dir),
     })
     logger.info({ event: 'analytics.export.local.done', dir })
     return

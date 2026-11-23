@@ -1,11 +1,9 @@
-import { readdir } from 'node:fs/promises'
-import path from 'node:path'
-
-import { ListObjectsV2Command, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 
 import {
   type CompletionSource,
+  type CompletionStore,
+  type DayCompletion,
   type JobState,
   latestFullCopy,
   markDayComplete,
@@ -22,6 +20,7 @@ import {
   type SilverRow,
   type SilverTable,
 } from './silver-table'
+import { writeEachTable } from './write-each-table'
 
 /**
  * A table written as one file per Singapore day, holding only the rows that changed that day.
@@ -38,51 +37,20 @@ export interface SilverChangeTable<Row extends SilverRow> {
   fetchPages: (db: Knex, window: SgtDayWindow | null) => AsyncIterable<Row[]>
 }
 
-export type SilverKeyLister = (prefix: string) => Promise<string[]>
-
-export function s3KeyLister(
-  s3Client: S3Client,
-  bucket: string,
-): SilverKeyLister {
-  return async (prefix) => {
-    const keys: string[] = []
-    let token: string | undefined
-    do {
-      const page = await s3Client.send(
-        new ListObjectsV2Command({
-          Bucket: bucket,
-          Prefix: prefix,
-          ContinuationToken: token,
-        }),
-      )
-      keys.push(
-        ...(page.Contents ?? []).flatMap(({ Key }): string[] =>
-          Key ? [Key] : [],
-        ),
-      )
-      token = page.NextContinuationToken
-    } while (token)
-    return keys
-  }
-}
-
-export function localDirKeyLister(dir: string): SilverKeyLister {
-  return async (prefix) => {
-    try {
-      const names = await readdir(path.join(dir, prefix))
-      return names.map((name) => `${prefix}${name}`)
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-        return []
-      }
-      throw err
-    }
-  }
-}
-
 export interface ChangeFilePlan {
   day: string
   full: boolean
+}
+
+// A day whose newest completion file was dropped cannot be rewritten alone, so a full copy repairs it. A later full copy already covers it.
+function hasOutdatedDay(state: JobState, baseline: DayCompletion): boolean {
+  const current = new Map<string, number>()
+  for (const { day, version } of state.completions) {
+    current.set(day, Math.max(version, current.get(day) ?? 0))
+  }
+  return [...state.newestVersion].some(
+    ([day, version]) => day > baseline.day && (current.get(day) ?? 0) < version,
+  )
 }
 
 /**
@@ -98,7 +66,12 @@ export function planChangeFiles(
   version: number,
 ): ChangeFilePlan[] {
   const baseline = latestFullCopy(state.completions)
-  if (full || !baseline || baseline.version < version) {
+  if (
+    full ||
+    !baseline ||
+    baseline.version < version ||
+    hasOutdatedDay(state, baseline)
+  ) {
     return [{ day: yesterday, full: true }]
   }
   // IMPORTANT: a finished day is never rewritten. A rerun reads rows' current updated_at, so it would drop rows edited since.
@@ -183,7 +156,7 @@ async function writeChangeDay({
 interface WriteSilverChangeTablesParams {
   db: Knex
   sink: SilverSink
-  listKeys: SilverKeyLister
+  store: CompletionStore
   tables: SilverChangeTable<SilverRow>[]
   yesterday: string
   full?: boolean
@@ -193,29 +166,30 @@ interface WriteSilverChangeTablesParams {
 export async function writeSilverChangeTables({
   db,
   sink,
-  listKeys,
+  store,
   tables,
   yesterday,
   full = false,
   source = 'nightly',
 }: WriteSilverChangeTablesParams): Promise<void> {
-  for (const table of tables) {
-    await runWithCoverage(
+  await writeEachTable(tables, (table) =>
+    runWithCoverage(
       {
         job: table.name,
         yesterday,
         version: table.version,
-        listKeys,
+        store,
         sink,
       },
-      async (state) => {
-        await writeEachDay(
-          table.name,
-          planChangeFiles(state, yesterday, full, table.version),
-          (file) => file.day,
-          (file) => writeChangeDay({ db, sink, table, file, source }),
-        )
-      },
-    )
-  }
+      (state) =>
+        writeEachDay({
+          job: table.name,
+          state,
+          version: table.version,
+          items: planChangeFiles(state, yesterday, full, table.version),
+          dayOf: (file) => file.day,
+          write: (file) => writeChangeDay({ db, sink, table, file, source }),
+        }),
+    ),
+  )
 }
