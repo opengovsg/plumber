@@ -33,7 +33,7 @@ Do not run `pnpm run setup` or `pnpm run dev`. Both need 1Password.
 node scripts/sample-dev-server.mjs start
 ```
 
-It prints the backend and frontend URLs once both are ready. If this worktree's server already runs, it waits for it to be ready, then prints `already running` and the same URLs. `status` prints `running`, `starting` or `not running`.
+It prints the backend and frontend URLs once both are ready. If this worktree's server already runs, it waits for it to be ready, then prints `already running` and the same URLs. `status` prints `running`, `not ready` or `not running`. `not ready` means the server is booting or a service crashed. Check `tmp/plumber-dev.log`.
 
 It refuses to start when another process holds this worktree's ports. Ask the user before you stop that process.
 
