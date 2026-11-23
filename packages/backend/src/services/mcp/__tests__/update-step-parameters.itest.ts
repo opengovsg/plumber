@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
+import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -1138,10 +1139,18 @@ describe('Databricks connection verification', () => {
     expect(dbStep?.connectionId).toBeNull()
   })
 
-  it('does not bind when the check times out', async () => {
-    mocks.databricksIsStillVerified.mockResolvedValue(true)
-    mocks.withTimeout.mockRejectedValueOnce(
-      new Error('Timed out after 20000ms'),
+  it('does not bind when the check times out, even if it finishes late', async () => {
+    const { withTimeout } = await vi.importActual<
+      typeof import('@/helpers/with-timeout')
+    >('@/helpers/with-timeout')
+    mocks.withTimeout.mockImplementationOnce((promise: Promise<boolean>) =>
+      withTimeout(promise, 10),
+    )
+    let finishCheck: (verified: boolean) => void = () => undefined
+    mocks.databricksIsStillVerified.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        finishCheck = resolve
+      }),
     )
 
     const result = await updateStepParametersService({
@@ -1158,7 +1167,31 @@ describe('Databricks connection verification', () => {
     )
     expect(result.step.connectionId).toBeNull()
 
+    finishCheck(true)
+    await vi.waitFor(async () => {
+      const dbConnection = await Connection.query().findById(connectionId)
+      expect(dbConnection?.verified).toBe(true)
+    })
     const dbStep = await Step.query().findById(actionStepId)
     expect(dbStep?.connectionId).toBeNull()
+  })
+
+  it('keeps the published-pipe error when the pipe is published during the check', async () => {
+    mocks.databricksIsStillVerified.mockImplementationOnce(async () => {
+      await Flow.knex().table('flows').where('id', pipeId).update({
+        active: true,
+      })
+      return true
+    })
+
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId,
+        stepId: actionStepId,
+        parameters: {},
+        connectionId,
+      }),
+    ).rejects.toMatchObject({ type: 'editingPublishedPipeError' })
   })
 })

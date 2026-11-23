@@ -61,6 +61,8 @@ type VerifyConnectionParams = {
   app: IApp
   $: IGlobalVariable
   connection: Connection
+  // The id as the caller sent it, so the log line matches the request.
+  connectionId: string
   flowId?: string | null
 }
 
@@ -69,6 +71,7 @@ export async function verifyConnection({
   app,
   $,
   connection,
+  connectionId,
   flowId,
 }: VerifyConnectionParams) {
   let isStillVerified: boolean
@@ -78,7 +81,7 @@ export async function verifyConnection({
   } catch (err) {
     isStillVerified = false
     errorMessage = err.message
-    logger.error(`Error verifying CONNECTION ID: ${connection.id}`, {
+    logger.error(`Error verifying CONNECTION ID: ${connectionId}`, {
       event: 'test-connection',
       flowId,
       errMessage: err.message,
