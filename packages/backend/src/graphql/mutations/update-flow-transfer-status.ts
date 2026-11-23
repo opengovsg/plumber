@@ -153,6 +153,7 @@ const updateFlowTransferStatus: NonNullable<
         (step) => step.appKey === 'm365-excel' && step.connectionId != null,
       )
       .map((step) => step.id)
+    await Step.lockFlow(flow.id, trx)
     const numExcelNullified = await Step.query(trx)
       .patch({ connectionId: null, status: 'incomplete' })
       .where('flow_id', flow.id)

@@ -1,14 +1,16 @@
 import { randomUUID } from 'crypto'
 
+import type { Transaction } from 'objection'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import { updateFlowStatusService } from '@/services/flow/update-flow-status'
 
 async function waitForLockWaiters(count: number): Promise<void> {
-  for (let attempt = 0; attempt < 200; attempt++) {
+  for (let attempt = 0; attempt < 120; attempt++) {
     const { rows } = await Flow.knex().raw<{ rows: { count: number }[] }>(
       `SELECT count(*)::int AS count FROM pg_stat_activity
        WHERE datname = current_database() AND wait_event_type = 'Lock'`,
@@ -23,6 +25,32 @@ async function waitForLockWaiters(count: number): Promise<void> {
 
 function settle<T>(promise: Promise<T>): Promise<T | Error> {
   return promise.catch((error: Error) => error)
+}
+
+type Launch = <T>(promise: Promise<T>) => Promise<T | Error>
+
+/**
+ * Always ends `trx` and awaits the launched work, so a failed assertion cannot
+ * leave locks held for later tests and the shared teardown.
+ */
+async function holding(
+  trx: Transaction,
+  body: (launch: Launch) => Promise<void>,
+): Promise<void> {
+  const launched: Promise<unknown>[] = []
+  const launch: Launch = (promise) => {
+    const settled = settle(promise)
+    launched.push(settled)
+    return settled
+  }
+  try {
+    await body(launch)
+  } finally {
+    if (!trx.isCompleted()) {
+      await trx.rollback()
+    }
+    await Promise.all(launched)
+  }
 }
 
 describe('step writes lock the flow row', () => {
@@ -80,19 +108,22 @@ describe('step writes lock the flow row', () => {
   it('rejects a step update that waits on a publish which commits first', async () => {
     // Holds the flow row so publish and the step update queue up in order.
     const gate = await Flow.startTransaction()
-    await Flow.query(gate).findById(flowId).forUpdate()
-
-    const publishResult = settle(publish())
-    await waitForLockWaiters(1)
-    const updateResult = settle(
-      Step.transaction(async (trx) =>
-        Step.query(trx).patchAndFetchById(actionStepId, {
-          parameters: { edited: true },
-        }),
-      ),
-    )
-    await waitForLockWaiters(2)
-    await gate.commit()
+    let publishResult!: Promise<Flow | Error>
+    let updateResult!: Promise<Step | Error>
+    await holding(gate, async (launch) => {
+      await Flow.query(gate).findById(flowId).forNoKeyUpdate()
+      publishResult = launch(publish())
+      await waitForLockWaiters(1)
+      updateResult = launch(
+        Step.transaction(async (trx) =>
+          Step.query(trx).patchAndFetchById(actionStepId, {
+            parameters: { edited: true },
+          }),
+        ),
+      )
+      await waitForLockWaiters(2)
+      await gate.commit()
+    })
 
     expect(await publishResult).toBeInstanceOf(Flow)
     const updateError = await updateResult
@@ -104,24 +135,27 @@ describe('step writes lock the flow row', () => {
 
   it('rejects a step insert that waits on a publish which commits first', async () => {
     const gate = await Flow.startTransaction()
-    await Flow.query(gate).findById(flowId).forUpdate()
-
-    const publishResult = settle(publish())
-    await waitForLockWaiters(1)
-    const insertResult = settle(
-      Step.transaction(async (trx) =>
-        Step.query(trx).insert({
-          flowId,
-          type: 'action',
-          position: 3,
-          appKey: 'custom-api',
-          key: 'httpRequest',
-          parameters: {},
-        }),
-      ),
-    )
-    await waitForLockWaiters(2)
-    await gate.commit()
+    let publishResult!: Promise<Flow | Error>
+    let insertResult!: Promise<Step | Error>
+    await holding(gate, async (launch) => {
+      await Flow.query(gate).findById(flowId).forNoKeyUpdate()
+      publishResult = launch(publish())
+      await waitForLockWaiters(1)
+      insertResult = launch(
+        Step.transaction(async (trx) =>
+          Step.query(trx).insert({
+            flowId,
+            type: 'action',
+            position: 3,
+            appKey: 'custom-api',
+            key: 'httpRequest',
+            parameters: {},
+          }),
+        ),
+      )
+      await waitForLockWaiters(2)
+      await gate.commit()
+    })
 
     expect(await publishResult).toBeInstanceOf(Flow)
     const insertError = await insertResult
@@ -132,18 +166,39 @@ describe('step writes lock the flow row', () => {
 
   it('lets publish proceed after a step update commits first', async () => {
     const stepTrx = await Step.startTransaction()
-    await Step.query(stepTrx).patchAndFetchById(actionStepId, {
-      parameters: { edited: true },
+    let publishResult!: Promise<Flow | Error>
+    await holding(stepTrx, async (launch) => {
+      await Step.query(stepTrx).patchAndFetchById(actionStepId, {
+        parameters: { edited: true },
+      })
+      publishResult = launch(publish())
+      await waitForLockWaiters(1)
+      await stepTrx.commit()
     })
-
-    const publishResult = settle(publish())
-    await waitForLockWaiters(1)
-    await stepTrx.commit()
 
     expect(await publishResult).toBeInstanceOf(Flow)
     const flow = await Flow.query().findById(flowId).throwIfNotFound()
     expect(flow.active).toBe(true)
     const step = await Step.query().findById(actionStepId).throwIfNotFound()
     expect(step.parameters).toEqual({ edited: true })
+  })
+
+  it('lets an execution insert proceed while a step write holds the flow lock', async () => {
+    const stepTrx = await Step.startTransaction()
+    let executionResult!: Promise<Execution | Error>
+    await holding(stepTrx, async (launch) => {
+      await Step.query(stepTrx).patchAndFetchById(actionStepId, {
+        parameters: { edited: true },
+      })
+      executionResult = launch(
+        Execution.query().insert({ flowId, testRun: true }).execute(),
+      )
+      const blocked = new Promise<'blocked'>((resolve) =>
+        setTimeout(() => resolve('blocked'), 2000),
+      )
+      expect(await Promise.race([executionResult, blocked])).toBeInstanceOf(
+        Execution,
+      )
+    })
   })
 })

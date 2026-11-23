@@ -23,7 +23,8 @@ export interface StepContext {
 }
 
 /**
- * Serializes step writes with publishing, which locks the same flow rows.
+ * Serializes step writes with publishing, which updates the same flow rows.
+ * NO KEY UPDATE still lets execution inserts take their foreign key lock.
  *
  * IMPORTANT: Do not filter by `active` in the locking query. Postgres does not
  * lock rows that the filter excludes.
@@ -34,7 +35,7 @@ async function lockFlowsAndAssertNotActive(
   const flows = await flowsQuery
     .select('flows.active')
     .orderBy('flows.id')
-    .forUpdate()
+    .forNoKeyUpdate()
 
   if (flows.some((flow) => flow.active === true)) {
     throw new ValidationError({
@@ -231,6 +232,17 @@ class Step extends BaseStep {
     const command = apps[appKey].actions?.find((action) => action.key === key)
 
     return command
+  }
+
+  /**
+   * Takes the Step hooks' flow lock up front.
+   *
+   * IMPORTANT: Call this before a conditional step write in a READ COMMITTED
+   * transaction. The hook locks only flows of rows it finds, but the write can
+   * then match rows committed in between.
+   */
+  static async lockFlow(flowId: string, trx: Transaction): Promise<void> {
+    await Flow.query(trx).findById(flowId).forNoKeyUpdate()
   }
 
   // Reset step ordering in case of mass deletion or reordering

@@ -4,6 +4,7 @@ import Step from '@/models/step'
 
 export async function removeMrfSteps(flowId: string, trx?: Transaction) {
   const executeQueries = async (trx: Transaction) => {
+    await Step.lockFlow(flowId, trx)
     // delete all mrf action steps
     await Step.query(trx)
       .where('flow_id', flowId)

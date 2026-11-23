@@ -96,7 +96,7 @@ export async function updateStepParametersService({
 
     // IMPORTANT: Lock the flow before the step row. The Step hooks lock the
     // flow on every step write, so the reverse order can deadlock.
-    await Flow.query(trx).findById(pipeId).forUpdate()
+    await Step.lockFlow(pipeId, trx)
 
     // Re-fetch with a row lock to serialise concurrent tool calls for the same
     // step. forUpdate() cannot be used on the withAccessibleSteps query
