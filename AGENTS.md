@@ -55,7 +55,7 @@ explicitly, e.g. `nvm use && pnpm --filter backend run lint`.
 biometric prompt that an agent cannot answer.
 
 - `pnpm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
-  `.env-example` placeholders.
+  `.env-example` placeholders. Each linked worktree gets its own ports. The backend's LaunchDarkly client runs offline.
 - **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
   Those calls fail with third-party authentication errors. That is expected, not a bug to
   fix.
