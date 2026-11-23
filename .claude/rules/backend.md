@@ -111,7 +111,7 @@ Rules for choosing:
 Special cases:
 
 - A rate limit (429, `RATE-LIMITED`) is `internal`. Plumber must drain its queues fast enough to avoid rate limits.
-- Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
+- Any error other than `StepError` or `RetriableError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
 - An error likely caused by an external API changing its format is `internal`, not `third-party` (e.g. an unexpected response body). Plumber owns keeping up with API changes.
 
