@@ -80,18 +80,17 @@ describe('newConnectionCredentials', () => {
 })
 
 describe('ensureDatabricksConnection', () => {
-  it('reads the gate before opening a transaction', async () => {
+  it('opens the transaction only after the flag resolves', async () => {
     stubNewEnv()
-    const order: string[] = []
-    getLdFlagValue.mockImplementation(async () => {
-      order.push('flag')
-      return false
-    })
+    let resolveFlag: (value: boolean) => void = () => undefined
+    getLdFlagValue.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        resolveFlag = resolve
+      }),
+    )
     connectionTransaction.mockImplementation(
-      async (fn: (trx: unknown) => unknown) => {
-        order.push('transaction')
-        return fn({ raw: async (): Promise<void> => undefined })
-      },
+      async (fn: (trx: unknown) => unknown) =>
+        fn({ raw: async (): Promise<void> => undefined }),
     )
     const user = {
       id: 'user-1',
@@ -101,8 +100,12 @@ describe('ensureDatabricksConnection', () => {
       }),
     }
 
-    await ensureDatabricksConnection(user as never, false)
+    const pending = ensureDatabricksConnection(user as never, false)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(connectionTransaction).not.toHaveBeenCalled()
 
-    expect(order).toEqual(['flag', 'transaction'])
+    resolveFlag(false)
+    await pending
+    expect(connectionTransaction).toHaveBeenCalledTimes(1)
   })
 })

@@ -18,7 +18,8 @@ const NEW_CONNECTION_FLAG = 'databricks-new-connection'
 
 type WorkspacePointer = { serverHostname: string; catalog: string }
 
-// Null keeps the user on the legacy workspace.
+// Null when the flag is off or the new credentials are missing. Null only stops
+// new rows from being inserted. A user's existing new row stays in use.
 export async function newConnectionCredentials(userEmail: string) {
   if (!(await getLdFlagValue(NEW_CONNECTION_FLAG, userEmail, false))) {
     return null

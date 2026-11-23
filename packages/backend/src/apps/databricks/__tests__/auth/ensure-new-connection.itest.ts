@@ -115,6 +115,25 @@ async function insertLegacyRow(
   })
 }
 
+async function insertNewRow(user: User): Promise<void> {
+  await user.$relatedQuery('connections').insert({
+    key: APP_KEY,
+    formattedData: {
+      screenName: constructSchemaNameFromEmail(user.email),
+      generation: 'new',
+      env: JSON.stringify({ hostname: 'kept-new', catalog: 'kept-new' }),
+    },
+    verified: true,
+    draft: false,
+  })
+}
+
+function generationOf(connection: Connection): string {
+  return (
+    (connection.formattedData?.generation as string | undefined) ?? 'legacy'
+  )
+}
+
 async function rowsFor(user: User): Promise<Connection[]> {
   return user
     .$relatedQuery('connections')
@@ -247,4 +266,71 @@ describe('ensureDatabricksConnection', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0].formattedData?.generation).toBe('new')
   })
+
+  type Scenario = 'legacy only' | 'no rows' | 'legacy and new'
+  type Caller = 'My Apps' | 'step config' | 'new-step list'
+
+  const SETUP: Record<Scenario, (user: User) => Promise<void>> = {
+    'legacy only': (user) => insertLegacyRow(user, 'legacy'),
+    'no rows': async () => undefined,
+    'legacy and new': async (user) => {
+      await insertLegacyRow(user, 'legacy')
+      await insertNewRow(user)
+    },
+  }
+
+  // [scenario, gate, caller, stored generations after, generations listed for a new step]
+  const MATRIX: [Scenario, boolean, Caller, string[], string[] | null][] = [
+    ['legacy only', false, 'My Apps', ['legacy'], null],
+    ['legacy only', false, 'step config', ['legacy'], null],
+    ['legacy only', false, 'new-step list', ['legacy'], ['legacy']],
+    ['legacy only', true, 'My Apps', ['legacy'], null],
+    ['legacy only', true, 'step config', ['legacy', 'new'], null],
+    ['legacy only', true, 'new-step list', ['legacy', 'new'], ['new']],
+    ['no rows', false, 'My Apps', ['legacy'], null],
+    ['no rows', false, 'step config', ['legacy'], null],
+    ['no rows', false, 'new-step list', ['legacy'], ['legacy']],
+    ['no rows', true, 'My Apps', ['new'], null],
+    ['no rows', true, 'step config', ['new'], null],
+    ['no rows', true, 'new-step list', ['new'], ['new']],
+    ['legacy and new', false, 'My Apps', ['legacy', 'new'], null],
+    ['legacy and new', false, 'step config', ['legacy', 'new'], null],
+    [
+      'legacy and new',
+      false,
+      'new-step list',
+      ['legacy', 'new'],
+      ['legacy', 'new'],
+    ],
+    ['legacy and new', true, 'My Apps', ['legacy', 'new'], null],
+    ['legacy and new', true, 'step config', ['legacy', 'new'], null],
+    ['legacy and new', true, 'new-step list', ['legacy', 'new'], ['new']],
+  ]
+
+  it.each(MATRIX)(
+    '%s, gate %s, %s: stores %j and lists %j',
+    async (scenario, gate, caller, stored, listedForNewStep) => {
+      stubGate(gate)
+      const user = await createUser()
+      await SETUP[scenario](user)
+
+      let listed: { id: string }[] | null = null
+      if (caller === 'My Apps') {
+        await getSystemAddedConnections(user)
+      } else if (caller === 'step config') {
+        await ensureDatabricksConnection(user, true)
+      } else {
+        listed = await listDatabricksConnectionsForNewStep(user)
+      }
+
+      const rows = await rowsFor(user)
+      expect(rows.map(generationOf).sort()).toEqual(stored)
+      if (listedForNewStep) {
+        const byId = new Map(rows.map((row) => [row.id, generationOf(row)]))
+        expect(
+          (listed ?? []).map((connection) => byId.get(connection.id)).sort(),
+        ).toEqual(listedForNewStep)
+      }
+    },
+  )
 })
