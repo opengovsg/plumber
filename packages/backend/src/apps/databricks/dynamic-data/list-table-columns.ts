@@ -7,8 +7,6 @@ import {
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
-import { resolveDatabricksCredentials } from '../auth/resolve-credentials'
-import { parseDatabricksGeneration } from '../common/connection-generation'
 import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickColumnRes } from '../common/types'
 
@@ -26,9 +24,7 @@ const dynamicData: IDynamicData = {
         },
       }
     }
-    const generation = parseDatabricksGeneration($.auth.data?.generation)
-    const credentials = resolveDatabricksCredentials(generation)
-    const { session, endSession } = await createSession($, { generation })
+    const { session, endSession, credentials } = await createSession($)
     try {
       const operation = await session.getColumns({
         tableName: $.step.parameters.tableName as string,

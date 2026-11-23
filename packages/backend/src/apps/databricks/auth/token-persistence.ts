@@ -3,22 +3,17 @@ import axios from 'axios'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import logger from '@/helpers/logger'
 
-import { type DatabricksGeneration } from '../common/connection-generation'
-import { databricksAuthTokenRedisKey } from './auth-token-redis-key'
-import { resolveDatabricksCredentials } from './resolve-credentials'
+import { type DatabricksConnection } from './resolve-connection'
 
 const redisClient = createRedisClient(REDIS_DB_INDEX.APP_DATA)
 
-export async function getDatabricksToken(
-  generation: DatabricksGeneration,
-): Promise<string> {
-  const credentials = resolveDatabricksCredentials(generation)
-  const redisKey = databricksAuthTokenRedisKey({
-    clientId: credentials.clientId,
-    serverHostname: credentials.serverHostname,
-  })
+export async function getDatabricksToken({
+  generation,
+  credentials,
+  tokenRedisKey,
+}: DatabricksConnection): Promise<string> {
   try {
-    const cachedToken = await redisClient.get(redisKey)
+    const cachedToken = await redisClient.get(tokenRedisKey)
     if (cachedToken) {
       logger.info('Databricks OAuth token read', {
         event: 'databricks-oauth-token-read',
@@ -54,7 +49,7 @@ export async function getDatabricksToken(
     // expires_in is in seconds, minus 1 minute of buffer
     const expiresIn = response.data.expires_in - 60
     // Write it into Redis
-    await redisClient.set(redisKey, accessToken, 'EX', expiresIn)
+    await redisClient.set(tokenRedisKey, accessToken, 'EX', expiresIn)
 
     return accessToken
   } catch (e) {
