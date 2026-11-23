@@ -32,7 +32,7 @@ Run from [packages/backend/](../../packages/backend/) or via `pnpm --filter back
 
 ## App plugin model
 
-Every integration lives under [packages/backend/src/apps/<key>/](../../packages/backend/src/apps/) and default-exports an `IApp` (`@plumber/types`) describing metadata, `triggers`, `actions`, optional `auth`, and optional `queue`. New apps must also be registered in [packages/backend/src/apps/index.ts](../../packages/backend/src/apps/index.ts). Triggers/actions are individual modules combined via an `index.ts` array (see e.g. [packages/backend/src/apps/postman/actions/index.ts](../../packages/backend/src/apps/postman/actions/index.ts)). Static assets in each app's `assets/` are served at `/apps/<key>/assets/...` via [packages/backend/src/helpers/app-assets-handler.ts](../../packages/backend/src/helpers/app-assets-handler.ts).
+Integrations live under [packages/backend/src/apps/](../../packages/backend/src/apps/). [apps.md](apps.md) holds the rules for adding or changing an app, trigger or action, and loads when you edit those files.
 
 ## Flow execution pipeline
 
