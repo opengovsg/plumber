@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import {
   databricksConfig,
   databricksConfigSchema,
@@ -12,7 +14,11 @@ const NEW_CONFIGURATION_VARS = [
   'DATABRICKS_NEW_CLIENT_SECRET',
 ] as const
 
-function readNewConfiguration() {
+export type DatabricksCredentials = Readonly<
+  z.infer<typeof databricksConfigSchema>
+>
+
+function readNewConfiguration(): DatabricksCredentials {
   const parsed = databricksConfigSchema.safeParse(readNewDatabricksConfig())
   if (!parsed.success) {
     throw new Error(
@@ -22,7 +28,9 @@ function readNewConfiguration() {
   return Object.freeze(parsed.data)
 }
 
-export function resolveDatabricksCredentials(generation: 'legacy' | 'new') {
+export function resolveDatabricksCredentials(
+  generation: 'legacy' | 'new',
+): DatabricksCredentials {
   switch (generation) {
     case 'legacy':
       return databricksConfig

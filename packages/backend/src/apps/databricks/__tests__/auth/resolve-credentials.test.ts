@@ -72,4 +72,13 @@ describe('resolveDatabricksCredentials', () => {
 
     expect(() => resolve('new')).toThrow(/DATABRICKS_NEW_SERVER_HOSTNAME/)
   })
+
+  it('freezes the legacy and new credentials', async () => {
+    stubLegacyEnv()
+    stubNewEnv()
+    const resolve = await loadResolver()
+
+    expect(Object.isFrozen(resolve('legacy'))).toBe(true)
+    expect(Object.isFrozen(resolve('new'))).toBe(true)
+  })
 })
