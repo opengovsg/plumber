@@ -49,8 +49,15 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const [deleteConnection, { loading: isDeletingConnection }] =
     useMutation(DELETE_CONNECTION)
 
-  const { id, key, formattedData, createdAt, updatedAt, flowCount, hasPublishedFlows } =
-    props.connection
+  const {
+    id,
+    key,
+    formattedData,
+    createdAt,
+    updatedAt,
+    flowCount,
+    hasPublishedFlows,
+  } = props.connection
 
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
