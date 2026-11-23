@@ -62,10 +62,16 @@ describe('createSession', () => {
   it.each([
     ['legacy', undefined, LEGACY],
     ['new', 'new', CREATED],
-  ])(
+  ] as const)(
     'connects to the %s workspace with its own catalog',
-    async (_label, generation, credentials) => {
+    async (label, generation, credentials) => {
       const result = await createSession(withGeneration(generation))
+
+      expect(mocks.getDatabricksToken).toHaveBeenCalledWith({
+        generation: label,
+        credentials,
+        tokenRedisKey: `databricks:authToken:${credentials.clientId}:${credentials.serverHostname}`,
+      })
 
       expect(mocks.connect).toHaveBeenCalledWith({
         authType: 'access-token',
