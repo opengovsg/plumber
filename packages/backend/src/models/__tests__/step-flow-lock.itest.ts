@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import type { Transaction } from 'objection'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import deleteConnection from '@/graphql/mutations/delete-connection'
 import Connection from '@/models/connection'
 import Execution from '@/models/execution'
@@ -201,6 +202,73 @@ describe('step writes lock the flow row', () => {
     expect(step.parameters).toEqual({ edited: true })
   })
 
+  it('rejects a publish when another user edits the pipe while it waits on the flow lock', async () => {
+    const otherUser = await User.query().insert({
+      id: randomUUID(),
+      email: `${randomUUID()}@example.com`,
+    })
+    const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    flow.steps = await flow.$relatedQuery('steps').orderBy('position')
+    const seenUpdatedAt = String(new Date(flow.updatedAt).getTime())
+
+    const editTrx = await Step.startTransaction()
+    let publishResult!: Promise<Flow | Error>
+    await holding(editTrx, async (launch) => {
+      await Step.query(editTrx).patchAndFetchById(actionStepId, {
+        parameters: { edited: true },
+      })
+      await Flow.query(editTrx)
+        .findById(flowId)
+        .patch({ updatedBy: otherUser.id })
+      publishResult = launch(
+        updateFlowStatusService({
+          flow,
+          active: true,
+          userId: user.id,
+          updatedAt: seenUpdatedAt,
+        }),
+      )
+      await waitForLockWaiters(1)
+      await editTrx.commit()
+    })
+
+    const publishError = await publishResult
+    expect(publishError).toBeInstanceOf(BadUserInputError)
+    expect((publishError as Error).message).toBe(
+      'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.',
+    )
+    const finalFlow = await Flow.query().findById(flowId).throwIfNotFound()
+    expect(finalFlow.active).toBe(false)
+  })
+
+  it('keeps a config change that commits while publish waits on the flow lock', async () => {
+    const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    flow.steps = await flow.$relatedQuery('steps').orderBy('position')
+
+    const configTrx = await Flow.startTransaction()
+    let publishResult!: Promise<Flow | Error>
+    await holding(configTrx, async (launch) => {
+      await Flow.query(configTrx)
+        .findById(flowId)
+        .patch({ config: { maxQps: 5 }, updatedBy: user.id })
+      publishResult = launch(
+        updateFlowStatusService({
+          flow,
+          active: true,
+          userId: user.id,
+          updatedAt: flow.updatedAt,
+        }),
+      )
+      await waitForLockWaiters(1)
+      await configTrx.commit()
+    })
+
+    expect(await publishResult).toBeInstanceOf(Flow)
+    const finalFlow = await Flow.query().findById(flowId).throwIfNotFound()
+    expect(finalFlow.active).toBe(true)
+    expect(finalFlow.config).toEqual({ maxQps: 5 })
+  })
+
   it('lets an execution insert proceed while a step write holds the flow lock', async () => {
     const stepTrx = await Step.startTransaction()
     let executionResult!: Promise<Execution | Error>
@@ -340,9 +408,24 @@ describe('publishing and deleting a connection', () => {
       }
     })
 
-    const published = (await publishResult) instanceof Flow
-    const deleted = (await deleteResult) === true
-    expect(published !== deleted).toBe(true)
+    // Exactly one side wins. The loser fails with its own rule's error.
+    const publishOutcome = await publishResult
+    const deleteOutcome = await deleteResult
+    const [winner, loser, loserMessage] =
+      publishOutcome instanceof Flow
+        ? [
+            publishOutcome,
+            deleteOutcome,
+            'This connection is used by a published pipe. Unpublish the pipe or switch its connection before deleting.',
+          ]
+        : [
+            deleteOutcome,
+            publishOutcome,
+            'This pipe uses a connection that has been deleted. Switch the step to another connection before publishing.',
+          ]
+    expect(winner instanceof Error).toBe(false)
+    expect(loser).toBeInstanceOf(BadUserInputError)
+    expect((loser as Error).message).toBe(loserMessage)
     const finalFlow = await Flow.query().findById(flowId).throwIfNotFound()
     const finalConnectionB = await Connection.query()
       .withSoftDeleted()

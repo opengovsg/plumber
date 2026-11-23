@@ -139,6 +139,17 @@ describe('updateFlowStatus', () => {
     }
   })
 
+  // Unpublishing re-reads the flow row under the flow lock, so the row must
+  // be active too.
+  const markFlowActive = async () => {
+    fakeFlow.active = true
+    const seedFlow = await Flow.query().findById(fakeFlow.id).throwIfNotFound()
+    await seedFlow.$query().patch({
+      active: true,
+      publishedAt: new Date().toISOString(),
+    })
+  }
+
   it('returns the flow without changes if the active status did not change', async () => {
     // Set the flow status to true and provide the same value in input.
     fakeFlow.active = true
@@ -340,7 +351,7 @@ describe('updateFlowStatus', () => {
 
   it('deactivates the flow and removes the repeatable job for non-webhook triggers', async () => {
     // For deactivation, ensure the current flow is active and we are setting it to inactive.
-    fakeFlow.active = true
+    await markFlowActive()
 
     // Simulate that a repeatable job exists for this flow. The new code finds
     // the job via `key.startsWith("flow-<id>")`, so the mocked key must match
@@ -393,7 +404,7 @@ describe('updateFlowStatus', () => {
 
   it('does not perform any queue actions when the trigger type is webhook on deactivation', async () => {
     // Flow deactivation but the trigger is of type webhook.
-    fakeFlow.active = true
+    await markFlowActive()
 
     fakeTriggerStep.getTriggerCommand.mockResolvedValue({
       type: 'webhook',
@@ -468,7 +479,7 @@ describe('updateFlowStatus', () => {
     it('still unpublishes when a step connection is deleted', async () => {
       const connection = await attachConnectionToActionStep()
       await Connection.query().findById(connection.id).delete()
-      fakeFlow.active = true
+      await markFlowActive()
 
       const result = await updateFlowStatus(
         {},
@@ -649,7 +660,7 @@ describe('updateFlowStatus', () => {
     })
 
     it('logs a warning and does not call removeRepeatableByKey when no repeatable job is found on unpublish', async () => {
-      fakeFlow.active = true
+      await markFlowActive()
       // No repeatable job whose key starts with `flow-<id>`
       flowQueue.getRepeatableJobs = vi
         .fn()

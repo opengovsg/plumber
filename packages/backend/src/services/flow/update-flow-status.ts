@@ -107,10 +107,9 @@ export async function updateFlowStatusService({
     return flow
   }
 
-  flow.assertNotUpdatedSince(updatedAt, userId)
-
   const jobName = `${JOB_NAME}-${flow.id}`
-  const previousPublishedAt = flow.publishedAt
+  let previousPublishedAt = flow.publishedAt
+  let hasChanged = false
 
   /**
    * Patch first inside the transaction, then perform the queue op.
@@ -119,9 +118,22 @@ export async function updateFlowStatusService({
    * the repeatable job exists.
    */
   await Flow.transaction(async (trx) => {
-    // IMPORTANT: Lock the flow before reading its steps. Step writes take the
-    // same lock, so the steps and connections checked below stay current.
-    await Step.lockFlow(flow.id, trx)
+    // IMPORTANT: Lock the flow before reading it or its steps. Step writes take
+    // the same lock, so everything checked below stays current until commit.
+    const lockedFlow = await Flow.query(trx)
+      .findById(flow.id)
+      .forNoKeyUpdate()
+      .throwIfNotFound()
+    flow.active = lockedFlow.active
+    flow.publishedAt = lockedFlow.publishedAt
+    flow.updatedAt = lockedFlow.updatedAt
+    flow.updatedBy = lockedFlow.updatedBy
+    flow.config = lockedFlow.config
+    if (flow.active === active) {
+      return
+    }
+    flow.assertNotUpdatedSince(updatedAt, userId)
+    previousPublishedAt = flow.publishedAt
 
     if (active) {
       const steps = await Step.query(trx)
@@ -254,7 +266,12 @@ export async function updateFlowStatusService({
         }
       }
     }
+    hasChanged = true
   })
+
+  if (!hasChanged) {
+    return flow
+  }
 
   // After the commit, so a rolled-back change sends nothing.
   captureServerEvent(
