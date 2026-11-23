@@ -22,7 +22,7 @@ const WORKTREE_PORT_LOCK = WORKTREE_PORT_START - 1
 const WORKTREE_PORT_FILE = 'plumber-port'
 
 // Connects instead of test-listening, because SO_REUSEADDR lets a test listen succeed on a held port.
-function isPortInUse(port, host) {
+export function isPortInUse(port, host) {
   return new Promise((resolve) => {
     const socket = connect({ port, host })
     socket.setTimeout(1000)

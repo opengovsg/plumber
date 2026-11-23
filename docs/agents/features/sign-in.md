@@ -21,7 +21,7 @@ Preconditions:
 
 - **Open the form.** Go to `/login`. The button `Get OTP` is visible.
 - **Request an OTP.** Fill the field with placeholder `e.g. user@agency.gov.sg` and choose `Get OTP`. The label `Enter OTP sent to <email>` is visible.
-- **Read the OTP.** Read the newest `OTP for <email>` line in the dev server log. It is a 6-character code.
+- **Read the OTP.** Run `node scripts/sample-dev-server.mjs otp <email>`. It prints a 6-character code.
 - **Verify.** Fill the field with placeholder `ABC123` and choose `Verify OTP`. The URL reaches `/flows`.
 - **Proof.** Close the announcement dialog if it appears, then capture the page. It shows `How do you want to create your workflow?` and `Start from scratch`.
 
