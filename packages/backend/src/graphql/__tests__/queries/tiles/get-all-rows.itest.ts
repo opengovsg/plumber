@@ -237,6 +237,24 @@ describe.each<[DatabaseType]>([['ddb'], ['pg']])(
         )
       })
 
+      it('should not update last accessed at for other collaborators', async () => {
+        const oldLastAccessedAt = new Date().toISOString()
+        await TableCollaborator.query()
+          .patch({
+            lastAccessedAt: oldLastAccessedAt,
+          })
+          .where('table_id', dummyTable.id)
+          .andWhere('user_id', editor.id)
+        await getAllRows({}, { tableId: dummyTable.id }, context)
+        const { lastAccessedAt } = (await TableCollaborator.query().findOne({
+          table_id: dummyTable.id,
+          user_id: editor.id,
+        }))!
+        expect(new Date(lastAccessedAt!).getTime()).toEqual(
+          new Date(oldLastAccessedAt).getTime(),
+        )
+      })
+
       it('should not update last accessed at for admin operations', async () => {
         context.isAdminOperation = true
         const oldLastAccessedAt = new Date().toISOString()
