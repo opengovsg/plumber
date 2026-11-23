@@ -45,7 +45,7 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 
 ## Running tests
 
-Run checks through Turbo, as CI does.
+Run checks and builds through Turbo, as CI does. Turbo builds `@plumber/backend-models` first. The bare package scripts fail with `TS2307` on a clean checkout.
 
 ```bash
 pnpm exec turbo run typecheck --filter=backend-analytics
