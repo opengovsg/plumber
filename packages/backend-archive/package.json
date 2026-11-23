@@ -7,7 +7,7 @@
     "build": "tsc && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "test:unit": "vitest --config ./vitest.config.ts",
-    "test:integration": "vitest --config ./vitest.config.integration.ts",
+    "test:integration": "vitest run --config ./vitest.config.integration.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "format": "oxfmt --check .",

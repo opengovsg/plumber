@@ -291,6 +291,8 @@ pnpm --filter backend-archive run test:integration
 
 A migration that renames or drops a column an export reads fails these tests in CI. Add an `*.itest.ts` for every new export table.
 
+The script migrates a fresh database on each run. A watch or UI session migrates only when it starts, so restart it after editing a migration.
+
 ---
 
 ## Production deployment
