@@ -1,4 +1,4 @@
-import type { IJSONObject } from '@plumber/types'
+import type { IFlowAiBuilderSuggestion, IJSONObject } from '@plumber/types'
 import z from 'zod'
 
 import { createMrfSteps } from '@/apps/formsg/triggers/new-submission/create-mrf-steps'
@@ -305,6 +305,11 @@ export async function createFlowWithStepsService({
   // An MRF pipe's actions wait until its stage steps exist, because the stage
   // steps are inserted straight after the trigger.
   const stepsToInsert = mrfWorkflow ? steps.slice(0, 1) : steps
+  const suggested: IFlowAiBuilderSuggestion[] = steps.map((step) => ({
+    position: step.position,
+    appKey: step.appKey,
+    key: step.key ?? null,
+  }))
 
   const flow = await Flow.transaction(async (trx) => {
     const createdFlow = await Flow.query(trx).insertAndFetch({
@@ -312,14 +317,7 @@ export async function createFlowWithStepsService({
       name: trimmedName,
       active: false,
       config: {
-        aiBuilderConfig: {
-          traceId,
-          suggested: steps.map((step) => ({
-            position: step.position,
-            appKey: step.appKey,
-            key: step.key ?? null,
-          })),
-        },
+        aiBuilderConfig: { traceId, suggested },
       },
     })
 
@@ -344,6 +342,13 @@ export async function createFlowWithStepsService({
         }
       }),
     )
+
+    // Analytics matches suggestions to saved steps by id, because MRF stage
+    // steps shift positions.
+    for (const [index, insertedStep] of insertedSteps.entries()) {
+      suggested[index].stepId = insertedStep.id
+    }
+    await Flow.saveAiBuilderSuggestions(createdFlow.id, suggested, trx)
 
     // Markers point forward, so they need every step's id first.
     for (const [index, step] of stepsToInsert.entries()) {
@@ -397,6 +402,7 @@ export async function createFlowWithStepsService({
       flowId: flow.id,
       actions: steps.slice(1),
       traceId,
+      suggested,
     })
     // Re-read, since createMrfSteps added steps and reordered positions.
     const withMrfSteps = await flow.$query().withGraphFetched('steps')
@@ -404,5 +410,6 @@ export async function createFlowWithStepsService({
     return withMrfSteps
   }
 
-  return flow.$fetchGraph('steps')
+  // Re-read, since the suggestions gained step ids after the insert.
+  return flow.$query().withGraphFetched('steps')
 }

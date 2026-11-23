@@ -87,6 +87,11 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       const result = await createFlowWithSteps({}, params, context)
 
+      // Verify steps were created and inserted correctly
+      const steps = await Step.query()
+        .where('flow_id', result!.id!)
+        .orderBy('position', 'asc')
+
       // Verify flow was created
       expect(result).toBeDefined()
       expect(result!.name).toBe('My Test Flow')
@@ -94,18 +99,28 @@ describe('createFlowWithSteps mutation integration tests', () => {
         aiBuilderConfig: {
           traceId: '123',
           suggested: [
-            { position: 1, appKey: 'scheduler', key: 'everyHour' },
-            { position: 2, appKey: 'postman', key: 'sendTransactionalEmail' },
-            { position: 3, appKey: 'slack', key: 'sendMessageToChannel' },
+            {
+              position: 1,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              stepId: steps[0].id,
+            },
+            {
+              position: 2,
+              appKey: 'postman',
+              key: 'sendTransactionalEmail',
+              stepId: steps[1].id,
+            },
+            {
+              position: 3,
+              appKey: 'slack',
+              key: 'sendMessageToChannel',
+              stepId: steps[2].id,
+            },
           ],
         },
       })
       expect(result!.userId).toBe(testUser.id)
-
-      // Verify steps were created and inserted correctly
-      const steps = await Step.query()
-        .where('flow_id', result!.id!)
-        .orderBy('position', 'asc')
 
       expect(steps).toHaveLength(3)
 
