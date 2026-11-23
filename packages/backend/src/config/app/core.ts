@@ -1,5 +1,4 @@
 import '@/config/datetime'
-import appEnvConfig from './load-app-env'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'
@@ -8,6 +7,7 @@ import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { posthogHost, posthogProjectToken } from '@plumber/shared'
 import { z } from 'zod'
 
+import appEnvConfig from './load-app-env'
 import { requireEnv } from './require-env'
 
 // IMPORTANT: ECS runs `node` directly, so npm_package_version is unset there.
