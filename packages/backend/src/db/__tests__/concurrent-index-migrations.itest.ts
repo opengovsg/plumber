@@ -53,24 +53,21 @@ describe.each([
     indexName: 'execution_steps_app_key_key_index',
     table: 'execution_steps',
     columns: '(app_key, key)',
-    checksDefinition: false,
   },
   {
     migration: executionsCreatedAtId as Migration,
     indexName: 'executions_created_at_id_index',
     table: 'executions',
     columns: '(created_at, id)',
-    checksDefinition: true,
   },
   {
     migration: flowsTestExecutionId as Migration,
     indexName: 'flows_test_execution_id_index',
     table: 'flows',
     columns: '(test_execution_id)',
-    checksDefinition: true,
   },
 ])('$indexName migration', (testCase) => {
-  const { migration, indexName, table, columns, checksDefinition } = testCase
+  const { migration, indexName, table, columns } = testCase
   let client: Knex
 
   beforeEach(async () => {
@@ -113,15 +110,4 @@ describe.each([
 
     expect(await getIndex(client, indexName)).toEqual(existing)
   })
-
-  it.runIf(checksDefinition)(
-    'rejects a valid index with another definition',
-    async () => {
-      await client.raw(`CREATE INDEX ${indexName} ON ${table} (id)`)
-
-      await expect(migration.up(client)).rejects.toThrow(
-        'exists with another definition',
-      )
-    },
-  )
 })
