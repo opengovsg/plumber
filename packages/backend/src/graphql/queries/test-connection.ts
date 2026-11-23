@@ -1,5 +1,5 @@
 import apps from '@/apps'
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import User from '@/models/user'
 import { getConnection, verifyConnection } from '@/services/connection'
@@ -45,6 +45,10 @@ const testConnection: QueryResolvers['testConnection'] = async (
       .findOne({ id: connectionId })
       .throwIfNotFound()
     userRole = 'owner'
+  }
+
+  if (!connection) {
+    throw new BadUserInputError('Connection not found')
   }
 
   const app = apps[connection.key]

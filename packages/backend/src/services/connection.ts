@@ -77,15 +77,18 @@ export async function verifyConnection({
   let isStillVerified: boolean
   let errorMessage: string | undefined
   try {
+    if (!app.auth?.isStillVerified) {
+      throw new Error('App does not support connection verification')
+    }
     isStillVerified = !!(await app.auth.isStillVerified($))
   } catch (err) {
     isStillVerified = false
-    errorMessage = err.message
+    errorMessage = err instanceof Error ? err.message : String(err)
     logger.error(`Error verifying CONNECTION ID: ${connectionId}`, {
       event: 'test-connection',
       flowId,
-      errMessage: err.message,
-      errStack: err.stack,
+      errMessage: errorMessage,
+      errStack: err instanceof Error ? err.stack : undefined,
     })
   }
 
