@@ -6,6 +6,7 @@ import { archiveExecution } from './archive-execution'
 import { archivalConfig } from './config'
 import { archivalDb, archivalDbReader } from './db'
 import logger from './logger'
+import { assertRequiredIndexes } from './required-indexes'
 import { archiveS3Client, putArchiveObject } from './s3-client'
 import type { ExecutionRow, ExecutionStepRow } from './types'
 
@@ -26,6 +27,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - retentionDays)
+
+  await assertRequiredIndexes()
 
   // Pages oldest first, so a run cut short by the runtime limit leaves only newer rows behind.
   // createdAt is Postgres text, because a JS Date drops microseconds and would re-select the last row.

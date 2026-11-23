@@ -87,6 +87,7 @@ let capturedTestExecAntiJoin: {
 let capturedDeletedFlowsWhereIn: any = null
 // Bindings of each batch query's keyset condition
 let capturedKeysets: string[][] = []
+let unusableIndex: string | null = null
 
 // Rows without a cursorCreatedAt get their createdAt in Postgres text form.
 function setupDb(
@@ -180,7 +181,16 @@ function setupDb(
   ;(archivalDbReader as any).mockImplementation(tableRouter)
   ;(archivalDbReader as any).raw = vi
     .fn()
-    .mockImplementation((expr: string) => expr)
+    .mockImplementation((expr: string, bindings?: string[][]) =>
+      expr.includes('pg_index')
+        ? Promise.resolve({
+            rows: bindings![0].map((name) => ({
+              name,
+              usable: name !== unusableIndex,
+            })),
+          })
+        : expr,
+    )
   ;(archivalDb as any).mockImplementation(tableRouter)
 }
 
@@ -201,6 +211,7 @@ describe('runArchivalLoop', () => {
     ;(archivalConfig as any).archiveDeletedFlowsOnly = false
     ;(archivalConfig as any).archiveTestRuns = false
     ;(archivalConfig as any).archiveBatchSize = 500
+    unusableIndex = null
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -211,7 +222,7 @@ describe('runArchivalLoop', () => {
 
   it('calls archiveExecution for each execution in a batch', async () => {
     const batch = [makeExecution('e1'), makeExecution('e2')]
-    setupDb([batch, []])
+    setupDb([batch])
 
     await runArchivalLoop(new AbortController().signal)
 
@@ -251,10 +262,7 @@ describe('runArchivalLoop', () => {
       .mockRejectedValueOnce(new Error('S3 timeout'))
       .mockResolvedValue('archived')
 
-    setupDb([
-      [makeExecution('e1'), makeExecution('e2'), makeExecution('e3')],
-      [],
-    ])
+    setupDb([[makeExecution('e1'), makeExecution('e2'), makeExecution('e3')]])
 
     await runArchivalLoop(new AbortController().signal)
 
@@ -264,7 +272,7 @@ describe('runArchivalLoop', () => {
   it('logs the execution ID when the step query fails', async () => {
     vi.mocked(archiveExecution).mockResolvedValue('archived')
     const dbError = new Error('connection reset')
-    setupDb([[makeExecution('e1'), makeExecution('e2')], []], {
+    setupDb([[makeExecution('e1'), makeExecution('e2')]], {
       e1: dbError,
       e2: [],
     })
@@ -277,6 +285,16 @@ describe('runArchivalLoop', () => {
       err: dbError,
     })
     expect(archiveExecution).toHaveBeenCalledTimes(1)
+  })
+
+  it('fails before the first batch when a required index is not usable', async () => {
+    unusableIndex = 'flows_test_execution_id_index'
+    setupDb([[makeExecution('e1')]])
+
+    await expect(runArchivalLoop(new AbortController().signal)).rejects.toThrow(
+      'flows_test_execution_id_index',
+    )
+    expect(archivalDbReader).not.toHaveBeenCalledWith('executions')
   })
 
   describe('keyset cursor', () => {
@@ -306,7 +324,6 @@ describe('runArchivalLoop', () => {
           { ...makeExecution('e2'), cursorCreatedAt: tiedAt },
           { ...makeExecution('e3'), cursorCreatedAt: tiedAt },
         ],
-        [],
       ])
 
       await runArchivalLoop(new AbortController().signal)
@@ -331,7 +348,7 @@ describe('runArchivalLoop', () => {
 
   it('counts skipped executions when archiveExecution returns skipped', async () => {
     vi.mocked(archiveExecution).mockResolvedValue('skipped')
-    setupDb([[makeExecution('e1')], []])
+    setupDb([[makeExecution('e1')]])
 
     // Should complete without throwing even when all executions are skipped
     await expect(
@@ -341,7 +358,7 @@ describe('runArchivalLoop', () => {
 
   it('counts skipped executions when archiveExecution throws', async () => {
     vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 timeout'))
-    setupDb([[makeExecution('e1')], []])
+    setupDb([[makeExecution('e1')]])
 
     await expect(
       runArchivalLoop(new AbortController().signal),
@@ -437,7 +454,7 @@ describe('runArchivalLoop', () => {
 
   it('uses archivalDbReader for eligibility + execution_steps, archivalDb for the DELETE', async () => {
     const batch = [makeExecution('e1')]
-    setupDb([batch, []])
+    setupDb([batch])
 
     await runArchivalLoop(new AbortController().signal)
 
@@ -649,7 +666,7 @@ describe('runArchivalLoop', () => {
     it('accumulates counts per appKey:key from archived execution steps', async () => {
       const exec1 = makeExecution('e1')
       const exec2 = makeExecution('e2')
-      setupDb([[exec1, exec2], []], {
+      setupDb([[exec1, exec2]], {
         e1: [
           makeStep({
             id: 's1',
@@ -691,7 +708,7 @@ describe('runArchivalLoop', () => {
 
     it('buckets counts per appKey:key by SGT date, not UTC date', async () => {
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           // 2024-01-01T23:30 UTC is 2024-01-02T07:30 SGT (UTC+8).
           makeStep({
@@ -725,7 +742,7 @@ describe('runArchivalLoop', () => {
 
     it('increments nullStepCount for steps where appKey or key is null', async () => {
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           makeStep({
             id: 's1',
@@ -763,7 +780,7 @@ describe('runArchivalLoop', () => {
     it('does not count steps from skipped executions', async () => {
       vi.mocked(archiveExecution).mockResolvedValueOnce('skipped')
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           makeStep({
             id: 's1',
@@ -786,7 +803,7 @@ describe('runArchivalLoop', () => {
 
     it('writes meta file to _meta/runs/{runAt}.json with correct summary fields', async () => {
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           makeStep({
             id: 's1',
@@ -821,7 +838,7 @@ describe('runArchivalLoop', () => {
 
     it('does not log run.complete when the meta file write fails', async () => {
       vi.mocked(putArchiveObject).mockRejectedValueOnce(new Error('S3 down'))
-      setupDb([[makeExecution('e1')], []], { e1: [] })
+      setupDb([[makeExecution('e1')]], { e1: [] })
 
       await expect(
         runArchivalLoop(new AbortController().signal),
@@ -834,13 +851,10 @@ describe('runArchivalLoop', () => {
 
     it('logs the run counts when the meta file write fails', async () => {
       vi.mocked(putArchiveObject).mockRejectedValueOnce(new Error('S3 down'))
-      setupDb(
-        [[makeExecution('e1'), makeExecution('e2', { testRun: true })], []],
-        {
-          e1: [],
-          e2: [],
-        },
-      )
+      setupDb([[makeExecution('e1'), makeExecution('e2', { testRun: true })]], {
+        e1: [],
+        e2: [],
+      })
 
       await expect(
         runArchivalLoop(new AbortController().signal),
@@ -865,7 +879,6 @@ describe('runArchivalLoop', () => {
             makeExecution('e2', { testRun: true }),
             makeExecution('e3', { testRun: true }),
           ],
-          [],
         ],
         { e1: [], e2: [], e3: [] },
       )
