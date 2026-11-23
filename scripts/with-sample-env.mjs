@@ -11,14 +11,5 @@ if (command.length === 0) {
 }
 
 const ports = await getWorktreePorts()
-const env = {
-  // Every flag reads its fallback value, since the placeholder SDK key fails LD auth.
-  LAUNCH_DARKLY_OFFLINE: 'true',
-  ...ports,
-  ...process.env,
-}
-// oxlint-disable-next-line no-console
-console.log(
-  `Backend: http://localhost:${env.DEV_BACKEND_PORT ?? 3000}  Frontend: http://localhost:${env.DEV_FRONTEND_PORT ?? 3001}`,
-)
-run(command, env)
+// Every flag reads its fallback value, since the placeholder SDK key fails LD auth.
+run(command, { LAUNCH_DARKLY_OFFLINE: 'true', ...ports, ...process.env })
