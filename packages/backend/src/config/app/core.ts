@@ -1,5 +1,5 @@
 import '@/config/datetime'
-import './load-app-env'
+import appEnvConfig from './load-app-env'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'
@@ -169,7 +169,9 @@ const coreConfig: CoreConfig = {
     process.env.LAUNCH_DARKLY_SDK_KEY,
   ),
   // The .env-example SDK key fails LD auth, which blocks every flag read, including login.
-  launchDarklyOffline: process.env.LAUNCH_DARKLY_OFFLINE === 'true',
+  // IMPORTANT: deployed environments must never skip LD, so only development honours it.
+  launchDarklyOffline:
+    appEnvConfig.isDev && process.env.LAUNCH_DARKLY_OFFLINE === 'true',
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
   tilesPostgres: {
