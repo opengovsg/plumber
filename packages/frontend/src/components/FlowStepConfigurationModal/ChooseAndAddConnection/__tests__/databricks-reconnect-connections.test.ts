@@ -23,11 +23,6 @@ describe('databricksReconnectConnections', () => {
   })
 
   it('returns the legacy row when the stored id is absent and no new row is listed', () => {
-    const missingGeneration = { id: 'legacy-id' }
-
-    expect(
-      databricksReconnectConnections([missingGeneration], 'transferred-id'),
-    ).toEqual([missingGeneration])
     expect(databricksReconnectConnections([legacy], 'transferred-id')).toEqual([
       legacy,
     ])
@@ -54,16 +49,23 @@ describe('pickDatabricksConnection', () => {
     expect(pickDatabricksConnection([missingId])).toBeUndefined()
   })
 
+  it('skips a row with an invalid generation', () => {
+    const invalid = { id: 'invalid-id', generation: null }
+
+    expect(pickDatabricksConnection([invalid, legacy])).toEqual(legacy)
+    expect(pickDatabricksConnection([invalid])).toBeUndefined()
+  })
+
   it('returns nothing for an empty list', () => {
     expect(pickDatabricksConnection([])).toBeUndefined()
   })
 })
 
 describe('databricksGeneration', () => {
-  it('treats anything but new as legacy', () => {
+  it('accepts only legacy and new', () => {
     expect(databricksGeneration(created)).toBe('new')
     expect(databricksGeneration(legacy)).toBe('legacy')
-    expect(databricksGeneration({ id: 'x' })).toBe('legacy')
-    expect(databricksGeneration({ id: 'x', generation: null })).toBe('legacy')
+    expect(databricksGeneration({ id: 'x', generation: null })).toBeNull()
+    expect(databricksGeneration({ id: 'x', generation: 'v3' })).toBeNull()
   })
 })
