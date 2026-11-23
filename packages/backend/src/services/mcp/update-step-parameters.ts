@@ -110,6 +110,7 @@ async function isDatabricksConnectionVerified(
     app,
     $,
     connection,
+    connectionId,
     flowId: flow.id,
   })
   return isStillVerified
@@ -323,19 +324,12 @@ export async function updateStepParametersService({
           err instanceof Error ? err.message : String(err)
       }
     } else if (rawApp?.key === DATABRICKS_APP_KEY) {
+      let verified: boolean | null
       try {
-        const verified = await withTimeout(
+        verified = await withTimeout(
           isDatabricksConnectionVerified(user, stepId, connectionId),
           DATABRICKS_VERIFY_TIMEOUT_MS,
         )
-        if (verified) {
-          await Step.query()
-            .patchAndFetchById(stepId, { connectionId })
-            .throwIfNotFound()
-          result.step.connectionId = connectionId
-        } else {
-          result.connectionError = DATABRICKS_NOT_ONBOARDED_MESSAGE
-        }
       } catch (err) {
         logger.error('AI builder could not verify a Databricks connection', {
           event: 'ai-builder-databricks-verify-error',
@@ -343,7 +337,19 @@ export async function updateStepParametersService({
           stepId,
           connectionId,
         })
+        verified = null
+      }
+
+      // The write stays outside the try so a published-pipe rejection keeps its own error.
+      if (verified === null) {
         result.connectionError = DATABRICKS_VERIFY_FAILED_MESSAGE
+      } else if (!verified) {
+        result.connectionError = DATABRICKS_NOT_ONBOARDED_MESSAGE
+      } else {
+        await Step.query()
+          .patchAndFetchById(stepId, { connectionId })
+          .throwIfNotFound()
+        result.step.connectionId = connectionId
       }
     } else {
       await Step.query()

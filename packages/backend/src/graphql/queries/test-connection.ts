@@ -72,6 +72,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
     app,
     $,
     connection,
+    connectionId,
     flowId,
   })
 
