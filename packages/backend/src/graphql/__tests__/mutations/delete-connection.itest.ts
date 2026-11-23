@@ -34,9 +34,6 @@ describe('deleteConnection', () => {
   }) => {
     const flow = await generateMockFlow(owningContext, randomUUID())
     await Flow.query().findById(flow.id).patch({ name })
-    // Published state is set via knex: Flow.$beforeUpdate rejects publishing a
-    // pipe without completed steps, which this fixture does not need.
-    await Flow.knex().table('flows').where('id', flow.id).update({ active })
     const step = await generateMockStep(
       owningContext,
       'createTableRow',
@@ -46,6 +43,9 @@ describe('deleteConnection', () => {
       2,
     )
     await Step.query().findById(step.id).patch({ connectionId: connection.id })
+    // IMPORTANT: Publish last. Step hooks reject edits to a published pipe.
+    // Knex skips Flow.$beforeUpdate, which rejects publishing incomplete steps.
+    await Flow.knex().table('flows').where('id', flow.id).update({ active })
     return flow
   }
 

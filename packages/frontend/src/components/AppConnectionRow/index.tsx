@@ -63,6 +63,8 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const onConnectionDelete = useCallback(async () => {
     await deleteConnection({
       variables: { input: { id } },
+      // onError owns the error toast, so skip the global one.
+      context: { autoSnackbar: false },
       update: (cache) => {
         const connectionCacheId = cache.identify({
           __typename: 'Connection',

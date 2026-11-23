@@ -1,8 +1,11 @@
+import type { Transaction } from 'objection'
+
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 import { validateFlowBlocks } from '@/apps/toolbox/common/validate-end-step'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
@@ -10,8 +13,9 @@ import {
 import logger from '@/helpers/logger'
 import { getRepeatDelayedJobIds } from '@/helpers/repeatable-jobs'
 import { captureServerEvent } from '@/helpers/server-events'
+import Connection from '@/models/connection'
 import Flow from '@/models/flow'
-import type Step from '@/models/step'
+import Step from '@/models/step'
 import flowQueue from '@/queues/flow'
 
 import {
@@ -47,6 +51,43 @@ const validateFlowSteps = (steps: Step[]) => {
         forEachSteps[1].config.approval?.branch)
   ) {
     throw new Error('Flow must have exactly one for-each step.')
+  }
+}
+
+/**
+ * Locks the connections used by the flow's steps until the transaction ends.
+ * This stops deleteConnection from soft-deleting one between this check and
+ * the commit of the publish.
+ *
+ * IMPORTANT: Lock in id order to avoid deadlocks between concurrent publishes.
+ */
+async function assertConnectionsAreLive(
+  flowId: string,
+  trx: Transaction,
+): Promise<void> {
+  const steps = await Step.query(trx)
+    .select('connection_id')
+    .where('flow_id', flowId)
+    .whereNotNull('connection_id')
+  const connectionIds = [...new Set(steps.map((step) => step.connectionId))]
+  if (connectionIds.length === 0) {
+    return
+  }
+
+  const connections = await Connection.query(trx)
+    .withSoftDeleted()
+    .select('id', 'deleted_at')
+    .whereIn('id', connectionIds)
+    .orderBy('id')
+    .forShare()
+
+  if (
+    connections.length < connectionIds.length ||
+    connections.some((connection) => connection.deletedAt)
+  ) {
+    throw new BadUserInputError(
+      'This pipe uses a connection that has been deleted. Switch the step to another connection before publishing.',
+    )
   }
 }
 
@@ -98,6 +139,10 @@ export async function updateFlowStatusService({
    * the repeatable job exists.
    */
   await Flow.transaction(async (trx) => {
+    if (active) {
+      await assertConnectionsAreLive(flow.id, trx)
+    }
+
     await flow.$query(trx).patch({
       active,
       publishedAt: active ? new Date().toISOString() : null,

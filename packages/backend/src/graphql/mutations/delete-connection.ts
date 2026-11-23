@@ -21,6 +21,9 @@ const deleteConnection: NonNullable<
       .findOne({
         id: input.id,
       })
+      // IMPORTANT: Publishing locks the same row, so a publish cannot commit
+      // between the published-pipe check below and the soft delete.
+      .forUpdate()
       .throwIfNotFound()
 
     // Deleting a connection that a published pipe uses leaves its executions

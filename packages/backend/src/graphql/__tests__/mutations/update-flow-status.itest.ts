@@ -15,6 +15,7 @@ import {
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -395,6 +396,67 @@ describe('updateFlowStatus', () => {
     expect(flowQueue.getRepeatableJobs).not.toHaveBeenCalled()
     expect(flowQueue.removeRepeatableByKey).not.toHaveBeenCalled()
     expect(result).toEqual(fakeFlow)
+  })
+
+  describe('step connections', () => {
+    const attachConnectionToActionStep = async () => {
+      const connection = await Connection.query().insertAndFetch({
+        userId: owner.id,
+        key: 'custom-api',
+        formattedData: { screenName: 'Test connection' },
+        verified: true,
+      })
+      const actionStep = await Step.query().findOne({
+        flow_id: fakeFlow.id,
+        type: 'action',
+      })
+      await Step.query()
+        .findById(actionStep.id)
+        .patch({ connectionId: connection.id })
+      return connection
+    }
+
+    it('publishes when every step connection is live', async () => {
+      await attachConnectionToActionStep()
+
+      const result = await updateFlowStatus(
+        {},
+        { input: defaultInput },
+        context,
+      )
+
+      expect(result).toEqual(fakeFlow)
+      expect(patchSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('rejects publishing when a step connection is deleted', async () => {
+      const connection = await attachConnectionToActionStep()
+      await Connection.query().findById(connection.id).delete()
+
+      await expect(
+        updateFlowStatus({}, { input: defaultInput }, context),
+      ).rejects.toThrow(
+        'This pipe uses a connection that has been deleted. Switch the step to another connection before publishing.',
+      )
+
+      expect(patchSpy).not.toHaveBeenCalled()
+      expect(flowQueue.add).not.toHaveBeenCalled()
+    })
+
+    it('still unpublishes when a step connection is deleted', async () => {
+      const connection = await attachConnectionToActionStep()
+      await Connection.query().findById(connection.id).delete()
+      fakeFlow.active = true
+
+      const result = await updateFlowStatus(
+        {},
+        { input: { ...defaultInput, active: false } },
+        context,
+      )
+
+      expect(result).toEqual(fakeFlow)
+      expect(patchSpy).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('access control', () => {
