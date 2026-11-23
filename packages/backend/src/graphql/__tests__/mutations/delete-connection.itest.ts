@@ -153,15 +153,11 @@ describe('deleteConnection', () => {
       owningContext: otherContext,
     })
 
-    const error = await deleteConnection(
-      {},
-      { input: { id: connection.id } },
-      context,
-    ).catch((e: Error) => e)
-
-    expect(error).toBeInstanceOf(Error)
-    expect((error as Error).message).toContain('1 other pipe(s)')
-    expect((error as Error).message).not.toContain('Secret pipe')
+    await expect(
+      deleteConnection({}, { input: { id: connection.id } }, context),
+    ).rejects.toThrow(
+      'This connection is used by published pipe(s): 1 other pipe(s). Unpublish them or switch their connection before deleting.',
+    )
   })
 
   it('names published pipes the user has collaborator access to', async () => {
