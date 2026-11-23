@@ -1,7 +1,11 @@
 import { parquetMetadata, parquetReadObjects } from 'hyparquet'
 import { describe, expect, it } from 'vitest'
 
-import { buildSilverKey, encodeSilverTable } from '../silver-table'
+import {
+  buildSilverKey,
+  encodeSilverTable,
+  type SilverTable,
+} from '../silver-table'
 import {
   type FlowTransferRow,
   flowTransferTable,
@@ -55,6 +59,42 @@ describe('encodeSilverTable', () => {
     )
     const createdAt = metadata.schema.find((c) => c.name === 'created_at')
     expect(createdAt?.converted_type).toBe('TIMESTAMP_MILLIS')
+  })
+
+  it('marks timestamps as UTC instants', () => {
+    const file = toArrayBuffer(encodeSilverTable(flowTransferTable, rows))
+
+    const createdAt = parquetMetadata(file).schema.find(
+      (c) => c.name === 'created_at',
+    )
+
+    expect(createdAt?.logical_type).toEqual({
+      type: 'TIMESTAMP',
+      isAdjustedToUTC: true,
+      unit: 'MILLIS',
+    })
+  })
+
+  it('writes integers, booleans and nulls', async () => {
+    type MixedRow = { id: string; count: number | null; flag: boolean | null }
+    const mixedTable: SilverTable<MixedRow> = {
+      name: 'mixed',
+      columns: { id: 'STRING', count: 'INT64', flag: 'BOOLEAN' },
+      fetchRows: async () => [],
+    }
+    const mixedRows: MixedRow[] = [
+      { id: 'a', count: 3, flag: true },
+      { id: 'b', count: null, flag: null },
+    ]
+
+    const readBack = await parquetReadObjects({
+      file: toArrayBuffer(encodeSilverTable(mixedTable, mixedRows)),
+    })
+
+    expect(readBack).toEqual([
+      { id: 'a', count: 3n, flag: true },
+      { id: 'b', count: null, flag: null },
+    ])
   })
 })
 

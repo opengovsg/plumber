@@ -1,8 +1,17 @@
+import { chmod, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
 import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { exportSilverTables } from '../export-silver-tables'
+import {
+  exportSilverTables,
+  localDirSink,
+  selectSilverTables,
+  writeSilverTables,
+} from '../export-silver-tables'
 import type { SilverTable } from '../silver-table'
 
 vi.mock('@/helpers/archival/logger')
@@ -83,5 +92,59 @@ describe('exportSilverTables', () => {
       }),
     ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
     expect(s3.send).not.toHaveBeenCalled()
+  })
+})
+
+describe('writeSilverTables to a local folder', () => {
+  it('writes each table at the same key the nightly job uses', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    try {
+      await writeSilverTables({
+        db,
+        tables: [testTable],
+        sink: localDirSink(dir),
+      })
+
+      const body = await readFile(
+        path.join(dir, 'silver/test_table/current.parquet'),
+      )
+      expect(body.subarray(0, 4).toString()).toBe('PAR1')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps the files readable only by the invoking user', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
+    const tableDir = path.join(dir, 'silver/test_table')
+    const filePath = path.join(tableDir, 'current.parquet')
+    const mode = async (p: string) => (await stat(p)).mode & 0o777
+    const write = () =>
+      writeSilverTables({ db, tables: [testTable], sink: localDirSink(dir) })
+    try {
+      await write()
+      expect(await mode(tableDir)).toBe(0o700)
+      expect(await mode(filePath)).toBe(0o600)
+
+      await chmod(filePath, 0o644)
+      await write()
+      expect(await mode(filePath)).toBe(0o600)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('selectSilverTables', () => {
+  it('returns the named tables', () => {
+    expect(
+      selectSilverTables(['dim_user', 'flow_transfer']).map((t) => t.name),
+    ).toEqual(['flow_transfer', 'dim_user'])
+  })
+
+  it('rejects an unknown table name', () => {
+    expect(() => selectSilverTables(['dim_users'])).toThrow(
+      'Unknown silver tables: dim_users',
+    )
   })
 })
