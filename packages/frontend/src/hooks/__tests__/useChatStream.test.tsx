@@ -201,4 +201,26 @@ describe('useChatStream', () => {
     }
     context.output = {}
   })
+
+  it('sends the pipe id even when the pipe has no configured steps', async () => {
+    context.output = {
+      pipeId: 'pipe-1',
+      steps: [{ id: 'step-1', type: 'trigger' }],
+    }
+    function Probe() {
+      hook = useChatStream({})
+      return null
+    }
+    act(() => root.render(<Probe />))
+    fetchMock.mockResolvedValue(new Response('Too large', { status: 413 }))
+
+    act(() => hook.sendMessage('Set up a trigger'))
+    await waitForState(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    const [first] = JSON.parse(fetchMock.mock.calls[0][1].body).messages
+    expect(first.id).toBe('pipe-context-resync')
+    expect(first.parts[0].text).toContain('Pipe id: pipe-1')
+    expect(first.parts[0].text).not.toContain('step-1')
+    context.output = {}
+  })
 })

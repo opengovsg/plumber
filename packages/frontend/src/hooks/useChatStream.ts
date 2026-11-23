@@ -254,7 +254,8 @@ export function useChatStream(options: UseChatStreamOptions) {
                 (s: { appKey?: string; key?: string }) => s.appKey && s.key,
               )
             : []
-          if (configuredSteps.length > 0) {
+          // A pipe can have no configured steps, e.g. after its only trigger is deleted. The model still needs its id.
+          if (pipeId) {
             const stepIdMapping = configuredSteps
               .map(
                 (
@@ -263,6 +264,9 @@ export function useChatStream(options: UseChatStreamOptions) {
                 ) => `${i + 1}. ${s.appKey}/${s.key} (${s.type}) — id: ${s.id}`,
               )
               .join('\n')
+            const stepList = stepIdMapping
+              ? `\nCurrent pipe steps and their real IDs, for use as step_id in tool calls:\n${stepIdMapping}`
+              : ''
             pipeContextMessageRef.current = {
               id: 'pipe-context-resync',
               // IMPORTANT: Bedrock rejects a conversation that starts with an assistant message, as a new chat would.
@@ -272,7 +276,7 @@ export function useChatStream(options: UseChatStreamOptions) {
               parts: [
                 {
                   type: 'text' as const,
-                  text: `[Internal resync — do not mention this to the user] Pipe id: ${pipeId}\nCurrent pipe steps and their real IDs, for use as step_id in tool calls:\n${stepIdMapping}`,
+                  text: `[Internal resync — do not mention this to the user] Pipe id: ${pipeId}${stepList}`,
                 },
               ],
             }
