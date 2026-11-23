@@ -38,4 +38,6 @@ run(command, {
   ...ports,
   // Every flag reads its fallback value, since the placeholder SDK key fails LD auth.
   LAUNCH_DARKLY_OFFLINE: 'true',
+  // Vite would open the user's own browser, whose localhost cookie belongs to their session.
+  BROWSER: 'none',
 })
