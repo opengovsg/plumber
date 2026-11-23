@@ -23,6 +23,7 @@ import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
 import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
+import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 
 type AppConnectionRowProps = {
   connection: IConnection
@@ -77,6 +78,17 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
           title: 'The connection has been deleted.',
           status: 'success',
           duration: 3000,
+          isClosable: true,
+          position: 'bottom-right',
+        })
+      },
+      onError: (error) => {
+        onDialogClose()
+        toast({
+          title: 'Unable to delete connection',
+          description: parseGraphqlError(error).message,
+          status: 'error',
+          duration: 8000,
           isClosable: true,
           position: 'bottom-right',
         })
