@@ -55,6 +55,21 @@ IMPORTANT: the files are public. Add only government domains and public bodies. 
 - `launched_at` is typed by hand (`YYYY-MM-DD`, Singapore). A blank cell means nobody has entered it. Regenerating keeps every date.
 - `resource_parameter` is typed by hand. It names the argument that holds the table, file, channel or other resource a step points at, or `none`. `flow_step.resource_id` reads that argument. The test fails while a cell is blank or names an argument the app-action lacks. Regenerating keeps every value.
 
+## Tracking finished days
+
+An export written as one file set per Singapore day marks each finished day with a completion file. The code lives in `src/day-completion.ts`.
+
+- The file sits at `bronze/_completion/<job>/day=YYYY-MM-DD.v<version>.json`. A full copy adds `.full` before `.json`. It sits under `bronze/` because the archival role writes only `bronze/` and `silver/`, and PostHog reads only `silver/`.
+- It is written after all of the day's files, so a failed run leaves the day unmarked. Its body lists those files and whether the nightly run or a manual command wrote it.
+- A completion file counts only while every file it lists is older than it. A rewrite that stopped part-way, or an older checkout that overwrote the day, leaves newer files, so the day is redone and logs `analytics.export.completion.outdated`. Only the last 30 days and the latest full copy are checked.
+- A run refuses to write a day that a newer version already wrote. Update your checkout instead.
+- Each night redoes every day in the last 7, through yesterday, with no current completion file at the job's version.
+- A day that fails does not hold back later days. It stays unmarked for the next run, logs `analytics.export.day.error`, and the run still fails.
+- A job's first run writes `bronze/_completion/<job>/start=YYYY-MM-DD.json` before it starts. The date is the earliest day the run writes: yesterday at night, or the earliest requested day in a backfill. Days before that marker and the first completion file are history, so the first night after release never rewrites history. A first day that fails is still owed. A full copy covers every earlier day.
+- Each run logs `analytics.export.coverage` per job, even when the export fails: `missingDays` in the last 30 days, `firstMissing`, `lastMissing` and `staleDays`. `staleDays` includes a full copy from an older version. A Datadog monitor alerts when `missingDays` is above zero. When the completion files cannot be listed, the run logs `analytics.export.coverage.unavailable` instead.
+
+---
+
 ## Running tests
 
 Run checks and builds through Turbo, as CI does. Turbo builds `@plumber/backend-models` first. The bare package scripts fail with `TS2307` on a clean checkout.

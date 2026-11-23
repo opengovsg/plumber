@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import type { SilverSink } from './export-silver-tables'
 import logger from './logger'
 import { addSgtDays, isSgtDay, sgtDaysAfter } from './sgt-day'
@@ -22,6 +24,20 @@ export interface JobState {
   completions: DayCompletion[]
   // The day the job first ran, so a first run that fails is still owed.
   startDay: string | null
+  // Every completion file counts here, outdated ones included, so an older checkout cannot overwrite a newer day.
+  newestVersion: Map<string, number>
+}
+
+export interface StoredObject {
+  key: string
+  lastModified: Date
+}
+
+// The bucket or local folder an export writes to, as completion tracking reads it.
+export interface CompletionStore {
+  list(prefix: string): Promise<StoredObject[]>
+  read(key: string): Promise<Buffer | null>
+  lastModified(key: string): Promise<Date | null>
 }
 
 // The version and full flag sit in the key, so planning needs one listing and no reads.
@@ -57,11 +73,92 @@ export function readJobState(keys: string[]): JobState {
     .map((key) => START_KEY.exec(key)?.[1])
     .filter((day): day is string => day !== undefined && isSgtDay(day))
     .sort()
-  return {
-    completions: keys
-      .map(parseCompletionKey)
-      .filter((completion): completion is DayCompletion => completion !== null),
-    startDay: startDays[0] ?? null,
+  const completions = keys
+    .map(parseCompletionKey)
+    .filter((completion): completion is DayCompletion => completion !== null)
+  const newestVersion = new Map<string, number>()
+  for (const { day, version } of completions) {
+    newestVersion.set(day, Math.max(version, newestVersion.get(day) ?? 0))
+  }
+  return { completions, startDay: startDays[0] ?? null, newestVersion }
+}
+
+const completionBodySchema = z.object({ outputs: z.array(z.string()) })
+
+function parseCompletionBody(body: Buffer): { outputs: string[] } | null {
+  try {
+    const parsed = completionBodySchema.safeParse(JSON.parse(body.toString()))
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
+  }
+}
+
+// A rewrite that stopped part-way, or an older checkout, leaves files newer than the day's completion file.
+async function isCurrent(
+  store: CompletionStore,
+  key: string,
+  writtenAt: Date,
+): Promise<boolean> {
+  const body = await store.read(key)
+  const parsed = body ? parseCompletionBody(body) : null
+  if (!parsed) {
+    return false
+  }
+  const modified = await Promise.all(
+    parsed.outputs.map((output) => store.lastModified(output)),
+  )
+  return modified.every((date) => date !== null && date <= writtenAt)
+}
+
+/**
+ * Reads a job's completion files and drops each one whose outputs changed after it was written.
+ *
+ * Only files in the coverage window, plus the latest full copy, are checked, so the reads stay bounded.
+ */
+export async function loadJobState(
+  store: CompletionStore,
+  job: string,
+  yesterday: string,
+): Promise<JobState> {
+  const objects = await store.list(completionPrefix(job))
+  const state = readJobState(objects.map((object) => object.key))
+  const writtenAt = new Map(
+    objects.map((object) => [object.key, object.lastModified]),
+  )
+  const checkFrom = addSgtDays(yesterday, -(COVERAGE_DAYS - 1))
+  const lastFull = latestFullCopy(state.completions)
+  const completions: DayCompletion[] = []
+  for (const completion of state.completions) {
+    const key = completionKey(job, completion)
+    const written = writtenAt.get(key)
+    const checked = completion.day >= checkFrom || completion === lastFull
+    if (!checked || (written && (await isCurrent(store, key, written)))) {
+      completions.push(completion)
+    } else {
+      logger.warn({
+        event: 'analytics.export.completion.outdated',
+        job,
+        day: completion.day,
+        version: completion.version,
+      })
+    }
+  }
+  return { ...state, completions }
+}
+
+// Run before a day's first upload. Planning already skips such a day, so this stops a manual run.
+export function assertNoNewerWriter(
+  state: JobState,
+  job: string,
+  day: string,
+  version: number,
+): void {
+  const newest = state.newestVersion.get(day) ?? 0
+  if (newest > version) {
+    throw new Error(
+      `${job} ${day}: version ${newest} already wrote this day, and this checkout is version ${version}. Update your checkout.`,
+    )
   }
 }
 
@@ -214,29 +311,31 @@ export async function runWithCoverage(
   {
     job,
     yesterday,
+    firstDay = yesterday,
     version,
-    listKeys,
+    store,
     sink,
   }: {
     job: string
     yesterday: string
+    // The earliest day the run will write: yesterday at night, the earliest requested day in a backfill.
+    firstDay?: string
     version: number
-    listKeys: (prefix: string) => Promise<string[]>
+    store: CompletionStore
     sink: SilverSink
   },
   run: (state: JobState) => Promise<void>,
 ): Promise<void> {
-  const readState = async () =>
-    readJobState(await listKeys(completionPrefix(job)))
+  const readState = () => loadJobState(store, job, yesterday)
   let before: JobState | null = null
   try {
     before = await readState()
-    if (!before.startDay && before.completions.length === 0) {
+    if (!before.startDay && before.newestVersion.size === 0) {
       await sink(
-        startKey(job, yesterday),
-        Buffer.from(JSON.stringify({ job, startDay: yesterday })),
+        startKey(job, firstDay),
+        Buffer.from(JSON.stringify({ job, startDay: firstDay })),
       )
-      before = { ...before, startDay: yesterday }
+      before = { ...before, startDay: firstDay }
     }
     await run(before)
   } finally {
@@ -251,19 +350,29 @@ export async function runWithCoverage(
 }
 
 /**
- * Writes each planned day, so one failing day does not hold back later ones.
+ * Writes each planned day, so one failing day does not hold back later days.
  *
  * A failed day stays unmarked for the next run. The run still fails, so the export alert fires.
  */
-export async function writeEachDay<Item>(
-  job: string,
-  items: Item[],
-  dayOf: (item: Item) => string,
-  write: (item: Item) => Promise<void>,
-): Promise<void> {
+export async function writeEachDay<Item>({
+  job,
+  state,
+  version,
+  items,
+  dayOf,
+  write,
+}: {
+  job: string
+  state: JobState
+  version: number
+  items: Item[]
+  dayOf: (item: Item) => string
+  write: (item: Item) => Promise<void>
+}): Promise<void> {
   const failed: string[] = []
   for (const item of items) {
     try {
+      assertNoNewerWriter(state, job, dayOf(item), version)
       await write(item)
     } catch (err) {
       failed.push(dayOf(item))
