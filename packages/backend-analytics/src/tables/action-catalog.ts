@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { DateTime } from 'luxon'
 import { z } from 'zod'
 
 import { parseCsv } from '../agency/agency-mapping'
+import { isSgtDay, sgtDayWindow } from '../sgt-day'
 import type { SilverTable } from '../silver-table'
 
 // The backend apps test keeps the registry columns in sync, because importing the registry needs Redis.
@@ -41,14 +41,11 @@ const csvRowSchema = z.object({
     if (!value) {
       return null
     }
-    const day = DateTime.fromFormat(value, 'yyyy-MM-dd', {
-      zone: 'Asia/Singapore',
-    })
-    if (!day.isValid) {
+    if (!isSgtDay(value)) {
       ctx.addIssue({ code: 'custom', message: `Invalid date ${value}` })
       return z.NEVER
     }
-    return day.toJSDate()
+    return sgtDayWindow(value).start
   }),
 })
 
