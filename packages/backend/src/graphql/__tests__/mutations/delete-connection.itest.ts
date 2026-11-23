@@ -33,7 +33,10 @@ describe('deleteConnection', () => {
     owningContext?: Context
   }) => {
     const flow = await generateMockFlow(owningContext, randomUUID())
-    await Flow.query().findById(flow.id).patch({ name, active })
+    await Flow.query().findById(flow.id).patch({ name })
+    // Published state is set via knex: Flow.$beforeUpdate rejects publishing a
+    // pipe without completed steps, which this fixture does not need.
+    await Flow.knex().table('flows').where('id', flow.id).update({ active })
     const step = await generateMockStep(
       owningContext,
       'createTableRow',
