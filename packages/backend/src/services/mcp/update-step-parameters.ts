@@ -11,6 +11,8 @@ import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
 import globalVariable from '@/helpers/global-variable'
+import logger from '@/helpers/logger'
+import { withTimeout } from '@/helpers/with-timeout'
 import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -82,7 +84,13 @@ async function fetchFormSchemaForStep(
 
 // Same wording as the editor's Databricks connection modal.
 const DATABRICKS_NOT_ONBOARDED_MESSAGE =
-  "The Govtech Data Platform requires onboarding before use. It looks like you're not onboarded yet. To get access, join the #ask-cdo channel on GovTech Slack, click the Onboarding Request button and follow the instructions, then try again. For more information, refer to https://go.gov.sg/gdp-onboarding."
+  "The Govtech Data Platform requires onboarding before use. It looks like you're not onboarded yet. Join the #ask-cdo channel on GovTech Slack. Click the Onboarding Request button and follow the instructions. Then try again. For more information, refer to https://go.gov.sg/gdp-onboarding."
+
+const DATABRICKS_VERIFY_FAILED_MESSAGE =
+  "Plumber couldn't check your Databricks access. Try again in a few minutes."
+
+// A cold token cache waits on Databricks OAuth and SQL with no timeout of their own.
+const DATABRICKS_VERIFY_TIMEOUT_MS = 20_000
 
 // The AI builder must not bind a Databricks connection whose schema does not exist yet.
 async function isDatabricksConnectionVerified(
@@ -309,7 +317,11 @@ export async function updateStepParametersService({
       }
     } else if (rawApp?.key === DATABRICKS_APP_KEY) {
       try {
-        if (await isDatabricksConnectionVerified(user, stepId, connectionId)) {
+        const verified = await withTimeout(
+          isDatabricksConnectionVerified(user, stepId, connectionId),
+          DATABRICKS_VERIFY_TIMEOUT_MS,
+        )
+        if (verified) {
           await Step.query()
             .patchAndFetchById(stepId, { connectionId })
             .throwIfNotFound()
@@ -318,8 +330,13 @@ export async function updateStepParametersService({
           result.connectionError = DATABRICKS_NOT_ONBOARDED_MESSAGE
         }
       } catch (err) {
-        result.connectionError =
-          err instanceof Error ? err.message : String(err)
+        logger.error('AI builder could not verify a Databricks connection', {
+          event: 'ai-builder-databricks-verify-error',
+          errorMessage: err instanceof Error ? err.message : String(err),
+          stepId,
+          connectionId,
+        })
+        result.connectionError = DATABRICKS_VERIFY_FAILED_MESSAGE
       }
     } else {
       await Step.query()
