@@ -16,6 +16,7 @@ import {
 } from '@/helpers/toolbox'
 import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
+import { pickDatabricksConnection } from '../ChooseAndAddConnection/databricks-reconnect-connections'
 import {
   APP_ALLOWING_EMPTY_CONNECTION,
   DATABRICKS_APP_KEY,
@@ -32,30 +33,6 @@ import ChooseEvent from './ChooseEvent'
 const SYSTEM_ADDED_CONFIGURE_SCREEN: Record<string, ModalScreen> = {
   [EXCEL_APP_KEY]: 'configure-excel-connection',
   [DATABRICKS_APP_KEY]: 'configure-databricks-connection',
-}
-
-type ListedConnection = {
-  id?: string | null
-  verified?: boolean | null
-  generation?: string | null
-}
-
-function databricksConnectionToBind(
-  connections: ListedConnection[],
-): { id?: string; verified?: boolean } | null {
-  const match =
-    connections.find((connection) => connection.generation === 'new') ??
-    connections.find(
-      (connection) =>
-        connection.generation === 'legacy' || connection.generation == null,
-    )
-  if (!match) {
-    return null
-  }
-  return {
-    id: match.id ?? undefined,
-    verified: match.verified ?? undefined,
-  }
 }
 
 type ChooseAppAndEventProps = {
@@ -114,18 +91,11 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             ensureDatabricksNew: app.key === DATABRICKS_APP_KEY,
           },
         })
-        const connections: ListedConnection[] =
-          appConnectionsData?.getApp?.connections ?? []
-        const firstConnection = connections[0]
+        const connections = appConnectionsData?.getApp?.connections ?? []
         systemConnection =
           app.key === DATABRICKS_APP_KEY
-            ? databricksConnectionToBind(connections)
-            : firstConnection
-              ? {
-                  id: firstConnection.id ?? undefined,
-                  verified: firstConnection.verified ?? undefined,
-                }
-              : null
+            ? (pickDatabricksConnection(connections) ?? null)
+            : (connections[0] ?? null)
 
         if (connections.length > 1 && app.key === EXCEL_APP_KEY) {
           console.error(

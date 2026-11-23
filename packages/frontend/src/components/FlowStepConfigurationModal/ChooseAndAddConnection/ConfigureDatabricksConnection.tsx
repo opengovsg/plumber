@@ -25,6 +25,7 @@ import { DATABRICKS_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'
 import ConnectionHeader from './ConnectionHeader'
+import { pickDatabricksConnection } from './databricks-reconnect-connections'
 
 function NotOnboardedContent({
   onRecheck,
@@ -94,32 +95,6 @@ interface ConfigureDatabricksConnectionProps {
   onCreateOrUpdateStep: (connectionId: string) => Promise<void>
 }
 
-type ListedConnection = {
-  id?: string | null
-  generation?: string | null
-}
-
-function databricksSetupConnectionId(
-  selectedConnectionId: string | undefined,
-  connections: ListedConnection[],
-): string {
-  if (selectedConnectionId) {
-    return selectedConnectionId
-  }
-  const created = connections.find(
-    (connection) => connection.generation === 'new' && connection.id,
-  )
-  if (created?.id) {
-    return created.id
-  }
-  const legacy = connections.find(
-    (connection) =>
-      connection.id &&
-      (connection.generation === 'legacy' || connection.generation == null),
-  )
-  return legacy?.id ?? ''
-}
-
 export default function ConfigureDatabricksConnection(
   props: ConfigureDatabricksConnectionProps,
 ) {
@@ -142,12 +117,11 @@ export default function ConfigureDatabricksConnection(
     },
   )
 
-  const connections: ListedConnection[] =
-    appConnectionsData?.getApp?.connections ?? []
-  const connectionId = databricksSetupConnectionId(
-    selectedConnectionId,
-    connections,
-  )
+  const connectionId =
+    selectedConnectionId ??
+    pickDatabricksConnection(appConnectionsData?.getApp?.connections ?? [])
+      ?.id ??
+    ''
 
   const { testResult, testResultLoading, testConnection } =
     useConnectionVerification({
