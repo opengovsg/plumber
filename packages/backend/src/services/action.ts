@@ -114,7 +114,11 @@ function getErrorDetails(error: unknown): IJSONObject {
       parsed !== null &&
       !Array.isArray(parsed)
     ) {
-      return parsed as IJSONObject
+      // Winston interpolates a top-level message into the log text, which throws for some objects.
+      const { message: parsedMessage, ...rest } = parsed as IJSONObject
+      return typeof parsedMessage === 'object' && parsedMessage !== null
+        ? rest
+        : (parsed as IJSONObject)
     }
   } catch {
     // A non-JSON message falls through to the default below.

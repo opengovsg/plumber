@@ -253,4 +253,29 @@ describe('setActionOutputError', () => {
 
     expect($.actionOutput.error).toEqual(JSON.parse(error.message))
   })
+
+  it.each([
+    ['an object', { a: 1 }],
+    ['an array', [1]],
+  ])('drops a parsed message field that is %s', (_, message: unknown) => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError(
+      $,
+      new Error(JSON.stringify({ message, kind: 'internal' })),
+    )
+
+    expect($.actionOutput.error).toEqual({ kind: 'internal' })
+  })
+
+  it('keeps a parsed message field that is a string', () => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError(
+      $,
+      new Error(JSON.stringify({ message: 'oops', kind: 'internal' })),
+    )
+
+    expect($.actionOutput.error).toEqual({ message: 'oops', kind: 'internal' })
+  })
 })
