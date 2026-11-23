@@ -39,8 +39,6 @@ export default function ContextMenu(
     onMenuItemClick,
   } = props
 
-  const deleteHintId = React.useId()
-
   const createActionHandler = React.useCallback(
     (action: Action) => {
       return function clickHandler(event: React.MouseEvent) {
@@ -90,23 +88,23 @@ export default function ContextMenu(
             // Keeps the item in keyboard navigation so its reason is reachable.
             // Chakra still blocks the click while isDisabled is set.
             isFocusable
-            aria-describedby={hasPublishedFlows ? deleteHintId : undefined}
+            flexDir="column"
+            alignItems="flex-start"
           >
             Delete
+            {hasPublishedFlows ? (
+              <Text
+                maxW="xs"
+                whiteSpace="normal"
+                textAlign="left"
+                textStyle="caption-2"
+                color="base.content.medium"
+              >
+                Unpublish the pipes using this connection or switch their
+                connection before deleting.
+              </Text>
+            ) : null}
           </MenuItem>
-          {hasPublishedFlows ? (
-            <Text
-              id={deleteHintId}
-              px={3}
-              pb={2}
-              maxW="xs"
-              textStyle="caption-2"
-              color="base.content.medium"
-            >
-              Unpublish the pipes using this connection or switch their
-              connection before deleting.
-            </Text>
-          ) : null}
         </MenuList>
       </Portal>
     </Menu>
