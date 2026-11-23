@@ -60,12 +60,14 @@ export async function testRemainingMrfSteps(
     results.push({ step: remainingStep, executionStep })
 
     if (!executionStep.isFailed) {
-      await remainingStep.$query().patch({
-        // Update step status
-        status: 'completed',
-        // clear templateConfig in config when step is tested successfully
-        config: raw(`config - 'templateConfig'`),
-      })
+      await Step.transaction(async (trx) =>
+        remainingStep.$query(trx).patch({
+          // Update step status
+          status: 'completed',
+          // clear templateConfig in config when step is tested successfully
+          config: raw(`config - 'templateConfig'`),
+        }),
+      )
     } else {
       break
     }

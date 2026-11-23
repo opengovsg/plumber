@@ -208,9 +208,11 @@ export async function updateStepParametersService({
         )
 
         if (verification.status === 'VERIFIED') {
-          await Step.query()
-            .patchAndFetchById(stepId, { connectionId })
-            .throwIfNotFound()
+          await Step.transaction(async (trx) =>
+            Step.query(trx)
+              .patchAndFetchById(stepId, { connectionId })
+              .throwIfNotFound(),
+          )
           result.step.connectionId = connectionId
           result.connectionRegistered = true
         } else if (verification.status === 'UNREGISTERED') {
@@ -263,9 +265,11 @@ export async function updateStepParametersService({
         if (verification.status !== 'VERIFIED') {
           await registerConnectionService(user, stepId, connectionId)
         } else {
-          await Step.query()
-            .patchAndFetchById(stepId, { connectionId })
-            .throwIfNotFound()
+          await Step.transaction(async (trx) =>
+            Step.query(trx)
+              .patchAndFetchById(stepId, { connectionId })
+              .throwIfNotFound(),
+          )
         }
         result.step.connectionId = connectionId
         result.connectionRegistered = true
@@ -274,9 +278,11 @@ export async function updateStepParametersService({
           err instanceof Error ? err.message : String(err)
       }
     } else {
-      await Step.query()
-        .patchAndFetchById(stepId, { connectionId })
-        .throwIfNotFound()
+      await Step.transaction(async (trx) =>
+        Step.query(trx)
+          .patchAndFetchById(stepId, { connectionId })
+          .throwIfNotFound(),
+      )
       result.step.connectionId = connectionId
     }
   }

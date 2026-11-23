@@ -1,5 +1,6 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
+import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -31,7 +32,9 @@ const deleteFlow: NonNullable<MutationResolvers['deleteFlow']> = async (
   // await ExecutionStep.query().delete().whereIn('execution_id', executionIds)
 
   await flow.$relatedQuery('executions').delete()
-  await flow.$relatedQuery('steps').delete()
+  await Step.transaction(async (trx) =>
+    flow.$relatedQuery('steps', trx).delete(),
+  )
   await flow.$relatedQuery('pendingTransfer').delete()
   await flow.$relatedQuery('flowConnections').delete()
 

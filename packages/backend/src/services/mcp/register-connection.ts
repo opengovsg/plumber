@@ -83,7 +83,9 @@ export async function registerConnectionService(
 
   await app.auth.registerConnection?.($)
 
-  await Step.query().patchAndFetchById(stepId, { connectionId })
+  await Step.transaction(async (trx) =>
+    Step.query(trx).patchAndFetchById(stepId, { connectionId }),
+  )
 
   return { registered: true, message: 'Connection registered successfully' }
 }

@@ -2,6 +2,7 @@ import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import Flow from '@/models/flow'
+import Step from '@/models/step'
 import {
   getMrfTestStartStep,
   isMrfStep,
@@ -51,12 +52,14 @@ const executeStep: NonNullable<MutationResolvers['executeStep']> = async (
   let shouldContinueTestingMrfSteps = false
 
   if (!executionStep.isFailed) {
-    const updatedStep = await stepToTest.$query().patchAndFetch({
-      // Update step status
-      status: 'completed',
-      // clear templateConfig in config when step is tested successfully
-      config: raw(`config - 'templateConfig'`),
-    })
+    const updatedStep = await Step.transaction(async (trx) =>
+      stepToTest.$query(trx).patchAndFetch({
+        // Update step status
+        status: 'completed',
+        // clear templateConfig in config when step is tested successfully
+        config: raw(`config - 'templateConfig'`),
+      }),
+    )
 
     // we check if the step is an MRF step again after testing
     shouldContinueTestingMrfSteps = !!updatedStep.parameters.mrf
