@@ -78,6 +78,9 @@ The backend has three error families. Do not add a new family.
 ### Which error to throw
 
 - A step failure the user sees: throw `StepError` with a `kind`.
+  - Throw it only from a step's entry point (e.g. an action's `run` or `runBatch`).
+  - A shared helper returns a typed result or throws a non-`StepError` instead. Callers outside a step (e.g. dynamic data) also use it.
+  - For the pattern, see `parseAuthData` and its caller `getAuthDataOrThrow` in `apps/m365-excel/`.
 - A user-visible failure outside a step: throw `UserFacingError`, in GraphQL resolvers and REST endpoints (e.g. AI builder) alike.
 - Exception: a GraphQL resolver that needs a client error code (e.g. `BAD_USER_INPUT`) throws a class from `errors/graphql-errors/`. They extend the library type `GraphQLError` (see "Library error types"), so they are not a new family.
 - Anything else counts as a Plumber bug. This includes a raw `HttpError` that ran out of retries.
