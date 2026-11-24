@@ -11,6 +11,10 @@ import FlowConnections from '@/models/flow-connections'
 import FlowTransfer from '@/models/flow-transfers'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
+import {
+  captureCollaboratorChange,
+  classifyCollaboratorUpsert,
+} from '@/services/flow/flow-collaborator-event'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -300,12 +304,29 @@ const updateFlowTransferStatus: NonNullable<
     // - check if the current owner was once a collaborator
     // - update the role if they were a collaborator
     // - otherwise, create a new record
+    // Locked so the event matches the row this transaction patches.
     const existingCollaborator = await FlowCollaborator.query(trx)
       .findOne({
         flow_id: flow.id,
         user_id: flow.userId,
       })
       .withSoftDeleted()
+      .forUpdate()
+
+    const oldOwnerChange = classifyCollaboratorUpsert(
+      existingCollaborator,
+      'editor',
+    )
+    if (oldOwnerChange) {
+      captureCollaboratorChange({
+        actorUserId: context.currentUser.id,
+        flowId: flow.id,
+        collaboratorUserId: flow.userId,
+        change: oldOwnerChange,
+        source: 'transfer',
+        trx,
+      })
+    }
 
     if (!existingCollaborator) {
       await FlowCollaborator.query(trx).insert({
@@ -329,11 +350,22 @@ const updateFlowTransferStatus: NonNullable<
     })
 
     if (isNewOwnerCollaborator) {
-      await FlowCollaborator.deleteCollaborator({
+      // The deleted row holds the role at removal, even if an edit committed after the read above.
+      const removed = await FlowCollaborator.deleteCollaborator({
         userId: context.currentUser.id,
         flowId: flow.id,
         trx,
       })
+      for (const collaborator of removed) {
+        captureCollaboratorChange({
+          actorUserId: context.currentUser.id,
+          flowId: flow.id,
+          collaboratorUserId: context.currentUser.id,
+          change: { type: 'removed', previousRole: collaborator.role },
+          source: 'transfer',
+          trx,
+        })
+      }
     }
 
     // make the current owner a collaborator in the flow
