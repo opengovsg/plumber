@@ -3,6 +3,7 @@ import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb } from '@/helpers/archival/db'
 import { fetchArchivedExecution } from '@/helpers/archival/fetch-archived-execution'
 import { listArchivedExecutions } from '@/helpers/archival/list-archived-executions'
+import logger from '@/helpers/archival/logger'
 import { restoreExecution } from '@/helpers/archival/restore-execution'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
@@ -78,6 +79,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('rehydrate-execution failed:', err)
+  // The archival logger keeps only an error's safe fields. console.error would print an SDK error's raw response.
+  logger.error({ event: 'rehydration.run.error', err })
   process.exit(1)
 })

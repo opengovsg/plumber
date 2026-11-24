@@ -324,6 +324,11 @@ describe('runWithCoverage', () => {
         lastMissing: '2026-11-10',
       }),
     )
+    expect(logger.warn).toHaveBeenCalledWith({
+      event: 'analytics.export.coverage.list_failed',
+      job: 'mutation_log',
+      err: expect.objectContaining({ message: 'listing failed' }),
+    })
   })
 
   it('marks the first run before it starts, so a failed first day is still owed', async () => {

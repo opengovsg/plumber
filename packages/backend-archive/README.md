@@ -75,6 +75,8 @@ The script logs structured JSON to stdout. Key events to look for:
 | `archival.execution.error`         | One execution failed to archive. Carries `executionId`. The row stays in Postgres and the next run retries it.                                   |
 | `archival.execution.verify_failed` | The S3 check after upload failed. Carries `executionId`, `key` and `reason`. The row stays in Postgres and the next run retries it.              |
 
+Error events carry the error under `err`. [Logs](../backend-analytics/README.md#logs) lists the fields it keeps.
+
 ### 4. Verify S3 contents
 
 ```bash
@@ -149,6 +151,8 @@ Both call `ts-node`, a devDependency, so the host needs a full checkout and an i
 ```bash
 node packages/backend-archive/dist/scripts/rehydrate-execution.js --flow-id <uuid>
 ```
+
+A failed run logs `rehydration.run.error` and exits with code 1.
 
 ### Rehydration subcommands
 

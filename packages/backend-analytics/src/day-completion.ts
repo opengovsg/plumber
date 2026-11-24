@@ -340,7 +340,10 @@ export async function runWithCoverage(
     await run(before)
   } finally {
     // A failed listing must not replace the export's own error.
-    const after = await readState().catch(() => before)
+    const after = await readState().catch((err: unknown) => {
+      logger.warn({ event: 'analytics.export.coverage.list_failed', job, err })
+      return before
+    })
     if (after) {
       logCoverage(job, after, yesterday, version)
     } else {

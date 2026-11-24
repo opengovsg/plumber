@@ -20,6 +20,8 @@ export const archivalDb: Knex = knex({
       : false,
   } satisfies pg.ClientConfig,
   pool: { min: 0, max: 12 },
+  // IMPORTANT: knex otherwise writes bound values, such as user emails, into a failed query's message.
+  compileSqlOnError: false,
 })
 
 // Reader connection. Used for archival's eligibility scan, execution_steps
@@ -38,4 +40,5 @@ export const archivalDbReader: Knex = knex({
       : false,
   } satisfies pg.ClientConfig,
   pool: { min: 0, max: 14 },
+  compileSqlOnError: false,
 })
