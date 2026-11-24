@@ -7,6 +7,8 @@ import * as URLS from '@/config/urls'
 import { CREATE_TEMPLATED_FLOW } from '@/graphql/mutations/create-templated-flow'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 
+const PREFETCH_TIMEOUT_MS = 3000
+
 /**
  * @param onDismiss Closes the surface showing the template. It runs before the
  * editor opens so the two screens never overlap.
@@ -44,8 +46,12 @@ export function useCreateTemplatedFlow(
 
     // Warms the cache so the editor renders at once instead of flashing its
     // loading state. The editor refetches on a miss, so a failure is safe.
+    // The deadline stops a stalled query from trapping the user in the modal.
     try {
-      await client.query({ query: GET_FLOW, variables: { id: flowId } })
+      await Promise.race([
+        client.query({ query: GET_FLOW, variables: { id: flowId } }),
+        new Promise((resolve) => setTimeout(resolve, PREFETCH_TIMEOUT_MS)),
+      ])
     } catch {
       // Navigate anyway.
     }
