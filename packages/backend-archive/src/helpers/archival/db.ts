@@ -42,3 +42,34 @@ export const archivalDbReader: Knex = knex({
   pool: { min: 0, max: 14 },
   compileSqlOnError: false,
 })
+
+/**
+ * Rewrites a failed query's PostgreSQL error to hold only the operation, SQLSTATE and schema identifiers.
+ *
+ * IMPORTANT: PostgreSQL echoes the rejected value in its message and detail, such as an invalid UUID.
+ */
+function redactDatabaseError(err: unknown, query: { method?: string }): void {
+  if (!(err instanceof pg.DatabaseError)) {
+    return
+  }
+  const identifiers = {
+    routine: err.routine,
+    table: err.table,
+    column: err.column,
+    constraint: err.constraint,
+  }
+  const context = Object.entries(identifiers)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(' ')
+  err.message = `PostgreSQL ${query.method ?? 'query'} failed with SQLSTATE ${err.code}${context ? ` (${context})` : ''}`
+  err.stack = `${err.name}: ${err.message}`
+  err.detail = undefined
+  err.hint = undefined
+  err.where = undefined
+  err.internalQuery = undefined
+}
+
+// knex emits this before it rejects the query, so the rewrite reaches every caller.
+archivalDb.on('query-error', redactDatabaseError)
+archivalDbReader.on('query-error', redactDatabaseError)

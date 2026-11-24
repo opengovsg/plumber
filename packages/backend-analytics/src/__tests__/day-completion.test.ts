@@ -325,9 +325,32 @@ describe('runWithCoverage', () => {
       }),
     )
     expect(logger.warn).toHaveBeenCalledWith({
-      event: 'analytics.export.coverage.list_failed',
+      event: 'analytics.export.coverage.refresh_failed',
       job: 'mutation_log',
       err: expect.objectContaining({ message: 'listing failed' }),
+    })
+  })
+
+  it('logs a completion read that fails after the listing succeeds', async () => {
+    const key = completionKey('mutation_log', {
+      day: '2026-11-09',
+      version: 1,
+      full: false,
+    })
+    const store = {
+      ...memoryStore({ [key]: { at: '2026-11-10T00:00:00Z' } }),
+      read: vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockRejectedValueOnce(new Error('read failed')),
+    }
+
+    await runWithCoverage({ ...options(store.list), store }, async () => {})
+
+    expect(logger.warn).toHaveBeenCalledWith({
+      event: 'analytics.export.coverage.refresh_failed',
+      job: 'mutation_log',
+      err: expect.objectContaining({ message: 'read failed' }),
     })
   })
 
