@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "3.1027.0",
     "@aws-sdk/client-s3": "catalog:",
     "@plumber/backend-models": "workspace:*",
     "@plumber/shared": "workspace:*",
