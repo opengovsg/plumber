@@ -108,7 +108,7 @@ describe('Execution.setStatus', () => {
 
     expect(await getStatus(executionId)).toBe('success')
     expect(mocks.incrementMetric.mock.calls).toEqual([
-      ['plumber.executions.ended', { outcome: 'third_party' }],
+      ['plumber.executions.ended', { outcome: 'failure-third-party' }],
     ])
   })
 })

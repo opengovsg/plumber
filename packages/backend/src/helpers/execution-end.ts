@@ -8,9 +8,9 @@ type ExecutionOutcome = 'success' | StepErrorKind
 
 const OUTCOME_TAGS: Record<ExecutionOutcome, string> = {
   success: 'success',
-  config: 'config',
-  'third-party': 'third_party',
-  internal: 'internal',
+  config: 'failure-config',
+  'third-party': 'failure-third-party',
+  internal: 'failure-internal',
 }
 
 /**

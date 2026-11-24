@@ -19,9 +19,9 @@ describe('countExecutionEnd', () => {
 
   it.each([
     { outcome: 'success', tag: 'success' },
-    { outcome: 'config', tag: 'config' },
-    { outcome: 'third-party', tag: 'third_party' },
-    { outcome: 'internal', tag: 'internal' },
+    { outcome: 'config', tag: 'failure-config' },
+    { outcome: 'third-party', tag: 'failure-third-party' },
+    { outcome: 'internal', tag: 'failure-internal' },
   ] as const)('tags a $outcome end as $tag', ({ outcome, tag }) => {
     countExecutionEnd(ENDED, outcome)
 

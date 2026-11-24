@@ -91,9 +91,9 @@ describe('execution end count on a failed action job', () => {
   })
 
   it.each<{ kind: StepErrorKind; outcome: string }>([
-    { kind: 'config', outcome: 'config' },
-    { kind: 'third-party', outcome: 'third_party' },
-    { kind: 'internal', outcome: 'internal' },
+    { kind: 'config', outcome: 'failure-config' },
+    { kind: 'third-party', outcome: 'failure-third-party' },
+    { kind: 'internal', outcome: 'failure-internal' },
   ])('counts a $kind StepError as $outcome', async ({ kind, outcome }) => {
     const stepError = new StepError({ name: 'n', solution: 's', kind })
 
@@ -102,7 +102,7 @@ describe('execution end count on a failed action job', () => {
     expect(getCountedOutcomes()).toEqual([outcome])
   })
 
-  it('counts a third-party RetriableError that ran out of attempts as third_party', async () => {
+  it('counts a third-party RetriableError that ran out of attempts as failure-third-party', async () => {
     const lastAttemptJob = { ...JOB, attemptsMade: MAXIMUM_JOB_ATTEMPTS }
     const retriableError = new RetriableError({
       error: 'e',
@@ -117,13 +117,13 @@ describe('execution end count on a failed action job', () => {
       'queue',
     )
 
-    expect(getCountedOutcomes()).toEqual(['third_party'])
+    expect(getCountedOutcomes()).toEqual(['failure-third-party'])
   })
 
-  it('counts a setup failure as internal', async () => {
+  it('counts a setup failure as failure-internal', async () => {
     await handleFailedJob(JOB, makeFinalError(), 'queue')
 
-    expect(getCountedOutcomes()).toEqual(['internal'])
+    expect(getCountedOutcomes()).toEqual(['failure-internal'])
   })
 
   it('does not count a job that will retry', async () => {
@@ -180,11 +180,11 @@ describe('execution end count on a failed action job', () => {
           new Error('db down'),
         ),
     },
-  ])('counts $label as internal', async ({ mockLookup }) => {
+  ])('counts $label as failure-internal', async ({ mockLookup }) => {
     mockLookup()
 
     await handleFailedJob(JOB, makeFinalError(), 'queue')
 
-    expect(getCountedOutcomes()).toEqual(['internal'])
+    expect(getCountedOutcomes()).toEqual(['failure-internal'])
   })
 })

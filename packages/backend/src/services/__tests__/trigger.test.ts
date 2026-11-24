@@ -85,11 +85,15 @@ describe('processTrigger', () => {
     }
 
     it.each([
-      { label: 'the saved kind', error: { kind: 'config' }, outcome: 'config' },
+      {
+        label: 'the saved kind',
+        error: { kind: 'config' },
+        outcome: 'failure-config',
+      },
       {
         label: 'internal without a kind',
         error: { error: 'boom' },
-        outcome: 'internal',
+        outcome: 'failure-internal',
       },
     ])('counts a trigger error with $label', async ({ error, outcome }) => {
       await processTrigger({ flowId: 'flow-id', stepId: 'step-id', error })
