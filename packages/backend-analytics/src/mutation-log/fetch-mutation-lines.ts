@@ -101,6 +101,7 @@ async function runQuery(
 ): Promise<{
   rows: ResultField[][]
   truncated: boolean
+  bytesScanned: number
 }> {
   signal?.throwIfAborted()
   const { queryId } = await client.send(
@@ -125,29 +126,47 @@ async function runQuery(
     })
     if (result.status === 'Complete') {
       const rows = result.results ?? []
-      return { rows, truncated: rows.length >= MAX_QUERY_RESULTS }
+      return {
+        rows,
+        truncated: rows.length >= MAX_QUERY_RESULTS,
+        bytesScanned: result.statistics?.bytesScanned ?? 0,
+      }
     }
     if (result.status !== 'Running' && result.status !== 'Scheduled') {
       throw new Error(`Logs Insights query ended as ${result.status}`)
     }
     if (Date.now() > deadline) {
-      throw new Error('Logs Insights query timed out')
+      // The "mutation log hit a time limit" monitor matches this name.
+      throw Object.assign(new Error('Logs Insights query timed out'), {
+        name: 'TimeoutError',
+      })
     }
     await sleep(POLL_INTERVAL_MS, signal)
   }
 }
 
+export interface FetchedLines<Line> {
+  lines: Line[]
+  // Logs Insights bills by bytes scanned, so this tracks the cost of every query run.
+  bytesScanned: number
+}
+
 async function fetchRows(
   queryString: string,
   params: FetchMutationLinesParams,
-): Promise<ResultField[][]> {
+): Promise<FetchedLines<ResultField[]>> {
   const { startMs, endMs } = params
-  const { rows, truncated } = await runQuery(queryString, params)
+  const { rows, truncated, bytesScanned } = await runQuery(queryString, params)
   if (!truncated) {
     // Each window keeps only its own rows, so a line on a split boundary is not read twice.
-    return rows.filter((fields) =>
-      inWindow(params)({ timestamp: fieldValue(fields, '@timestamp') ?? '' }),
-    )
+    return {
+      lines: rows.filter((fields) =>
+        inWindow(params)({
+          timestamp: fieldValue(fields, '@timestamp') ?? '',
+        }),
+      ),
+      bytesScanned,
+    }
   }
   const mid = Math.floor((startMs + (endMs - startMs) / 2) / 1_000) * 1_000
   if (mid <= startMs || mid >= endMs) {
@@ -157,7 +176,10 @@ async function fetchRows(
   }
   const first = await fetchRows(queryString, { ...params, endMs: mid })
   const second = await fetchRows(queryString, { ...params, startMs: mid })
-  return [...first, ...second]
+  return {
+    lines: [...first.lines, ...second.lines],
+    bytesScanned: bytesScanned + first.bytesScanned + second.bytesScanned,
+  }
 }
 
 function inWindow(
@@ -176,9 +198,9 @@ function inWindow(
  */
 export async function fetchMutationLines(
   params: FetchMutationLinesParams,
-): Promise<MutationLogLine[]> {
-  const rows = await fetchRows(MUTATION_LOG_QUERY, params)
-  return rows.map(toLine)
+): Promise<FetchedLines<MutationLogLine>> {
+  const { lines, bytesScanned } = await fetchRows(MUTATION_LOG_QUERY, params)
+  return { lines: lines.map(toLine), bytesScanned }
 }
 
 /**
@@ -186,10 +208,13 @@ export async function fetchMutationLines(
  */
 export async function fetchMcpToolLines(
   params: FetchMutationLinesParams,
-): Promise<McpToolLine[]> {
-  const rows = await fetchRows(MCP_TOOL_LOG_QUERY, params)
-  return rows.map((fields) => ({
-    timestamp: fieldValue(fields, '@timestamp') ?? '',
-    event: fieldValue(fields, '@message'),
-  }))
+): Promise<FetchedLines<McpToolLine>> {
+  const { lines, bytesScanned } = await fetchRows(MCP_TOOL_LOG_QUERY, params)
+  return {
+    lines: lines.map((fields) => ({
+      timestamp: fieldValue(fields, '@timestamp') ?? '',
+      event: fieldValue(fields, '@message'),
+    })),
+    bytesScanned,
+  }
 }

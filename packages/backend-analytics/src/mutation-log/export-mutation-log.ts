@@ -96,6 +96,7 @@ export const MUTATION_LOG_VERSION = 3
 export interface DayLines {
   mutationLines: MutationLogLine[]
   mcpToolLines: McpToolLine[]
+  bytesScanned: number
 }
 
 export type FetchDayLines = (window: {
@@ -108,20 +109,25 @@ export function logsInsightsFetcher(
   logGroup: string,
   signal?: AbortSignal,
 ): FetchDayLines {
-  return async (window) => ({
-    mutationLines: await fetchMutationLines({
+  return async (window) => {
+    const mutations = await fetchMutationLines({
       client,
       logGroup,
       signal,
       ...window,
-    }),
-    mcpToolLines: await fetchMcpToolLines({
+    })
+    const mcpTools = await fetchMcpToolLines({
       client,
       logGroup,
       signal,
       ...window,
-    }),
-  })
+    })
+    return {
+      mutationLines: mutations.lines,
+      mcpToolLines: mcpTools.lines,
+      bytesScanned: mutations.bytesScanned + mcpTools.bytesScanned,
+    }
+  }
 }
 
 // Maps lowercase emails to user ids. The AI builder's usage log names users by email.
@@ -217,7 +223,11 @@ export async function writeMutationLogDays({
     dayOf: (day) => day,
     write: async (day) => {
       const { start, end } = sgtDayWindow(day)
-      const { mutationLines: lines, mcpToolLines } = await fetchDayLines({
+      const {
+        mutationLines: lines,
+        mcpToolLines,
+        bytesScanned,
+      } = await fetchDayLines({
         startMs: start.getTime(),
         endMs: end.getTime(),
       })
@@ -259,6 +269,7 @@ export async function writeMutationLogDays({
         mcpToolLines: mcpToolLines.length,
         mcpToolRows: mcpToolRows.length,
         rows: rows.length,
+        bytesScanned,
         rowsWithoutOperation: rows.filter((row) => !row.operation).length,
         rowsWithoutUser: rows.filter((row) => !row.user_id).length,
         rowsWithFlowFromStep:
