@@ -224,7 +224,7 @@ The same run also writes `flow_edit_daily`, described in [`backend-analytics`](.
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--from YYYY-MM-DD`  | First Singapore day.                                                                                                                                                                                                                                                |
 | `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                                                                                                                                                                                   |
-| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`. Skips the step lookups, since the database reader may belong to another environment.                                                                                                   |
+| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`. Skips the step and user lookups, since the database reader may belong to another environment.                                                                                          |
 | `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                                                                                                |
 | `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. Finished days only, since a completion file marks the day done. Reads `ANALYTICS_REQUEST_LOG_GROUP`, so the source matches the bucket's environment. |
 
@@ -235,6 +235,13 @@ The query reads AWS credentials from the default chain. To try one day against p
 ```bash
 OUT="$(mktemp -d)"
 pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out "$OUT"
+```
+
+That checks the query and parsing only. `--log-group` skips the lookups, so `deleteStep` and `register_connection` rows have no pipe, and MCP rows have no user. `flow_edit_daily` then leaves out every MCP row. To check the lookups and `flow_edit_daily` too, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine), with `ANALYTICS_REQUEST_LOG_GROUP` set to the production log group. Then run without `--log-group`:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --out "$OUT"
 ```
 
 Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.

@@ -81,6 +81,13 @@ export function readActionCatalog(): ActionCatalogRow[] {
 }
 
 /**
+ * Lists every `app_key.action_key` pair in the catalog, removed ones included.
+ */
+export function catalogActionKeys(rows: ActionCatalogRow[]): Set<string> {
+  return new Set(rows.map((row) => `${row.app_key}.${row.action_key}`))
+}
+
+/**
  * Maps `app_key.action_key` to the argument that names the step's resource.
  */
 export function resourceParameters(

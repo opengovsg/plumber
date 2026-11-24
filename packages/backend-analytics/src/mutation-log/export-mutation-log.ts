@@ -1,6 +1,6 @@
 import type { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs'
 import type { S3Client } from '@aws-sdk/client-s3'
-import { BaseStep } from '@plumber/backend-models'
+import { BaseStep, BaseUser } from '@plumber/backend-models'
 import type { Knex } from 'knex'
 import { z } from 'zod'
 
@@ -30,13 +30,22 @@ import {
   encodeParquet,
   type ParquetColumns,
 } from '../silver-table'
-import { readActionCatalog, resourceParameters } from '../tables/action-catalog'
-import { fetchMutationLines } from './fetch-mutation-lines'
+import {
+  catalogActionKeys,
+  readActionCatalog,
+  resourceParameters,
+} from '../tables/action-catalog'
+import { fetchMcpToolLines, fetchMutationLines } from './fetch-mutation-lines'
 import {
   FLOW_EDIT_DAILY_COLUMNS,
   FLOW_EDIT_DAILY_TABLE,
   summarizeFlowEdits,
 } from './flow-edit-daily'
+import {
+  type McpToolLine,
+  parseMcpToolLine,
+  toMcpToolRow,
+} from './parse-mcp-tool-line'
 import {
   type MutationLogLine,
   type MutationLogRow,
@@ -81,20 +90,54 @@ export function sortForFlowSearch(rows: MutationLogRow[]): MutationLogRow[] {
 }
 
 // Bump when a day's files change. The next night replays the last 7 days from the log, which is append-only.
-// 2 adds flow_edit_daily.
-export const MUTATION_LOG_VERSION = 2
+// 2 adds flow_edit_daily. 3 adds AI builder tool calls.
+export const MUTATION_LOG_VERSION = 3
+
+export interface DayLines {
+  mutationLines: MutationLogLine[]
+  mcpToolLines: McpToolLine[]
+}
 
 export type FetchDayLines = (window: {
   startMs: number
   endMs: number
-}) => Promise<MutationLogLine[]>
+}) => Promise<DayLines>
 
 export function logsInsightsFetcher(
   client: Pick<CloudWatchLogsClient, 'send'>,
   logGroup: string,
   signal?: AbortSignal,
 ): FetchDayLines {
-  return (window) => fetchMutationLines({ client, logGroup, signal, ...window })
+  return async (window) => ({
+    mutationLines: await fetchMutationLines({
+      client,
+      logGroup,
+      signal,
+      ...window,
+    }),
+    mcpToolLines: await fetchMcpToolLines({
+      client,
+      logGroup,
+      signal,
+      ...window,
+    }),
+  })
+}
+
+// Maps lowercase emails to user ids. The AI builder's usage log names users by email.
+export type ResolveUserIds = (emails: string[]) => Promise<Map<string, string>>
+
+export function dbUserIdResolver(db: Knex): ResolveUserIds {
+  return async (emails) => {
+    if (emails.length === 0) {
+      return new Map()
+    }
+    const users = await BaseUser.query(db)
+      .withSoftDeleted()
+      .whereIn(db.raw('lower(email)'), emails)
+      .select('id', 'email')
+    return new Map(users.map((user) => [user.email.toLowerCase(), user.id]))
+  }
 }
 
 // Maps step ids to their pipe ids. The editor's deleteStep sends step ids without the pipe.
@@ -146,21 +189,25 @@ async function fillFlowIds(
 interface WriteMutationLogDaysParams {
   fetchDayLines: FetchDayLines
   resolveFlowIds: ResolveFlowIds
+  resolveUserIds: ResolveUserIds
   sink: SilverSink
   state: JobState
   days: string[]
   source?: CompletionSource
   parameterByAction?: Record<string, string>
+  catalogActions?: ReadonlySet<string>
 }
 
 export async function writeMutationLogDays({
   fetchDayLines,
   resolveFlowIds,
+  resolveUserIds,
   sink,
   state,
   days,
   source = 'backfill',
   parameterByAction = resourceParameters(readActionCatalog()),
+  catalogActions = catalogActionKeys(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
   await writeEachDay({
     job: MUTATION_LOG_TABLE,
@@ -170,13 +217,29 @@ export async function writeMutationLogDays({
     dayOf: (day) => day,
     write: async (day) => {
       const { start, end } = sgtDayWindow(day)
-      const lines = await fetchDayLines({
+      const { mutationLines: lines, mcpToolLines } = await fetchDayLines({
         startMs: start.getTime(),
         endMs: end.getTime(),
       })
-      const parsedRows = lines
-        .map((line) => toMutationLogRow(line, parameterByAction))
-        .filter((row): row is MutationLogRow => row !== null)
+      const mcpToolCalls = mcpToolLines
+        .map(parseMcpToolLine)
+        .filter((call) => call !== null)
+      const userIdByEmail = await resolveUserIds([
+        ...new Set(
+          mcpToolCalls.flatMap((call) =>
+            call.userEmail ? [call.userEmail] : [],
+          ),
+        ),
+      ])
+      const mcpToolRows = mcpToolCalls.map((call) =>
+        toMcpToolRow(call, userIdByEmail, catalogActions),
+      )
+      const parsedRows = [
+        ...lines
+          .map((line) => toMutationLogRow(line, parameterByAction))
+          .filter((row): row is MutationLogRow => row !== null),
+        ...mcpToolRows,
+      ]
       const rows = sortForFlowSearch(
         await fillFlowIds(parsedRows, resolveFlowIds),
       )
@@ -193,6 +256,8 @@ export async function writeMutationLogDays({
         day,
         key,
         lines: lines.length,
+        mcpToolLines: mcpToolLines.length,
+        mcpToolRows: mcpToolRows.length,
         rows: rows.length,
         rowsWithoutOperation: rows.filter((row) => !row.operation).length,
         rowsWithoutUser: rows.filter((row) => !row.user_id).length,
@@ -279,6 +344,7 @@ export async function exportMutationLog({
       await writeMutationLogDays({
         fetchDayLines: logsInsightsFetcher(logsClient, logGroup, signal),
         resolveFlowIds: dbFlowIdResolver(db),
+        resolveUserIds: dbUserIdResolver(db),
         sink,
         state,
         days: Array.isArray(days)
@@ -294,6 +360,7 @@ interface ExportMutationLogToDirParams {
   dir: string
   fetchDayLines: FetchDayLines
   resolveFlowIds: ResolveFlowIds
+  resolveUserIds: ResolveUserIds
   days: string[]
 }
 
@@ -302,6 +369,7 @@ export async function exportMutationLogToDir({
   dir,
   fetchDayLines,
   resolveFlowIds,
+  resolveUserIds,
   days,
 }: ExportMutationLogToDirParams): Promise<void> {
   const sink = localDirSink(dir)
@@ -318,6 +386,7 @@ export async function exportMutationLogToDir({
       writeMutationLogDays({
         fetchDayLines,
         resolveFlowIds,
+        resolveUserIds,
         sink,
         state,
         days,

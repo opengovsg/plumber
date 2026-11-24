@@ -35,12 +35,18 @@ export const FLOW_EDIT_OPERATIONS: ReadonlySet<string> = new Set([
   'updateFlowConfig',
   'updateFlowStatus',
   'deleteFlow',
+  'mcp:create_step',
+  'mcp:update_step_parameters',
+  'mcp:delete_step',
+  'mcp:unpublish_pipe',
+  'mcp:register_connection',
 ])
 
 /**
  * Counts one day's edit requests per pipe, user and operation.
  *
  * IMPORTANT: GraphQL reports a rejected request with HTTP 200, so a count includes rejected edits.
+ * Only MCP rows report a failed call as an error status.
  */
 export function summarizeFlowEdits(
   day: string,
@@ -54,7 +60,8 @@ export function summarizeFlowEdits(
       !row.flow_id ||
       !row.user_id ||
       !row.operation ||
-      !FLOW_EDIT_OPERATIONS.has(row.operation)
+      !FLOW_EDIT_OPERATIONS.has(row.operation) ||
+      (row.http_status !== null && row.http_status >= 400)
     ) {
       continue
     }

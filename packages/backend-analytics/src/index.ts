@@ -15,6 +15,7 @@ export {
 } from './completion-stores'
 export {
   dbFlowIdResolver,
+  dbUserIdResolver,
   exportMutationLog,
   exportMutationLogToDir,
   logsInsightsFetcher,
