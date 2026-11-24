@@ -2,8 +2,11 @@ import {
   GetQueryResultsCommand,
   type ResultField,
   StartQueryCommand,
+  StopQueryCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
 import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('../../logger')
 
 import {
   fetchMcpToolLines,
@@ -63,6 +66,15 @@ function fakeClient(rowsFor: (startSec: number, endSec: number) => number[]) {
 }
 
 const noSleep = async () => {}
+
+function stoppedQueries(
+  send: ReturnType<typeof vi.fn>,
+): (string | undefined)[] {
+  return send.mock.calls
+    .map(([command]) => command)
+    .filter((command) => command instanceof StopQueryCommand)
+    .map((command) => (command as StopQueryCommand).input.queryId)
+}
 
 describe('fetchMutationLines', () => {
   it('keeps only lines inside the window', async () => {
@@ -165,6 +177,7 @@ describe('fetchMutationLines', () => {
         name: 'TimeoutError',
         message: 'Logs Insights query timed out',
       })
+      expect(stoppedQueries(send)).toEqual(['q1'])
     } finally {
       vi.useRealTimers()
     }
@@ -186,6 +199,7 @@ describe('fetchMutationLines', () => {
         sleep: noSleep,
       }),
     ).rejects.toThrow('Logs Insights query ended as Failed')
+    expect(stoppedQueries(send)).toEqual([])
   })
 
   it('stops a stalled request when the signal aborts', async () => {
@@ -225,7 +239,29 @@ describe('fetchMutationLines', () => {
         signal: AbortSignal.timeout(10),
       }),
     ).rejects.toThrow('aborted due to timeout')
-    expect(send).toHaveBeenCalledTimes(2)
+    expect(stoppedQueries(send)).toEqual(['q1'])
+  })
+
+  it('keeps the original error when StopQuery fails', async () => {
+    const send = vi.fn(async (command: unknown) => {
+      if (command instanceof StartQueryCommand) {
+        return { queryId: 'q1' }
+      }
+      if (command instanceof StopQueryCommand) {
+        throw new Error('stop failed')
+      }
+      return { status: 'Running' }
+    })
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        signal: AbortSignal.timeout(10),
+      }),
+    ).rejects.toThrow('aborted due to timeout')
   })
 })
 

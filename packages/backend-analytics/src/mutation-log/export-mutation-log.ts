@@ -236,6 +236,13 @@ export async function writeMutationLogDays({
         startMs: start.getTime(),
         endMs: end.getTime(),
       })
+      // Logged before any lookup or upload, since a later failure does not refund the scan.
+      logger.info({
+        event: 'analytics.mutation_log.day.scanned',
+        day,
+        queries,
+        bytesScanned,
+      })
       const mcpToolCalls = mcpToolLines
         .map(parseMcpToolLine)
         .filter((call) => call !== null)
@@ -274,8 +281,6 @@ export async function writeMutationLogDays({
         mcpToolLines: mcpToolLines.length,
         mcpToolRows: mcpToolRows.length,
         rows: rows.length,
-        queries,
-        bytesScanned,
         rowsWithoutOperation: rows.filter((row) => !row.operation).length,
         rowsWithoutUser: rows.filter((row) => !row.user_id).length,
         rowsWithFlowFromStep:

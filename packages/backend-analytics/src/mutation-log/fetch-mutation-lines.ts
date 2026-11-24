@@ -3,8 +3,10 @@ import {
   GetQueryResultsCommand,
   type ResultField,
   StartQueryCommand,
+  StopQueryCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
 
+import logger from '../logger'
 import { MCP_EDIT_TOOLS, type McpToolLine } from './parse-mcp-tool-line'
 import {
   type MutationLogLine,
@@ -16,6 +18,7 @@ export const MAX_QUERY_RESULTS = 10_000
 
 const POLL_INTERVAL_MS = 1_000
 const QUERY_TIMEOUT_MS = 15 * 60 * 1_000
+const STOP_QUERY_TIMEOUT_MS = 5_000
 // The SDK sets no request timeout by default, so one stalled call would hang the archival task.
 const REQUEST_TIMEOUT_MS = 60_000
 
@@ -116,29 +119,51 @@ async function runQuery(
   }
 
   const deadline = Date.now() + QUERY_TIMEOUT_MS
-  for (;;) {
-    const result = await client.send(new GetQueryResultsCommand({ queryId }), {
-      abortSignal: signal,
-    })
-    if (result.status === 'Complete') {
-      const rows = result.results ?? []
-      return {
-        rows,
-        truncated: rows.length >= MAX_QUERY_RESULTS,
-        queries: 1,
-        bytesScanned: result.statistics?.bytesScanned ?? null,
+  let running = true
+  try {
+    for (;;) {
+      const result = await client.send(
+        new GetQueryResultsCommand({ queryId }),
+        { abortSignal: signal },
+      )
+      if (result.status === 'Complete') {
+        running = false
+        const rows = result.results ?? []
+        return {
+          rows,
+          truncated: rows.length >= MAX_QUERY_RESULTS,
+          queries: 1,
+          bytesScanned: result.statistics?.bytesScanned ?? null,
+        }
       }
+      if (result.status !== 'Running' && result.status !== 'Scheduled') {
+        running = false
+        throw new Error(`Logs Insights query ended as ${result.status}`)
+      }
+      if (Date.now() > deadline) {
+        // The "mutation log hit a time limit" monitor matches this name.
+        throw Object.assign(new Error('Logs Insights query timed out'), {
+          name: 'TimeoutError',
+        })
+      }
+      await sleep(POLL_INTERVAL_MS, signal)
     }
-    if (result.status !== 'Running' && result.status !== 'Scheduled') {
-      throw new Error(`Logs Insights query ended as ${result.status}`)
+  } finally {
+    if (running) {
+      await stopQuery(client, queryId)
     }
-    if (Date.now() > deadline) {
-      // The "mutation log hit a time limit" monitor matches this name.
-      throw Object.assign(new Error('Logs Insights query timed out'), {
-        name: 'TimeoutError',
-      })
-    }
-    await sleep(POLL_INTERVAL_MS, signal)
+  }
+}
+
+// An abandoned query keeps scanning, and billing, until it ends on its own.
+async function stopQuery(client: LogsClient, queryId: string): Promise<void> {
+  try {
+    await client.send(new StopQueryCommand({ queryId }), {
+      // Not the caller's signal, which may already be aborted.
+      abortSignal: AbortSignal.timeout(STOP_QUERY_TIMEOUT_MS),
+    })
+  } catch (err) {
+    logger.warn({ event: 'analytics.mutation_log.stop_query_failed', err })
   }
 }
 

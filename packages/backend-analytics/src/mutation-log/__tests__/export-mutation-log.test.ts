@@ -255,7 +255,7 @@ describe('writeMutationLogDays', () => {
 
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'analytics.mutation_log.day.written',
+        event: 'analytics.mutation_log.day.scanned',
         day: '2026-11-05',
         queries: 2,
         bytesScanned: 500,
@@ -275,9 +275,36 @@ describe('writeMutationLogDays', () => {
 
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'analytics.mutation_log.day.written',
+        event: 'analytics.mutation_log.day.scanned',
         queries: 2,
         bytesScanned: null,
+      }),
+    )
+  })
+
+  it('logs the scan even when the day fails to upload', async () => {
+    await expect(
+      writeMutationLogDays({
+        fetchDayLines: logsInsightsFetcher(
+          statsClient({ bytesScanned: 200 }) as never,
+          'server',
+        ),
+        resolveUserIds: noUsers,
+        resolveFlowIds: noFlows,
+        sink: async () => {
+          throw new Error('S3 unavailable')
+        },
+        days: ['2026-11-05'],
+        state,
+      }),
+    ).rejects.toThrow('1 day(s) failed')
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.mutation_log.day.scanned',
+        day: '2026-11-05',
+        queries: 2,
+        bytesScanned: 500,
       }),
     )
   })
