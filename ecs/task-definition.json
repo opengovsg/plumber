@@ -81,7 +81,11 @@
         },
         {
           "name": "DD_TAGS",
-          "value": "env:<ENVIRONMENT> service:plumber team:plumber"
+          "value": "env:<ENVIRONMENT> service:plumber team:plumber product:plumber"
+        },
+        {
+          "name": "DD_DOGSTATSD_TAGS",
+          "value": "product:plumber"
         }
       ],
       "mountPoints": [],

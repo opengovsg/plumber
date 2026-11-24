@@ -25,6 +25,8 @@ if (!container) {
 const root = createRoot(container)
 
 if (['prod', 'staging'].includes(appConfig.env)) {
+  datadogRum.setGlobalContextProperty('team', 'plumber')
+  datadogRum.setGlobalContextProperty('product', 'plumber')
   datadogRum.init({
     applicationId: '3bd09f62-dad8-4107-a907-1242dda9ee4d',
     clientToken: 'pubdc3dfc4ab0145729ebc91a19e9fae167',
