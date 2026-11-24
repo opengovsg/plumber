@@ -109,7 +109,6 @@ describe('handleFailedJob failure log', () => {
   })
 
   it.each([
-    { label: 'a StepError without kind', cause: new StepError('n', 's') },
     { label: 'a non-StepError cause', cause: new Error('boom') },
     { label: 'no cause', cause: undefined },
   ])('logs internal for $label', async ({ cause }) => {
@@ -153,34 +152,6 @@ describe('handleFailedJob failure log', () => {
       willRetry: false,
       kind: 'third-party',
     })
-  })
-
-  it('logs internal for a RetriableError without kind', async () => {
-    const retriableError = new RetriableError({
-      error: 'e',
-      delayInMs: 'default',
-      delayType: 'step',
-    })
-
-    await handleFailedJob(JOB, retriableError, 'queue')
-
-    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'internal' })
-  })
-
-  it('logs the StepError kind hidden behind a RetriableError without kind', async () => {
-    const retriableError = new RetriableError({
-      error: 'e',
-      delayInMs: 'default',
-      delayType: 'step',
-    })
-    keepErrorKindViaCause(
-      retriableError,
-      new StepError({ name: 'n', solution: 's', kind: 'config' }),
-    )
-
-    await handleFailedJob(JOB, retriableError, 'queue')
-
-    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'config' })
   })
 
   it('logs without appKey when the step lookup fails', async () => {

@@ -37,6 +37,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
@@ -76,6 +77,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
@@ -112,6 +114,7 @@ describe('Backoff', () => {
       error: 'test error',
       delayInMs: 10,
       delayType: 'queue',
+      kind: 'internal',
     })
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
@@ -133,6 +136,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs: 1000,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
       vi.spyOn(Date, 'now').mockReturnValue(123456789)
@@ -159,6 +163,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs: 1000,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
@@ -172,6 +177,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs: 1000,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
       const updateErr = new Error('redis down')

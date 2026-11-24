@@ -39,14 +39,6 @@ describe('StepError', () => {
       expect(error.name).toBe('StepError')
     })
 
-    it('omits kind from the message when unset', () => {
-      const error = new StepError({ name: 'n', solution: 's' })
-
-      expect(JSON.parse(error.message)).toEqual({ name: 'n', solution: 's' })
-      expect(error.kind).toBeUndefined()
-      expect(error.cause).toBeUndefined()
-    })
-
     it('serializes extra properties', () => {
       const error = new StepError(
         { name: 'n', solution: 's', kind: 'third-party' },
@@ -59,35 +51,6 @@ describe('StepError', () => {
         kind: 'third-party',
         partialRetry: { buttonMessage: 'Retry' },
       })
-    })
-  })
-
-  describe('deprecated positional constructor', () => {
-    it('serializes the same message as before', () => {
-      const error = new StepError('n', 's', HTTP_ERROR, { extra: 1 })
-
-      expect(JSON.parse(error.message)).toEqual({
-        name: 'n',
-        solution: 's',
-        details: HTTP_ERROR.details,
-        extra: 1,
-      })
-      expect(error.kind).toBeUndefined()
-      expect(error.cause).toBe(HTTP_ERROR)
-    })
-
-    it('keeps the solution and cause when the name is missing at runtime', () => {
-      const error = new StepError(
-        undefined as unknown as string,
-        's',
-        HTTP_ERROR,
-      )
-
-      expect(JSON.parse(error.message)).toEqual({
-        solution: 's',
-        details: HTTP_ERROR.details,
-      })
-      expect(error.cause).toBe(HTTP_ERROR)
     })
   })
 })
@@ -127,21 +90,9 @@ describe('getStepErrorKind', () => {
     },
   )
 
-  it('returns internal for a StepError without kind', () => {
-    expect(getStepErrorKind(new StepError('n', 's'))).toBe('internal')
-  })
-
   it.each([
     { label: 'plain Error', error: new Error('{"kind":"config"}') },
     { label: 'HttpError', error: HTTP_ERROR },
-    {
-      label: 'RetriableError without kind',
-      error: new RetriableError({
-        error: { kind: 'config' },
-        delayInMs: 'default',
-        delayType: 'step',
-      }),
-    },
     { label: 'UserFacingError', error: new UserFacingError('bad input') },
     { label: 'object with kind', error: { kind: 'config' } },
     { label: 'null', error: null },

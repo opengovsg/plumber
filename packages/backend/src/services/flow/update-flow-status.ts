@@ -12,14 +12,13 @@ import {
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import { getRepeatDelayedJobIds } from '@/helpers/repeatable-jobs'
-import { captureServerEvent } from '@/helpers/server-events'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import flowQueue from '@/queues/flow'
 
 import {
-  buildFlowStatusEvent,
+  captureFlowStatusChange,
   type FlowStatusSource,
 } from './flow-status-event'
 
@@ -252,9 +251,7 @@ export async function updateFlowStatusService({
   })
 
   // After the commit, so a rolled-back change sends nothing.
-  captureServerEvent(
-    buildFlowStatusEvent({ flow, active, userId, source, previousPublishedAt }),
-  )
+  captureFlowStatusChange({ flow, active, userId, source, previousPublishedAt })
 
   return flow
 }

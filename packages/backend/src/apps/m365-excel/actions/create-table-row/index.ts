@@ -5,14 +5,15 @@ import type {
 } from '@plumber/types'
 
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 
-import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
+import { type AuthData, parseAuthData } from '../../common/auth-data'
 import {
   NO_TABLES_MESSAGE,
   TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import { validateCanAccessFile } from '../../common/file-privacy'
+import { toInternalStepError } from '../../common/internal-step-error'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -45,6 +46,38 @@ function parseRowParams($: IGlobalVariable) {
     })
   }
   return parametersParseResult.data
+}
+
+/**
+ * The batch worker records a per-job failure as-is, so it must already carry a kind.
+ */
+function wrapUnexpectedJobError($: IGlobalVariable, error: unknown): StepError {
+  if (error instanceof StepError) {
+    return error
+  }
+  return toInternalStepError($, error, {
+    name: 'Could not add a row to your Excel table.',
+    event: 'm365-excel-create-table-row-unexpected-error',
+  })
+}
+
+function getAuthDataOrThrow($: IGlobalVariable): AuthData {
+  const result = parseAuthData($)
+  switch (result.status) {
+    case 'missing':
+      throw new StepError({
+        name: 'M365 connection is missing',
+        solution: GenericSolution.MalformedConnectionData,
+        kind: 'config',
+      })
+    case 'malformed':
+      throw toInternalStepError($, result.error, {
+        name: 'M365 connection data is invalid',
+        event: 'm365-excel-malformed-auth-data',
+      })
+    case 'ok':
+      return result.data
+  }
 }
 
 // Performs a single multi-row insert for a batch of createTableRow jobs that
@@ -82,7 +115,10 @@ async function runBatch(
     try {
       parsed.push({ index, $, params: parseRowParams($) })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
@@ -153,7 +189,7 @@ async function runBatch(
     }
     await validateCanAccessFile(
       ownerEmail,
-      extractAuthDataWithPlumberFolder(firstJob),
+      getAuthDataOrThrow(firstJob),
       fileId,
       firstJob.http,
     )
@@ -161,8 +197,9 @@ async function runBatch(
     if (error instanceof RetriableError) {
       throw error
     }
+    const stepError = wrapUnexpectedJobError(firstJob, error)
     for (const { index } of parsed) {
-      results[index] = { status: 'failed', error }
+      results[index] = { status: 'failed', error: stepError }
     }
     return results
   }
@@ -230,7 +267,10 @@ async function runBatch(
       )
       writable.push({ index, $ })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 

@@ -4,31 +4,34 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getLockKey } from '../../common/file-lock'
 
 const mocks = vi.hoisted(() => ({
-  extractAuthData: vi.fn(),
   getTenant: vi.fn(),
+  loggerError: vi.fn(),
 }))
 
-vi.mock('@/apps/m365-excel/common/auth-data', () => ({
-  extractAuthDataWithPlumberFolder: mocks.extractAuthData,
-}))
-
-vi.mock('@/config/app-env-vars/m365', () => ({
+vi.mock('@/config/app-env-vars/m365', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/config/app-env-vars/m365')>()),
   getM365TenantInfo: mocks.getTenant,
 }))
 
-function makeGlobalVariable(fileId?: string): IGlobalVariable {
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.loggerError, info: vi.fn(), warn: vi.fn() },
+}))
+
+const VALID_AUTH_DATA = { tenantKey: 'sg-govt', folderId: 'FOLDER' }
+
+function makeGlobalVariable(
+  fileId?: string,
+  authData: unknown = VALID_AUTH_DATA,
+): IGlobalVariable {
   return {
     step: { parameters: fileId ? { fileId } : {} },
-    auth: { data: { tenantKey: 'sg-govt', folderId: 'FOLDER' } },
+    auth: { data: authData },
   } as unknown as IGlobalVariable
 }
 
 describe('m365-excel getLockKey', () => {
   beforeEach(() => {
-    mocks.extractAuthData.mockReturnValue({
-      tenantKey: 'sg-govt',
-      folderId: 'FOLDER',
-    })
+    vi.resetAllMocks()
     mocks.getTenant.mockReturnValue({ id: 'TENANT-1' })
   })
 
@@ -42,9 +45,22 @@ describe('m365-excel getLockKey', () => {
     expect(await getLockKey(makeGlobalVariable())).toBeNull()
   })
 
-  it('returns null when the tenant cannot be derived (e.g. bad auth)', async () => {
-    mocks.extractAuthData.mockImplementation(() => {
-      throw new Error('bad auth data')
+  it.each([
+    ['missing', null],
+    ['malformed', { tenantKey: 'nope', folderId: 'FOLDER' }],
+  ])(
+    'returns null without logging when the auth data is %s',
+    async (_, authData) => {
+      expect(
+        await getLockKey(makeGlobalVariable('file-xyz', authData)),
+      ).toBeNull()
+      expect(mocks.loggerError).not.toHaveBeenCalled()
+    },
+  )
+
+  it('returns null when the tenant lookup fails', async () => {
+    mocks.getTenant.mockImplementation(() => {
+      throw new Error('no tenant info')
     })
     expect(await getLockKey(makeGlobalVariable('file-xyz'))).toBeNull()
   })

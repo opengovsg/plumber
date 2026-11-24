@@ -79,6 +79,7 @@ describe('WorkbookSession', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'internal',
       })
       vi.mocked($.http.post).mockRejectedValue(retriableError)
 
@@ -89,25 +90,34 @@ describe('WorkbookSession', () => {
   })
 
   describe('request', () => {
-    it('retries and clears the session when Graph invalidates it', async () => {
-      vi.mocked($.http.request).mockRejectedValue(
-        makeHttpError({
-          status: 400,
-          data: {
-            error: {
-              code: 'InvalidSession',
-              innerError: { code: 'invalidSessionReCreatable' },
+    it.each([
+      { code: 'invalidSessionReCreatable', kind: 'third-party' },
+      { code: 'invalidSessionUnsupportedWorkbook', kind: 'config' },
+      { code: 'invalidSessionNotFound', kind: 'config' },
+    ])(
+      'retries and clears the session when Graph invalidates it with $code',
+      async ({ code, kind }) => {
+        vi.mocked($.http.request).mockRejectedValue(
+          makeHttpError({
+            status: 400,
+            data: {
+              error: {
+                code: 'InvalidSession',
+                innerError: { code },
+              },
             },
-          },
-        }),
-      )
-      const session = await WorkbookSession.acquire($, 'file-id')
+          }),
+        )
+        const session = await WorkbookSession.acquire($, 'file-id')
 
-      await expect(session.request('/tables', 'get')).rejects.toBeInstanceOf(
-        RetriableError,
-      )
-      expect(mocks.clearSessionIdFromRedis).toHaveBeenCalledOnce()
-    })
+        const error = await session
+          .request('/tables', 'get')
+          .catch((err: unknown) => err)
+        expect(error).toBeInstanceOf(RetriableError)
+        expect(error).toMatchObject({ kind })
+        expect(mocks.clearSessionIdFromRedis).toHaveBeenCalledOnce()
+      },
+    )
 
     it('converts any other HttpError to a StepError with its cause', async () => {
       const httpError = makeHttpError({

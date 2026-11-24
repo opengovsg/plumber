@@ -23,6 +23,12 @@ import {
   setSessionIdInRedis,
 } from './redis'
 
+// Only the user's own workbook causes these, so recreating the session cannot fix them.
+const CONFIG_SESSION_ERROR_CODES: ReadonlySet<string> = new Set([
+  'invalidSessionNotFound',
+  'invalidSessionUnsupportedWorkbook',
+])
+
 async function refreshSessionId(
   tenant: M365TenantInfo,
   fileId: string,
@@ -173,6 +179,9 @@ export default class WorkbookSession {
         error: 'Excel session was invalidated',
         delayInMs: 'default',
         delayType: 'step',
+        kind: CONFIG_SESSION_ERROR_CODES.has(graphApiInnerError)
+          ? 'config'
+          : 'third-party',
       })
     }
   }

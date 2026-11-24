@@ -1,5 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -13,6 +14,15 @@ const mocks = vi.hoisted(() => ({
   // runBatch authorizes file access ONCE per batch (every job in a batch shares
   // one connection). Default: access granted; the denial test overrides it.
   validateCanAccessFile: vi.fn(),
+  parseAuthData: vi.fn(),
+  constructRow: vi.fn(),
+  loggerError: vi.fn(),
+  realConstructRow:
+    undefined as unknown as (typeof import('../../common/workbook-helpers/tables'))['constructMsGraphValuesArrayForRowWrite'],
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: { error: mocks.loggerError, info: vi.fn(), warn: vi.fn() },
 }))
 
 vi.mock('../../common/workbook-session', () => ({
@@ -25,15 +35,23 @@ vi.mock('../../common/file-privacy', () => ({
   validateCanAccessFile: mocks.validateCanAccessFile,
 }))
 
-// runBatch passes auth data (via extractAuthDataWithPlumberFolder) to
-// validateCanAccessFile. Both are mocked here, so the stub `$`'s auth need not
-// be real - extractAuthDataWithPlumberFolder always returns this dummy.
+// runBatch passes auth data (via parseAuthData) to validateCanAccessFile.
+// Both are mocked here, so the stub `$`'s auth need not be real.
 vi.mock('../../common/auth-data', () => ({
-  extractAuthDataWithPlumberFolder: () => ({
-    tenantKey: 'tenant',
-    folderId: 'FOLDER',
-  }),
+  parseAuthData: mocks.parseAuthData,
 }))
+
+vi.mock('../../common/workbook-helpers/tables', async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import('../../common/workbook-helpers/tables')
+    >()
+  mocks.realConstructRow = actual.constructMsGraphValuesArrayForRowWrite
+  return {
+    ...actual,
+    constructMsGraphValuesArrayForRowWrite: mocks.constructRow,
+  }
+})
 
 // Keep this a true unit test: the test-run rate-limit guard constructs a real
 // Redis-backed rate limiter at import time, so stub the whole module out.
@@ -120,6 +138,11 @@ describe('createTableRow runBatch', () => {
     vi.resetAllMocks()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
+    mocks.parseAuthData.mockReturnValue({
+      status: 'ok',
+      data: { tenantKey: 'tenant', folderId: 'FOLDER' },
+    })
+    mocks.constructRow.mockImplementation(mocks.realConstructRow)
     mockGraph(0)
   })
 
@@ -329,13 +352,12 @@ describe('createTableRow runBatch', () => {
 
   it('fails the whole batch when the shared file-access check is denied', async () => {
     mocks.validateCanAccessFile.mockReset()
-    mocks.validateCanAccessFile.mockRejectedValue(
-      new StepError({
-        name: 'You need write access to use this file in your pipe.',
-        solution: 'Ask the file owner to give you edit access, then try again.',
-        kind: 'config',
-      }),
-    )
+    const denial = new StepError({
+      name: 'You need write access to use this file in your pipe.',
+      solution: 'Ask the file owner to give you edit access, then try again.',
+      kind: 'config',
+    })
+    mocks.validateCanAccessFile.mockRejectedValue(denial)
 
     const jobs = [
       { $: makeGlobalVariable(rowParameters('Alice', '30')) },
@@ -348,12 +370,144 @@ describe('createTableRow runBatch', () => {
     // isolates every job - no session, no POST, no outputs.
     expect(mocks.validateCanAccessFile).toHaveBeenCalledTimes(1)
     expect(results.every((r) => r.status === 'failed')).toBe(true)
-    results.forEach((r) =>
-      expect(r).toMatchObject({ error: { kind: 'config' } }),
-    )
+    results.forEach((r) => expect((r as { error: unknown }).error).toBe(denial))
     expect(mocks.acquire).not.toHaveBeenCalled()
     expect(postCalls()).toHaveLength(0)
     jobs.forEach((job) => expect(job.$.setActionItem).not.toHaveBeenCalled())
+  })
+
+  it.each([
+    [
+      'a plain Error from the access check',
+      () => mocks.validateCanAccessFile.mockRejectedValue(new Error('boom')),
+      'boom',
+    ],
+    [
+      'malformed auth data',
+      () =>
+        mocks.parseAuthData.mockReturnValue({
+          status: 'malformed',
+          error: z.object({ a: z.string() }).safeParse(undefined).error,
+        }),
+      '✖ Invalid input: expected object, received undefined',
+    ],
+  ])(
+    'wraps %s in an internal StepError for every job',
+    async (_, arrange, expectedMessage) => {
+      arrange()
+      const jobs = [
+        { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+        { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+      ]
+
+      const results = await createTableRowAction.runBatch!(jobs)
+
+      results.forEach((r) => {
+        const { error } = r as { status: 'failed'; error: StepError }
+        expect(r.status).toBe('failed')
+        expect(error).toBeInstanceOf(StepError)
+        expect(error.kind).toBe('internal')
+        expect(error.cause).toBeInstanceOf(Error)
+        expect(error.cause).not.toBeInstanceOf(StepError)
+        expect(JSON.parse(error.message).details).toEqual({
+          error: expectedMessage,
+        })
+      })
+      expect(mocks.acquire).not.toHaveBeenCalled()
+    },
+  )
+
+  it('fails every job with a config StepError when the connection is missing', async () => {
+    mocks.parseAuthData.mockReturnValue({ status: 'missing' })
+    const jobs = [
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+    ]
+
+    const results = await createTableRowAction.runBatch!(jobs)
+
+    results.forEach((r) => {
+      const { error } = r as { status: 'failed'; error: StepError }
+      expect(r.status).toBe('failed')
+      expect(error).toBeInstanceOf(StepError)
+      expect(error.kind).toBe('config')
+    })
+    expect(mocks.validateCanAccessFile).not.toHaveBeenCalled()
+    expect(mocks.loggerError).not.toHaveBeenCalled()
+  })
+
+  it('logs malformed auth data once with its own event', async () => {
+    mocks.parseAuthData.mockReturnValue({
+      status: 'malformed',
+      error: z.object({ a: z.string() }).safeParse(undefined).error,
+    })
+
+    await createTableRowAction.runBatch!([
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+    ])
+
+    expect(mocks.loggerError).toHaveBeenCalledOnce()
+    expect(mocks.loggerError.mock.calls[0][1]).toMatchObject({
+      event: 'm365-excel-malformed-auth-data',
+      errorName: 'ZodError',
+    })
+  })
+
+  it('logs one diagnostic for an unexpected access-check error shared by the batch', async () => {
+    mocks.validateCanAccessFile.mockRejectedValue(new Error('boom'))
+    const jobs = [
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+    ]
+
+    await createTableRowAction.runBatch!(jobs)
+
+    expect(mocks.loggerError).toHaveBeenCalledOnce()
+    const [, fields] = mocks.loggerError.mock.calls[0]
+    expect(fields).toEqual({
+      event: 'm365-excel-create-table-row-unexpected-error',
+      errorName: 'Error',
+      errorMessage: 'boom',
+      flowId: 'flow-id',
+      stepId: 'step-id',
+      executionId: 'execution-id',
+    })
+  })
+
+  it('does not log a StepError from the access check', async () => {
+    mocks.validateCanAccessFile.mockRejectedValue(
+      new StepError({ name: 'Denied', solution: 'Fix it', kind: 'config' }),
+    )
+
+    await createTableRowAction.runBatch!([
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+    ])
+
+    expect(mocks.loggerError).not.toHaveBeenCalled()
+  })
+
+  it('wraps a non-StepError row-build failure in an internal StepError', async () => {
+    const buildError = new Error('unexpected')
+    mocks.constructRow
+      .mockImplementationOnce(mocks.realConstructRow)
+      .mockImplementationOnce(() => {
+        throw buildError
+      })
+    const jobs = [
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+    ]
+
+    const results = await createTableRowAction.runBatch!(jobs)
+
+    expect(results[0]).toEqual({ status: 'success' })
+    const { error } = results[1] as { status: 'failed'; error: StepError }
+    expect(results[1].status).toBe('failed')
+    expect(error).toBeInstanceOf(StepError)
+    expect(error.kind).toBe('internal')
+    expect(error.cause).toBe(buildError)
+    expect(JSON.parse(error.message).details).toEqual({ error: 'unexpected' })
   })
 
   it('rethrows a transient access-check error so the whole batch retries', async () => {
@@ -367,6 +521,7 @@ describe('createTableRow runBatch', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 'default',
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
@@ -453,6 +608,11 @@ describe('createTableRow run (single-row delegation)', () => {
     vi.resetAllMocks()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
+    mocks.parseAuthData.mockReturnValue({
+      status: 'ok',
+      data: { tenantKey: 'tenant', folderId: 'FOLDER' },
+    })
+    mocks.constructRow.mockImplementation(mocks.realConstructRow)
     mockGraph(0)
   })
 

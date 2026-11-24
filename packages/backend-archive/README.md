@@ -174,6 +174,78 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ---
 
+## Exporting analytics tables
+
+The archival task runs the analytics export each night, before it archives. Archival must not delete executions before the export reads them. [`backend-analytics`](../backend-analytics/README.md) holds the export code and describes what it writes.
+
+`analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
+
+| Flag           | Meaning                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--tables a,b` | Silver tables to write. Default: all. [`backend-analytics`](../backend-analytics/README.md#what-the-export-writes) lists them.             |
+| `--full`       | Write `flow_step` as a full copy for yesterday. Run it after a migration or script writes `steps` directly, since those skip `updated_at`. |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                       |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                             |
+
+Pass exactly one of `--out` and `--s3`.
+
+A local folder belongs to the database that first wrote it. The first run records `APP_ENV`, the reader host and the database in `bronze/_completion/source.json`. A later run against another database stops before writing, because the folder's completion files would make it skip days.
+
+To export production data to your own machine, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine). Then:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:export-local --tables flow_transfer,dim_user --out "$OUT"
+```
+
+`dim_user` holds email addresses. `mktemp -d` creates a private folder outside the repo, so `git add` cannot stage the files. The export writes them readable only by you. Check a file with DuckDB:
+
+```bash
+duckdb -c "DESCRIBE SELECT * FROM read_parquet('$OUT/silver/dim_user/current.parquet')"
+```
+
+Delete the folder after the upload:
+
+```bash
+rm -rf "$OUT"
+```
+
+## Extracting the mutation log
+
+The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It queries `ANALYTICS_REQUEST_LOG_GROUP` with CloudWatch Logs Insights. [`backend-analytics`](../backend-analytics/README.md#mutation_log) describes the rows it writes. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`.
+
+The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night. A finished run logs `analytics.mutation_log.complete` with `durationMs`. A failed run logs `analytics.mutation_log.error` with `durationMs`, and `timedOut: true` when the 30 minutes ran out.
+
+The same run also writes `flow_edit_daily`, described in [`backend-analytics`](../backend-analytics/README.md#flow_edit_daily).
+
+`analytics:mutation-log` runs the same code for a range of days, for example to extract history:
+
+| Flag                 | Meaning                                                                                                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--from YYYY-MM-DD`  | First Singapore day.                                                                                                                                                                                                                                                |
+| `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                                                                                                                                                                                   |
+| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`. Skips the step and user lookups, since the database reader may belong to another environment.                                                                                          |
+| `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                                                                                                |
+| `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. Finished days only, since a completion file marks the day done. Reads `ANALYTICS_REQUEST_LOG_GROUP`, so the source matches the bucket's environment. |
+
+A local folder also records its log group in `bronze/_completion/source.json`. A later run with another log group stops before writing.
+
+The query reads AWS credentials from the default chain. To try one day against production from your own machine:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out "$OUT"
+```
+
+That checks the query and parsing only. `--log-group` skips the lookups, so `deleteStep` and `register_connection` rows have no pipe, and MCP rows have no user. `flow_edit_daily` then leaves out every MCP row. To check the lookups and `flow_edit_daily` too, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine), with `ANALYTICS_REQUEST_LOG_GROUP` set to the production log group. Then run without `--log-group`:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --out "$OUT"
+```
+
+Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.
+
 ## Counting archived steps by app and action
 
 Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bucket. The `stepCounts` field breaks down the number of archived steps by SGT date → `appKey` → `actionKey` for that run.
@@ -274,14 +346,21 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 | `ARCHIVE_MAX_RUNTIME_MS`           | **yes**        | —                        | Wall-clock limit for a single run (ms). Set to `0` to disable.                                                                               |
 | `ARCHIVE_DELETED_FLOWS_ONLY`       | no             | `false`                  | Restrict archival to executions belonging to soft-deleted flows.                                                                             |
 | `ARCHIVE_TEST_RUNS`                | no             | `false`                  | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
+| `ANALYTICS_BUCKET`                 | yes (prod)     | —                        | S3 bucket for the analytics `bronze/` and `silver/` files.                                                                                   |
+| `ANALYTICS_REQUEST_LOG_GROUP`      | yes (prod)     | —                        | Server log group the mutation log is extracted from.                                                                                         |
 
 ---
 
 ## Running tests
 
+Run checks through Turbo. It builds `backend-analytics` first, and this package imports that build. The bare package scripts fail with `TS2307` on a clean checkout.
+
 ```bash
-pnpm --filter backend-archive run test:unit
+pnpm exec turbo run typecheck --filter=backend-archive
+pnpm exec turbo run test:unit --filter=backend-archive
 ```
+
+The analytics export tests live in [`backend-analytics`](../backend-analytics/README.md#running-tests).
 
 ---
 

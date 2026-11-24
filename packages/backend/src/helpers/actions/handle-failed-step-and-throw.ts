@@ -1,4 +1,4 @@
-import type { IActionJobData } from '@plumber/types'
+import type { IActionJobData, StepErrorKind } from '@plumber/types'
 import {
   type JobPro,
   UnrecoverableError,
@@ -8,7 +8,10 @@ import { type Span } from 'dd-trace'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError, { keepErrorKindViaCause } from '@/errors/step'
+import StepError, {
+  getStepErrorKind,
+  keepErrorKindViaCause,
+} from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -81,6 +84,7 @@ function handleRetriableError(
 function handleHttpError(
   executionError: HttpError,
   errorDetails: HandleFailedStepAndThrowParams['errorDetails'],
+  kind: StepErrorKind,
 ): never {
   const retryInfo = executionError.getRetryInfo()
   // Without strictNullChecks, only `=== true` narrows `retryInfo` for the branch below.
@@ -89,6 +93,7 @@ function handleHttpError(
       error: errorDetails ?? undefined,
       delayInMs: retryInfo.delayInMs,
       delayType: 'step',
+      kind,
     })
   }
 
@@ -144,7 +149,11 @@ export function handleFailedStepAndThrow(
       return handleRetriableError(executionError, context)
     }
     if (executionError instanceof HttpError) {
-      return handleHttpError(executionError, errorDetails)
+      return handleHttpError(
+        executionError,
+        errorDetails,
+        getStepErrorKind(params.executionError),
+      )
     }
 
     // All other errors cannot be retried.

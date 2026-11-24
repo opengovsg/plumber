@@ -12,6 +12,7 @@ RUN npm install -g pnpm@12.11.2
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm_config__auth="{\"https://npm.taskforce.sh\":{\"@taskforcesh\":{\"authToken\":\"$(cat /run/secrets/NPM_TASKFORCESH_TOKEN)\"}}}" \
   pnpm install --frozen-lockfile
+# The package's prebuild builds its workspace dependencies first.
 RUN pnpm --filter backend-archive run build
 # `pnpm deploy` materializes a self-contained node_modules for one workspace
 # package (resolving symlinks and workspace:* deps into real files), unlike

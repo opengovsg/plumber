@@ -94,12 +94,12 @@ vi.mock('@/apps/m365-excel/common/file-privacy', () => ({
 
 // createTableRow's runBatch derives auth data (to pass to validateCanAccessFile)
 // from `$`. The test flows have no real m365 connection, so the real
-// extractAuthDataWithPlumberFolder would throw; stub it to a dummy
+// parseAuthData would report it missing; stub it to a dummy
 // (validateCanAccessFile is mocked above, so the value is never actually used).
 vi.mock('@/apps/m365-excel/common/auth-data', () => ({
-  extractAuthDataWithPlumberFolder: () => ({
-    tenantKey: 'itest-tenant',
-    folderId: 'ITEST-FOLDER',
+  parseAuthData: () => ({
+    status: 'ok',
+    data: { tenantKey: 'itest-tenant', folderId: 'ITEST-FOLDER' },
   }),
 }))
 
@@ -556,6 +556,7 @@ describe('m365-excel batch worker (integration)', () => {
         error: 'transient graph error',
         delayInMs: 50,
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
@@ -593,6 +594,7 @@ describe('m365-excel batch worker (integration)', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 50,
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
