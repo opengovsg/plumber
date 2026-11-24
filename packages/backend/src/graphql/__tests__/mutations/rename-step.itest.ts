@@ -164,4 +164,48 @@ describe('renameStep mutation', () => {
       'This step no longer exists or you can no longer edit it. Refresh the page.',
     )
   })
+  it('rejects the second of two concurrent renames from the same pipe version', async () => {
+    const editor = await generateMockUser('editor')
+    await generateMockCollaborator(
+      flow.id,
+      editor.id,
+      context.currentUser.id,
+      'editor',
+    )
+    // A third user saved last, so neither renamer skips the version check.
+    const lastSaver = await generateMockUser('nonCollaborator')
+    await Flow.knex()('flows')
+      .where({ id: flow.id })
+      .update({ updated_by: lastSaver.id })
+    const version = await flowInput()
+
+    const results = await Promise.allSettled([
+      renameStep(
+        {},
+        { input: { id: step.id, flow: version, stepName: 'Owner name' } },
+        context,
+      ),
+      renameStep(
+        {},
+        { input: { id: step.id, flow: version, stepName: 'Editor name' } },
+        { ...context, currentUser: editor },
+      ),
+    ])
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled')
+    const rejected = results.filter((r) => r.status === 'rejected')
+    expect(fulfilled).toHaveLength(1)
+    expect(rejected).toHaveLength(1)
+    expect((rejected[0] as PromiseRejectedResult).reason.message).toContain(
+      'This Pipe has been edited by another user',
+    )
+    const winner = (
+      fulfilled[0] as PromiseFulfilledResult<
+        Awaited<ReturnType<typeof renameStep>>
+      >
+    ).value
+    expect(
+      (await Step.query().findById(step.id).throwIfNotFound()).config.stepName,
+    ).toBe(winner?.config?.stepName)
+  })
 })

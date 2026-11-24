@@ -2,6 +2,7 @@ import { raw } from 'objection'
 import { z } from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 import { lookupStepDefinition } from '@/services/step-definition'
 
@@ -61,7 +62,13 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
       )
     }
 
-    step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
+    // IMPORTANT: lock the pipe before checking its version. Otherwise two
+    // concurrent renames both pass the check and the later one silently wins.
+    const flow = await Flow.query(trx)
+      .forUpdate()
+      .findById(flowId)
+      .throwIfNotFound()
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     // FormSG workflow steps take their names from the form.
     const isSystemStep =
@@ -87,7 +94,7 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
       })
       .withGraphFetched({ connection: true, flow: true })
 
-    const updatedFlow = await step.flow.patchLastUpdated({
+    const updatedFlow = await flow.patchLastUpdated({
       flowId: step.flowId,
       updatedBy: context.currentUser.id,
       trx,
