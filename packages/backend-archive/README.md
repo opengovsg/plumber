@@ -216,6 +216,8 @@ The archival task also extracts yesterday's GraphQL mutations from the server re
 
 The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night. A finished run logs `analytics.mutation_log.complete` with `durationMs`. A failed run logs `analytics.mutation_log.error` with `durationMs`, and `timedOut: true` when the 30 minutes ran out.
 
+The same run also writes `flow_edit_daily`, described in [`backend-analytics`](../backend-analytics/README.md#flow_edit_daily).
+
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 
 | Flag                 | Meaning                                                                                                                                                                                                                                                             |
