@@ -1,16 +1,15 @@
 import { randomUUID } from 'crypto'
 
 /**
- * Community template rules. Every user can see every community template, so
- * these hold for owners, editors and viewers alike:
- * - Any role can save an accessible pipe as a template.
+ * Community template rules. Every user can see every community template:
+ * - Only the pipe owner can save it as a template. Editors and viewers cannot.
  * - The template drops file, table and secret parameters.
  * - The template drops every step variable, keeping the text around it.
  * - Pipes created from that template do not receive any of these either.
  * - The template never keeps the source Tiles table and column IDs.
  * - The template keeps the source tile's name and column names, but no rows.
- * - It keeps them only if the user converting the pipe can access the tile now.
- *   Otherwise the template treats the tile as deleted.
+ * - It keeps them only if the pipe owner can access the tile now. Otherwise
+ *   the template treats the tile as deleted.
  * - Pipes created from that template get a new empty tile with those columns.
  *   Steps that used the source tile use the new tile instead.
  * - The template drops admin overrides, template guidance and AI Builder config.
@@ -162,16 +161,10 @@ async function userWithRole(role: IFlowCollabRole): Promise<User> {
     role,
     updatedBy: owner.id,
   })
-  // Pipe collaborators get tile access through addFlowTableConnection.
-  await TableCollaborator.query().insert({
-    tableId: sourceTile.id,
-    userId: user.id,
-    role,
-  })
   return user
 }
 
-describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
+describe.each<IFlowCollabRole>(['editor', 'viewer'])(
   'createTemplateFromFlow by a %s',
   (role) => {
     let user: User
@@ -181,215 +174,222 @@ describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
       user = await userWithRole(role)
     })
 
-    const exportTemplate = () =>
-      createTemplateFromFlow(
-        {},
-        { input: { flowId: flow.id } },
-        contextFor(user),
-      )
-
-    it('returns sanitized template parameters', async () => {
-      const result = await exportTemplate()
-
-      expectSanitized(result.steps.map((step) => step.parameters ?? {}))
-    })
-
-    it('stores sanitized template steps', async () => {
-      const { id } = await exportTemplate()
-
-      const template = await Template.query()
-        .findById(id)
-        .withGraphFetched({ templateSteps: true })
-        .throwIfNotFound()
-      expect(template.userId).toBe(user.id)
-      const stored = [...template.templateSteps]
-        .map(({ data }) => data)
-        .sort((a, b) => a.position - b.position)
-      expectSanitized(stored.map((step) => step.parameters ?? {}))
-    })
-
-    it('lists sanitized parameters to every user', async () => {
-      const { id } = await exportTemplate()
-      const otherUser = await User.query().insert({
-        email: `${randomUUID()}@open.gov.sg`,
-      })
-
-      const templates = await getTemplates({}, {}, contextFor(otherUser))
-      const template = templates.find((t) => t.id === id)!
-      expectSanitized(template.steps.map((step) => step.parameters ?? {}))
-    })
-
-    it('creates pipes without the source parameters or variables', async () => {
-      const { id } = await exportTemplate()
-
-      const newFlow = await createFlowFromTemplate(id, user)
-      const steps = await newFlow.$relatedQuery('steps').orderBy('position')
-      expectSanitized(steps.map((step) => step.parameters))
-    })
-
-    it('leaves the source pipe parameters untouched', async () => {
-      await exportTemplate()
-
-      const steps = await flow.$relatedQuery('steps').orderBy('position')
-      expect(steps[0].parameters.encryptionKey).toBe('gather-secret')
-      expect(steps[2].parameters.fileId).toBe('file-1')
-      expect(steps[3].parameters.data).toContain('{{step.')
+    it('rejects the pipe and saves no template', async () => {
+      await expect(
+        createTemplateFromFlow(
+          {},
+          { input: { flowId: flow.id } },
+          contextFor(user),
+        ),
+      ).rejects.toThrow('Only the pipe owner can convert it to a template')
+      expect(await Template.query().resultSize()).toBe(0)
     })
   },
 )
 
-describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
-  'createTemplateFromFlow tiles by a %s',
-  (role) => {
-    let user: User
+describe('createTemplateFromFlow by the owner', () => {
+  const role: IFlowCollabRole = 'owner'
+  let user: User
 
-    beforeEach(async () => {
-      await seedFlow()
-      user = await userWithRole(role)
+  beforeEach(async () => {
+    await seedFlow()
+    user = await userWithRole(role)
+  })
+
+  const exportTemplate = () =>
+    createTemplateFromFlow({}, { input: { flowId: flow.id } }, contextFor(user))
+
+  it('returns sanitized template parameters', async () => {
+    const result = await exportTemplate()
+
+    expectSanitized(result.steps.map((step) => step.parameters ?? {}))
+  })
+
+  it('stores sanitized template steps', async () => {
+    const { id } = await exportTemplate()
+
+    const template = await Template.query()
+      .findById(id)
+      .withGraphFetched({ templateSteps: true })
+      .throwIfNotFound()
+    expect(template.userId).toBe(user.id)
+    const stored = [...template.templateSteps]
+      .map(({ data }) => data)
+      .sort((a, b) => a.position - b.position)
+    expectSanitized(stored.map((step) => step.parameters ?? {}))
+  })
+
+  it('lists sanitized parameters to every user', async () => {
+    const { id } = await exportTemplate()
+    const otherUser = await User.query().insert({
+      email: `${randomUUID()}@open.gov.sg`,
     })
 
-    const exportTemplate = () =>
-      createTemplateFromFlow(
-        {},
-        { input: { flowId: flow.id } },
-        contextFor(user),
-      )
+    const templates = await getTemplates({}, {}, contextFor(otherUser))
+    const template = templates.find((t) => t.id === id)!
+    expectSanitized(template.steps.map((step) => step.parameters ?? {}))
+  })
 
-    it('keeps the source tile name and column names without rows', async () => {
-      const { id } = await exportTemplate()
+  it('creates pipes without the source parameters or variables', async () => {
+    const { id } = await exportTemplate()
 
-      const template = (await Template.findOneById(id))!
-      expect(template.steps[1].templateData).toEqual({
-        name: 'Owner tile',
-        columns: ['Name', 'Amount (SGD)'],
-      })
+    const newFlow = await createFlowFromTemplate(id, user)
+    const steps = await newFlow.$relatedQuery('steps').orderBy('position')
+    expectSanitized(steps.map((step) => step.parameters))
+  })
+
+  it('leaves the source pipe parameters untouched', async () => {
+    await exportTemplate()
+
+    const steps = await flow.$relatedQuery('steps').orderBy('position')
+    expect(steps[0].parameters.encryptionKey).toBe('gather-secret')
+    expect(steps[2].parameters.fileId).toBe('file-1')
+    expect(steps[3].parameters.data).toContain('{{step.')
+  })
+})
+
+describe('createTemplateFromFlow tiles by the owner', () => {
+  const role: IFlowCollabRole = 'owner'
+  let user: User
+
+  beforeEach(async () => {
+    await seedFlow()
+    user = await userWithRole(role)
+  })
+
+  const exportTemplate = () =>
+    createTemplateFromFlow({}, { input: { flowId: flow.id } }, contextFor(user))
+
+  it('keeps the source tile name and column names without rows', async () => {
+    const { id } = await exportTemplate()
+
+    const template = (await Template.findOneById(id))!
+    expect(template.steps[1].templateData).toEqual({
+      name: 'Owner tile',
+      columns: ['Name', 'Amount (SGD)'],
     })
+  })
 
-    it('creates pipes with a new empty tile that steps use', async () => {
-      const { id } = await exportTemplate()
+  it('creates pipes with a new empty tile that steps use', async () => {
+    const { id } = await exportTemplate()
 
-      const newFlow = await createFlowFromTemplate(id, user)
-      const steps = await newFlow.$relatedQuery('steps').orderBy('position')
-      expectNoSourceTileIds(steps.map((step) => step.parameters))
+    const newFlow = await createFlowFromTemplate(id, user)
+    const steps = await newFlow.$relatedQuery('steps').orderBy('position')
+    expectNoSourceTileIds(steps.map((step) => step.parameters))
 
-      const newTile = await TableMetadata.query()
-        .findById(steps[1].parameters.tableId as string)
-        .withGraphFetched({ columns: true })
-        .throwIfNotFound()
-      expect(newTile.columns.map((column) => column.name)).toEqual([
-        'Name',
-        'Amount (SGD)',
-      ])
-      const [nameColumn] = newTile.columns
-      expect(steps[1].parameters.rowData).toEqual([
-        { columnId: nameColumn.id, cellValue: '' },
-      ])
-    })
+    const newTile = await TableMetadata.query()
+      .findById(steps[1].parameters.tableId as string)
+      .withGraphFetched({ columns: true })
+      .throwIfNotFound()
+    expect(newTile.columns.map((column) => column.name)).toEqual([
+      'Name',
+      'Amount (SGD)',
+    ])
+    const [nameColumn] = newTile.columns
+    expect(steps[1].parameters.rowData).toEqual([
+      { columnId: nameColumn.id, cellValue: '' },
+    ])
+  })
 
-    it('drops the Tiles table and column IDs when the source tile is deleted', async () => {
-      await sourceTile.$query().delete()
+  it('drops the Tiles table and column IDs when the source tile is deleted', async () => {
+    await sourceTile.$query().delete()
 
-      const result = await exportTemplate()
+    const result = await exportTemplate()
 
-      const tiles = result.steps[1]
-      expect(tiles.parameters?.tableId).toBeUndefined()
-      expect(tiles.parameters?.rowData).toEqual([
-        expect.objectContaining({ columnId: '' }),
-      ])
-      expect(tiles).not.toHaveProperty('templateData')
-    })
+    const tiles = result.steps[1]
+    expect(tiles.parameters?.tableId).toBeUndefined()
+    expect(tiles.parameters?.rowData).toEqual([
+      expect.objectContaining({ columnId: '' }),
+    ])
+    expect(tiles).not.toHaveProperty('templateData')
+  })
 
-    function expectTileDropped(steps: { parameters?: unknown }[]): void {
-      const tiles = steps[1] as {
-        parameters?: { tableId?: string; rowData?: unknown }
-      }
-      expect(tiles.parameters?.tableId).toBeUndefined()
-      expect(tiles.parameters?.rowData).toEqual([
-        expect.objectContaining({ columnId: '' }),
-      ])
-      expect(tiles).not.toHaveProperty('templateData')
+  function expectTileDropped(steps: { parameters?: unknown }[]): void {
+    const tiles = steps[1] as {
+      parameters?: { tableId?: string; rowData?: unknown }
     }
+    expect(tiles.parameters?.tableId).toBeUndefined()
+    expect(tiles.parameters?.rowData).toEqual([
+      expect.objectContaining({ columnId: '' }),
+    ])
+    expect(tiles).not.toHaveProperty('templateData')
+  }
 
-    it('drops the tile name and column names after the user loses tile access', async () => {
-      await TableCollaborator.query()
-        .where({ table_id: sourceTile.id, user_id: user.id })
-        .delete()
-      await sourceTile.$query().patch({ name: 'Renamed after removal' })
+  it('drops the tile name and column names after the owner loses tile access', async () => {
+    await TableCollaborator.query()
+      .where({ table_id: sourceTile.id, user_id: user.id })
+      .delete()
+    await sourceTile.$query().patch({ name: 'Renamed after removal' })
 
-      const { id, steps } = await exportTemplate()
+    const { id, steps } = await exportTemplate()
 
-      expectTileDropped(steps)
-      const template = (await Template.findOneById(id))!
-      expect(JSON.stringify(template.steps)).not.toContain(
-        'Renamed after removal',
-      )
+    expectTileDropped(steps)
+    const template = (await Template.findOneById(id))!
+    expect(JSON.stringify(template.steps)).not.toContain(
+      'Renamed after removal',
+    )
+  })
+
+  it('drops the tile name and column names of a tile the owner cannot access', async () => {
+    const stranger = await User.query().insert({
+      email: `${randomUUID()}@open.gov.sg`,
+    })
+    const privateTile = await stranger.$relatedQuery('tables').insertGraph({
+      name: 'Private tile',
+      role: 'owner',
+      db: 'pg',
+      columns: [{ name: 'Secret column', position: 0 }],
+    })
+    await tilesStep.$query().patch({
+      parameters: {
+        tableId: privateTile.id,
+        rowData: [{ columnId: privateTile.columns[0].id, cellValue: 'value' }],
+      },
     })
 
-    it('drops the tile name and column names of a tile the user cannot access', async () => {
-      const stranger = await User.query().insert({
-        email: `${randomUUID()}@open.gov.sg`,
-      })
-      const privateTile = await stranger.$relatedQuery('tables').insertGraph({
-        name: 'Private tile',
-        role: 'owner',
-        db: 'pg',
-        columns: [{ name: 'Secret column', position: 0 }],
-      })
-      await tilesStep.$query().patch({
-        parameters: {
-          tableId: privateTile.id,
-          rowData: [
-            { columnId: privateTile.columns[0].id, cellValue: 'value' },
-          ],
-        },
-      })
+    const { id, steps } = await exportTemplate()
 
-      const { id, steps } = await exportTemplate()
+    expectTileDropped(steps)
+    const serialized = JSON.stringify((await Template.findOneById(id))!.steps)
+    for (const privateValue of [
+      'Private tile',
+      'Secret column',
+      privateTile.id,
+      privateTile.columns[0].id,
+    ]) {
+      expect(serialized).not.toContain(privateValue)
+    }
+  })
+})
 
-      expectTileDropped(steps)
-      const serialized = JSON.stringify((await Template.findOneById(id))!.steps)
-      for (const privateValue of [
-        'Private tile',
-        'Secret column',
-        privateTile.id,
-        privateTile.columns[0].id,
-      ]) {
-        expect(serialized).not.toContain(privateValue)
-      }
+describe('createTemplateFromFlow step config by the owner', () => {
+  const role: IFlowCollabRole = 'owner'
+  let user: User
+
+  beforeEach(async () => {
+    await seedFlow()
+    user = await userWithRole(role)
+  })
+
+  it('drops admin overrides, template guidance and AI Builder config', async () => {
+    const result = await createTemplateFromFlow(
+      {},
+      { input: { flowId: flow.id } },
+      contextFor(user),
+    )
+
+    expect(result.steps[3].config).toEqual({ stepName: 'Call API' })
+
+    const newFlow = await createFlowFromTemplate(result.id, user)
+    const step = await newFlow
+      .$relatedQuery('steps')
+      .findOne({ position: 4 })
+      .throwIfNotFound()
+    expect(step.config.adminOverride).toBeUndefined()
+    expect(step.config.aiBuilderConfig).toBeUndefined()
+    expect(step.config.templateConfig).toEqual({
+      appEventKey: 'custom-api_httpRequest',
     })
-  },
-)
-
-describe.each<IFlowCollabRole>(['owner', 'editor', 'viewer'])(
-  'createTemplateFromFlow step config by a %s',
-  (role) => {
-    let user: User
-
-    beforeEach(async () => {
-      await seedFlow()
-      user = await userWithRole(role)
-    })
-
-    it('drops admin overrides, template guidance and AI Builder config', async () => {
-      const result = await createTemplateFromFlow(
-        {},
-        { input: { flowId: flow.id } },
-        contextFor(user),
-      )
-
-      expect(result.steps[3].config).toEqual({ stepName: 'Call API' })
-
-      const newFlow = await createFlowFromTemplate(result.id, user)
-      const step = await newFlow
-        .$relatedQuery('steps')
-        .findOne({ position: 4 })
-        .throwIfNotFound()
-      expect(step.config.adminOverride).toBeUndefined()
-      expect(step.config.aiBuilderConfig).toBeUndefined()
-      expect(step.config.templateConfig).toEqual({
-        appEventKey: 'custom-api_httpRequest',
-      })
-      expect(step.config.stepName).toBe('Call API')
-    })
-  },
-)
+    expect(step.config.stepName).toBe('Call API')
+  })
+})

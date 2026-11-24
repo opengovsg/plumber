@@ -25,7 +25,7 @@ import ThemeProvider from '@/components/ThemeProvider'
 import ConvertToTemplateModal from '../ConvertToTemplateModal'
 import FlowContextMenu from '../FlowContextMenu'
 
-const flow = { id: 'flow-id', name: 'Original pipe title' }
+const flow = { id: 'flow-id', name: 'Original pipe title', role: 'owner' }
 let root: Root
 let container: HTMLDivElement
 const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
