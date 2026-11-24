@@ -2,7 +2,7 @@ import { Flex, Text } from '@chakra-ui/react'
 import { IconButton, Input, useIsMobile } from '@opengovsg/design-system-react'
 import { KeyboardEvent, useState } from 'react'
 import { FaCheck, FaTimes } from 'react-icons/fa'
-import { MdOutlineModeEdit } from 'react-icons/md'
+import { MdModeEdit } from 'react-icons/md'
 
 interface EditableInputProps {
   value: string
@@ -37,11 +37,20 @@ export default function EditableInput({
 
   const [isEditing, setIsEditing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const [inputValue, setInputValue] = useState(initialValue)
 
   const resetField = () => {
     setIsEditing(false)
     setInputValue(initialValue)
+  }
+
+  // The read-only row unmounts while editing, so its mouseleave never fires.
+  // Reset here to stop the tooltip reappearing after save.
+  const startEditing = () => {
+    setIsHovered(false)
+    setInputValue(initialValue)
+    setIsEditing(true)
   }
 
   const handleSave = async () => {
@@ -106,14 +115,15 @@ export default function EditableInput({
   const readOnlyContent = (
     <Flex
       alignItems="center"
-      gap={3}
+      gap={0}
       onClick={() => {
         if (!readOnly) {
-          setInputValue(initialValue)
-          setIsEditing(true)
+          startEditing()
         }
       }}
       whiteSpace="nowrap"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Text
         textOverflow="ellipsis"
@@ -128,17 +138,18 @@ export default function EditableInput({
       {!readOnly && (
         <IconButton
           onClick={() => {
-            setInputValue(initialValue)
-            setIsEditing(true)
+            startEditing()
           }}
-          icon={<MdOutlineModeEdit size={14} />}
+          icon={<MdModeEdit size={18} />}
           aria-label="Edit"
           size="xs"
           variant="clear"
-          display={isMobile ? 'flex' : 'none'}
-          _groupHover={{
-            display: 'flex',
-          }}
+          colorScheme="secondary"
+          // State-driven instead of _groupHover, so the icon stays hidden
+          // under the cursor after saving until the mouse re-enters the row.
+          display={isMobile || isHovered ? 'flex' : 'none'}
+          _hover={{ bg: 'interaction.muted.neutral.hover' }}
+          _active={{ bg: 'interaction.muted.neutral.active' }}
         />
       )}
     </Flex>

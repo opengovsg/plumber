@@ -23,7 +23,7 @@ export default function StepHeader(props: StepHeaderProps) {
   } = useDisclosure()
 
   const {
-    readOnly: isReadOnlyEditor,
+    hasEditPermission,
     shouldWarnOnLeave,
     onDrawerClose,
     onUpdateStep,
@@ -77,8 +77,8 @@ export default function StepHeader(props: StepHeaderProps) {
           key={step.id}
           value={stepName}
           onSave={onSave}
-          // We don't allow editing the step name for MRF steps
-          readOnly={isReadOnlyEditor || isMrfStep}
+          // Renaming is allowed on published pipes. MRF step names are fixed.
+          readOnly={!hasEditPermission || isMrfStep}
           placeholder={defaultStepName}
           allowEmpty={true}
           fontWeight={500}

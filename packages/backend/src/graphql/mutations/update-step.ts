@@ -1,4 +1,7 @@
 import { IAction } from '@/../../types'
+import { isEqual } from 'lodash'
+import { ValidationError } from 'objection'
+
 import apps from '@/apps'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -71,6 +74,46 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
     }
 
     step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
+
+    if (step.flow.active) {
+      // Published pipes only allow renaming a step.
+      const isRenameOnly =
+        input.status !== 'incomplete' &&
+        step.key === key &&
+        step.appKey === appKey &&
+        (step.connectionId ?? null) === (inputConnection.id ?? null) &&
+        isEqual(step.parameters ?? {}, inputParameters)
+
+      if (!isRenameOnly) {
+        throw new ValidationError({
+          message: 'Cannot edit published pipe.',
+          type: 'editingPublishedPipeError',
+        })
+      }
+
+      const newStepName =
+        input?.config?.stepName ?? step?.config?.stepName
+
+      const renamedStep = await Step.query(trx)
+        .context({ shouldBypassBeforeUpdateHook: true })
+        .patchAndFetchById(id, {
+          updatedBy: context.currentUser.id,
+          config: {
+            ...(step.config ?? {}),
+            ...(newStepName !== undefined ? { stepName: newStepName } : {}),
+          },
+        })
+        .withGraphFetched({ connection: true, flow: true })
+
+      const flowAfterRename = await step.flow.patchLastUpdated({
+        flowId: step.flowId,
+        updatedBy: context.currentUser.id,
+        trx,
+      })
+      renamedStep.flow.updatedAt = flowAfterRename.updatedAt
+      renamedStep.flow.updatedBy = context.currentUser.id
+      return renamedStep
+    }
 
     if (inputConnection.id) {
       // if connectionId is specified, verify that the connection exists
