@@ -214,7 +214,7 @@ rm -rf "$OUT"
 
 The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It queries `ANALYTICS_REQUEST_LOG_GROUP` with CloudWatch Logs Insights. [`backend-analytics`](../backend-analytics/README.md#mutation_log) describes the rows it writes. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`.
 
-The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night.
+The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night. A finished run logs `analytics.mutation_log.complete` with `durationMs`. A failed run logs `analytics.mutation_log.error` with `durationMs`, and `timedOut: true` when the 30 minutes ran out.
 
 `analytics:mutation-log` runs the same code for a range of days, for example to extract history:
 

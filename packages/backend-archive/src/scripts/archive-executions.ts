@@ -9,6 +9,7 @@ import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb, archivalDbReader } from '@/helpers/archival/db'
 import logger from '@/helpers/archival/logger'
 import { runArchivalLoop } from '@/helpers/archival/run-archival-loop'
+import { runMutationLogExport } from '@/helpers/archival/run-mutation-log-export'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
 const controller = new AbortController()
@@ -46,31 +47,23 @@ async function runAnalyticsExport(): Promise<boolean> {
   }
 }
 
-async function runMutationLogExport(): Promise<boolean> {
-  try {
-    await exportMutationLog({
-      db: archivalDbReader,
-      logsClient: createLogsClient('ap-southeast-1'),
-      s3Client: archiveS3Client,
-      appEnv: archivalConfig.appEnv,
-      bucket: archivalConfig.analyticsBucket,
-      logGroup: archivalConfig.analyticsRequestLogGroup,
-      days: { through: previousSgtDay(new Date()) },
-      signal: AbortSignal.any([
-        controller.signal,
-        AbortSignal.timeout(MUTATION_LOG_DEADLINE_MS),
-      ]),
-    })
-    return true
-  } catch (err) {
-    logger.error({ event: 'analytics.mutation_log.error', err })
-    return false
-  }
-}
-
 async function main(): Promise<void> {
   const analyticsExported = await runAnalyticsExport()
-  const mutationLogExported = await runMutationLogExport()
+  const mutationLogExported = await runMutationLogExport({
+    run: (signal) =>
+      exportMutationLog({
+        db: archivalDbReader,
+        logsClient: createLogsClient('ap-southeast-1'),
+        s3Client: archiveS3Client,
+        appEnv: archivalConfig.appEnv,
+        bucket: archivalConfig.analyticsBucket,
+        logGroup: archivalConfig.analyticsRequestLogGroup,
+        days: { through: previousSgtDay(new Date()) },
+        signal,
+      }),
+    deadlineMs: MUTATION_LOG_DEADLINE_MS,
+    stop: controller.signal,
+  })
   const exitCode = analyticsExported && mutationLogExported ? 0 : 1
 
   if (!archivalConfig.archiveEnabled) {
