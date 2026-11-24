@@ -1,4 +1,5 @@
 import { raw } from 'objection'
+import { z } from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import Step from '@/models/step'
@@ -6,17 +7,36 @@ import { lookupStepDefinition } from '@/services/step-definition'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
+// Matches the step name input's maxLength in the editor.
+export const MAX_STEP_NAME_LENGTH = 64
+
+export const renameStepSchema = z.object({
+  id: z.string().uuid(),
+  flow: z.object({
+    id: z.string().uuid(),
+    // Epoch milliseconds, which assertNotUpdatedSince expects.
+    updatedAt: z.string().regex(/^\d+$/),
+  }),
+  // An empty name falls back to the step's default name.
+  stepName: z.string().trim().max(MAX_STEP_NAME_LENGTH),
+})
+
 const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
   _parent,
   params,
   context,
 ) => {
-  const { id, flow: inputFlow, stepName } = params.input
-  if (!inputFlow.id || !inputFlow.updatedAt) {
-    throw new BadUserInputError('Missing flow')
+  const parsed = renameStepSchema.safeParse(params.input)
+  if (!parsed.success) {
+    throw new BadUserInputError(
+      `Invalid input: ${parsed.error.issues[0].path.join('.')}`,
+    )
   }
-  const flowId = inputFlow.id
-  const flowUpdatedAt = inputFlow.updatedAt
+  const {
+    id,
+    flow: { id: flowId, updatedAt: flowUpdatedAt },
+    stepName,
+  } = parsed.data
 
   return await Step.transaction(async (trx) => {
     const step = await context.currentUser
@@ -51,7 +71,7 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
         updatedBy: context.currentUser.id,
         config: raw(
           `jsonb_set(coalesce(config, '{}'::jsonb), '{stepName}', to_jsonb(?::text))`,
-          [stepName.trim()],
+          [stepName],
         ),
       })
       .withGraphFetched({ connection: true, flow: true })

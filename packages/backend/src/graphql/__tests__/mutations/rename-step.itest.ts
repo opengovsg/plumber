@@ -108,6 +108,25 @@ describe('renameStep mutation', () => {
     ).toBe('Old name')
   })
 
+  it('rejects a name over 64 characters', async () => {
+    await expect(
+      renameStep(
+        {},
+        {
+          input: {
+            id: step.id,
+            flow: await flowInput(),
+            stepName: 'a'.repeat(65),
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow('Invalid input: stepName')
+    expect(
+      (await Step.query().findById(step.id).throwIfNotFound()).config.stepName,
+    ).toBe('Old name')
+  })
+
   it('rejects renaming a FormSG workflow step', async () => {
     await expect(
       renameStep(
