@@ -6,7 +6,7 @@ export const mrfWorkflowDataSchema = z.array(
     edit: z.array(z.string()),
     step_name: z.string().optional(),
     approval_field: z.string().optional(),
-    workflow_type: z.enum(['static', 'dynamic', 'conditional']),
+    workflow_type: z.enum(['static', 'dynamic', 'conditional', 'hybrid']),
   }),
 )
 
@@ -56,7 +56,7 @@ export interface FormSchema {
 export const parsedMrfWorkflowStepSchema = z.object({
   defaultStepName: z.string(),
   formWorkflowStepId: z.string(),
-  type: z.enum(['static', 'dynamic', 'conditional']),
+  type: z.enum(['static', 'dynamic', 'conditional', 'hybrid']),
   fields: z.array(z.string()),
   approvalField: z.string().optional(),
 })
