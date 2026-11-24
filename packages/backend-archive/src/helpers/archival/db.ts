@@ -48,13 +48,18 @@ export const archivalDbReader: Knex = knex({
  *
  * IMPORTANT: PostgreSQL echoes the rejected value in its message and detail, such as an invalid UUID.
  */
-function redactDatabaseError(err: unknown, query: { method?: string }): void {
+function redactDatabaseError(
+  err: unknown,
+  query: { method?: string; sql?: string },
+): void {
   if (!(err instanceof pg.DatabaseError)) {
     return
   }
   const identifiers = {
     routine: err.routine,
     table: err.table,
+    // Some errors, such as an invalid timestamp, name no table, so the statement's own target tells the writes apart.
+    target: err.table ? undefined : writeTarget(query.sql),
     column: err.column,
     constraint: err.constraint,
   }
@@ -68,6 +73,13 @@ function redactDatabaseError(err: unknown, query: { method?: string }): void {
   err.hint = undefined
   err.where = undefined
   err.internalQuery = undefined
+}
+
+const WRITE_TARGET =
+  /^\s*(?:insert\s+into|update|delete\s+from)\s+"?([\w.]+)"?/i
+
+function writeTarget(sql: string | undefined): string | undefined {
+  return sql?.match(WRITE_TARGET)?.[1]
 }
 
 // knex emits this before it rejects the query, so the rewrite reaches every caller.

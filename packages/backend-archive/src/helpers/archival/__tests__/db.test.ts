@@ -38,7 +38,7 @@ describe('archival db query errors', () => {
         _connection: unknown,
         query: { sql: string; response?: unknown },
       ) => {
-        if (query.sql.startsWith('UPDATE') || query.sql.startsWith('select')) {
+        if (/^(UPDATE|select|insert)/.test(query.sql)) {
           throw invalidUuidError()
         }
         query.response = { rows: [], rowCount: 0 }
@@ -77,7 +77,7 @@ describe('archival db query errors', () => {
 
     expectRedacted(err)
     expect(err.message).toBe(
-      'PostgreSQL raw failed with SQLSTATE 22P02 (routine=string_to_uuid)',
+      'PostgreSQL raw failed with SQLSTATE 22P02 (routine=string_to_uuid target=flows)',
     )
   })
 
@@ -89,6 +89,23 @@ describe('archival db query errors', () => {
     expectRedacted(err)
     expect(err.message).toBe(
       'PostgreSQL select failed with SQLSTATE 22P02 (routine=string_to_uuid)',
+    )
+  })
+
+  it('names the table each restore write targets', async () => {
+    const executionErr = await queryError(
+      archivalDb('executions').insert({ id: PRIVATE_VALUE }),
+    )
+    const stepErr = await queryError(
+      archivalDb('execution_steps').insert({ id: PRIVATE_VALUE }),
+    )
+
+    expectRedacted(executionErr)
+    expect(executionErr.message).toBe(
+      'PostgreSQL insert failed with SQLSTATE 22P02 (routine=string_to_uuid target=executions)',
+    )
+    expect(stepErr.message).toBe(
+      'PostgreSQL insert failed with SQLSTATE 22P02 (routine=string_to_uuid target=execution_steps)',
     )
   })
 })
