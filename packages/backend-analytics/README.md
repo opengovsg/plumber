@@ -10,17 +10,18 @@ It has no entry point of its own. The archival task in [`backend-archive`](../ba
 
 ## What the export writes
 
-Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run, except `flow_step` (below).
+Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run, except `flow_step` and `flow_edit_daily` (below).
 
-| Table                | One row per                                                                           |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `flow_transfer`      | Pipe ownership transfer.                                                              |
-| `dim_user`           | User, including soft-deleted users. Holds emails.                                     |
-| `flow_stage`         | Pipe, with its creator, owner and creation path.                                      |
-| `flow_access`        | User with access to a pipe: owner, editor or viewer.                                  |
-| `flow_ai_suggestion` | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position. |
-| `action_catalog`     | Trigger or action in the app registry, removed ones included.                         |
-| `flow_step`          | Step that changed on a Singapore day. See [flow_step](#flow_step).                    |
+| Table                | One row per                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| `flow_transfer`      | Pipe ownership transfer.                                                                   |
+| `dim_user`           | User, including soft-deleted users. Holds emails.                                          |
+| `flow_stage`         | Pipe, with its creator, owner and creation path.                                           |
+| `flow_access`        | User with access to a pipe: owner, editor or viewer.                                       |
+| `flow_ai_suggestion` | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position.      |
+| `action_catalog`     | Trigger or action in the app registry, removed ones included.                              |
+| `flow_step`          | Step that changed on a Singapore day. See [flow_step](#flow_step).                         |
+| `flow_edit_daily`    | Pipe, user and edit operation on a Singapore day. See [flow_edit_daily](#flow_edit_daily). |
 
 The export writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket. PostHog reads a bucket only if someone attaches it.
 
@@ -97,6 +98,14 @@ The mutation log writes one Parquet file per Singapore day at `bronze/mutation_l
 Each row holds `ts`, `user_id`, `operation`, `flow_id`, `step_id`, `table_id`, `connection_id`, `app_key`, `action_key`, `resource_id` and `http_status`. `operation` is the mutation's root field, such as `updateFlow`. `app_key`, `action_key` and `resource_id` are set for `updateStep` only, from the call's `appKey`, `key` and the parameter the action catalog names in `resource_parameter`. A templated resource is null. No other variable is kept, since step parameters can hold user content.
 
 Each row records a request, not its outcome. GraphQL returns resolver errors with HTTP 200, so a rejected `updateStep` looks like a saved one. Treat `app_key`, `action_key` and `resource_id` as attempted changes, and read saved state from `flow_step`. A mutation whose root selection is a fragment spread gets no `operation`. Plumber's frontend never sends one. The editor's `deleteStep` sends only step ids, so a row with a `step_id` and no `flow_id` gets its pipe from `steps.flow_id` through the database reader, deleted steps included. The day's `rowsWithFlowFromStep` counts them. Morgan logs variables with every `"` turned into `'`, so an apostrophe directly before `,` `:` `}` or `]` makes them unparseable. The ids are then recovered from their fixed place in the editor's `updateStep` input, other ids and `resource_id` stay null, and the day's `rowsWithUnreadableVariables` counts those rows. Lines logged before the request log carried a user id have no `user_id`.
+
+## flow_edit_daily
+
+The mutation log run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`, which PostHog reads. The day's completion file waits for both files. This table bumps `MUTATION_LOG_VERSION` to 2, so if the nightly run shipped first, the next night redoes the last 7 days with it. An older day needs `analytics:mutation-log --s3`. It holds one row per pipe, user and edit operation that day, with `edits`, `first_edit_at` and `last_edit_at`.
+
+- Only mutations that change the pipe count: step changes, `duplicateBranch`, `updateFlow`, `updateFlowConfig`, `updateFlowStatus` and `deleteFlow`. `duplicateFlow`, run retries, sharing and connection setup name a pipe without changing it.
+- `edits` counts requests, not saves. A rejected request returns HTTP 200, so it counts too. The editor is read-only for viewers, so a viewer's request needs a stale tab.
+- A join with `flow_access` gives each user's current access, not their role at edit time. Its owner row dates the current owner from the pipe's creation, so a former editor's past edits read as owner edits. For the role at edit time, use `flow_transfer` for ownership and the `flow_collaborator_*` PostHog events for collaborator changes, matched on each request's timestamp in the bronze `mutation_log`.
 
 ## Tracking finished days
 
