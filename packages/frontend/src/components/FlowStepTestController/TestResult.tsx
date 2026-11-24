@@ -5,6 +5,7 @@ import { useContext } from 'react'
 
 import VariablesList from '@/components/VariablesList'
 import { EditorContext } from '@/contexts/Editor'
+import { PAIR_APP_KEY } from '@/helpers/pair'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import type { Variable } from '@/helpers/variables'
 
@@ -47,6 +48,8 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
 
   const { testExecutionSteps } = useContext(EditorContext)
   const isForEachStep = step.key === TOOLBOX_ACTIONS.ForEach
+  const isAssistantStep =
+    step.appKey === PAIR_APP_KEY && step.key === 'assistant'
 
   const testResultMessage = isForEachStep
     ? getForEachDataMessage(testExecutionSteps, step)
@@ -78,7 +81,11 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
             <Text>{testResultMessage}</Text>
           </Infobox>
         )}
-        <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />
+        <VariablesList
+          variables={variables}
+          customStyles={{ py: 0, px: 2 }}
+          hideTypeTags={isAssistantStep}
+        />
       </Box>
     )
   }

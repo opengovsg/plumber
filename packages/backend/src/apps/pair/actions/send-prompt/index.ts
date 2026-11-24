@@ -20,6 +20,8 @@ const turndownService = new TurndownService()
 const action: IRawAction = {
   name: 'Process text',
   key: 'sendPrompt',
+  // Pair assistant uses an API key connection; text and image do not.
+  noAuthRequired: true,
   description: 'Summarise, categorise, write or analyse textual data with AI',
   linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [

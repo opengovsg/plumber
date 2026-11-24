@@ -180,7 +180,12 @@ export default function ConfigureExcelConnection(
           />
         )}
       </ModalHeader>
-      <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
+      <ModalCloseButton
+        mt={2}
+        size="xs"
+        colorScheme="secondary"
+        sx={{ svg: { boxSize: 6 } }}
+      />
 
       <ModalBody>
         {isConnectionValid ? (

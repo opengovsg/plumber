@@ -988,6 +988,15 @@ export type ConnectionRegistrationType = 'global' | 'per-step'
 type IConnectionModalLabel = {
   chooseConnectionLabel?: string
   addConnectionLabel?: string
+  // Label above the connection dropdown, defaults to "Choose connection".
+  connectionFieldLabel?: string
+  connectionFieldPlaceholder?: string
+  // Small print shown under the main button in the connection modals.
+  termsNote?: string
+  // Prefix of the status line in the step panel, e.g. "Using" X.
+  connectedStatusPrefix?: string
+  // Replaces the "Reconnect" button text in the step panel.
+  changeConnectionLabel?: string
 }
 
 export interface SubtriggerData {

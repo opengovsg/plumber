@@ -19,6 +19,8 @@ import { hasProvidedImage, schema } from './schema'
 const action: IRawAction = {
   name: 'Process image',
   key: 'processImage',
+  // Pair assistant uses an API key connection; text and image do not.
+  noAuthRequired: true,
   description: 'Extract data or synthesise content from an image or PDF',
   linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [

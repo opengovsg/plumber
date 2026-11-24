@@ -6,6 +6,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
+import { PAIR_APP_KEY } from '@/helpers/pair'
 
 import { DATABRICKS_APP_KEY, EXCEL_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
@@ -126,6 +127,23 @@ export default function ChooseAndAddConnection(
         return
       }
 
+      // Lets users tell apart several Pair assistant steps in one pipe.
+      let assistantName: string | undefined
+      if (selectedApp.key === PAIR_APP_KEY) {
+        assistantName = connectionOptions.find(
+          (option) => option.value === connectionId,
+        )?.label
+        // A just-added assistant is missing from the cached options.
+        if (!assistantName) {
+          const { data: freshData } = await refetch()
+          const freshConnections = (freshData?.getApp as IApp | undefined)
+            ?.connections
+          assistantName = freshConnections
+            ?.map((connection) => optionGenerator(connection, PAIR_APP_KEY))
+            .find((option) => option.value === connectionId)?.label
+        }
+      }
+
       patchModalState({ isLoading: true })
       let newStepId = null
       try {
@@ -139,13 +157,21 @@ export default function ChooseAndAddConnection(
             selectedApp.key,
             selectedEvent.key,
             connectionId,
-            approvalConfig && { approval: approvalConfig },
+            approvalConfig || assistantName
+              ? {
+                  ...(approvalConfig && { approval: approvalConfig }),
+                  ...(assistantName && { stepName: assistantName }),
+                }
+              : undefined,
             { previousBlockId },
           )
           newStepId = createdStep.id
         } else if (step) {
           const updatedStep = await onUpdateStep({
             ...step,
+            ...(assistantName && {
+              config: { ...step.config, stepName: assistantName },
+            }),
             appKey: selectedApp.key,
             key: selectedEvent.key,
             connection: {
@@ -179,6 +205,8 @@ export default function ChooseAndAddConnection(
       onDrawerOpen,
       setCurrentStepId,
       approvalBranches,
+      connectionOptions,
+      refetch,
       onCreateStep,
       onUpdateStep,
       executeTestStep,
