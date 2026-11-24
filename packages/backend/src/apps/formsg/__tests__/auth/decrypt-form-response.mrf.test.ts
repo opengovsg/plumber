@@ -561,25 +561,48 @@ describe('decrypt form response - MRF specific', () => {
 
   describe('verifiedSubmitterInfo for MRF submissions', () => {
     it.each([
-      { key: 'myInfoUinFin (Step 1)', logged: true },
-      { key: 'cpUen (Step 1)', logged: false },
-    ])('logs unknown verified key $key: $logged', async ({ key, logged }) => {
+      { key: 'myInfoUinFin (Step 1)', reason: 'unknown_verified_key' },
+      { key: 'cpUen (Step 1)', reason: null },
+      { key: 'cpUen', reason: null },
+      { key: 'uinFin (Step 2)', reason: 'later_step_verified_key' },
+      { key: 'cpUid (Step 12)', reason: 'later_step_verified_key' },
+    ])(
+      'logs verified key $key with reason $reason',
+      async ({ key, reason }) => {
+        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+          responses: {},
+          verified: { [key]: 'S1234567A' },
+        })
+
+        await decryptFormResponse($)
+
+        expect(mocks.consoleWarn.mock.calls.map(([, meta]) => meta)).toEqual(
+          reason
+            ? [
+                {
+                  event: 'formsg-unsupported-payload',
+                  reason,
+                  formId: 'formId123',
+                  key,
+                },
+              ]
+            : [],
+        )
+      },
+    )
+
+    it('should keep mapping a later step verified key to its base key', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(1)
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
         responses: {},
-        verified: { [key]: 'S1234567A' },
+        verified: { 'cpUen (Step 2)': '201912345A' },
       })
 
       await decryptFormResponse($)
 
-      const warning = {
-        event: 'formsg-unsupported-payload',
-        reason: 'unknown_verified_key',
-        formId: 'formId123',
-        key,
-      }
-      expect(mocks.consoleWarn.mock.calls.map(([, meta]) => meta)).toEqual(
-        logged ? [warning] : [],
-      )
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        cpUen: '201912345A',
+      })
     })
 
     it('should map "uinFin (Step 1)" to uinFin and sgidUinFin', async () => {

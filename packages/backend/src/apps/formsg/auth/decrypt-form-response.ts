@@ -29,7 +29,7 @@ const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 const KNOWN_VERIFIED_KEYS = new Set(['uinFin', 'sgidUinFin', 'cpUen', 'cpUid'])
 // V4 and MRF payloads suffix verified keys with the step, e.g. "cpUen (Step 1)".
 // Brackets break the variable regex, so we map them back to the legacy keys.
-const VERIFIED_KEY_STEP_SUFFIX = / \(Step \d+\)$/
+const VERIFIED_KEY_STEP_SUFFIX = / \(Step (\d+)\)$/
 
 function processLocalAddress(answerArray: string[]): string[] {
   const answer = [...answerArray]
@@ -348,11 +348,18 @@ export async function decryptFormResponse(
     const verifiedSubmitterInfo: Record<string, string> = {}
     if (submission.verified) {
       for (const key of Object.keys(submission.verified)) {
-        // TODO: FormSG only collects login data on Step 1 today. Revisit if
-        // FormSG adds logins on later steps, since step keys would collide.
         const baseKey = key.replace(VERIFIED_KEY_STEP_SUFFIX, '')
         if (!KNOWN_VERIFIED_KEYS.has(baseKey)) {
           logUnsupportedPayload('unknown_verified_key', {
+            formId: data.formId,
+            key,
+          })
+        }
+        // FormSG writes verified keys for Step 1's login only. A later step's
+        // key would collide with Step 1's under the same base key.
+        const stepNumber = Number(key.match(VERIFIED_KEY_STEP_SUFFIX)?.[1] ?? 1)
+        if (stepNumber > 1) {
+          logUnsupportedPayload('later_step_verified_key', {
             formId: data.formId,
             key,
           })
