@@ -1,7 +1,6 @@
 import posthog from '@posthog/rollup-plugin'
 import react from '@vitejs/plugin-react-swc'
 import { defineConfig, loadEnv } from 'vite'
-import loadVersion from 'vite-plugin-package-version'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
 import { failOnLeakedNodeBuiltins } from './vite-config-utils.ts'
@@ -19,11 +18,9 @@ export default ({ mode }: { mode: string }) => {
   )
 
   return defineConfig({
-    // loadVersion injects package.json version into import.meta.env.PACKAGE_VERSION
     plugins: [
       react(),
       viteTsconfigPaths(),
-      loadVersion(),
       failOnLeakedNodeBuiltins(),
       posthog({
         personalApiKey: process.env.POSTHOG_API_KEY ?? '',
@@ -38,6 +35,12 @@ export default ({ mode }: { mode: string }) => {
         },
       }),
     ],
+    define: {
+      // Docker turns an unset APP_VERSION build arg into an empty string.
+      'import.meta.env.APP_VERSION': JSON.stringify(
+        process.env.APP_VERSION || 'dev',
+      ),
+    },
     build: {
       // disable inline images since we don't allow them in csp
       assetsInlineLimit: 0,

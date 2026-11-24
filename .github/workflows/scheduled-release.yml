@@ -71,12 +71,9 @@ jobs:
             exit 0
           fi
 
-          # The version in the root package.json is the source of truth, as in
-          # .claude/skills/publish-release.
-          current="$(gh api -H 'Accept: application/vnd.github.raw+json' \
-            "repos/${GH_REPO}/contents/package.json?ref=${RELEASE_BRANCH}" | jq -r .version)"
-          if ! [[ "${current}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            echo "::error::Version '${current}' in package.json is not in X.Y.Z format"
+          # Release tags are the version source of truth. package.json versions are not bumped.
+          if ! [[ "${latest_tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Latest release tag '${latest_tag}' is not in vX.Y.Z format"
             exit 1
           fi
           major="${BASH_REMATCH[1]}"
