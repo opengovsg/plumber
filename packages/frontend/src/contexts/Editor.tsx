@@ -14,6 +14,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -82,6 +83,7 @@ interface IEditorContextValue {
   onUpdateStep: (step: IStep, onCompleted?: () => void) => Promise<IStep>
   allApps: IApp[]
   resetForm: () => void
+  saveDirtyStepRef: React.MutableRefObject<(() => Promise<void>) | null>
   resetTimestamp: number
   isLoading: boolean
   hasFlowTransfer: boolean
@@ -113,6 +115,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   setShouldWarnOnLeave: () => null,
   allApps: [],
   resetForm: () => null,
+  saveDirtyStepRef: { current: null },
   resetTimestamp: 0,
   isLoading: true,
   hasFlowTransfer: false,
@@ -134,6 +137,7 @@ export const EditorProvider = ({
   children,
 }: EditorProviderProps) => {
   const isMobile = useIsMobile()
+  const saveDirtyStepRef = useRef<(() => Promise<void>) | null>(null)
 
   // flow transfer phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
@@ -397,6 +401,7 @@ export const EditorProvider = ({
         setCurrentStepId,
         setShouldWarnOnLeave,
         resetForm,
+        saveDirtyStepRef,
         resetTimestamp,
         isLoading:
           isLoadingAllApps ||

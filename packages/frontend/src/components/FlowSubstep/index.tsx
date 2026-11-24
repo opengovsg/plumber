@@ -29,6 +29,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const {
     executeTestStep,
     onUpdateStep,
+    saveDirtyStepRef,
     setShouldWarnOnLeave,
     testExecutionSteps,
     isTestExecuting,
@@ -123,6 +124,19 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       setIsSaving(false)
     }
   }, [formContext, onUpdateStep, substep])
+
+  // Lets the unsaved changes dialog save this step before navigating away.
+  useEffect(() => {
+    if (!isDirty) {
+      return
+    }
+    saveDirtyStepRef.current = saveStep
+    return () => {
+      if (saveDirtyStepRef.current === saveStep) {
+        saveDirtyStepRef.current = null
+      }
+    }
+  }, [isDirty, saveStep, saveDirtyStepRef])
 
   const handleSaveAndTest = useCallback(
     async (testRunMetadata?: Record<string, unknown>) => {

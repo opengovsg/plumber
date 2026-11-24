@@ -1,12 +1,17 @@
 import {
   AlertDialog,
   AlertDialogBody,
+  AlertDialogCloseButton,
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogOverlay,
   Button,
+  useToast,
 } from '@chakra-ui/react'
+import { useContext, useState } from 'react'
+
+import { EditorContext } from '@/contexts/Editor'
 
 export interface UnsavedChangesAlertProps {
   cancelRef: React.RefObject<HTMLButtonElement>
@@ -21,9 +26,30 @@ export default function UnsavedChangesAlert({
   onClose,
   onLeave,
 }: UnsavedChangesAlertProps): React.ReactElement {
+  const toast = useToast()
+  const { saveDirtyStepRef, readOnly } = useContext(EditorContext)
+  const [isSaving, setIsSaving] = useState(false)
+  const canSave = !readOnly && saveDirtyStepRef.current !== null
+
   const handleLeave = () => {
     onLeave?.()
     onClose()
+  }
+
+  const handleSaveAndLeave = async () => {
+    try {
+      setIsSaving(true)
+      await saveDirtyStepRef.current?.()
+    } catch {
+      toast({
+        status: 'error',
+        title: 'Could not save your changes. Please try again.',
+      })
+      return
+    } finally {
+      setIsSaving(false)
+    }
+    handleLeave()
   }
 
   return (
@@ -34,23 +60,30 @@ export default function UnsavedChangesAlert({
     >
       <AlertDialogOverlay>
         <AlertDialogContent>
-          <AlertDialogHeader>You have unsaved changes</AlertDialogHeader>
+          <AlertDialogHeader>Save before you leave?</AlertDialogHeader>
+
+          <AlertDialogCloseButton isDisabled={isSaving} />
 
           <AlertDialogBody>
-            Are you sure you want to leave? Your changes will be lost.
+            You haven&apos;t saved your changes to this step. Save now to keep
+            them, or keep editing.
           </AlertDialogBody>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter gap={3}>
             <Button
-              onClick={handleLeave}
-              variant="clear"
-              colorScheme="secondary"
+              ref={cancelRef}
+              variant={canSave ? 'clear' : 'solid'}
+              colorScheme={canSave ? 'secondary' : undefined}
+              onClick={onClose}
+              isDisabled={isSaving}
             >
-              Discard changes
+              Keep editing
             </Button>
-            <Button ref={cancelRef} onClick={onClose} ml={3}>
-              Continue editing
-            </Button>
+            {canSave && (
+              <Button onClick={handleSaveAndLeave} isLoading={isSaving}>
+                Save and continue
+              </Button>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialogOverlay>
