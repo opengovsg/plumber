@@ -13,6 +13,7 @@ const action = {
   name: 'Send SMS',
   key: 'sendSms',
   description: 'Sends an SMS under Gov.SG sender ID',
+  sendsToRecipientsOnTest: true,
 
   /**
    * FEATURE NOTE

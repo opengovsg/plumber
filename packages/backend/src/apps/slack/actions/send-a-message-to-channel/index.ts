@@ -6,6 +6,7 @@ const action: IRawAction = {
   name: 'Send a message to channel',
   key: 'sendMessageToChannel',
   description: 'Sends a message to a specified Slack channel',
+  sendsToRecipientsOnTest: true,
   arguments: [
     {
       label: 'Channel',
