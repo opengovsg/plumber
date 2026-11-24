@@ -1,9 +1,8 @@
 import { raw } from 'objection'
 
-import { IAction } from '@/../../types'
 import { BadUserInputError } from '@/errors/graphql-errors'
-import App from '@/models/app'
 import Step from '@/models/step'
+import { lookupStepDefinition } from '@/services/step-definition'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -34,12 +33,11 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
     step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     // FormSG workflow steps take their names from the form.
-    const triggerOrAction =
-      step.appKey && step.key
-        ? await App.findTriggerOrActionByKey(step.appKey, step.key)
-        : null
     const isSystemStep =
-      step.type === 'action' && (triggerOrAction as IAction)?.hiddenFromUser
+      step.appKey && step.key
+        ? lookupStepDefinition(step.appKey, step.key, step.type).kind ===
+          'hidden'
+        : false
     if (isSystemStep || (step.appKey === 'formsg' && step.parameters?.mrf)) {
       throw new BadUserInputError('This step name cannot be changed')
     }
