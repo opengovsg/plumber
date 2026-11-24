@@ -1,7 +1,7 @@
 import type { DecryptedContentV4 } from '@opengovsg/formsg-sdk'
 
 /**
- * Shared by the decrypt-form-response.mrf and process-v4-responses tests.
+ * Shared by the decrypt-form-response.contract.critical and process-v4-responses tests.
  * Kept in a separate file while processResponsesV3 still exists; once the v3
  * path is removed, this can be inlined into the remaining v4 tests.
  */

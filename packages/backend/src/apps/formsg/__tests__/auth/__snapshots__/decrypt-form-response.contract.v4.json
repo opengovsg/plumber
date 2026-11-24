@@ -1,0 +1,384 @@
+{
+  "fields": {
+    "69eedf3b2e18526ffea6335c": {
+      "order": 1,
+      "fieldType": "textfield",
+      "question": "Name",
+      "answer": "AH KOW, TAN"
+    },
+    "69eedf3ee69ec0227d5b44a1": {
+      "order": 2,
+      "fieldType": "dropdown",
+      "question": "Sex",
+      "answer": "MALE"
+    },
+    "69eedf4120948ed94fae09b9": {
+      "order": 3,
+      "fieldType": "date",
+      "question": "Date of birth",
+      "answer": "12 Jan 1980"
+    },
+    "69eedf448962b17f28b5d6d3": {
+      "order": 4,
+      "fieldType": "dropdown",
+      "question": "Race",
+      "answer": "CHINESE"
+    },
+    "69eedf472e18526ffea6359a": {
+      "order": 5,
+      "fieldType": "dropdown",
+      "question": "Nationality",
+      "answer": "SINGAPORE CITIZEN"
+    },
+    "69eedf4a20948ed94fae0af9": {
+      "order": 6,
+      "fieldType": "dropdown",
+      "question": "Birth country",
+      "answer": "SINGAPORE"
+    },
+    "69eedf4e6df9349729779884": {
+      "order": 7,
+      "fieldType": "dropdown",
+      "question": "Residential Status",
+      "answer": "CITIZEN"
+    },
+    "69eedf508844a134ddbb4da2": {
+      "order": 8,
+      "fieldType": "dropdown",
+      "question": "Dialect",
+      "answer": "HOKKIEN"
+    },
+    "69eedf55e83627c17770e283": {
+      "order": 9,
+      "fieldType": "dropdown",
+      "question": "Housing type",
+      "answer": "CONDOMINIUM"
+    },
+    "69eedf589ebc72ac95a1c146": {
+      "order": 10,
+      "fieldType": "dropdown",
+      "question": "HDB type",
+      "answer": "4-ROOM FLAT (HDB)"
+    },
+    "69eedf5cfd2757b0584e30a7": {
+      "order": 11,
+      "fieldType": "textfield",
+      "question": "Passport number",
+      "answer": "K1234567A"
+    },
+    "69eedf60e83627c17770e4e2": {
+      "order": 12,
+      "fieldType": "date",
+      "question": "Passport expiry date",
+      "answer": "01 Jan 2099"
+    },
+    "69eedf646f410b5fe8efa650": {
+      "order": 13,
+      "fieldType": "textfield",
+      "question": "Vehicle number",
+      "answer": "SBS9999A"
+    },
+    "69eedf688962b17f28b5ddc1": {
+      "order": 14,
+      "fieldType": "textfield",
+      "question": "Registered address",
+      "answer": "123 TAN AH MENG ROAD, #15-20, SINGAPORE 123456"
+    },
+    "69eedf6c4c4123822c147e79": {
+      "order": 15,
+      "fieldType": "mobile",
+      "question": "Mobile number",
+      "answer": "+6597654321"
+    },
+    "69eedf739ebc72ac95a1c630": {
+      "order": 16,
+      "fieldType": "dropdown",
+      "question": "Occupation",
+      "answer": "SOFTWARE TEST CASE"
+    },
+    "69eedf77c50e6bea6bfcf0e9": {
+      "order": 17,
+      "fieldType": "textfield",
+      "question": "Name of employer",
+      "answer": "PLUMBER"
+    },
+    "69eedf7c12e0ebead02e428b": {
+      "order": 18,
+      "fieldType": "dropdown",
+      "question": "Workpass status",
+      "answer": "Live"
+    },
+    "69eedf81426d1b5cb465d8df": {
+      "order": 19,
+      "fieldType": "date",
+      "question": "Workpass expiry date",
+      "answer": "02 Sep 2098"
+    },
+    "69eedf89fd2757b0584e3a9b": {
+      "order": 20,
+      "fieldType": "textfield",
+      "question": "Vehicle number",
+      "answer": "SBS9999A"
+    },
+    "69eedf91ed3e04f8606c401c": {
+      "order": 21,
+      "fieldType": "textfield",
+      "question": "Registered address",
+      "answer": "123 TAN AH MENG ROAD, #15-20, SINGAPORE 123456"
+    },
+    "69eedf97e69ec0227d5b54ed": {
+      "order": 22,
+      "fieldType": "mobile",
+      "question": "Mobile number",
+      "answer": "+6597654321"
+    },
+    "69eedf9dc50e6bea6bfcf974": {
+      "order": 23,
+      "fieldType": "dropdown",
+      "question": "Occupation",
+      "answer": "Test Case (Special)"
+    },
+    "69eedfa120948ed94fae1f9f": {
+      "order": 24,
+      "fieldType": "textfield",
+      "question": "Name of employer",
+      "answer": "PLUMBER"
+    },
+    "69eedfa58844a134ddbb622b": {
+      "order": 25,
+      "fieldType": "dropdown",
+      "question": "Workpass status",
+      "answer": "Live"
+    },
+    "69eedfb120948ed94fae2422": {
+      "order": 26,
+      "fieldType": "date",
+      "question": "Workpass expiry date",
+      "answer": "02 Sep 2098"
+    },
+    "69eedfb5426d1b5cb465e1a4": {
+      "order": 27,
+      "fieldType": "dropdown",
+      "question": "Marital status",
+      "answer": "SINGLE"
+    },
+    "69eedfb9d19891b7776ee43f": {
+      "order": 28,
+      "fieldType": "dropdown",
+      "question": "Country of marriage",
+      "answer": "SINGAPORE"
+    },
+    "69eedfbed19891b7776ee5be": {
+      "order": 29,
+      "fieldType": "textfield",
+      "question": "Marriage cert. no.",
+      "answer": "ASDF"
+    },
+    "69eedfc1d19891b7776ee6f8": {
+      "order": 30,
+      "fieldType": "date",
+      "question": "Marriage date",
+      "answer": "02 Sep 2010"
+    },
+    "69eeddc9e69ec0227d5ae7e0": {
+      "order": 31,
+      "fieldType": "textfield",
+      "question": "Short answer",
+      "answer": "ASDF"
+    },
+    "69eeddcb77a3d021a8cdce44": {
+      "order": 32,
+      "fieldType": "textarea",
+      "question": "Long answer",
+      "answer": "ASDF"
+    },
+    "69eeddcf8844a134ddbadc56": {
+      "order": 33,
+      "fieldType": "radiobutton",
+      "question": "Radio",
+      "answer": "Option 2"
+    },
+    "69eeddd53c9ffa7a2b464687": {
+      "order": 34,
+      "fieldType": "radiobutton",
+      "question": "Radio",
+      "answer": "Others: adg"
+    },
+    "69eedde26f410b5fe8ef4683": {
+      "order": 35,
+      "fieldType": "checkbox",
+      "question": "Checkbox",
+      "answerArray": [
+        "Option 2"
+      ]
+    },
+    "69eedde76df93497297710b1": {
+      "order": 36,
+      "fieldType": "checkbox",
+      "question": "Checkbox",
+      "answerArray": [
+        "Option 2",
+        "Others: adw",
+        "Option 1"
+      ]
+    },
+    "69eeddec1b3ae67c084a5f1b": {
+      "order": 37,
+      "fieldType": "dropdown",
+      "question": "Dropdown",
+      "answer": "Option 1"
+    },
+    "69eeddf02f788da6393f970f": {
+      "order": 38,
+      "fieldType": "rating",
+      "question": "Rating",
+      "answer": "5"
+    },
+    "69eeddf42f788da6393f982e": {
+      "order": 39,
+      "fieldType": "yes_no",
+      "question": "Yes/No",
+      "answer": "Yes"
+    },
+    "69eede378844a134ddbaf4e8": {
+      "order": 40,
+      "fieldType": "number",
+      "question": "Number",
+      "answer": "1"
+    },
+    "69eede4704aec0d4bc3eda9e": {
+      "order": 41,
+      "fieldType": "decimal",
+      "question": "Decimal",
+      "answer": "0.5"
+    },
+    "69eede7804aec0d4bc3ee296": {
+      "order": 42,
+      "fieldType": "date",
+      "question": "Date",
+      "answer": "02 Jan 2914"
+    },
+    "69eede868c2bfbb8748c75d3": {
+      "order": 43,
+      "fieldType": "email",
+      "question": "Email",
+      "answer": "ahkow@open.gov.local"
+    },
+    "69eede812e18526ffea60af3": {
+      "order": 44,
+      "fieldType": "email",
+      "question": "Email",
+      "answer": "ahkow@open.gov.local"
+    },
+    "69eede8a426d1b5cb465a369": {
+      "order": 45,
+      "fieldType": "mobile",
+      "question": "Mobile number",
+      "answer": "+6597654321"
+    },
+    "69eede9304aec0d4bc3ee7c7": {
+      "order": 46,
+      "fieldType": "mobile",
+      "question": "Mobile number",
+      "answer": "+6597654321"
+    },
+    "69eede9a9fae78f997888a57": {
+      "order": 47,
+      "fieldType": "homeno",
+      "question": "Home number",
+      "answer": "+14527178579"
+    },
+    "69eede9f2f788da6393fbd91": {
+      "order": 48,
+      "fieldType": "address",
+      "question": "Local address",
+      "answerArray": [
+        "123",
+        "TAN AH MENG ROAD",
+        "",
+        "",
+        "123456"
+      ]
+    },
+    "69eedea3d19891b7776ea8bc": {
+      "order": 49,
+      "fieldType": "nric",
+      "question": "NRIC/FIN",
+      "answer": "S1234567D"
+    },
+    "69eedea8cd86908422560589": {
+      "order": 50,
+      "fieldType": "uen",
+      "question": "UEN",
+      "answer": "200700940A"
+    },
+    "69eedead7cfa1c89fc419280": {
+      "order": 51,
+      "fieldType": "country_region",
+      "question": "Country/Region",
+      "answer": "SINGAPORE"
+    },
+    "69eedeb17cfa1c89fc419340": {
+      "order": 52,
+      "fieldType": "signature",
+      "question": "Signature",
+      "answer": "Signature captured"
+    },
+    "69eedec5fd2757b0584e0be5": {
+      "order": 53,
+      "fieldType": "table",
+      "question": "Table (Column 1, Column 2)",
+      "answerArray": [
+        [
+          "a",
+          "Option 1"
+        ],
+        [
+          "b",
+          "Option 2"
+        ]
+      ],
+      "answer": "{\"rows\":[{\"data\":{\"436f6c2031\":\"a\",\"436f6c2032\":\"Option 1\"}},{\"data\":{\"436f6c2031\":\"b\",\"436f6c2032\":\"Option 2\"}}],\"columns\":[{\"id\":\"436f6c2031\",\"label\":\"Column 1\",\"name\":\"Column 1\",\"value\":\"data.rows.*.data.436f6c2031\"},{\"id\":\"436f6c2032\",\"label\":\"Column 2\",\"name\":\"Column 2\",\"value\":\"data.rows.*.data.436f6c2032\"}],\"inputSource\":\"formsg-table\"}"
+    },
+    "69eedecafd2757b0584e0c54": {
+      "order": 54,
+      "fieldType": "attachment",
+      "question": "Attachment",
+      "answer": "Screenshot.png",
+      "filename": "Screenshot.png"
+    },
+    "optText": {
+      "order": 55,
+      "fieldType": "textfield",
+      "question": "Optional text",
+      "answer": ""
+    },
+    "optCheckbox": {
+      "order": 56,
+      "fieldType": "checkbox",
+      "question": "Optional checkbox",
+      "answerArray": []
+    },
+    "childrenbirthrecords_ch1_childname_0": {
+      "order": 57,
+      "fieldType": "children",
+      "question": "[MyInfo] Child 1 Name",
+      "answer": "ALI LEE"
+    },
+    "childrenbirthrecords_ch1_childgender_0": {
+      "order": 58,
+      "fieldType": "children",
+      "question": "[MyInfo] Child 1 Sex",
+      "answer": "MALE"
+    }
+  },
+  "submissionId": "submissionId",
+  "submissionTime": "2026-06-02T13:00:53.879+08:00",
+  "formId": "formId",
+  "verifiedSubmitterInfo": {
+    "uinFin": "S1234567D",
+    "sgidUinFin": "S1234567D",
+    "cpUen": "200000000A",
+    "cpUid": "S1234567D"
+  }
+}
