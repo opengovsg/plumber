@@ -107,7 +107,7 @@ const upsertFlowCollaborator: NonNullable<
           user_id: collaboratorUser.id,
         })
         .withSoftDeleted()
-        .forUpdate()
+        .forNoKeyUpdate()
 
       const change = classifyCollaboratorUpsert(existingCollaborator, role)
       if (change) {

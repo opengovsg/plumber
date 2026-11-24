@@ -53,16 +53,16 @@ const deleteFlowCollaborator: NonNullable<
       )
     }
 
-    let removed: FlowCollaborator[]
     try {
-      removed = await FlowCollaborator.query()
+      const removed = await FlowCollaborator.query()
         .delete()
         .where({
           flow_id: flowId,
           user_id: context.currentUser.id,
         })
-        .returning('*')
+        .returning(['user_id', 'role'])
         .throwIfNotFound({ message: 'No such collaborator found' })
+      captureRemoval(removed, context.currentUser.id, flowId, 'left')
     } catch {
       logger.error({
         message: 'Failed to leave pipe as collaborator',
@@ -75,7 +75,6 @@ const deleteFlowCollaborator: NonNullable<
       throw new Error('Failed to leave pipe')
     }
 
-    captureRemoval(removed, context.currentUser.id, flowId, 'left')
     return true
   }
 
@@ -92,16 +91,16 @@ const deleteFlowCollaborator: NonNullable<
     })
     .throwIfNotFound('No such user found')
 
-  let removed: FlowCollaborator[]
   try {
-    removed = await FlowCollaborator.query()
+    const removed = await FlowCollaborator.query()
       .delete()
       .where({
         flow_id: flowId,
         user_id: user.id,
       })
-      .returning('*')
+      .returning(['user_id', 'role'])
       .throwIfNotFound({ message: 'No such collaborator found' })
+    captureRemoval(removed, context.currentUser.id, flowId, 'app')
   } catch (e) {
     logger.error({
       message: 'Failed to delete collaborator',
@@ -117,7 +116,6 @@ const deleteFlowCollaborator: NonNullable<
     )
   }
 
-  captureRemoval(removed, context.currentUser.id, flowId, 'app')
   return true
 }
 

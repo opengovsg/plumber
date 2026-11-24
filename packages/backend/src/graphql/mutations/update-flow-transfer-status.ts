@@ -311,7 +311,7 @@ const updateFlowTransferStatus: NonNullable<
         user_id: flow.userId,
       })
       .withSoftDeleted()
-      .forUpdate()
+      .forNoKeyUpdate()
 
     const oldOwnerChange = classifyCollaboratorUpsert(
       existingCollaborator,
