@@ -1,6 +1,5 @@
+import { SECRET_KEY_REGEXP } from '@plumber/shared'
 import * as winston from 'winston'
-
-import { SECRET_KEY_REGEXP } from './sensitive-keys'
 
 const MAX_DEPTH = 8
 const MAX_ARRAY_LENGTH = 100

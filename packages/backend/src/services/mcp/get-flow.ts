@@ -1,7 +1,7 @@
+import { SECRET_KEY_REGEXP } from '@plumber/shared'
 import type { IJSONObject, IJSONValue, IStepConfig } from '@plumber/types'
 
 import { hasStepVariable } from '@/apps/custom-api/common/sensitive-headers'
-import { SECRET_KEY_REGEXP } from '@/helpers/redaction/sensitive-keys'
 import type User from '@/models/user'
 
 export const REDACTED_VALUE = '[REDACTED]'

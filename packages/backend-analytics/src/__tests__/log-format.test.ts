@@ -2,10 +2,7 @@ import { ResourceNotFoundException } from '@aws-sdk/client-cloudwatch-logs'
 import { describe, expect, it } from 'vitest'
 import winston from 'winston'
 
-// Test-only import. It catches drift from the backend's key list.
-import { SECRET_KEY_REGEXP as BACKEND_SECRET_KEY_REGEXP } from '../../../backend/src/helpers/redaction/sensitive-keys'
 import { redactLogFields } from '../log-format'
-import { SECRET_KEY_REGEXP } from '../sensitive-keys'
 
 // winston writes the rendered line under this symbol.
 const MESSAGE = Symbol.for('message')
@@ -143,9 +140,5 @@ describe('redactLogFields', () => {
       circular: { self: '[circular]' },
       at: '1970-01-01T00:00:00.000Z',
     })
-  })
-  it('masks the same keys as the backend logger', () => {
-    expect(SECRET_KEY_REGEXP.source).toBe(BACKEND_SECRET_KEY_REGEXP.source)
-    expect(SECRET_KEY_REGEXP.flags).toBe(BACKEND_SECRET_KEY_REGEXP.flags)
   })
 })
