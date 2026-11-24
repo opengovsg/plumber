@@ -152,7 +152,9 @@ export default function EditableInput({
           colorScheme="secondary"
           // State-driven instead of _groupHover, so the icon stays hidden
           // under the cursor after saving until the mouse re-enters the row.
-          display={isMobile || isHovered ? 'flex' : 'none'}
+          // Opacity keeps it in the tab order for keyboard users.
+          opacity={isMobile || isHovered ? 1 : 0}
+          _focusVisible={{ opacity: 1 }}
           _hover={{ bg: 'interaction.muted.neutral.hover' }}
           _active={{ bg: 'interaction.muted.neutral.active' }}
         />

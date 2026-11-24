@@ -81,6 +81,13 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
     }
 
     if (step.flow.active) {
+      // FormSG workflow steps take their names from the form.
+      if (step.appKey === 'formsg' && step.parameters?.mrf) {
+        throw new BadUserInputError(
+          'FormSG workflow step names cannot be changed',
+        )
+      }
+
       const newStepName = input.config?.stepName
       const inputEndStepId = input.config?.[BLOCK_END_STEP_ID]
       const isRenameOnly =
