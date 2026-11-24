@@ -1,7 +1,7 @@
-import { IAction } from '@/../../types'
 import { isEqual } from 'lodash'
 import { ValidationError } from 'objection'
 
+import { IAction } from '@/../../types'
 import apps from '@/apps'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -91,8 +91,7 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
         })
       }
 
-      const newStepName =
-        input?.config?.stepName ?? step?.config?.stepName
+      const newStepName = input?.config?.stepName ?? step?.config?.stepName
 
       const renamedStep = await Step.query(trx)
         .context({ shouldBypassBeforeUpdateHook: true })
