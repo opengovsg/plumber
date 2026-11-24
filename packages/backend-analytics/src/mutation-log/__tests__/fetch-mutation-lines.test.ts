@@ -128,7 +128,7 @@ describe('fetchMutationLines', () => {
         : [],
     )
 
-    const { bytesScanned } = await fetchMutationLines({
+    const { queries, bytesScanned } = await fetchMutationLines({
       client,
       logGroup: 'server',
       startMs: START,
@@ -138,6 +138,7 @@ describe('fetchMutationLines', () => {
 
     // The capped queries are billed too.
     expect(ranges.length).toBeGreaterThan(2)
+    expect(queries).toBe(ranges.length)
     expect(bytesScanned).toBe(ranges.length * BYTES_PER_QUERY)
   })
 
@@ -260,7 +261,8 @@ describe('fetchMcpToolLines', () => {
     })
 
     expect(lines).toEqual([{ timestamp: insightsTimestamp(START), event }])
-    expect(bytesScanned).toBe(0)
+    // The fake client returns no statistics.
+    expect(bytesScanned).toBeNull()
     const [start] = send.mock.calls[0] as [StartQueryCommand]
     expect(start.input.queryString).toBe(MCP_TOOL_LOG_QUERY)
     expect(MCP_TOOL_LOG_QUERY).toContain("`message.source` = 'plumber'")

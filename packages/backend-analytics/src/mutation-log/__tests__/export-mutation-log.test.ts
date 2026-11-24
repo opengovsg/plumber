@@ -62,6 +62,7 @@ describe('writeMutationLogDays', () => {
           },
         ],
         mcpToolLines: [],
+        queries: 0,
         bytesScanned: 0,
       }),
       resolveUserIds: noUsers,
@@ -106,6 +107,7 @@ describe('writeMutationLogDays', () => {
       fetchDayLines: async () => ({
         mutationLines: [],
         mcpToolLines: [{ timestamp: '2026-11-04 16:00:02.000', event }],
+        queries: 0,
         bytesScanned: 0,
       }),
       resolveUserIds,
@@ -150,6 +152,7 @@ describe('writeMutationLogDays', () => {
         },
       ],
       mcpToolLines: [],
+      queries: 0,
       bytesScanned: 0,
     }))
 
@@ -211,30 +214,38 @@ describe('writeMutationLogDays', () => {
     ])
   })
 
-  it("logs the bytes scanned by both of the day's queries", async () => {
-    const send = vi.fn(async (command: unknown) => {
-      if (command instanceof StartQueryCommand) {
-        return {
-          queryId:
-            command.input.queryString === MUTATION_LOG_QUERY
-              ? 'mutations'
-              : 'mcp',
+  function statsClient(mcpStatistics: { bytesScanned?: number }) {
+    return {
+      send: vi.fn(async (command: unknown) => {
+        if (command instanceof StartQueryCommand) {
+          return {
+            queryId:
+              command.input.queryString === MUTATION_LOG_QUERY
+                ? 'mutations'
+                : 'mcp',
+          }
         }
-      }
-      if (command instanceof GetQueryResultsCommand) {
-        return {
-          status: 'Complete',
-          results: [],
-          statistics: {
-            bytesScanned: command.input.queryId === 'mutations' ? 300 : 200,
-          },
+        if (command instanceof GetQueryResultsCommand) {
+          return {
+            status: 'Complete',
+            results: [],
+            statistics:
+              command.input.queryId === 'mutations'
+                ? { bytesScanned: 300 }
+                : mcpStatistics,
+          }
         }
-      }
-      throw new Error('unexpected command')
-    })
+        throw new Error('unexpected command')
+      }),
+    }
+  }
 
+  it("logs the bytes scanned and query count of both of the day's queries", async () => {
     await writeMutationLogDays({
-      fetchDayLines: logsInsightsFetcher({ send } as never, 'server'),
+      fetchDayLines: logsInsightsFetcher(
+        statsClient({ bytesScanned: 200 }) as never,
+        'server',
+      ),
       resolveUserIds: noUsers,
       resolveFlowIds: noFlows,
       sink: async () => {},
@@ -246,7 +257,27 @@ describe('writeMutationLogDays', () => {
       expect.objectContaining({
         event: 'analytics.mutation_log.day.written',
         day: '2026-11-05',
+        queries: 2,
         bytesScanned: 500,
+      }),
+    )
+  })
+
+  it('logs unknown bytes scanned when one query returns no statistics', async () => {
+    await writeMutationLogDays({
+      fetchDayLines: logsInsightsFetcher(statsClient({}) as never, 'server'),
+      resolveUserIds: noUsers,
+      resolveFlowIds: noFlows,
+      sink: async () => {},
+      days: ['2026-11-05'],
+      state,
+    })
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.mutation_log.day.written',
+        queries: 2,
+        bytesScanned: null,
       }),
     )
   })
@@ -258,6 +289,7 @@ describe('writeMutationLogDays', () => {
         fetchDayLines: async () => ({
           mutationLines: [],
           mcpToolLines: [],
+          queries: 0,
           bytesScanned: 0,
         }),
         resolveFlowIds: noFlows,
@@ -345,6 +377,7 @@ describe('the mutation log file layout', () => {
       fetchDayLines: async () => ({
         mutationLines: lines,
         mcpToolLines: [],
+        queries: 0,
         bytesScanned: 0,
       }),
       resolveUserIds: noUsers,
@@ -424,6 +457,7 @@ describe('exportMutationLogToDir', () => {
       fetchDayLines: async () => ({
         mutationLines: [],
         mcpToolLines: [],
+        queries: 0,
         bytesScanned: 0,
       }),
       resolveFlowIds: noFlows,

@@ -98,11 +98,7 @@ async function runQuery(
     signal,
     sleep = defaultSleep,
   }: FetchMutationLinesParams,
-): Promise<{
-  rows: ResultField[][]
-  truncated: boolean
-  bytesScanned: number
-}> {
+): Promise<{ rows: ResultField[][]; truncated: boolean } & ScanStats> {
   signal?.throwIfAborted()
   const { queryId } = await client.send(
     new StartQueryCommand({
@@ -129,7 +125,8 @@ async function runQuery(
       return {
         rows,
         truncated: rows.length >= MAX_QUERY_RESULTS,
-        bytesScanned: result.statistics?.bytesScanned ?? 0,
+        queries: 1,
+        bytesScanned: result.statistics?.bytesScanned ?? null,
       }
     }
     if (result.status !== 'Running' && result.status !== 'Scheduled') {
@@ -145,10 +142,28 @@ async function runQuery(
   }
 }
 
-export interface FetchedLines<Line> {
+// Logs Insights bills by bytes scanned, so this tracks the cost of every query run.
+export interface ScanStats {
+  queries: number
+  // Null when any query returned no statistics, so a partial sum never reads as the full cost.
+  bytesScanned: number | null
+}
+
+export function addScans(...scans: ScanStats[]): ScanStats {
+  return {
+    queries: scans.reduce((sum, scan) => sum + scan.queries, 0),
+    bytesScanned: scans.reduce<number | null>(
+      (sum, scan) =>
+        sum === null || scan.bytesScanned === null
+          ? null
+          : sum + scan.bytesScanned,
+      0,
+    ),
+  }
+}
+
+export interface FetchedLines<Line> extends ScanStats {
   lines: Line[]
-  // Logs Insights bills by bytes scanned, so this tracks the cost of every query run.
-  bytesScanned: number
 }
 
 async function fetchRows(
@@ -156,7 +171,7 @@ async function fetchRows(
   params: FetchMutationLinesParams,
 ): Promise<FetchedLines<ResultField[]>> {
   const { startMs, endMs } = params
-  const { rows, truncated, bytesScanned } = await runQuery(queryString, params)
+  const { rows, truncated, ...scan } = await runQuery(queryString, params)
   if (!truncated) {
     // Each window keeps only its own rows, so a line on a split boundary is not read twice.
     return {
@@ -165,7 +180,7 @@ async function fetchRows(
           timestamp: fieldValue(fields, '@timestamp') ?? '',
         }),
       ),
-      bytesScanned,
+      ...scan,
     }
   }
   const mid = Math.floor((startMs + (endMs - startMs) / 2) / 1_000) * 1_000
@@ -178,7 +193,7 @@ async function fetchRows(
   const second = await fetchRows(queryString, { ...params, startMs: mid })
   return {
     lines: [...first.lines, ...second.lines],
-    bytesScanned: bytesScanned + first.bytesScanned + second.bytesScanned,
+    ...addScans(scan, first, second),
   }
 }
 
@@ -199,8 +214,8 @@ function inWindow(
 export async function fetchMutationLines(
   params: FetchMutationLinesParams,
 ): Promise<FetchedLines<MutationLogLine>> {
-  const { lines, bytesScanned } = await fetchRows(MUTATION_LOG_QUERY, params)
-  return { lines: lines.map(toLine), bytesScanned }
+  const { lines, ...scan } = await fetchRows(MUTATION_LOG_QUERY, params)
+  return { lines: lines.map(toLine), ...scan }
 }
 
 /**
@@ -209,12 +224,12 @@ export async function fetchMutationLines(
 export async function fetchMcpToolLines(
   params: FetchMutationLinesParams,
 ): Promise<FetchedLines<McpToolLine>> {
-  const { lines, bytesScanned } = await fetchRows(MCP_TOOL_LOG_QUERY, params)
+  const { lines, ...scan } = await fetchRows(MCP_TOOL_LOG_QUERY, params)
   return {
     lines: lines.map((fields) => ({
       timestamp: fieldValue(fields, '@timestamp') ?? '',
       event: fieldValue(fields, '@message'),
     })),
-    bytesScanned,
+    ...scan,
   }
 }

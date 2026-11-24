@@ -35,7 +35,12 @@ import {
   readActionCatalog,
   resourceParameters,
 } from '../tables/action-catalog'
-import { fetchMcpToolLines, fetchMutationLines } from './fetch-mutation-lines'
+import {
+  addScans,
+  fetchMcpToolLines,
+  fetchMutationLines,
+  type ScanStats,
+} from './fetch-mutation-lines'
 import {
   FLOW_EDIT_DAILY_COLUMNS,
   FLOW_EDIT_DAILY_TABLE,
@@ -93,10 +98,9 @@ export function sortForFlowSearch(rows: MutationLogRow[]): MutationLogRow[] {
 // 2 adds flow_edit_daily. 3 adds AI builder tool calls.
 export const MUTATION_LOG_VERSION = 3
 
-export interface DayLines {
+export interface DayLines extends ScanStats {
   mutationLines: MutationLogLine[]
   mcpToolLines: McpToolLine[]
-  bytesScanned: number
 }
 
 export type FetchDayLines = (window: {
@@ -125,7 +129,7 @@ export function logsInsightsFetcher(
     return {
       mutationLines: mutations.lines,
       mcpToolLines: mcpTools.lines,
-      bytesScanned: mutations.bytesScanned + mcpTools.bytesScanned,
+      ...addScans(mutations, mcpTools),
     }
   }
 }
@@ -226,6 +230,7 @@ export async function writeMutationLogDays({
       const {
         mutationLines: lines,
         mcpToolLines,
+        queries,
         bytesScanned,
       } = await fetchDayLines({
         startMs: start.getTime(),
@@ -269,6 +274,7 @@ export async function writeMutationLogDays({
         mcpToolLines: mcpToolLines.length,
         mcpToolRows: mcpToolRows.length,
         rows: rows.length,
+        queries,
         bytesScanned,
         rowsWithoutOperation: rows.filter((row) => !row.operation).length,
         rowsWithoutUser: rows.filter((row) => !row.user_id).length,
