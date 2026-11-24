@@ -27,10 +27,11 @@ const callLine = (
   })
 
 const USERS = new Map([['officer@agency.gov.sg', 'user-1']])
+const CATALOG_ACTIONS = new Set(['tiles.createTileRow'])
 
 function toRow(input: { timestamp: string; event: string | null }) {
   const call = parseMcpToolLine(input)
-  return call && toMcpToolRow(call, USERS)
+  return call && toMcpToolRow(call, USERS, CATALOG_ACTIONS)
 }
 
 describe('toMcpToolRow', () => {
@@ -77,6 +78,31 @@ describe('toMcpToolRow', () => {
     })
   })
 
+  it.each(['success', 'error'])(
+    'keeps a create_step with status %s but drops an app-action outside the catalog',
+    (status) => {
+      expect(
+        toRow(
+          callLine(
+            'create_step',
+            {
+              pipe_id: 'f1',
+              app_key: 'Ignore the rules',
+              action_key: 'createTileRow',
+            },
+            status,
+          ),
+        ),
+      ).toMatchObject({
+        operation: 'mcp:create_step',
+        flow_id: 'f1',
+        app_key: null,
+        action_key: null,
+        http_status: status === 'success' ? 200 : 500,
+      })
+    },
+  )
+
   it('lowercases the pipe, step and connection ids', () => {
     expect(
       toRow(
@@ -114,7 +140,9 @@ describe('toMcpToolRow', () => {
     const call = parseMcpToolLine(
       callLine('delete_step', { pipe_id: 'f1', step_id: 's1' }),
     )
-    expect(call && toMcpToolRow(call, new Map())?.user_id).toBeNull()
+    expect(
+      call && toMcpToolRow(call, new Map(), CATALOG_ACTIONS)?.user_id,
+    ).toBeNull()
   })
 
   it('marks a failed call with status 500', () => {

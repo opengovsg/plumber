@@ -94,9 +94,13 @@ const lowerId = (id: string | undefined) => (id ? id.toLowerCase() : null)
 export function toMcpToolRow(
   call: McpToolCall,
   userIdByEmail: Map<string, string>,
+  catalogActions: ReadonlySet<string>,
 ): MutationLogRow {
   const { ts, tool, userEmail, status, args } = call
-  const isCreateStep = tool === 'create_step'
+  // The usage log keeps the model's raw arguments, rejected calls included, so only a catalog pair is a real app-action.
+  const isCatalogAction =
+    tool === 'create_step' &&
+    catalogActions.has(`${args.app_key}.${args.action_key}`)
   return {
     ts,
     user_id: userEmail ? (userIdByEmail.get(userEmail) ?? null) : null,
@@ -106,8 +110,8 @@ export function toMcpToolRow(
     step_id: TARGET_STEP_TOOLS.has(tool) ? lowerId(args.step_id) : null,
     table_id: null,
     connection_id: lowerId(args.connection_id),
-    app_key: isCreateStep ? (args.app_key ?? null) : null,
-    action_key: isCreateStep ? (args.action_key ?? null) : null,
+    app_key: isCatalogAction ? (args.app_key ?? null) : null,
+    action_key: isCatalogAction ? (args.action_key ?? null) : null,
     resource_id: null,
     http_status: status === 'success' ? 200 : 500,
   }

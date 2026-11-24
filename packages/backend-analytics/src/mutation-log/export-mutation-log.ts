@@ -30,7 +30,11 @@ import {
   encodeParquet,
   type ParquetColumns,
 } from '../silver-table'
-import { readActionCatalog, resourceParameters } from '../tables/action-catalog'
+import {
+  catalogActionKeys,
+  readActionCatalog,
+  resourceParameters,
+} from '../tables/action-catalog'
 import { fetchMcpToolLines, fetchMutationLines } from './fetch-mutation-lines'
 import {
   FLOW_EDIT_DAILY_COLUMNS,
@@ -191,6 +195,7 @@ interface WriteMutationLogDaysParams {
   days: string[]
   source?: CompletionSource
   parameterByAction?: Record<string, string>
+  catalogActions?: ReadonlySet<string>
 }
 
 export async function writeMutationLogDays({
@@ -202,6 +207,7 @@ export async function writeMutationLogDays({
   days,
   source = 'backfill',
   parameterByAction = resourceParameters(readActionCatalog()),
+  catalogActions = catalogActionKeys(readActionCatalog()),
 }: WriteMutationLogDaysParams): Promise<void> {
   await writeEachDay({
     job: MUTATION_LOG_TABLE,
@@ -226,7 +232,7 @@ export async function writeMutationLogDays({
         ),
       ])
       const mcpToolRows = mcpToolCalls.map((call) =>
-        toMcpToolRow(call, userIdByEmail),
+        toMcpToolRow(call, userIdByEmail, catalogActions),
       )
       const parsedRows = [
         ...lines
