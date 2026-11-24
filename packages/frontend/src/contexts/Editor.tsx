@@ -83,7 +83,7 @@ interface IEditorContextValue {
   onUpdateStep: (step: IStep, onCompleted?: () => void) => Promise<IStep>
   allApps: IApp[]
   resetForm: () => void
-  saveDirtyStepRef: React.MutableRefObject<(() => Promise<void>) | null>
+  saveDirtyStepRef: React.MutableRefObject<(() => Promise<IStep>) | null>
   resetTimestamp: number
   isLoading: boolean
   hasFlowTransfer: boolean
@@ -137,7 +137,7 @@ export const EditorProvider = ({
   children,
 }: EditorProviderProps) => {
   const isMobile = useIsMobile()
-  const saveDirtyStepRef = useRef<(() => Promise<void>) | null>(null)
+  const saveDirtyStepRef = useRef<(() => Promise<IStep>) | null>(null)
 
   // flow transfer phase 1: add check to prevent user from publishing pipe after submitting request
   const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
