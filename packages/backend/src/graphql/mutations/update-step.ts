@@ -1,10 +1,6 @@
-import { isEqual } from 'lodash'
-import { raw, ValidationError } from 'objection'
-
 import { IAction } from '@/../../types'
 import apps from '@/apps'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
-import { BLOCK_END_STEP_ID } from '@/apps/toolbox/common/constants'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   addFlowConnection,
@@ -76,61 +72,6 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
 
     step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
-    if (step.type === 'action' && (triggerOrAction as IAction).hiddenFromUser) {
-      throw new BadUserInputError('Action can only be updated by system')
-    }
-
-    if (step.flow.active) {
-      // FormSG workflow steps take their names from the form.
-      if (step.appKey === 'formsg' && step.parameters?.mrf) {
-        throw new BadUserInputError(
-          'FormSG workflow step names cannot be changed',
-        )
-      }
-
-      const newStepName = input.config?.stepName
-      const inputEndStepId = input.config?.[BLOCK_END_STEP_ID]
-      const isRenameOnly =
-        newStepName !== undefined &&
-        newStepName !== null &&
-        input.status !== 'incomplete' &&
-        step.key === key &&
-        step.appKey === appKey &&
-        (step.connectionId ?? null) === (inputConnection.id ?? null) &&
-        isEqual(step.parameters ?? {}, inputParameters) &&
-        (inputEndStepId === undefined ||
-          inputEndStepId === step.config?.[BLOCK_END_STEP_ID])
-
-      if (!isRenameOnly) {
-        throw new ValidationError({
-          message: 'Cannot edit published pipe.',
-          type: 'editingPublishedPipeError',
-        })
-      }
-
-      // IMPORTANT: patch only stepName against the current row. Spreading the
-      // fetched config can restore an endStepId that a concurrent delete repaired.
-      const renamedStep = await Step.query(trx)
-        .context({ shouldBypassBeforeUpdateHook: true })
-        .patchAndFetchById(id, {
-          updatedBy: context.currentUser.id,
-          config: raw(
-            `jsonb_set(coalesce(config, '{}'::jsonb), '{stepName}', to_jsonb(?::text))`,
-            [newStepName],
-          ),
-        })
-        .withGraphFetched({ connection: true, flow: true })
-
-      const flowAfterRename = await step.flow.patchLastUpdated({
-        flowId: step.flowId,
-        updatedBy: context.currentUser.id,
-        trx,
-      })
-      renamedStep.flow.updatedAt = flowAfterRename.updatedAt
-      renamedStep.flow.updatedBy = context.currentUser.id
-      return renamedStep
-    }
-
     if (inputConnection.id) {
       // if connectionId is specified, verify that the connection exists
       // this prevents editors from adding their own connections, only flow connections can be added
@@ -152,6 +93,9 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
     // to avoid misuse and saving invalid step parameters
     if (step.type === 'action') {
       const action = triggerOrAction as IAction
+      if (action?.hiddenFromUser) {
+        throw new BadUserInputError('Action can only be updated by system')
+      }
       action?.validateStepParameters?.(inputParameters)
     }
 

@@ -1,9 +1,11 @@
+import { useMutation } from '@apollo/client'
 import { CloseButton, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { IStep } from '@plumber/types'
 import { useContext, useRef } from 'react'
 
 import EditableInput from '@/components/EditableInput'
 import { EditorContext } from '@/contexts/Editor'
+import { RENAME_STEP } from '@/graphql/mutations/rename-step'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
@@ -23,11 +25,11 @@ export default function StepHeader(props: StepHeaderProps) {
   } = useDisclosure()
 
   const {
+    flow,
     hasEditPermission,
     hasFlowTransfer,
     shouldWarnOnLeave,
     onDrawerClose,
-    onUpdateStep,
     setCurrentStepId,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
@@ -48,12 +50,16 @@ export default function StepHeader(props: StepHeaderProps) {
     setShouldWarnOnLeave(false)
   }
 
+  // A dedicated mutation, because updateStep rejects every edit on a published pipe.
+  const [renameStep] = useMutation(RENAME_STEP)
   const onSave = async (value: string) => {
-    await onUpdateStep({
-      ...step,
-      config: {
-        ...step.config,
-        stepName: value,
+    await renameStep({
+      variables: {
+        input: {
+          id: step.id,
+          flow: { id: flow.id, updatedAt: flow.updatedAt },
+          stepName: value,
+        },
       },
     })
   }
