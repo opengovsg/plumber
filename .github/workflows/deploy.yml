@@ -69,11 +69,19 @@ jobs:
       - name: Resolve app version
         id: app-version
         shell: bash
+        env:
+          # Empty outside release events.
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
           # Release tags are the version source of truth. package.json versions are not bumped.
-          # Untagged commits (staging, uat) resolve to e.g. 1.107.0-12-gc3a6733.
-          version="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*')"
+          if [ -n "${RELEASE_TAG}" ]; then
+            # A commit can carry several release tags, so git describe may not pick the one being deployed.
+            version="${RELEASE_TAG}"
+          else
+            # Branch deploys (staging, uat) resolve to e.g. 1.107.0-12-gc3a6733.
+            version="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*')"
+          fi
           echo "version=${version#v}" >> "${GITHUB_OUTPUT}"
           echo "App version: ${version#v}" >> "${GITHUB_STEP_SUMMARY}"
 

@@ -69,8 +69,10 @@ The previous release is the latest published release on origin. Drafts and
 pre-releases do not count:
 
 ```bash
-PREV=$(gh api "repos/{owner}/{repo}/releases/latest" --jq .tag_name) && echo "since $PREV" && git log --oneline --no-merges "$PREV"..HEAD
+PREV=$(gh api "repos/{owner}/{repo}/releases/latest" --jq .tag_name) && echo "since $PREV at $(git rev-parse HEAD)" && git log --oneline --no-merges "$PREV"..HEAD
 ```
+
+Note the printed tag and SHA. Step 4 checks that neither changed.
 
 This is the set of changes the release ships. Condense each commit into one
 release-note bullet. Keep the conventional-commit type prefix and the `(#PR)`
@@ -96,10 +98,17 @@ recommended option first and append " (Recommended)" to its label.
 
 ### 4. Tag
 
-Replace `<bump>` with the chosen `patch`/`minor`/`major`:
+Replace `<bump>` with the chosen `patch`/`minor`/`major`. Replace `<prev>` and
+`<sha>` with the tag and SHA that step 2 printed:
 
 ```bash
+git fetch origin develop-v2 --tags --quiet
 PREV=$(gh api "repos/{owner}/{repo}/releases/latest" --jq .tag_name)
+SHA=$(git rev-parse origin/develop-v2)
+if [ "$PREV" != "<prev>" ] || [ "$SHA" != "<sha>" ] || [ "$(git rev-parse HEAD)" != "$SHA" ]; then
+  echo "release inputs changed: latest release $PREV, develop-v2 $SHA. Restart from step 1."
+  exit 1
+fi
 [[ "$PREV" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || { echo "latest release tag '$PREV' is not vX.Y.Z"; exit 1; }
 MAJOR=${BASH_REMATCH[1]} MINOR=${BASH_REMATCH[2]} PATCH=${BASH_REMATCH[3]}
 case <bump> in
@@ -107,12 +116,19 @@ case <bump> in
   minor) NEW="v$MAJOR.$((MINOR + 1)).0" ;;
   patch) NEW="v$MAJOR.$MINOR.$((PATCH + 1))" ;;
 esac
-git rev-parse -q --verify "refs/tags/$NEW" && { echo "$NEW already exists"; exit 1; }
-git tag "$NEW" && echo "tagged $NEW"
+git rev-parse -q --verify "refs/tags/$NEW" && { echo "$NEW already exists locally"; exit 1; }
+git ls-remote --exit-code --tags origin "refs/tags/$NEW" > /dev/null && { echo "$NEW already exists on origin"; exit 1; }
+git tag "$NEW" "$SHA" && echo "tagged $NEW at $SHA"
 ```
 
-The script recomputes `PREV` instead of reusing step 2. It aborts if the new tag
-already exists locally.
+Another release can ship while the user answers the bump prompt. Tagging the
+older `HEAD` under a higher version would roll production back. If the script
+reports changed inputs, restart from step 1 so the notes and bump match the new
+state.
+
+The script aborts if the new tag already exists. `scheduled-release.yml`
+reserves its tag when it drafts a release, so an existing tag usually means a
+draft is waiting.
 
 ### 5. Verify
 
