@@ -60,6 +60,17 @@ Known gaps, accepted because each is rare:
 - **Direct writes.** `--full` rewrites a day PostHog may already have imported. A step changed by a direct write then has two rows with the same `day` and `updated_at`, and the view may pick the older one.
 - **Late writes.** The export runs at 01:00 Singapore time and reads the day before. A write stamped before midnight that becomes readable only after the export read it is never exported. That needs a transaction open past 01:00, an hour of Aurora reader lag, or an app clock an hour slow. The step then keeps its earlier state in PostHog, for example still active after a soft delete, until it changes again or `--full` runs.
 
+## Logs
+
+The analytics and archival loggers share `redactLogFields` in `src/log-format.ts`. It writes each error under `err` with these fields only:
+
+- `name`, `message` and `stack`.
+- `code`, when it is a string.
+- `$metadata.httpStatusCode` and `$metadata.requestId`, from an AWS SDK error.
+- `cause`, and an `AggregateError`'s `errors`, with the same fields.
+
+It drops every other error field. An AWS SDK error holds the raw HTTP response in `$response` and copies its error body onto itself. Like the backend logger, it masks any key that looks like a secret as `[REDACTED]`. The key list mirrors `packages/backend/src/helpers/redaction/sensitive-keys.ts`, and a test fails when they differ. Any class instance other than an error, a `Date` or a `Buffer` is written as `[ClassName]`.
+
 ---
 
 ## Agency mapping

@@ -1,6 +1,6 @@
 import winston from 'winston'
 
-import { nestedErrors } from './log-format'
+import { redactLogFields } from './log-format'
 
 const isDev = (process.env.APP_ENV ?? 'development') === 'development'
 
@@ -9,7 +9,7 @@ const analyticsLogger = winston.createLogger({
   level: isDev ? 'debug' : 'info',
   format: winston.format.combine(
     winston.format.errors({ stack: true }),
-    nestedErrors(),
+    redactLogFields(),
     winston.format.timestamp(),
     winston.format.json(),
   ),
