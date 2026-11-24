@@ -2,12 +2,11 @@
 name: publish-release
 description: >
   Publish a Plumber production release. Prompts the user to choose the version
-  bump (patch / minor / major), bumps the version across the root workspace and
-  the app packages, creates a single conventional `vX.Y.Z` commit
-  and git tag, pushes both to origin, then opens a draft GitHub release whose
-  notes summarise the changes since the previous release. Use when the user asks
-  to cut or publish a release, bump the version and release, tag a release, or
-  ship develop-v2 to production.
+  bump (patch / minor / major) from the latest published release on origin,
+  tags the `develop-v2` tip `vX.Y.Z`, pushes the tag to origin, then opens a
+  draft GitHub release whose notes summarise the changes since the previous
+  release. Use when the user asks to cut or publish a release, bump the version
+  and release, tag a release, or ship develop-v2 to production.
 ---
 
 # Publish a release
@@ -18,14 +17,12 @@ Ship Plumber to production by publishing a GitHub release from a version tag.
 
 - Releases ship from `develop-v2` (the trunk). There is no release PR. Nothing
   merges into `production`.
-- The version bump is exactly one commit on `develop-v2`, named `vX.Y.Z`. It
-  bumps the root `package.json` and the six app packages (`backend`,
-  `frontend`, `backend-archive`, `backend-analytics`, `backend-models`,
-  `types`) to that same version. `tools/*`
-  stay on their own versions. `pnpm-lock.yaml` does not store the app
-  version, so it is not part of this commit.
-- That commit is tagged `vX.Y.Z`. Both the commit and the tag are pushed to
-  origin.
+- The latest published release tag on origin is the version source of truth.
+  The next version is that tag plus the chosen bump.
+- `package.json` versions are not bumped. There is no release commit. The
+  deploy resolves the version from the tag with `git describe` and passes it to
+  the backend and frontend as `APP_VERSION`.
+- The `develop-v2` tip is tagged `vX.Y.Z`. Only the tag is pushed to origin.
 - The GitHub release is created from that tag as a **draft**. The human
   publishes it.
 - Publishing fires `release: [released]`, which runs
@@ -37,19 +34,11 @@ Ship Plumber to production by publishing a GitHub release from a version tag.
 1. **Never publish the release.** You create the draft. The human clicks
    Publish, because that deploys to production. Never run `gh release create`
    without `--draft`. Never run `gh release edit --draft=false`.
-2. **Push only `develop-v2` and the `vX.Y.Z` tag.** Never force-push. Never push
-   any other branch.
-3. **One clean bump commit.** The commit must touch exactly these seven files:
-   the root `package.json`, `packages/backend/package.json`,
-   `packages/frontend/package.json`, `packages/backend-archive/package.json`,
-   `packages/backend-analytics/package.json`,
-   `packages/backend-models/package.json` and `packages/types/package.json`. Its message is `vX.Y.Z` (with the `v`
-   prefix). Each file's version field must be that same version. Do not leave
-   a workspace bump uncommitted. See the gotcha below.
-4. **Never `git reset --hard`** (a deny rule blocks it anyway). Back a bump out
-   with a mixed reset plus `git checkout -- .`.
-5. **Never bump or tag before step 1 passes.** A release must be cut from a
-   clean, fully-synced `develop-v2`.
+2. **Push only the `vX.Y.Z` tag.** Never push a branch. Never force-push.
+3. **Never edit `package.json` for a release.** Never create a release commit.
+   The tag alone sets the version.
+4. **Never tag before step 1 passes.** A release must be cut from a clean,
+   fully-synced `develop-v2`.
 
 ## Procedure
 
@@ -64,30 +53,38 @@ git branch --show-current          # must be: develop-v2
 git status --porcelain             # must be empty (clean tree)
 git rev-parse HEAD                 # must equal...
 git rev-parse origin/develop-v2    # ...this (local fully synced with origin)
+gh release list --limit 100 --json tagName,isDraft --jq '.[] | select(.isDraft) | .tagName'
 ```
 
 Abort and tell the user if: not on `develop-v2`, the tree is dirty, or local and
 `origin/develop-v2` diverge.
 
+The last command lists draft releases. `scheduled-release.yml` creates drafts on
+its own. If one exists, tell the user and ask whether to publish that draft
+instead of cutting a new release.
+
 ### 2. Summarise the changes since the previous release
 
+The previous release is the latest published release on origin. Drafts and
+pre-releases do not count:
+
 ```bash
-PREV=$(git describe --tags --abbrev=0 --match "v*") && echo "since $PREV" && git log --oneline --no-merges "$PREV"..HEAD
+PREV=$(gh api "repos/{owner}/{repo}/releases/latest" --jq .tag_name) && echo "since $PREV" && git log --oneline --no-merges "$PREV"..HEAD
 ```
 
 This is the set of changes the release ships. Condense each commit into one
 release-note bullet. Keep the conventional-commit type prefix and the `(#PR)`
 number, e.g. `- chore: enable Datadog continuous profiling (#1805)`.
-**Exclude** version-bump commits (messages matching `vX.Y.Z`).
+**Exclude** old version-bump commits (messages matching `vX.Y.Z`).
 
 If the list is empty or surprisingly small, surface that to the user before
 continuing. It may mean other branches still need to merge into `develop-v2`.
 
 ### 3. Prompt for the bump type
 
-Read the current version (`node -p "require('./package.json').version"`) and
-compute what each bump resolves to. Then use the **AskUserQuestion** tool to ask
-which bump to apply, with three options. Show the resulting version in each:
+Take the step-2 tag `vX.Y.Z` and compute what each bump resolves to. Then use
+the **AskUserQuestion** tool to ask which bump to apply, with three options.
+Show the resulting version in each:
 
 - **patch** (`X.Y.(Z+1)`) for bug fixes and chores only.
 - **minor** (`X.(Y+1).0`) for new features, backwards-compatible.
@@ -97,90 +94,46 @@ Recommend a default by scanning the step-2 commits. Any breaking change
 recommends major. Any `feat` recommends minor. Otherwise patch. Put the
 recommended option first and append " (Recommended)" to its label.
 
-### 4. Bump, commit, tag
+### 4. Tag
 
-Replace only the `version` field in the seven manifests. **You** create the
-commit and tag. Do not use `npm version` or `pnpm version` (see gotcha).
 Replace `<bump>` with the chosen `patch`/`minor`/`major`:
 
 ```bash
-nvm use
-NEW=$(BUMP=<bump> node << 'EOF'
-const fs = require('fs')
-const files = [
-  'package.json',
-  'packages/backend/package.json',
-  'packages/frontend/package.json',
-  'packages/backend-archive/package.json',
-  'packages/backend-analytics/package.json',
-  'packages/backend-models/package.json',
-  'packages/types/package.json',
-]
-const bump = process.env.BUMP
-function nextVersion(version, kind) {
-  const [major, minor, patch] = version.split('.').map(Number)
-  if (kind === 'major') return `${major + 1}.0.0`
-  if (kind === 'minor') return `${major}.${minor + 1}.0`
-  if (kind === 'patch') return `${major}.${minor}.${patch + 1}`
-  throw new Error(`unknown bump ${kind}`)
-}
-const current = JSON.parse(fs.readFileSync('package.json', 'utf8')).version
-const next = nextVersion(current, bump)
-const pattern = new RegExp(`("version"\\s*:\\s*")${current.replaceAll('.', '\\.')}(")`)
-const updates = files.map((file) => {
-  const text = fs.readFileSync(file, 'utf8')
-  const { version } = JSON.parse(text)
-  if (version !== current) {
-    throw new Error(`${file} is ${version}, expected ${current}`)
-  }
-  const updated = text.replace(pattern, `$1${next}$2`)
-  if (updated === text) throw new Error(`version field not found in ${file}`)
-  return [file, updated]
-})
-for (const [file, updated] of updates) fs.writeFileSync(file, updated)
-process.stdout.write(next)
-EOF
-)
-git add package.json packages/backend/package.json packages/frontend/package.json packages/backend-archive/package.json packages/backend-analytics/package.json packages/backend-models/package.json packages/types/package.json
-git commit -m "v$NEW"
-git tag "v$NEW"
+PREV=$(gh api "repos/{owner}/{repo}/releases/latest" --jq .tag_name)
+[[ "$PREV" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || { echo "latest release tag '$PREV' is not vX.Y.Z"; exit 1; }
+MAJOR=${BASH_REMATCH[1]} MINOR=${BASH_REMATCH[2]} PATCH=${BASH_REMATCH[3]}
+case <bump> in
+  major) NEW="v$((MAJOR + 1)).0.0" ;;
+  minor) NEW="v$MAJOR.$((MINOR + 1)).0" ;;
+  patch) NEW="v$MAJOR.$MINOR.$((PATCH + 1))" ;;
+esac
+git rev-parse -q --verify "refs/tags/$NEW" && { echo "$NEW already exists"; exit 1; }
+git tag "$NEW" && echo "tagged $NEW"
 ```
 
-The server reads `packages/backend/package.json` at startup. If that file stays
-on the old version, production still reports the old version. The script checks
-all seven files before it writes any. It aborts with no file changed when one has
-drifted from the root version.
+The script recomputes `PREV` instead of reusing step 2. It aborts if the new tag
+already exists locally.
 
 ### 5. Verify
 
 ```bash
-git show --stat HEAD
-git tag --points-at HEAD    # expect: vX.Y.Z
-git status --porcelain      # expect: empty
-node -p "
-const files = ['package.json','packages/backend/package.json','packages/frontend/package.json','packages/backend-archive/package.json','packages/backend-analytics/package.json','packages/backend-models/package.json','packages/types/package.json']
-files.map(f => require('./'+f).version).join(' ')
-"
+git tag --points-at HEAD                  # expect: vX.Y.Z
+git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*'   # expect: vX.Y.Z
+git status --porcelain                    # expect: empty
 ```
 
-`git show --stat` must list only those seven `package.json` files, and the
-message must be `vX.Y.Z`. The `node -p` line must print the new version seven
-times. `tools/*/package.json` and `pnpm-lock.yaml` must be absent from the
-commit.
+`git describe` must print exactly `vX.Y.Z`. The deploy runs the same command to
+set the version the app reports.
 
-If anything is off (workspace bumps missing, wrong message, stray tag), back it
-out and retry. Step 4 creates exactly one commit, so the pre-bump commit is
-always `HEAD~1`:
+If anything is off (wrong version, stray tag), delete the tag and retry:
 
 ```bash
 git tag -d vX.Y.Z
-git reset HEAD~1 && git checkout -- .
 ```
 
-### 6. Push the commit and the tag
+### 6. Push the tag
 
 ```bash
-git push origin develop-v2
 git push origin vX.Y.Z
 ```
 
@@ -215,22 +168,14 @@ Report the draft release URL. State plainly that clicking Publish deploys
 pre-release (`--prerelease`) publishes without deploying. Un-checking
 "pre-release" later fires `released` and deploys then.
 
-## Gotcha: do not use `npm version` or `pnpm version`
+A pre-release does not count as the latest published release. The next release
+computes its version from the last full release, so it can reuse the
+pre-release's version. Promote or delete the pre-release before cutting another.
 
-`npm version` writes `package-lock.json`, which this repo no longer has. With its default git
-tagging it also commits only the root `package.json`, so the workspace
-versions never land on the tag.
+## Gotcha: do not read the version from `package.json`
 
-`pnpm version patch` bumps only the root. The running server would keep
-reporting the old version from `packages/backend/package.json`.
-
-`pnpm version patch -r` bumps `tools/*` as well (those stay on `1.0.0`) and
-rewrites each `package.json`, which can reorder dependency keys. The release
-commit would then contain more than the version field.
-
-Step 4 replaces the `version` string in the seven manifests and commits
-those files by hand. The diff is the version field only, and the tag contains
-the version the server actually reads.
+`package.json` versions are no longer bumped and lag behind the tags. Any version
+computed from them can collide with an existing release.
 
 ## Gotcha: workflow-created releases do not deploy
 
