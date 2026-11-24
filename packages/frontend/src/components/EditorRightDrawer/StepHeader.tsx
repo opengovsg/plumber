@@ -24,6 +24,7 @@ export default function StepHeader(props: StepHeaderProps) {
 
   const {
     hasEditPermission,
+    hasFlowTransfer,
     shouldWarnOnLeave,
     onDrawerClose,
     onUpdateStep,
@@ -77,8 +78,8 @@ export default function StepHeader(props: StepHeaderProps) {
           key={step.id}
           value={stepName}
           onSave={onSave}
-          // Renaming is allowed on published pipes. MRF step names are fixed.
-          readOnly={!hasEditPermission || isMrfStep}
+          // Renaming is allowed on published pipes, but not during a pending transfer.
+          readOnly={!hasEditPermission || hasFlowTransfer || isMrfStep}
           placeholder={defaultStepName}
           allowEmpty={true}
           fontWeight={500}

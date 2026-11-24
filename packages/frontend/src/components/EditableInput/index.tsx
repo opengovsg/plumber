@@ -62,9 +62,14 @@ export default function EditableInput({
       resetField()
     } else {
       setIsUpdating(true)
-      await onSave(trimmedValue)
-      setIsUpdating(false)
-      setIsEditing(false)
+      try {
+        await onSave(trimmedValue)
+        setIsEditing(false)
+      } catch {
+        // Stay in edit mode so the user can retry with the typed value.
+      } finally {
+        setIsUpdating(false)
+      }
     }
   }
 

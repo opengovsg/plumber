@@ -1,9 +1,10 @@
 import { isEqual } from 'lodash'
-import { ValidationError } from 'objection'
+import { raw, ValidationError } from 'objection'
 
 import { IAction } from '@/../../types'
 import apps from '@/apps'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
+import { BLOCK_END_STEP_ID } from '@/apps/toolbox/common/constants'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   addFlowConnection,
@@ -75,14 +76,23 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
 
     step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
+    if (step.type === 'action' && (triggerOrAction as IAction).hiddenFromUser) {
+      throw new BadUserInputError('Action can only be updated by system')
+    }
+
     if (step.flow.active) {
-      // Published pipes only allow renaming a step.
+      const newStepName = input.config?.stepName
+      const inputEndStepId = input.config?.[BLOCK_END_STEP_ID]
       const isRenameOnly =
+        newStepName !== undefined &&
+        newStepName !== null &&
         input.status !== 'incomplete' &&
         step.key === key &&
         step.appKey === appKey &&
         (step.connectionId ?? null) === (inputConnection.id ?? null) &&
-        isEqual(step.parameters ?? {}, inputParameters)
+        isEqual(step.parameters ?? {}, inputParameters) &&
+        (inputEndStepId === undefined ||
+          inputEndStepId === step.config?.[BLOCK_END_STEP_ID])
 
       if (!isRenameOnly) {
         throw new ValidationError({
@@ -91,16 +101,16 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
         })
       }
 
-      const newStepName = input?.config?.stepName ?? step?.config?.stepName
-
+      // IMPORTANT: patch only stepName against the current row. Spreading the
+      // fetched config can restore an endStepId that a concurrent delete repaired.
       const renamedStep = await Step.query(trx)
         .context({ shouldBypassBeforeUpdateHook: true })
         .patchAndFetchById(id, {
           updatedBy: context.currentUser.id,
-          config: {
-            ...(step.config ?? {}),
-            ...(newStepName !== undefined ? { stepName: newStepName } : {}),
-          },
+          config: raw(
+            `jsonb_set(coalesce(config, '{}'::jsonb), '{stepName}', to_jsonb(?::text))`,
+            [newStepName],
+          ),
         })
         .withGraphFetched({ connection: true, flow: true })
 
@@ -135,9 +145,6 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
     // to avoid misuse and saving invalid step parameters
     if (step.type === 'action') {
       const action = triggerOrAction as IAction
-      if (action?.hiddenFromUser) {
-        throw new BadUserInputError('Action can only be updated by system')
-      }
       action?.validateStepParameters?.(inputParameters)
     }
 
