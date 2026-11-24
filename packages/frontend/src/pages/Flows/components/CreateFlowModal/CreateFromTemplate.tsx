@@ -10,10 +10,11 @@ import TemplatePicker from './TemplatePicker'
 interface CreateFromTemplateProps {
   onBack: () => void
   onDismiss: () => void
+  onBusyChange: (isBusy: boolean) => void
 }
 
 export default function CreateFromTemplate(props: CreateFromTemplateProps) {
-  const { onBack, onDismiss } = props
+  const { onBack, onDismiss, onBusyChange } = props
   // Lives here so the search survives a trip to the preview and back.
   const browser = useTemplateBrowser()
   const { data: apps, loading: appsLoading } = useApps()
@@ -28,6 +29,7 @@ export default function CreateFromTemplate(props: CreateFromTemplateProps) {
         apps={apps}
         onBack={() => setSelectedTemplate(null)}
         onDismiss={onDismiss}
+        onBusyChange={onBusyChange}
       />
     )
   }

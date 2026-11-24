@@ -7,6 +7,7 @@ import {
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import type { IApp, ITemplate } from '@plumber/types'
+import { useEffect } from 'react'
 
 import BackButton from '@/components/FlowStepConfigurationModal/BackButton'
 import { TemplateIcon } from '@/helpers/flow-templates'
@@ -23,6 +24,8 @@ interface TemplatePreviewProps {
   onDismiss?: () => void
   /** Replaces the preview's history entry with the editor. */
   replaceOnCreate?: boolean
+  /** Lets the host modal block dismissal while a pipe is being created. */
+  onBusyChange?: (isBusy: boolean) => void
 }
 
 /**
@@ -30,13 +33,18 @@ interface TemplatePreviewProps {
  * Render inside a Chakra `ModalContent` with a fixed height.
  */
 export default function TemplatePreview(props: TemplatePreviewProps) {
-  const { template, apps, onBack, onDismiss, replaceOnCreate } = props
+  const { template, apps, onBack, onDismiss, replaceOnCreate, onBusyChange } =
+    props
   const { name, description, iconName, steps } = template
   const { createFromTemplate, loading } = useCreateTemplatedFlow(
     template,
     onDismiss,
     replaceOnCreate,
   )
+
+  useEffect(() => {
+    onBusyChange?.(loading)
+  }, [loading, onBusyChange])
 
   return (
     <Flex flexDir="column" flex={1} minH={0} pt={onBack ? 6 : 8} pb={8}>
@@ -46,7 +54,7 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
             {/* A second creation from another preview would race this one. */}
             <BackButton onBack={onBack} isDisabled={loading} />
           </Flex>
-          <ModalCloseButton top="1.5rem" right={7} />
+          <ModalCloseButton top="1.5rem" right={7} isDisabled={loading} />
         </>
       )}
 

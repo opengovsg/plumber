@@ -25,6 +25,9 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
 
   const { setCreateMode } = useCreateFlowContext()
   const [isChoosingTemplate, setIsChoosingTemplate] = useState(false)
+  // IMPORTANT: closing mid-creation lets a reopened modal start a second
+  // pipe, and the first request would then close it and redirect.
+  const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false)
 
   const {
     flowName,
@@ -60,6 +63,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       onClose={onClose}
       motionPreset="none"
       closeOnEsc={false}
+      closeOnOverlayClick={!isCreatingFromTemplate}
       isCentered
       size="4xl"
     >
@@ -71,7 +75,11 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
         })}
       >
         {isChoosingTemplate ? (
-          <CreateFromTemplate onBack={handleBackToModes} onDismiss={onClose} />
+          <CreateFromTemplate
+            onBack={handleBackToModes}
+            onDismiss={onClose}
+            onBusyChange={setIsCreatingFromTemplate}
+          />
         ) : (
           <>
             <FlowNameAndModeContent
