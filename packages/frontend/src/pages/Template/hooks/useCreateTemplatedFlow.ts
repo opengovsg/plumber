@@ -47,23 +47,20 @@ export function useCreateTemplatedFlow(
     // Warms the cache so the editor renders at once instead of flashing its
     // loading state. The editor refetches on a miss, so a failure is safe.
     // The deadline stops a stalled query from trapping the user in the modal.
-    // IMPORTANT: abort it at the deadline. Apollo deduplicates identical
-    // queries, so the editor would otherwise share the stalled request.
-    const abortController = new AbortController()
-    const timeoutId = setTimeout(
-      () => abortController.abort(),
-      PREFETCH_TIMEOUT_MS,
-    )
+    // IMPORTANT: skip deduplication so the editor starts its own request
+    // instead of sharing one that stalled. Aborting it would crash the error
+    // link, which assumes a response exists.
     try {
-      await client.query({
-        query: GET_FLOW,
-        variables: { id: flowId },
-        context: { fetchOptions: { signal: abortController.signal } },
-      })
+      await Promise.race([
+        client.query({
+          query: GET_FLOW,
+          variables: { id: flowId },
+          context: { queryDeduplication: false },
+        }),
+        new Promise((resolve) => setTimeout(resolve, PREFETCH_TIMEOUT_MS)),
+      ])
     } catch {
       // Navigate anyway.
-    } finally {
-      clearTimeout(timeoutId)
     }
 
     onDismiss?.()
