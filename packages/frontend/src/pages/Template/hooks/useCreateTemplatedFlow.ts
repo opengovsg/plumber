@@ -10,10 +10,12 @@ import { GET_FLOW } from '@/graphql/queries/get-flow'
 /**
  * @param onDismiss Closes the surface showing the template. It runs before the
  * editor opens so the two screens never overlap.
+ * @param replace Replaces the current history entry with the editor.
  */
 export function useCreateTemplatedFlow(
   template: ITemplate,
   onDismiss?: () => void,
+  replace = false,
 ) {
   const navigate = useNavigate()
   const client = useApolloClient()
@@ -52,8 +54,11 @@ export function useCreateTemplatedFlow(
     // Lets React unmount the dismissed surface before the editor renders.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    navigate(isDemoTemplate ? URLS.FLOW_WITH_DEMO(flowId) : URLS.FLOW(flowId))
+    navigate(isDemoTemplate ? URLS.FLOW_WITH_DEMO(flowId) : URLS.FLOW(flowId), {
+      replace,
+    })
   }, [
+    replace,
     isBusy,
     createTemplatedFlow,
     client,

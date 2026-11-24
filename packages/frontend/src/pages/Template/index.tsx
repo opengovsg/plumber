@@ -28,11 +28,7 @@ export default function TemplateModal(props: TemplateProps) {
     >
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent h={TEMPLATE_MODAL_HEIGHT} maxH="calc(100vh - 4rem)">
-        <TemplatePreview
-          template={template}
-          apps={apps}
-          onDismiss={() => navigate(URLS.TEMPLATES, { replace: true })}
-        />
+        <TemplatePreview template={template} apps={apps} replaceOnCreate />
       </ModalContent>
     </Modal>
   )

@@ -1,4 +1,10 @@
-import { Box, Flex, ModalCloseButton, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  ModalCloseButton,
+  ModalHeader,
+  Text,
+} from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import type { IApp, ITemplate } from '@plumber/types'
 
@@ -14,7 +20,9 @@ interface TemplatePreviewProps {
   /** Shows the Back and close buttons. Omit when the modal has its own route. */
   onBack?: () => void
   /** Closes the modal once the pipe exists, before the editor opens. */
-  onDismiss: () => void
+  onDismiss?: () => void
+  /** Replaces the preview's history entry with the editor. */
+  replaceOnCreate?: boolean
 }
 
 /**
@@ -22,11 +30,12 @@ interface TemplatePreviewProps {
  * Render inside a Chakra `ModalContent` with a fixed height.
  */
 export default function TemplatePreview(props: TemplatePreviewProps) {
-  const { template, apps, onBack, onDismiss } = props
+  const { template, apps, onBack, onDismiss, replaceOnCreate } = props
   const { name, description, iconName, steps } = template
   const { createFromTemplate, loading } = useCreateTemplatedFlow(
     template,
     onDismiss,
+    replaceOnCreate,
   )
 
   return (
@@ -34,7 +43,8 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
       {onBack && (
         <>
           <Flex px={8} pb={5} pr={16}>
-            <BackButton onBack={onBack} />
+            {/* A second creation from another preview would race this one. */}
+            <BackButton onBack={onBack} isDisabled={loading} />
           </Flex>
           <ModalCloseButton top="1.5rem" right={7} />
         </>
@@ -55,10 +65,10 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
       >
         <Flex flexDir="column" minH="100%">
           <TemplateBody templateSteps={steps} apps={apps} />
-          {/* Sticky so the caption stays visible while the steps scroll. */}
+          {/* Sticky so the caption stays visible while the steps scroll.
+              Short viewports scroll it with the steps so it cannot cover links. */}
           <Flex
             mt="auto"
-            position="sticky"
             bottom={0}
             justifyContent="center"
             pt={20}
@@ -67,6 +77,7 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
             sx={{
               backgroundImage:
                 'linear-gradient(to top, #fff 55%, rgba(255, 255, 255, 0))',
+              '@media (min-height: 44rem)': { position: 'sticky' },
             }}
           >
             <Text
@@ -88,7 +99,9 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
           <TemplateIcon iconName={iconName} />
         </Box>
         <Flex flexDir="column" flexGrow={1} rowGap={0.5}>
-          <Text textStyle="subhead-1">{name}</Text>
+          <ModalHeader p={0} textStyle="subhead-1">
+            {name}
+          </ModalHeader>
           <Text textStyle="body-2" color="base.content.default">
             {description}
           </Text>

@@ -1,4 +1,4 @@
-import { Box, Flex, ModalCloseButton, Text } from '@chakra-ui/react'
+import { Box, Flex, ModalCloseButton, ModalHeader } from '@chakra-ui/react'
 import type { ITemplate } from '@plumber/types'
 
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
@@ -27,7 +27,9 @@ export default function TemplatePicker(props: TemplatePickerProps) {
         pr={16}
       >
         <BackButton onBack={onBack} />
-        <Text textStyle="h4">Choose a template</Text>
+        <ModalHeader p={0} textStyle="h4">
+          Choose a template
+        </ModalHeader>
       </Flex>
       <ModalCloseButton top="1.625rem" right={4} />
 
@@ -36,6 +38,8 @@ export default function TemplatePicker(props: TemplatePickerProps) {
           searchValue={browser.searchQuery}
           onChange={browser.setSearchQuery}
           placeholder="Describe your workflow"
+          minW={0}
+          flushOnUnmount
         />
       </Box>
 
