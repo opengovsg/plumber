@@ -62,8 +62,10 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
       )
     }
 
-    // IMPORTANT: lock the pipe before checking its version. Otherwise two
-    // concurrent renames both pass the check and the later one silently wins.
+    // IMPORTANT: lock the step, then the pipe, before checking the version.
+    // updateStep takes the same order, so the two cannot deadlock. Without the
+    // pipe lock, two concurrent renames both pass the check.
+    await Step.query(trx).forUpdate().findById(id)
     const flow = await Flow.query(trx)
       .forUpdate()
       .findById(flowId)

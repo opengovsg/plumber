@@ -208,4 +208,36 @@ describe('renameStep mutation', () => {
       (await Step.query().findById(step.id).throwIfNotFound()).config.stepName,
     ).toBe(winner?.config?.stepName)
   })
+  it('does not deadlock when a rename and a settings save hit the same draft step', async () => {
+    await Flow.knex()('flows').where({ id: flow.id }).update({ active: false })
+
+    for (let i = 0; i < 20; i++) {
+      const version = await flowInput()
+      const results = await Promise.allSettled([
+        renameStep(
+          {},
+          { input: { id: step.id, flow: version, stepName: `Name ${i}` } },
+          context,
+        ),
+        updateStep(
+          {},
+          {
+            input: {
+              id: step.id,
+              key: 'sendTransactionalEmail',
+              appKey: 'postman',
+              connection: {},
+              flow: version,
+              parameters: { subject: `Subject ${i}` },
+            },
+          },
+          context,
+        ),
+      ])
+      const errors = results
+        .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        .map((r) => String(r.reason?.message ?? r.reason))
+      expect(errors).toEqual([])
+    }
+  })
 })
