@@ -106,6 +106,7 @@ The mutation log run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`
 - Only mutations that change the pipe count: step changes, `duplicateBranch`, `updateFlow`, `updateFlowConfig`, `updateFlowStatus` and `deleteFlow`. `duplicateFlow`, run retries, sharing and connection setup name a pipe without changing it.
 - `edits` counts requests, not saves. A rejected request returns HTTP 200, so it counts too. The editor is read-only for viewers, so a viewer's request needs a stale tab.
 - A join with `flow_access` gives each user's current access, not their role at edit time. Its owner row dates the current owner from the pipe's creation, so a former editor's past edits read as owner edits. For the role at edit time, use `flow_transfer` for ownership and the `flow_collaborator_*` PostHog events for collaborator changes, matched on each request's timestamp in the bronze `mutation_log`.
+  - IMPORTANT: the `flow_collaborator_*` events start when #2615 releases. A collaborator's role before then is unknown, so count those edits as unknown role, not as the current one. `flow_transfer` holds the full ownership history.
 
 ## Tracking finished days
 
