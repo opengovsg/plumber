@@ -21,7 +21,11 @@ describe('renameStepSchema', () => {
 
   it('rejects a name over the length limit', () => {
     const name = 'a'.repeat(MAX_STEP_NAME_LENGTH + 1)
-    expect(renameStepSchema.safeParse(validInput(name)).success).toBe(false)
+    const result = renameStepSchema.safeParse(validInput(name))
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0].message).toBe(
+      'Step names can be up to 64 characters.',
+    )
   })
 
   it('trims the name before checking its length', () => {

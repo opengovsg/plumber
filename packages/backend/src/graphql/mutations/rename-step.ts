@@ -18,7 +18,12 @@ export const renameStepSchema = z.object({
     updatedAt: z.string().regex(/^\d+$/),
   }),
   // An empty name falls back to the step's default name.
-  stepName: z.string().trim().max(MAX_STEP_NAME_LENGTH),
+  stepName: z
+    .string()
+    .trim()
+    .max(MAX_STEP_NAME_LENGTH, {
+      message: `Step names can be up to ${MAX_STEP_NAME_LENGTH} characters.`,
+    }),
 })
 
 const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
@@ -28,8 +33,12 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
 ) => {
   const parsed = renameStepSchema.safeParse(params.input)
   if (!parsed.success) {
+    const issue = parsed.error.issues[0]
+    // Only the name can fail through the editor, so only it gets user-facing copy.
     throw new BadUserInputError(
-      `Invalid input: ${parsed.error.issues[0].path.join('.')}`,
+      issue.path[0] === 'stepName'
+        ? issue.message
+        : `Invalid input: ${issue.path.join('.')}`,
     )
   }
   const {
@@ -47,7 +56,9 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
       })
 
     if (!step) {
-      throw new BadUserInputError('Step not found')
+      throw new BadUserInputError(
+        'This step no longer exists or you can no longer edit it. Refresh the page.',
+      )
     }
 
     step.flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)

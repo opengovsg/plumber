@@ -121,7 +121,7 @@ describe('renameStep mutation', () => {
         },
         context,
       ),
-    ).rejects.toThrow('Invalid input: stepName')
+    ).rejects.toThrow('Step names can be up to 64 characters.')
     expect(
       (await Step.query().findById(step.id).throwIfNotFound()).config.stepName,
     ).toBe('Old name')
@@ -160,6 +160,8 @@ describe('renameStep mutation', () => {
         },
         { ...context, currentUser: viewer },
       ),
-    ).rejects.toThrow('Step not found')
+    ).rejects.toThrow(
+      'This step no longer exists or you can no longer edit it. Refresh the page.',
+    )
   })
 })
