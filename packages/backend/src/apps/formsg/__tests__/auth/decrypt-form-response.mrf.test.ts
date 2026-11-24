@@ -640,6 +640,28 @@ describe('decrypt form response - MRF specific', () => {
   })
 
   describe('verifiedSubmitterInfo for MRF submissions', () => {
+    it.each([
+      { key: 'myInfoUinFin (Step 1)', logged: true },
+      { key: 'cpUen (Step 1)', logged: false },
+    ])('logs unknown verified key $key: $logged', async ({ key, logged }) => {
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { [key]: 'S1234567A' },
+      })
+
+      await decryptFormResponse($)
+
+      const warning = {
+        event: 'formsg-unsupported-payload',
+        reason: 'unknown_verified_key',
+        formId: 'formId123',
+        key,
+      }
+      expect(mocks.consoleWarn.mock.calls.map(([, meta]) => meta)).toEqual(
+        logged ? [warning] : [],
+      )
+    })
+
     it('should map "uinFin (Step 1)" to uinFin and sgidUinFin', async () => {
       $.request.body.data.workflowContent = makeWorkflowContent(1)
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
