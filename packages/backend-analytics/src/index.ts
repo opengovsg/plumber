@@ -16,7 +16,8 @@ export {
 export {
   dbFlowIdResolver,
   exportMutationLog,
+  exportMutationLogToDir,
   logsInsightsFetcher,
-  writeMutationLogDays,
 } from './mutation-log/export-mutation-log'
+export { createLogsClient } from './mutation-log/fetch-mutation-lines'
 export { previousSgtDay, sgtDaysBetween } from './sgt-day'

@@ -1,5 +1,5 @@
 import {
-  type CloudWatchLogsClient,
+  CloudWatchLogsClient,
   GetQueryResultsCommand,
   type ResultField,
   StartQueryCommand,
@@ -15,6 +15,18 @@ export const MAX_QUERY_RESULTS = 10_000
 
 const POLL_INTERVAL_MS = 1_000
 const QUERY_TIMEOUT_MS = 15 * 60 * 1_000
+// The SDK sets no request timeout by default, so one stalled call would hang the archival task.
+const REQUEST_TIMEOUT_MS = 60_000
+
+export function createLogsClient(region: string): CloudWatchLogsClient {
+  return new CloudWatchLogsClient({
+    region,
+    requestHandler: {
+      connectionTimeout: 10_000,
+      requestTimeout: REQUEST_TIMEOUT_MS,
+    },
+  })
+}
 
 // IMPORTANT: the request log nests its fields under `message`. Winston wraps a
 // lone object that has no `message` key.
@@ -32,11 +44,24 @@ interface FetchMutationLinesParams {
   logGroup: string
   startMs: number
   endMs: number
-  sleep?: (ms: number) => Promise<void>
+  // Cancels every request and poll, so a caller's deadline holds even while a request is in flight.
+  signal?: AbortSignal
+  sleep?: (ms: number, signal?: AbortSignal) => Promise<void>
 }
 
-const defaultSleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms))
+const defaultSleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    signal?.throwIfAborted()
+    const timer = setTimeout(resolve, ms)
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer)
+        reject(signal.reason)
+      },
+      { once: true },
+    )
+  })
 
 function toLine(fields: ResultField[]): MutationLogLine {
   const value = (name: string) =>
@@ -55,11 +80,13 @@ async function runQuery({
   logGroup,
   startMs,
   endMs,
+  signal,
   sleep = defaultSleep,
 }: FetchMutationLinesParams): Promise<{
   rows: ResultField[][]
   truncated: boolean
 }> {
+  signal?.throwIfAborted()
   const { queryId } = await client.send(
     new StartQueryCommand({
       logGroupName: logGroup,
@@ -69,6 +96,7 @@ async function runQuery({
       queryString: MUTATION_LOG_QUERY,
       limit: MAX_QUERY_RESULTS,
     }),
+    { abortSignal: signal },
   )
   if (!queryId) {
     throw new Error('Logs Insights returned no query id')
@@ -76,7 +104,9 @@ async function runQuery({
 
   const deadline = Date.now() + QUERY_TIMEOUT_MS
   for (;;) {
-    const result = await client.send(new GetQueryResultsCommand({ queryId }))
+    const result = await client.send(new GetQueryResultsCommand({ queryId }), {
+      abortSignal: signal,
+    })
     if (result.status === 'Complete') {
       const rows = result.results ?? []
       return { rows, truncated: rows.length >= MAX_QUERY_RESULTS }
@@ -87,7 +117,7 @@ async function runQuery({
     if (Date.now() > deadline) {
       throw new Error('Logs Insights query timed out')
     }
-    await sleep(POLL_INTERVAL_MS)
+    await sleep(POLL_INTERVAL_MS, signal)
   }
 }
 

@@ -23,4 +23,22 @@ describe('claimLocalExportDir', () => {
       await rm(dir, { recursive: true, force: true })
     }
   })
+
+  it('ties a folder to the log group that first wrote its mutation log', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'export-'))
+    const prod = { appEnv: 'prod', host: 'prod-reader', database: 'plumber' }
+    try {
+      await claimLocalExportDir(dir, prod)
+      await claimLocalExportDir(dir, { ...prod, logGroup: 'prod-server' })
+      await claimLocalExportDir(dir, prod)
+
+      await expect(
+        claimLocalExportDir(dir, { ...prod, logGroup: 'staging-server' }),
+      ).rejects.toThrow(
+        'holds an export from prod (prod-reader/plumber, prod-server), but this run reads prod (prod-reader/plumber, staging-server)',
+      )
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
 })

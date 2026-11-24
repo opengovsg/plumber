@@ -128,6 +128,46 @@ describe('fetchMutationLines', () => {
       }),
     ).rejects.toThrow('Logs Insights query ended as Failed')
   })
+
+  it('stops a stalled request when the signal aborts', async () => {
+    const send = vi.fn(
+      (_command: unknown, { abortSignal }: { abortSignal?: AbortSignal }) =>
+        new Promise((_resolve, reject) =>
+          abortSignal?.addEventListener('abort', () =>
+            reject(abortSignal.reason),
+          ),
+        ),
+    )
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        signal: AbortSignal.timeout(10),
+      }),
+    ).rejects.toThrow('aborted due to timeout')
+  })
+
+  it('stops polling a running query when the signal aborts', async () => {
+    const send = vi.fn(async (command: unknown) =>
+      command instanceof StartQueryCommand
+        ? { queryId: 'q1' }
+        : { status: 'Running' },
+    )
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        signal: AbortSignal.timeout(10),
+      }),
+    ).rejects.toThrow('aborted due to timeout')
+    expect(send).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe('MUTATION_LOG_QUERY', () => {
