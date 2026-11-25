@@ -9,6 +9,7 @@ import {
 } from '../constants'
 
 const UPDATE_MAILING_LISTS_ID = '8ec2728a-6e4a-49c7-8721-ef6d4eb1d946'
+const TILE_STEP_POSITION = 2
 
 export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
   id: UPDATE_MAILING_LISTS_ID,
@@ -26,22 +27,49 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
-      position: 2,
+      position: TILE_STEP_POSITION,
       appKey: 'tiles',
       eventKey: 'findSingleRow',
+      templateData: {
+        name: 'Mailing list',
+        columns: ['Name', 'Email', 'Mobile number'],
+        rowData: [
+          {
+            Name: 'Anna Lee',
+            Email: 'anna_lee@email.com',
+            'Mobile number': '+6598625072',
+          },
+          {
+            Name: 'Susan Tan Jia Ling',
+            Email: 'susan_tjl@email.com',
+          },
+          {
+            Name: 'Jane Lim',
+            Email: 'jane_98@email.com',
+          },
+          {
+            Name: 'Amy Low',
+            Email: 'amy_low_ll@email.com',
+          },
+          {
+            Name: 'Judy Ng',
+            Email: 'judy_00@email.com',
+          },
+        ],
+      },
       sampleUrl:
         'https://plumber.gov.sg/tiles/ba2150f6-14d5-44cf-8a77-083c18f43518/c6b75dfa-9fa9-494c-b027-773da38ebaff',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
       parameters: {
         filters: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Name'),
             value: 'Anna Lee',
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
     {
@@ -52,41 +80,17 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Mobile number'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Mobile number',
+            ),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with new mobile number from step 1',
             ),
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
   ],
-  tileTemplateData: {
-    name: 'Mailing list',
-    columns: ['Name', 'Email', 'Mobile number'],
-    rowData: [
-      {
-        Name: 'Anna Lee',
-        Email: 'anna_lee@email.com',
-        'Mobile number': '+6598625072',
-      },
-      {
-        Name: 'Susan Tan Jia Ling',
-        Email: 'susan_tjl@email.com',
-      },
-      {
-        Name: 'Jane Lim',
-        Email: 'jane_98@email.com',
-      },
-      {
-        Name: 'Amy Low',
-        Email: 'amy_low_ll@email.com',
-      },
-      {
-        Name: 'Judy Ng',
-        Email: 'judy_00@email.com',
-      },
-    ],
-  },
 }

@@ -4,10 +4,11 @@ import { BiChevronLeft } from 'react-icons/bi'
 
 interface BackButtonProps {
   onBack: () => void
+  isDisabled?: boolean
 }
 
 export default function BackButton(props: BackButtonProps) {
-  const { onBack } = props
+  const { onBack, isDisabled } = props
 
   return (
     <Button
@@ -15,6 +16,7 @@ export default function BackButton(props: BackButtonProps) {
       colorScheme="secondary"
       size="xs"
       onClick={onBack}
+      isDisabled={isDisabled}
       leftIcon={<BiChevronLeft size={20} />}
       ml={-4}
     >

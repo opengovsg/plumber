@@ -13,6 +13,7 @@
     "**/coverage",
     "**/graphql/__generated__",
     "**/assets/**/*.json",
-    "**/fta/**/report.json"
+    "**/fta/**/report.json",
+    "**/__snapshots__"
   ]
 }

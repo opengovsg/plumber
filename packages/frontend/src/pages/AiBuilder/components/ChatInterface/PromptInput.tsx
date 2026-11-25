@@ -1,4 +1,5 @@
 import { Box, Flex, Icon, Image, Text, Textarea } from '@chakra-ui/react'
+import { usePostHog } from 'posthog-js/react'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -29,7 +30,6 @@ import {
   buildNoOptionsFoundMessage,
   containsSecretKey,
 } from '@/pages/AiBuilder/helpers'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { buildColumnTableReply } from './helpers/columnTableReply'
 import { isTilesListTablesPicker } from './helpers/isTilesListTablesPicker'
@@ -116,6 +116,7 @@ export default function PromptInput({
   onSelectExistingForm,
   attachedForm,
 }: PromptInputProps) {
+  const posthog = usePostHog()
   const { steps } = useAiBuilderContext()
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -133,9 +134,7 @@ export default function PromptInput({
   }, [clarification])
 
   const doSend = () => {
-    if (isPostHogConfigured) {
-      posthog.capture('ai_builder:message_sent')
-    }
+    posthog.capture('ai_builder:message_sent')
     sendMessage(input)
     setInput('')
     setSelectedAnswers({})

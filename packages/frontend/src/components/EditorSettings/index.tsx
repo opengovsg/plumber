@@ -7,10 +7,12 @@ import { useParams } from 'react-router-dom'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
+import { NOT_FOUND } from '@/config/errors'
 import { CONTENT_MAX_HEIGHT, TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
 import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
+import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 import useAuthentication from '@/hooks/useAuthentication'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
@@ -124,7 +126,7 @@ export default function EditorSettingsLayout(
   // navigate user to invalid page if flow does not belong to the user
   if (
     error instanceof ApolloError &&
-    error?.graphQLErrors?.find((e) => e.message === 'NotFoundError')
+    parseGraphqlError(error).code === NOT_FOUND
   ) {
     return <InvalidEditorPage />
   }

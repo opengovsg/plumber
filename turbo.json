@@ -2,6 +2,7 @@
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
   "envMode": "loose",
+  "globalPassThroughEnv": ["DD_*"],
   "tasks": {
     "lint": {
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.oxlintrc.json"],
@@ -29,7 +30,8 @@
         "POSTHOG_API_KEY",
         "POSTHOG_PROJECT_ID",
         "POSTHOG_HOST",
-        "RELEASE_VERSION"
+        "RELEASE_VERSION",
+        "APP_VERSION"
       ],
       "passThroughEnv": [
         "GITHUB_ACTIONS",

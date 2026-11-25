@@ -10,6 +10,7 @@ import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
 import createFlowTransfer from './mutations/create-flow-transfer'
 import createStep from './mutations/create-step'
+import createTemplateFromFlow from './mutations/create-template-from-flow'
 import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
@@ -28,6 +29,7 @@ import loginWithSgid from './mutations/login-with-sgid'
 import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
 import registerConnection from './mutations/register-connection'
+import renameStep from './mutations/rename-step'
 import replaceConnectionCredentials from './mutations/replace-connection-credentials'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -75,6 +77,7 @@ export default {
   registerConnection,
   createFlow,
   createTemplatedFlow,
+  createTemplateFromFlow,
   updateFlow,
   createFlowWithSteps,
   updateFlowStatus,
@@ -85,6 +88,7 @@ export default {
   executeStep,
   deleteFlow,
   createStep,
+  renameStep,
   updateStep,
   updateStepPositions,
   deleteStep,

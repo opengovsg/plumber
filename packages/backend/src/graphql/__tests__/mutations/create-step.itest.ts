@@ -731,9 +731,7 @@ describe('createStep endStepId write rules', () => {
     expect((newStep as any).config.endStepId).toBeUndefined()
   })
 
-  // IMPORTANT: known bug. The upgrade pass pins this block to the new step
-  // first, so the add-after-block check rejects the create.
-  it.fails('rule 1: deletes a leftover V1 blank placeholder before pinning a block reached via add-after-block', async () => {
+  it('rule 1: deletes a leftover V1 blank placeholder before pinning a block reached via add-after-block', async () => {
     const [, ifThenA, blankChild] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
       { key: 'ifThen', appKey: 'toolbox', type: 'action' },
@@ -761,12 +759,7 @@ describe('createStep endStepId write rules', () => {
     await expect(reload(blankChild.id)).rejects.toThrow()
     const reloadedIfThenA = await reload(ifThenA.id)
     expect(reloadedIfThenA.config.endStepId).toBe(ifThenA.id)
-    // IMPORTANT: reloaded, not the mutation's own return value — the
-    // cleanup's position shift runs after the insert this resolver's
-    // response was captured from, so the response's own `position` is
-    // stale by one.
-    const reloadedNewStep = await reload((newStep as any).id)
-    expect(reloadedNewStep.position).toBe(reloadedIfThenA.position + 1)
+    expect(newStep!.position).toBe(reloadedIfThenA.position + 1)
 
     const steps = await testFlow
       .$relatedQuery('steps')

@@ -25,6 +25,7 @@ import {
 } from '../../common/myinfo-child-subfields'
 import { type FormSchemaField, mrfWorkflowDataSchema } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
+import { logUnsupportedPayload } from './log-unsupported-payload'
 
 // decryptFormResponse removes tableColumnTitles before storing the field.
 export type MappedFormField = FormField & { tableColumnTitles?: string[] }
@@ -263,6 +264,24 @@ function withOmittedFields(
   return Object.fromEntries(ordered)
 }
 
+// The SDK types every value here as a string. Any other type, numbers
+// included, means FormSG changed the payload.
+function logIfValueNotString(
+  formId: string,
+  fieldId: string,
+  response: FieldResponseV4,
+): void {
+  const rawValue = (response.answer as Partial<StringAnswerV4> | undefined)
+    ?.value
+  if (typeof rawValue !== 'string') {
+    logUnsupportedPayload('unknown_answer_shape', {
+      formId,
+      fieldId,
+      fieldType: response.fieldType,
+    })
+  }
+}
+
 export async function processResponsesV4(
   $: IGlobalVariable,
   formId: string,
@@ -428,6 +447,7 @@ export async function processResponsesV4(
     if (value.fieldType === 'date') {
       // Currently, v4 responses return the date as DD/MM/YYYY (e.g. 29/03/2026)
       // We need to convert it to the standard FormSG date format (e.g. 29 Mar 2026)
+      logIfValueNotString(formId, key, value)
       const originalDateString = (value.answer as StringAnswerV4).value
       // Formatting an empty date string yields Invalid DateTime.
       if (!originalDateString) {
@@ -440,6 +460,13 @@ export async function processResponsesV4(
         continue
       }
       const originalDate = DateTime.fromFormat(originalDateString, 'dd/MM/yyyy')
+      if (!originalDate.isValid) {
+        logUnsupportedPayload('unparsable_date', {
+          formId,
+          fieldId: key,
+          fieldType: value.fieldType,
+        })
+      }
       const convertedDateString = originalDate.toPlumberFormat('dd MMM yyyy')
       mappedResponses.push({
         _id: key,
@@ -483,6 +510,7 @@ export async function processResponsesV4(
     }
     // catch-all: generic string answers ({ value }) and any future field
     // types, e.g. yes_no, textfield, dropdown, nric
+    logIfValueNotString(formId, key, value)
     mappedResponses.push({
       _id: key,
       fieldType: value.fieldType,

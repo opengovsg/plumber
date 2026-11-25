@@ -1,18 +1,19 @@
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Badge, Tile } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
-import { useNavigate } from 'react-router-dom'
 
-import * as URLS from '@/config/urls'
-import { TemplateIcon } from '@/helpers/flow-templates'
+import { getTemplateIconName, TemplateIcon } from '@/helpers/flow-templates'
 
 interface TemplateTileProps {
-  template: ITemplate
+  template: ITemplate & { isBuiltIn?: boolean }
+  onSelect: () => void
 }
 
-export default function TemplateTile({ template }: TemplateTileProps) {
-  const { id, name, description, iconName, tags } = template
-  const navigate = useNavigate()
+export default function TemplateTile({
+  template,
+  onSelect,
+}: TemplateTileProps) {
+  const { id, name, description, iconName, tags, isBuiltIn } = template
 
   const isDemoTemplate = tags?.some((tag) => tag === 'demo')
   const isNewTemplate = tags?.some((tag) => tag === 'new')
@@ -21,7 +22,10 @@ export default function TemplateTile({ template }: TemplateTileProps) {
     <Tile
       icon={() => (
         <Box py={2}>
-          <TemplateIcon iconName={iconName} fontSize="2rem" />
+          <TemplateIcon
+            iconName={getTemplateIconName({ id, iconName, isBuiltIn })}
+            fontSize="2rem"
+          />
         </Box>
       )}
       badge={
@@ -32,7 +36,7 @@ export default function TemplateTile({ template }: TemplateTileProps) {
         ) : undefined
       }
       display="flex"
-      onClick={() => navigate(URLS.TEMPLATE(id))}
+      onClick={onSelect}
     >
       <Flex flexDir="column" gap={2} mt={2}>
         <Text textStyle="subhead-1">{name}</Text>

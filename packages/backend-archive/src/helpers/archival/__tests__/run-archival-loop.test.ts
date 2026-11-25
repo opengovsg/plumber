@@ -85,10 +85,12 @@ let capturedTestExecAntiJoin: {
   col2: string
 } | null = null
 let capturedDeletedFlowsWhereIn: any = null
-let capturedModifyCbs: Array<(qb: any) => void> = []
+// Bindings of each batch query's keyset condition
+let capturedKeysets: string[][] = []
 
+// Rows without a cursorCreatedAt get their createdAt in Postgres text form.
 function setupDb(
-  batches: ExecutionRow[][],
+  batches: Array<Array<ExecutionRow & { cursorCreatedAt?: string }>>,
   stepsByExecutionId: Record<string, ExecutionStepRow[] | Error> = {},
 ) {
   let batchIdx = 0
@@ -96,7 +98,13 @@ function setupDb(
   capturedEligibilityCb = null
   capturedTestExecAntiJoin = null
   capturedDeletedFlowsWhereIn = null
-  capturedModifyCbs = []
+  capturedKeysets = []
+  const dbBatches = batches.map((batch) =>
+    batch.map((row) => ({
+      cursorCreatedAt: '2024-01-01 00:00:00+00',
+      ...row,
+    })),
+  )
 
   const flowsBuilder = {
     select: vi.fn().mockReturnThis(),
@@ -144,14 +152,20 @@ function setupDb(
     }),
     whereNotIn: vi.fn().mockReturnThis(),
     whereNull: vi.fn().mockReturnThis(),
+    whereRaw: vi.fn().mockImplementation((sql: string, bindings: string[]) => {
+      if (sql.includes('(executions.created_at, executions.id) >')) {
+        capturedKeysets.push(bindings)
+      }
+      return execBuilder
+    }),
     modify: vi.fn().mockImplementation((cb: (qb: any) => void) => {
-      capturedModifyCbs.push(cb)
+      cb(execBuilder)
       return execBuilder
     }),
     orderBy: vi.fn().mockReturnThis(),
     limit: vi
       .fn()
-      .mockImplementation(() => Promise.resolve(batches[batchIdx++] ?? [])),
+      .mockImplementation(() => Promise.resolve(dbBatches[batchIdx++] ?? [])),
   }
 
   const tableRouter = (table: string) => {
@@ -186,6 +200,7 @@ describe('runArchivalLoop', () => {
     vi.clearAllMocks()
     ;(archivalConfig as any).archiveDeletedFlowsOnly = false
     ;(archivalConfig as any).archiveTestRuns = false
+    ;(archivalConfig as any).archiveBatchSize = 500
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -196,7 +211,7 @@ describe('runArchivalLoop', () => {
 
   it('calls archiveExecution for each execution in a batch', async () => {
     const batch = [makeExecution('e1'), makeExecution('e2')]
-    setupDb([batch, []])
+    setupDb([batch])
 
     await runArchivalLoop(new AbortController().signal)
 
@@ -212,6 +227,8 @@ describe('runArchivalLoop', () => {
     const controller = new AbortController()
     // Use concurrency=1 so abort is observed before subsequent executions start
     ;(archivalConfig as any).archiveIntraBatchConcurrency = 1
+    // A full first batch, so only the abort stops the second query.
+    ;(archivalConfig as any).archiveBatchSize = 3
     vi.mocked(archiveExecution).mockImplementation(async () => {
       controller.abort()
       return 'archived'
@@ -234,10 +251,7 @@ describe('runArchivalLoop', () => {
       .mockRejectedValueOnce(new Error('S3 timeout'))
       .mockResolvedValue('archived')
 
-    setupDb([
-      [makeExecution('e1'), makeExecution('e2'), makeExecution('e3')],
-      [],
-    ])
+    setupDb([[makeExecution('e1'), makeExecution('e2'), makeExecution('e3')]])
 
     await runArchivalLoop(new AbortController().signal)
 
@@ -247,7 +261,7 @@ describe('runArchivalLoop', () => {
   it('logs the execution ID when the step query fails', async () => {
     vi.mocked(archiveExecution).mockResolvedValue('archived')
     const dbError = new Error('connection reset')
-    setupDb([[makeExecution('e1'), makeExecution('e2')], []], {
+    setupDb([[makeExecution('e1'), makeExecution('e2')]], {
       e1: dbError,
       e2: [],
     })
@@ -262,30 +276,58 @@ describe('runArchivalLoop', () => {
     expect(archiveExecution).toHaveBeenCalledTimes(1)
   })
 
-  it('advances cursor to the last batch item even when some executions fail', async () => {
-    // All fail — cursor should still move to the last batch item
-    vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 error'))
+  describe('keyset cursor', () => {
+    it('orders each batch by created_at, then id', async () => {
+      setupDb([[makeExecution('e1')]])
+      await runArchivalLoop(new AbortController().signal)
 
-    const batch = [
-      makeExecution('00000000-0000-0000-0000-000000000001'),
-      makeExecution('00000000-0000-0000-0000-000000000002'),
-      makeExecution('00000000-0000-0000-0000-000000000003'),
-    ]
-    setupDb([batch, []])
+      const execBuilder = vi
+        .mocked(archivalDbReader)
+        .mock.results.find(
+          (_r, i) =>
+            vi.mocked(archivalDbReader).mock.calls[i][0] === 'executions',
+        )!.value
+      expect(execBuilder.orderBy).toHaveBeenCalledWith([
+        { column: 'executions.created_at' },
+        { column: 'executions.id' },
+      ])
+    })
 
-    await runArchivalLoop(new AbortController().signal)
+    it('starts the next batch after the last row, with id breaking a created_at tie, even when every execution fails', async () => {
+      ;(archivalConfig as any).archiveBatchSize = 3
+      vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 error'))
+      const tiedAt = '2024-01-01 00:00:00.123456+00'
+      setupDb([
+        [
+          makeExecution('e1'),
+          { ...makeExecution('e2'), cursorCreatedAt: tiedAt },
+          { ...makeExecution('e3'), cursorCreatedAt: tiedAt },
+        ],
+      ])
 
-    // The second batch SELECT uses whereRaw(id > cursor); capturedModifyCbs[1] is the cursor modifier
-    const qb = { whereRaw: vi.fn() }
-    capturedModifyCbs[1](qb)
-    expect(qb.whereRaw).toHaveBeenCalledWith('executions.id > ?::uuid', [
-      '00000000-0000-0000-0000-000000000003',
-    ])
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedKeysets).toEqual([[tiedAt, 'e3']])
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'archival.batch.complete',
+          cursor: { createdAt: tiedAt, id: 'e3' },
+        }),
+      )
+    })
+
+    it('stops after a short batch', async () => {
+      setupDb([[makeExecution('e1')], [makeExecution('e2')]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(archiveExecution).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('counts skipped executions when archiveExecution returns skipped', async () => {
     vi.mocked(archiveExecution).mockResolvedValue('skipped')
-    setupDb([[makeExecution('e1')], []])
+    setupDb([[makeExecution('e1')]])
 
     // Should complete without throwing even when all executions are skipped
     await expect(
@@ -295,7 +337,7 @@ describe('runArchivalLoop', () => {
 
   it('counts skipped executions when archiveExecution throws', async () => {
     vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 timeout'))
-    setupDb([[makeExecution('e1')], []])
+    setupDb([[makeExecution('e1')]])
 
     await expect(
       runArchivalLoop(new AbortController().signal),
@@ -391,7 +433,7 @@ describe('runArchivalLoop', () => {
 
   it('uses archivalDbReader for eligibility + execution_steps, archivalDb for the DELETE', async () => {
     const batch = [makeExecution('e1')]
-    setupDb([batch, []])
+    setupDb([batch])
 
     await runArchivalLoop(new AbortController().signal)
 
@@ -603,7 +645,7 @@ describe('runArchivalLoop', () => {
     it('accumulates counts per appKey:key from archived execution steps', async () => {
       const exec1 = makeExecution('e1')
       const exec2 = makeExecution('e2')
-      setupDb([[exec1, exec2], []], {
+      setupDb([[exec1, exec2]], {
         e1: [
           makeStep({
             id: 's1',
@@ -645,7 +687,7 @@ describe('runArchivalLoop', () => {
 
     it('buckets counts per appKey:key by SGT date, not UTC date', async () => {
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           // 2024-01-01T23:30 UTC is 2024-01-02T07:30 SGT (UTC+8).
           makeStep({
@@ -679,7 +721,7 @@ describe('runArchivalLoop', () => {
 
     it('increments nullStepCount for steps where appKey or key is null', async () => {
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           makeStep({
             id: 's1',
@@ -717,7 +759,7 @@ describe('runArchivalLoop', () => {
     it('does not count steps from skipped executions', async () => {
       vi.mocked(archiveExecution).mockResolvedValueOnce('skipped')
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           makeStep({
             id: 's1',
@@ -740,7 +782,7 @@ describe('runArchivalLoop', () => {
 
     it('writes meta file to _meta/runs/{runAt}.json with correct summary fields', async () => {
       const exec1 = makeExecution('e1')
-      setupDb([[exec1], []], {
+      setupDb([[exec1]], {
         e1: [
           makeStep({
             id: 's1',
@@ -775,7 +817,7 @@ describe('runArchivalLoop', () => {
 
     it('does not log run.complete when the meta file write fails', async () => {
       vi.mocked(putArchiveObject).mockRejectedValueOnce(new Error('S3 down'))
-      setupDb([[makeExecution('e1')], []], { e1: [] })
+      setupDb([[makeExecution('e1')]], { e1: [] })
 
       await expect(
         runArchivalLoop(new AbortController().signal),
@@ -788,13 +830,10 @@ describe('runArchivalLoop', () => {
 
     it('logs the run counts when the meta file write fails', async () => {
       vi.mocked(putArchiveObject).mockRejectedValueOnce(new Error('S3 down'))
-      setupDb(
-        [[makeExecution('e1'), makeExecution('e2', { testRun: true })], []],
-        {
-          e1: [],
-          e2: [],
-        },
-      )
+      setupDb([[makeExecution('e1'), makeExecution('e2', { testRun: true })]], {
+        e1: [],
+        e2: [],
+      })
 
       await expect(
         runArchivalLoop(new AbortController().signal),
@@ -819,7 +858,6 @@ describe('runArchivalLoop', () => {
             makeExecution('e2', { testRun: true }),
             makeExecution('e3', { testRun: true }),
           ],
-          [],
         ],
         { e1: [], e2: [], e3: [] },
       )

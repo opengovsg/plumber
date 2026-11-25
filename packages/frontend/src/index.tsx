@@ -2,6 +2,7 @@ import '@fontsource/space-grotesk'
 import '@opengovsg/confetti/confetti.css'
 import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
+import { PostHogProvider } from 'posthog-js/react'
 import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
@@ -25,6 +26,8 @@ if (!container) {
 const root = createRoot(container)
 
 if (['prod', 'staging'].includes(appConfig.env)) {
+  datadogRum.setGlobalContextProperty('team', 'plumber')
+  datadogRum.setGlobalContextProperty('product', 'plumber')
   datadogRum.init({
     applicationId: '3bd09f62-dad8-4107-a907-1242dda9ee4d',
     clientToken: 'pubdc3dfc4ab0145729ebc91a19e9fae167',
@@ -47,30 +50,32 @@ if (['prod', 'staging'].includes(appConfig.env)) {
   })
 }
 root.render(
-  <ErrorBoundary
-    fallback={
-      <div role="alert">Something went wrong. Please refresh the page.</div>
-    }
-    onError={(error) => {
-      if (isPostHogConfigured) {
-        posthog.captureException(error)
+  <PostHogProvider client={posthog}>
+    <ErrorBoundary
+      fallback={
+        <div role="alert">Something went wrong. Please refresh the page.</div>
       }
-    }}
-  >
-    <ThemeProvider>
-      <MotionConfig reducedMotion="always">
-        <ApolloProvider>
-          <AuthenticationProvider>
-            <TimezoneProvider>
-              <LaunchDarklyProvider>
-                <SurveyProvider>
-                  <RouterProvider router={router} />
-                </SurveyProvider>
-              </LaunchDarklyProvider>
-            </TimezoneProvider>
-          </AuthenticationProvider>
-        </ApolloProvider>
-      </MotionConfig>
-    </ThemeProvider>
-  </ErrorBoundary>,
+      onError={(error) => {
+        if (isPostHogConfigured) {
+          posthog.captureException(error)
+        }
+      }}
+    >
+      <ThemeProvider>
+        <MotionConfig reducedMotion="always">
+          <ApolloProvider>
+            <AuthenticationProvider>
+              <TimezoneProvider>
+                <LaunchDarklyProvider>
+                  <SurveyProvider>
+                    <RouterProvider router={router} />
+                  </SurveyProvider>
+                </LaunchDarklyProvider>
+              </TimezoneProvider>
+            </AuthenticationProvider>
+          </ApolloProvider>
+        </MotionConfig>
+      </ThemeProvider>
+    </ErrorBoundary>
+  </PostHogProvider>,
 )

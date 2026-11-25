@@ -6,25 +6,39 @@ import {
 } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
 import debounce from 'lodash/debounce'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BiSearch, BiSolidXCircle } from 'react-icons/bi'
 
 type DebouncedSearchInputProps = {
   onChange: (val: string) => void
   searchValue: string
   placeholder?: string
+  minW?: string | number
+  /** Applies a pending debounced change on unmount so a remount stays in sync. */
+  flushOnUnmount?: boolean
 }
 
 export default function DebouncedSearchInput({
   onChange,
   searchValue,
   placeholder = 'Search',
+  minW = '20rem',
+  flushOnUnmount = false,
 }: DebouncedSearchInputProps): React.ReactElement {
   const [tempSearchValue, setTempSearchValue] = useState(searchValue)
 
   const handleSearchInputChangeDebounced = useMemo(
     () => debounce(onChange, 500),
     [onChange],
+  )
+
+  useEffect(
+    () => () => {
+      if (flushOnUnmount) {
+        handleSearchInputChangeDebounced.flush()
+      }
+    },
+    [flushOnUnmount, handleSearchInputChangeDebounced],
   )
 
   const onSearchInputChange = useCallback(
@@ -48,7 +62,7 @@ export default function DebouncedSearchInput({
       </InputLeftElement>
       <Input
         type="text"
-        minW="20rem"
+        minW={minW}
         maxW="100%"
         fontSize="md"
         onChange={onSearchInputChange}

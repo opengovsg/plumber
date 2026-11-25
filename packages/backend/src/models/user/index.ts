@@ -21,6 +21,7 @@ import ExtendedQueryBuilder from '../query-builder'
 import Step from '../step'
 import TableCollaborator from '../table-collaborators'
 import TableMetadata from '../table-metadata'
+import Template from '../template'
 import BaseUser from './base'
 
 const ROLE_STMT = `
@@ -36,6 +37,7 @@ class User extends BaseUser {
   otpSentAt?: Date | null
   connections?: Connection[]
   flows?: Flow[]
+  templates?: Template[]
   steps?: Step[]
   executions?: Execution[]
   tables?: TableMetadata[]
@@ -66,6 +68,14 @@ class User extends BaseUser {
       join: {
         from: 'users.id',
         to: 'flows.user_id',
+      },
+    },
+    templates: {
+      relation: Base.HasManyRelation,
+      modelClass: Template,
+      join: {
+        from: 'users.id',
+        to: 'templates.user_id',
       },
     },
     executions: {

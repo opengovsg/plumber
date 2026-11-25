@@ -24,6 +24,48 @@ export const TemplateIcon = ({
   return <IconComponent fontSize={fontSize} />
 }
 
+const COMMUNITY_TEMPLATE_ICONS = [
+  'BiBriefcase',
+  'BiBulb',
+  'BiCompass',
+  'BiCube',
+  'BiExtension',
+  'BiLayer',
+  'BiPaperPlane',
+  'BiPin',
+  'BiRocket',
+  'BiSpreadsheet',
+  'BiTask',
+  'BiTimeFive',
+  'BiTrendingUp',
+  'BiWrench',
+]
+
+/**
+ * Community templates have no icon. Hashing the id keeps each one's icon the
+ * same across renders, visits and views.
+ */
+export function getTemplateIconName({
+  id,
+  iconName,
+  isBuiltIn,
+}: {
+  id: string
+  iconName?: string
+  isBuiltIn?: boolean
+}): string | undefined {
+  if (iconName || isBuiltIn) {
+    return iconName
+  }
+  let hash = 0
+  for (const char of id) {
+    hash = (hash * 31 + char.charCodeAt(0)) | 0
+  }
+  return COMMUNITY_TEMPLATE_ICONS[
+    Math.abs(hash) % COMMUNITY_TEMPLATE_ICONS.length
+  ]
+}
+
 /**
  * chose app_event key since it is unique among all triggers and actions
  * key: app_event key pair, value: help message
@@ -43,9 +85,16 @@ export const HELP_MESSAGE_MAP: Record<SetupGuideAppEvent, string> = {
   'telegram-bot_sendMessage': 'Connect your Telegram bot in this step.',
 }
 
+const UNFILLED_PLACEHOLDER_REGEX = /<<[a-z_]+>>/
+
+/**
+ * Prefers the step's own table, since a template can create several tiles.
+ * Returns '' if a placeholder stays unfilled, to avoid showing a broken link.
+ */
 export function replacePlaceholdersForHelpMessage(
   appEventKey?: string,
   templateConfig?: IFlowTemplateConfig,
+  stepTableId?: string,
 ): string {
   if (!appEventKey || !templateConfig) {
     return ''
@@ -53,7 +102,8 @@ export function replacePlaceholdersForHelpMessage(
   let helpMessage = isSetupGuideAppEvent(appEventKey)
     ? HELP_MESSAGE_MAP[appEventKey]
     : ''
-  const { formId, tileId } = templateConfig
+  const { formId } = templateConfig
+  const tileId = stepTableId || templateConfig.tileId
   if (formId) {
     helpMessage = helpMessage.replace(FORM_ID_PLACEHOLDER, formId)
   }
@@ -61,5 +111,5 @@ export function replacePlaceholdersForHelpMessage(
   if (tileId) {
     helpMessage = helpMessage.replace(TILE_ID_PLACEHOLDER, tileId)
   }
-  return helpMessage
+  return UNFILLED_PLACEHOLDER_REGEX.test(helpMessage) ? '' : helpMessage
 }

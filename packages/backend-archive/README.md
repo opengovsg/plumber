@@ -6,7 +6,7 @@ Standalone ECS task that archives old Plumber execution records from Postgres to
 
 The archival pipeline runs nightly as a Fargate task. It:
 
-1. **Scans** Postgres for eligible executions (deleted flows, aged-out non-test executions, aged-out test executions — depending on config flags).
+1. **Scans** Postgres for eligible executions. Config flags pick which: deleted flows, aged-out non-test executions and aged-out test executions. The scan reads the oldest executions first. See [Archival order](#archival-order).
 2. **Serialises** each execution + its steps into a gzip-compressed JSON object and writes it to S3.
 3. **Verifies** the S3 object is present and non-empty.
 4. **Deletes** the rows from `execution_steps` and `executions` in a single transaction (skipped in dry-run mode).
@@ -17,6 +17,23 @@ S3 key format:
 executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 test-executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 ```
+
+### Archival order
+
+A run archives the oldest executions first, so a run that stops at `ARCHIVE_MAX_RUNTIME_MS` leaves only newer rows behind.
+
+- Each batch reads executions in `(created_at, id)` order, after the last row of the previous batch. The `executions_created_at_id_index` index serves this keyset.
+- `id` breaks ties between executions created in the same millisecond.
+- Each run starts at the oldest execution. It stops after a batch shorter than `ARCHIVE_BATCH_SIZE`, or at the runtime limit.
+- `created_at` and `id` never change. A row archived in one batch cannot match a later batch, even on a lagging reader.
+- The anti-join on `flows.test_execution_id` needs `flows_test_execution_id_index`. Without it, Postgres hash-joins, loses the index order and sorts every row past the cursor in each batch.
+
+The order has two exceptions:
+
+- Deleted-flow executions have no age cutoff. They are archived in `created_at` order, mixed in with old executions. After the old executions, a full run reads the rest of the index to find them.
+- A row that becomes eligible mid-run behind the cursor waits for the next run. So do executions of a flow deleted after the final short batch, though they are ahead of the cursor.
+
+The `cursor` field of `archival.batch.complete` is the `createdAt` and `id` of the batch's last row. `createdAt` is Postgres text, so it keeps microseconds.
 
 Rehydration (`rehydrate-execution`) runs on demand (not scheduled). It reads archived objects from S3 and writes execution + step rows back into Postgres, setting an `archiveDisabled` guard on the flow to prevent the archival task from immediately re-archiving them.
 
@@ -244,7 +261,7 @@ OUT="$(mktemp -d)"
 pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --out "$OUT"
 ```
 
-Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.
+Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB. Each day logs `analytics.mutation_log.day.scanned` as soon as its queries return, before any lookup or upload. It carries `bytesScanned`, summed over every query that day ran, split windows included, and `queries`, the number of those queries. `bytesScanned` is null when any query returned no statistics. A query still running when its poll times out or is aborted is stopped with `StopQuery`.
 
 ## Counting archived steps by app and action
 
