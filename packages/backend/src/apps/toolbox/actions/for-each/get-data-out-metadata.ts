@@ -87,13 +87,15 @@ async function getDataOutMetadata(
       }))
     } else {
       const tempColumnsMetadata = {} as Record<string, IDataOutMetadata>
+      const columnEntries = Object.entries(items.columns)
+      const numColumns = columnEntries.length
 
-      Object.entries(items.columns)
+      columnEntries
         .sort((a, b) => a[1].order - b[1].order)
         .forEach(([id, column], index) => {
           const isBackwardCompat = isBackwardCompatibilityColumnId(
             id,
-            Object.keys(items.columns).length,
+            numColumns,
           )
 
           tempColumnsMetadata[id] = {

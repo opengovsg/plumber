@@ -849,6 +849,38 @@ describe('getDataOutMetadata', () => {
     })
   })
 
+  describe('column count', () => {
+    it('should resolve metadata for tens of thousands of column keys in linear time', async () => {
+      const numColumns = 50_000
+      const columns: Record<string, any> = {}
+      for (let i = 0; i < numColumns; i++) {
+        columns[`col${i}`] = {
+          id: `col${i}`,
+          name: `Column ${i}`,
+          value: `items.rows.__ITERATION__.data.col${i}`,
+          order: i + 1,
+        }
+      }
+      const executionStep = createMockExecutionStep({
+        iterations: 0,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        items: {
+          columns,
+          rows: [],
+          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        },
+      })
+
+      // Quadratic work over 50k keys takes minutes, so this bound only fails on a regression.
+      const start = performance.now()
+      const result = await getDataOutMetadata(executionStep)
+      const elapsedMs = performance.now() - start
+
+      expect(Object.keys(result?.items?.columns ?? {})).toHaveLength(numColumns)
+      expect(elapsedMs).toBeLessThan(5000)
+    })
+  })
+
   describe('different data types in rows', () => {
     it('should handle rows with mixed data types', async () => {
       const dataOut = {

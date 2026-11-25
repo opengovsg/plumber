@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+import {
+  FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_MAX_COLUMNS,
+} from '@/apps/toolbox/common/constants'
 import { MultipleRowObject } from '@/apps/toolbox/common/get-for-each-variables'
 
 import { inputSchema, parameterSchema } from '../../../actions/for-each/schema'
@@ -511,6 +514,108 @@ describe('inputSchema', () => {
         expect(result.data.items.columns).toHaveLength(2)
         expect(result.data.items.columns[0].id).toBe(hexEncodedColumns[0])
         expect(result.data.items.columns[1].id).toBe(hexEncodedColumns[1])
+      }
+    })
+  })
+
+  describe('column limit', () => {
+    const makeColumns = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `col${i}`,
+        name: `Column ${i}`,
+        value: `col${i}`,
+      }))
+
+    it.each([
+      {
+        description: 'table',
+        toData: (columns: ReturnType<typeof makeColumns>) => ({
+          rows: [] as any[],
+          columns,
+          inputSource: FOR_EACH_INPUT_SOURCE.TILES,
+        }),
+      },
+      {
+        description: 'FormSG Table field',
+        toData: (columns: ReturnType<typeof makeColumns>) =>
+          JSON.stringify({ rows: [], columns }),
+      },
+    ])('should enforce the column limit for $description', ({ toData }) => {
+      const atLimit = inputSchema.safeParse({
+        data: toData(makeColumns(FOR_EACH_MAX_COLUMNS)),
+        testRun: false,
+      })
+      expect(atLimit.success).toBe(true)
+
+      const overLimit = inputSchema.safeParse({
+        data: toData(makeColumns(FOR_EACH_MAX_COLUMNS + 1)),
+        testRun: false,
+      })
+      expect(overLimit.success).toBe(false)
+      if (overLimit.success === false) {
+        expect(overLimit.error.issues[0].message).toBe(
+          `Table cannot have more than ${FOR_EACH_MAX_COLUMNS} columns`,
+        )
+      }
+    })
+
+    it('should reject a FormSG Table field with tens of thousands of columns', () => {
+      const result = inputSchema.safeParse({
+        data: JSON.stringify({ rows: [], columns: makeColumns(50_000) }),
+        testRun: false,
+      })
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('FormSG Table field schema', () => {
+    it.each([
+      {
+        description: 'columns that are not an array',
+        table: { rows: [], columns: { 0: { id: 'a', name: 'A', value: 'a' } } },
+      },
+      {
+        description: 'a column missing value',
+        table: { rows: [], columns: [{ id: 'a', name: 'A' }] },
+      },
+      {
+        description: 'rows that are not an array',
+        table: { rows: 'not-rows', columns: [] },
+      },
+      {
+        description: 'an unknown inputSource',
+        table: { rows: [], columns: [], inputSource: 'unknown' },
+      },
+      { description: 'a JSON array', table: [] },
+      { description: 'JSON null', table: null },
+    ])('should reject $description', ({ table }) => {
+      const result = inputSchema.safeParse({
+        data: JSON.stringify(table),
+        testRun: false,
+      })
+
+      expect(result.success).toBe(false)
+      if (result.success === false) {
+        expect(result.error.issues[0].message).toBe('Invalid input')
+      }
+    })
+
+    it('should default inputSource to formsg-table', () => {
+      const result = inputSchema.safeParse({
+        data: JSON.stringify({
+          rows: [{ data: { a: 'x' } }],
+          columns: [{ id: 'a', name: 'A', value: 'a' }],
+        }),
+        testRun: false,
+      })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.inputSource).toBe(FOR_EACH_INPUT_SOURCE.FORMSG_TABLE)
+        expect(result.data.items.inputSource).toBe(
+          FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        )
       }
     })
   })
