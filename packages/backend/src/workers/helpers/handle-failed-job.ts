@@ -1,7 +1,8 @@
-import type { IActionJobData } from '@plumber/types'
+import type { IActionJobData, StepErrorKind } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
+import RetriableError from '@/errors/retriable-error'
 import StepError, { getStepErrorKind } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import {
@@ -12,6 +13,12 @@ import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
+
+// An UnrecoverableError that replaced the original error carries it as cause.
+function getFailedJobKind(err: Error): StepErrorKind {
+  const hasOwnKind = err instanceof StepError || err instanceof RetriableError
+  return getStepErrorKind(hasOwnKind ? err : err.cause)
+}
 
 async function findAppKey(stepId: string): Promise<string | undefined> {
   try {
@@ -62,7 +69,7 @@ export async function handleFailedJob(
       attemptsStarted: failedJob.attemptsStarted,
       workerVersion: appConfig.version,
       willRetry: willRetryJob,
-      kind: getStepErrorKind(err instanceof StepError ? err : err.cause),
+      kind: getFailedJobKind(err),
       appKey: willRetryJob ? undefined : await findAppKey(stepId),
     },
   )

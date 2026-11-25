@@ -30,19 +30,19 @@ describe('get table connections query', () => {
   })
 
   it('should return empty object if no tables found', async () => {
-    const { edges } = await getTables(null, { limit: 10, offset: 0 }, context)
+    const { edges } = await getTables({}, { limit: 10, offset: 0 }, context)
     const tables = edges.map((edge) => edge.node)
     expect(tables).toHaveLength(0)
 
     const tableConnections = await getTableConnections(
-      null,
+      {},
       { tableIds: [] },
       context,
     )
     const flowQuerySpy = vi.spyOn(Flow, 'query')
     expect(flowQuerySpy).not.toHaveBeenCalled()
     expect(tableConnections).toEqual({})
-    expect(Object.keys(tableConnections).length).toBe(0)
+    expect(Object.keys(tableConnections!).length).toBe(0)
   })
 
   it('should return empty object if user has no access to any tables', async () => {
@@ -50,15 +50,15 @@ describe('get table connections query', () => {
     const testIds = Array.from({ length: numTables }, () => crypto.randomUUID())
 
     const tableConnections = await getTableConnections(
-      null,
+      {},
       { tableIds: testIds },
       context,
     )
     expect(tableConnections).toEqual({})
-    expect(Object.keys(tableConnections).length).toBe(0)
+    expect(Object.keys(tableConnections!).length).toBe(0)
   })
 
-  it.each([['ddb'], ['pg']])(
+  it.each<[DatabaseType]>([['ddb'], ['pg']])(
     'should return the correct number of table connections for user flows only: %s',
     async (databaseType: DatabaseType) => {
       const numTables = 5
@@ -87,7 +87,7 @@ describe('get table connections query', () => {
       for (let i = 0; i < Math.ceil(numTables / 2); i++) {
         const offset = limit * i
         const { edges, pageInfo } = await getTables(
-          null,
+          {},
           { limit, offset },
           context,
         )
@@ -101,23 +101,23 @@ describe('get table connections query', () => {
         const pageTableIds = edges.map((edge) => edge.node.id)
 
         const tableConnections = await getTableConnections(
-          null,
+          {},
           { tableIds: pageTableIds },
           context,
         )
-        expect(Object.keys(tableConnections).length).toBe(expectedLength)
-        expect(Object.keys(tableConnections).sort()).toEqual(
+        expect(Object.keys(tableConnections!).length).toBe(expectedLength)
+        expect(Object.keys(tableConnections!).sort()).toEqual(
           pageTableIds.sort(),
         )
 
-        Object.entries(tableConnections).forEach(([key, value]) => {
+        Object.entries(tableConnections!).forEach(([key, value]) => {
           expect(value).toBe(tablePipeCount[key])
         })
       }
     },
   )
 
-  it.each([['ddb'], ['pg']])(
+  it.each<[DatabaseType]>([['ddb'], ['pg']])(
     'should return the correct number of table connections for flows by user and editor: %s',
     async (databaseType: DatabaseType) => {
       const numTables = 5
@@ -155,7 +155,7 @@ describe('get table connections query', () => {
       for (let i = 0; i < Math.ceil(numTables / 2); i++) {
         const offset = limit * i
         const { edges, pageInfo } = await getTables(
-          null,
+          {},
           { limit, offset },
           context,
         )
@@ -169,23 +169,23 @@ describe('get table connections query', () => {
         const pageTableIds = edges.map((edge) => edge.node.id)
 
         const tableConnections = await getTableConnections(
-          null,
+          {},
           { tableIds: pageTableIds },
           context,
         )
-        expect(Object.keys(tableConnections).length).toBe(expectedLength)
-        expect(Object.keys(tableConnections).sort()).toEqual(
+        expect(Object.keys(tableConnections!).length).toBe(expectedLength)
+        expect(Object.keys(tableConnections!).sort()).toEqual(
           pageTableIds.sort(),
         )
 
-        Object.entries(tableConnections).forEach(([key, value]) => {
+        Object.entries(tableConnections!).forEach(([key, value]) => {
           expect(value).toBe(tablePipeCount[key])
         })
       }
     },
   )
 
-  it.each([['ddb'], ['pg']])(
+  it.each<[DatabaseType]>([['ddb'], ['pg']])(
     'should not return table connections for tables the user does not have access to: %s',
     async (databaseType: DatabaseType) => {
       const numTables = 5
@@ -220,7 +220,7 @@ describe('get table connections query', () => {
 
       // test as a whole
       const { edges, pageInfo } = await getTables(
-        null,
+        {},
         { limit: 10, offset: 0 },
         context,
       )
@@ -234,14 +234,14 @@ describe('get table connections query', () => {
       const testIds = [...pageTableIds, crypto.randomUUID()] // add a random table id
       expect(testIds).toHaveLength(numTables + 1)
       const tableConnections = await getTableConnections(
-        null,
+        {},
         { tableIds: testIds },
         context,
       )
-      expect(Object.keys(tableConnections).length).toBe(numTables)
-      expect(Object.keys(tableConnections).sort()).toEqual(pageTableIds.sort())
+      expect(Object.keys(tableConnections!).length).toBe(numTables)
+      expect(Object.keys(tableConnections!).sort()).toEqual(pageTableIds.sort())
 
-      Object.entries(tableConnections).forEach(([key, value]) => {
+      Object.entries(tableConnections!).forEach(([key, value]) => {
         expect(value).toBe(tablePipeCount[key])
       })
     },
@@ -249,7 +249,11 @@ describe('get table connections query', () => {
 
   it('should throw error if tableIds is null', async () => {
     await expect(
-      getTableConnections(null, { tableIds: null }, context),
+      getTableConnections(
+        {},
+        { tableIds: null as unknown as string[] },
+        context,
+      ),
     ).rejects.toThrow('tableIds is required')
   })
 })

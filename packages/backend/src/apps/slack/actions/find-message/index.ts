@@ -5,7 +5,7 @@ import findMessage from './find-message'
 const action: IRawAction = {
   name: 'Find a message',
   key: 'findMessage',
-  description: 'Finds a message in a Slack channel',
+  description: 'Find a message has been deprecated and can no longer be added.',
   arguments: [
     {
       label: 'Search Query',

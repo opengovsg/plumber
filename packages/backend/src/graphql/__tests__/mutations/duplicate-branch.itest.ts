@@ -31,8 +31,8 @@ describe('duplicateBranch endStepId remap', () => {
   ): Promise<Step[]> {
     return testFlow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: {},
@@ -49,7 +49,7 @@ describe('duplicateBranch endStepId remap', () => {
     await Step.query().delete()
     await Flow.query().delete()
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
       req: null,
       currentUser: owner,
@@ -62,7 +62,7 @@ describe('duplicateBranch endStepId remap', () => {
       updatedBy: owner.id,
     })
 
-    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => null)
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
     vi.spyOn(Flow.prototype, 'patchLastUpdated').mockResolvedValue({
       updatedAt: testFlow.updatedAt,
     } as any)
@@ -79,7 +79,7 @@ describe('duplicateBranch endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: member.id } })
 
     const result = await duplicateBranch(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -103,9 +103,9 @@ describe('duplicateBranch endStepId remap', () => {
       context,
     )
 
-    const [copiedIfThen, copiedMember] = result.steps
-    const reloaded = await reload(copiedIfThen.id)
-    expect(reloaded.config.endStepId).toBe(copiedMember.id)
+    const [copiedIfThen, copiedMember] = result!.steps!
+    const reloaded = await reload(copiedIfThen!.id!)
+    expect(reloaded.config.endStepId).toBe(copiedMember!.id)
     expect(reloaded.config.endStepId).not.toBe('client-bogus')
     expect(reloaded.config.endStepId).not.toBe(member.id)
   })
@@ -119,7 +119,7 @@ describe('duplicateBranch endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: ifThen.id } })
 
     const result = await duplicateBranch(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -130,9 +130,9 @@ describe('duplicateBranch endStepId remap', () => {
       context,
     )
 
-    const [copiedIfThen] = result.steps
-    expect((await reload(copiedIfThen.id)).config.endStepId).toBe(
-      copiedIfThen.id,
+    const [copiedIfThen] = result!.steps!
+    expect((await reload(copiedIfThen!.id!)).config.endStepId).toBe(
+      copiedIfThen!.id,
     )
   })
 
@@ -146,7 +146,7 @@ describe('duplicateBranch endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: tail.id } })
 
     const result = await duplicateBranch(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -164,8 +164,8 @@ describe('duplicateBranch endStepId remap', () => {
       context,
     )
 
-    const [copiedIfThen] = result.steps
-    expect((await reload(copiedIfThen.id)).config.endStepId).toBeUndefined()
+    const [copiedIfThen] = result!.steps!
+    expect((await reload(copiedIfThen!.id!)).config.endStepId).toBeUndefined()
     expect(loggerInfoSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'duplicate-branch-stripped-end-step',

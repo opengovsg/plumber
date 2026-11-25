@@ -50,7 +50,7 @@ describe('Start SSO login', () => {
       },
     })
 
-    const result = await startSsoLogin(null, {}, STUB_CONTEXT)
+    const result = await startSsoLogin({}, {}, STUB_CONTEXT)
 
     expect(mocks.createAuthorizationRequest).toHaveBeenCalledWith()
     expect(mocks.setSsoLoginCookie).toHaveBeenCalledWith(STUB_CONTEXT.res, {
@@ -68,11 +68,7 @@ describe('Start SSO login', () => {
     mocks.getLdFlagValue.mockResolvedValueOnce('all')
 
     await expect(
-      startSsoLogin(
-        null,
-        { input: { iss: 'https://one.gov.sg' } },
-        STUB_CONTEXT,
-      ),
+      startSsoLogin({}, { input: { iss: 'https://one.gov.sg' } }, STUB_CONTEXT),
     ).rejects.toThrow('SSO issuer mismatch')
     expect(mocks.createAuthorizationRequest).not.toHaveBeenCalled()
   })
@@ -89,7 +85,7 @@ describe('Start SSO login', () => {
     })
 
     const result = await startSsoLogin(
-      null,
+      {},
       { input: { iss: 'https://one.gov.sg/api/auth' } },
       STUB_CONTEXT,
     )
@@ -101,7 +97,7 @@ describe('Start SSO login', () => {
   it('does not start SSO when the feature flag is off', async () => {
     mocks.getLdFlagValue.mockResolvedValueOnce('off')
 
-    await expect(startSsoLogin(null, {}, STUB_CONTEXT)).rejects.toThrow(
+    await expect(startSsoLogin({}, {}, STUB_CONTEXT)).rejects.toThrow(
       'SSO is not enabled',
     )
     expect(mocks.createAuthorizationRequest).not.toHaveBeenCalled()
@@ -114,7 +110,7 @@ describe('Start SSO login', () => {
       transaction: { state: 'state', nonce: 'nonce', codeVerifier: 'verifier' },
     })
 
-    const result = await startSsoLogin(null, {}, STUB_CONTEXT)
+    const result = await startSsoLogin({}, {}, STUB_CONTEXT)
 
     expect(result.authorizationUrl).toContain('oauth2/authorize')
   })

@@ -77,8 +77,8 @@ describe('unpublishPipeService', () => {
     const updatedFlow = await Flow.query().findById(flow.id)
 
     expect(result).toEqual({ pipeId: flow.id, active: false })
-    expect(updatedFlow.active).toBe(false)
-    expect(updatedFlow.publishedAt).toBeNull()
+    expect(updatedFlow!.active).toBe(false)
+    expect(updatedFlow!.publishedAt).toBeNull()
   })
 
   it('unpublishes a webhook pipe without reading repeatable jobs', async () => {

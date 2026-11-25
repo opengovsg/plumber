@@ -1,6 +1,7 @@
 import { isEmpty } from 'lodash'
 
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
@@ -10,12 +11,17 @@ import Flow from '@/models/flow'
 import { MutationResolvers } from '../__generated__/types.generated'
 
 // transaction does 2 things: update duplicate count for flow + duplicate flow + steps
-const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
+const duplicateFlow: NonNullable<MutationResolvers['duplicateFlow']> = async (
   _parent,
   params,
   context,
 ) => {
-  const oldFlowId = params.input.id
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  const oldFlowId = input.id
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'viewer' })
     .withGraphJoined('[steps.[connection]]')
@@ -46,7 +52,11 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       .insert({
         name: `[COPY] ${flow.name}`,
         active: false,
-        config: isOwner && !isEmpty(prevConfig) ? prevConfig : undefined,
+        // Set after the inherited config, so a copy of a copy names its direct source.
+        config: {
+          ...(isOwner ? prevConfig : {}),
+          duplicatedFromFlowId: flow.id,
+        },
       })
 
     // duplicate the steps and the variables
@@ -79,7 +89,6 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
           appKey: oldStep.appKey,
           type: oldStep.type,
           connectionId: shouldDuplicateConnection ? oldStep.connectionId : null,
-          connection: shouldDuplicateConnection ? oldStep.connection : null,
           position: oldStep.position,
           parameters: updateStepVariables(
             isOwner

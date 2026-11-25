@@ -52,11 +52,11 @@ export default function ExecutionStep({
     canRetry,
     customRetryButtonText,
   } = useExecutionStepStatus({
-    appKey,
+    appKey: appKey ?? '',
     status,
     errorDetails,
     execution,
-    jobId,
+    jobId: jobId ?? undefined,
   })
 
   const showAlertTab = isDelayPaused
@@ -134,18 +134,18 @@ export default function ExecutionStep({
                 <JSONViewer data={executionStep.dataIn} />
               </TabPanel>
               <TabPanel>
-                <JSONViewer data={executionStep.dataOut} />
+                <JSONViewer data={executionStep.dataOut ?? {}} />
               </TabPanel>
               {showAlertTab && (
                 <TabPanel>
                   <DelayPausedAlert execution={execution} />
                 </TabPanel>
               )}
-              {showErrorTab && (
+              {showErrorTab && errorDetails && (
                 <TabPanel>
                   <ErrorResult
                     executionStepId={executionStep.id}
-                    errorDetails={executionStep.errorDetails}
+                    errorDetails={errorDetails}
                     isTestRun={false}
                   />
                 </TabPanel>

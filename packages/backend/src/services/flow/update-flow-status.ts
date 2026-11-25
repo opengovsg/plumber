@@ -13,6 +13,11 @@ import Flow from '@/models/flow'
 import type Step from '@/models/step'
 import flowQueue from '@/queues/flow'
 
+import {
+  captureFlowStatusChange,
+  type FlowStatusSource,
+} from './flow-status-event'
+
 const JOB_NAME = 'flow'
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 
@@ -21,6 +26,7 @@ export interface UpdateFlowStatusInput {
   active: boolean
   userId: string
   updatedAt: string
+  source?: FlowStatusSource
 }
 
 const validateFlowSteps = (steps: Step[]) => {
@@ -48,6 +54,7 @@ export async function updateFlowStatusService({
   active,
   userId,
   updatedAt,
+  source = 'app',
 }: UpdateFlowStatusInput): Promise<Flow> {
   // Do nothing if status did not change
   if (flow.active === active) {
@@ -61,9 +68,13 @@ export async function updateFlowStatusService({
     validateFlowBlocks(flow.steps, flow.id)
   }
   const jobName = `${JOB_NAME}-${flow.id}`
+  const previousPublishedAt = flow.publishedAt
 
   const triggerStep = await flow.getTriggerStep()
   const trigger = await triggerStep.getTriggerCommand()
+  if (!trigger) {
+    throw new Error(`Trigger command not found for step: ${triggerStep.id}`)
+  }
   const interval = trigger.getInterval?.(triggerStep.parameters)
   const repeatOptions = {
     pattern: interval || EVERY_15_MINUTES_CRON,
@@ -189,6 +200,9 @@ export async function updateFlowStatusService({
       }
     }
   })
+
+  // After the commit, so a rolled-back change sends nothing.
+  captureFlowStatusChange({ flow, active, userId, source, previousPublishedAt })
 
   return flow
 }

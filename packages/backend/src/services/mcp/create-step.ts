@@ -9,12 +9,12 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
-import { upgradeIfThenV1BlocksIfEnabled } from '@/apps/toolbox/common/validate-end-step'
+import { upgradeIfThenV1Blocks } from '@/apps/toolbox/common/validate-end-step'
 import { UserFacingError } from '@/errors/user-facing-error'
-import App from '@/models/app'
 import Step from '@/models/step'
 import type User from '@/models/user'
 import { createActionStepCore } from '@/services/create-action-step'
+import { lookupStepDefinition } from '@/services/step-definition'
 
 import { PublishedPipeError } from './published-pipe-error'
 import { createStepAiBuilderConfig } from './step-ai-builder-config'
@@ -48,24 +48,21 @@ function isInsertInsideIfThenBlock(
   )
 }
 
-/** Throws unless the app key and action key name a step the AI Builder may create. */
-export async function assertStepCreatable(
-  appKey: string,
-  key: string,
-): Promise<void> {
-  const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
+/** Throws unless the app key and action key name an action the AI Builder may create. */
+export function assertStepCreatable(appKey: string, key: string): void {
+  const lookup = lookupStepDefinition(appKey, key, 'action')
 
-  if (!triggerOrAction) {
+  if (lookup.kind === 'unknown') {
     throw new Error('No such trigger or action')
   }
 
-  if (triggerOrAction.hiddenFromUser) {
+  if (lookup.kind === 'hidden') {
     throw new Error('Action can only be created by system')
   }
 }
 
 export async function createStepService(input: CreateStepInput): Promise<Step> {
-  await assertStepCreatable(input.appKey, input.key)
+  assertStepCreatable(input.appKey, input.key)
 
   return Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
@@ -108,7 +105,7 @@ export async function createStepInTransaction(
   }
 
   // Legacy If blocks have no end marker, so pin them before placing the step.
-  await upgradeIfThenV1BlocksIfEnabled(
+  await upgradeIfThenV1Blocks(
     trx,
     flow,
     await flow.$relatedQuery('steps', trx).orderBy('position', 'asc'),

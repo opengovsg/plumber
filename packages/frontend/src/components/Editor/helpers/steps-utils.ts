@@ -334,21 +334,6 @@ export function isStepInsideForEachBody(
 }
 
 /**
- * Whether the flow already has an if-then V2 block. `useIfThenV2Enabled` uses
- * this to keep rendering the V2 UI once a pipe has one, regardless of the LD
- * flag. The V1 renderer has no concept of the marker and would silently
- * absorb steps that are actually outside the block.
- *
- * IMPORTANT: pass the full `flow.steps`, not the MRF-filtered display list,
- * so a marker on an off-screen branch still counts.
- */
-export function hasIfThenV2Block(flowSteps: IStep[]): boolean {
-  return flowSteps.some(
-    (step) => isIfThenStep(step) && step.config?.endStepId != null,
-  )
-}
-
-/**
  * Whether `step` is a blank placeholder left by the if-then V1 branch
  * initializer — no app or event ever chosen. Mirrors the backend's
  * `isBlankPlaceholderStep` (toolbox/common/constants.ts): createStep only

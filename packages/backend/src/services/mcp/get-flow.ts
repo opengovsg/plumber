@@ -88,8 +88,8 @@ export async function getFlowService({
     active: flow.active,
     steps: steps.map((step) => ({
       id: step.id,
-      key: step.key,
-      appKey: step.appKey,
+      key: step.key ?? null,
+      appKey: step.appKey ?? null,
       type: step.type,
       parameters: redactCredentials(step.parameters ?? {}) as IJSONObject,
       position: step.position,

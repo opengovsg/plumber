@@ -180,7 +180,7 @@ describe('decrypt form response', () => {
     })
 
     it('should fail and give warning if no connection exists', async () => {
-      delete $.auth.data
+      delete ($.auth as Partial<typeof $.auth>).data
       await expect(decryptFormResponse($)).resolves.toEqual(
         FAILED_DECRYPT_RESPONSE,
       )
@@ -190,7 +190,7 @@ describe('decrypt form response', () => {
           event: 'formsg-missing-connection',
           flowId: $.flow.id,
           stepId: $.step.id,
-          userId: $.user.id,
+          userId: $.user!.id,
         },
       )
     })
@@ -211,7 +211,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           submissionId: 'submissionId',
         }),
@@ -223,7 +223,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           submissionTime: '2023-07-06T18:26:27.505+08:00',
         }),
@@ -250,7 +250,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             question1: {
@@ -268,8 +268,8 @@ describe('decrypt form response', () => {
           },
         }),
       )
-      expect($.request.headers).toBeUndefined()
-      expect($.request.query).toBeUndefined()
+      expect($.request!.headers).toBeUndefined()
+      expect($.request!.query).toBeUndefined()
     })
 
     describe('nric filter', () => {
@@ -306,7 +306,7 @@ describe('decrypt form response', () => {
         await expect(decryptFormResponse($)).resolves.toEqual(
           SUCCESS_DECRYPT_RESPONSE,
         )
-        expect($.request.body).toEqual(
+        expect($.request!.body).toEqual(
           expect.objectContaining({
             fields: {
               question1: {
@@ -342,7 +342,7 @@ describe('decrypt form response', () => {
         await expect(decryptFormResponse($)).resolves.toEqual(
           SUCCESS_DECRYPT_RESPONSE,
         )
-        expect($.request.body).toEqual(
+        expect($.request!.body).toEqual(
           expect.objectContaining({
             fields: {
               question2: {
@@ -364,7 +364,7 @@ describe('decrypt form response', () => {
         await expect(decryptFormResponse($)).resolves.toEqual(
           SUCCESS_DECRYPT_RESPONSE,
         )
-        expect($.request.body).toEqual(
+        expect($.request!.body).toEqual(
           expect.objectContaining({
             fields: {
               question1: {
@@ -400,7 +400,7 @@ describe('decrypt form response', () => {
         await expect(decryptFormResponse($)).resolves.toEqual(
           SUCCESS_DECRYPT_RESPONSE,
         )
-        expect($.request.body).toEqual(
+        expect($.request!.body).toEqual(
           expect.objectContaining({
             fields: {
               question1: {
@@ -451,7 +451,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           verifiedSubmitterInfo: {
             sgidUinFin: '12345678B',
@@ -483,7 +483,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             question1_field_answer: {
@@ -501,8 +501,8 @@ describe('decrypt form response', () => {
           },
         }),
       )
-      expect($.request.headers).toBeUndefined()
-      expect($.request.query).toBeUndefined()
+      expect($.request!.headers).toBeUndefined()
+      expect($.request!.query).toBeUndefined()
     })
 
     it('should parse form fields and replace dots with underscores in keys', async () => {
@@ -531,7 +531,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             childrenbirthrecords_abc_childdateofbirth_0: {
@@ -555,8 +555,8 @@ describe('decrypt form response', () => {
           },
         }),
       )
-      expect($.request.headers).toBeUndefined()
-      expect($.request.query).toBeUndefined()
+      expect($.request!.headers).toBeUndefined()
+      expect($.request!.query).toBeUndefined()
     })
   })
 
@@ -606,7 +606,7 @@ describe('decrypt form response', () => {
 
       await decryptFormResponse($)
 
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             attachmentField: expect.objectContaining({
@@ -634,7 +634,7 @@ describe('decrypt form response', () => {
       await decryptFormResponse($)
 
       expect(mocks.storeAttachmentInS3).not.toBeCalled()
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             attachmentField: expect.objectContaining({
@@ -692,7 +692,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             addressFieldComplete: {
@@ -736,7 +736,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             textField: {
@@ -766,7 +766,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             checkboxField: {
@@ -800,7 +800,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             tableField: {
@@ -859,6 +859,30 @@ describe('decrypt form response', () => {
       )
     })
 
+    it('keeps an empty table as a table with its column titles', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'tableField',
+            fieldType: 'table',
+            question: 'Items (Name, Qty)',
+            answerArray: [],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(
+        JSON.parse($.request!.body.fields.tableField.answer),
+      ).toMatchObject({
+        rows: [],
+        columns: [{ label: 'Name' }, { label: 'Qty' }],
+      })
+    })
+
     it('should handle answerArray with null characters', async () => {
       $.flow.hasFileProcessingActions = false
       mocks.cryptoDecrypt.mockReturnValueOnce({
@@ -888,7 +912,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             checkboxField: {
@@ -962,7 +986,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             checkboxField: {
@@ -994,7 +1018,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             signatureField: {
@@ -1024,7 +1048,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             signatureField: {

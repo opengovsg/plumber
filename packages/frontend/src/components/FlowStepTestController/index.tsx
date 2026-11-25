@@ -79,7 +79,7 @@ const CheckStepTooltip = forwardRef<HTMLDivElement, CheckStepTooltipProps>(
           isReadOnly
             ? 'Unpublish your pipe to check step'
             : hasDeletedVars
-              ? 'Remove variables from deleted steps to check step'
+              ? 'Remove variables from deleted steps or questions to check step'
               : 'Complete required fields to check step'
         }
         aria-label="check step tooltip"
@@ -312,7 +312,7 @@ export default function FlowStepTestController(
       {isWebhookSubstep && (
         <VStack w="100%" ref={webhookUrlInfoRef}>
           <WebhookUrlInfo
-            webhookUrl={step.webhookUrl}
+            webhookUrl={step.webhookUrl ?? ''}
             webhookTriggerInstructions={
               (selectedActionOrTrigger as IBaseTrigger)
                 .webhookTriggerInstructions || defaultTriggerInstructions

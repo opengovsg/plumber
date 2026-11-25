@@ -3,7 +3,7 @@ import { createContext, ReactNode, useContext, useState } from 'react'
 interface CreateFlowContextProps {
   canUseAiBuilder: boolean
   createMode: FLOW_CREATE_MODE | null
-  setCreateMode: (mode: FLOW_CREATE_MODE) => void
+  setCreateMode: (mode: FLOW_CREATE_MODE | null) => void
   skipModeSelection: boolean
   setSkipModeSelection: (skip: boolean) => void
 }
@@ -28,7 +28,7 @@ export const CreateFlowContextProvider = ({
   children,
 }: {
   createMode: FLOW_CREATE_MODE | null
-  setCreateMode: (mode: FLOW_CREATE_MODE) => void
+  setCreateMode: (mode: FLOW_CREATE_MODE | null) => void
   children: ReactNode
 }) => {
   const [skipModeSelection, setSkipModeSelection] = useState<boolean>(false)

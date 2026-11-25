@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import Connection from '@/models/connection'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
@@ -96,7 +97,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: {
         subject: 'Hello world', // valid — in postman sendTransactionalEmail schema
         destinationEmail: ['a@b.com'], // valid — in postman sendTransactionalEmail schema
@@ -145,7 +146,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Test' },
     })
 
@@ -189,7 +190,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user: intruder,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: { subject: 'Hack' },
       }),
     ).rejects.toThrow('Step not found')
@@ -228,6 +229,98 @@ describe('updateStepParametersService', () => {
     ).rejects.toThrow('Step not found')
   })
 
+  describe('step definition checks', () => {
+    async function addActionStep(appKey: string, key: string) {
+      const user = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `update-params-definition-${randomUUID()}@example.com`,
+      })
+      const flow = await createFlowWithStepsService({
+        user,
+        name: 'Definition Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+        ],
+        traceId: 'trace-definition',
+      })
+      const step = await Step.query().insertAndFetch({
+        flowId: flow.id,
+        type: 'action',
+        appKey,
+        key,
+        position: 2,
+        parameters: { original: true },
+      })
+      return { user, flow, step }
+    }
+
+    it('rejects a hidden MRF stage action and leaves its parameters alone', async () => {
+      const { user, flow, step } = await addActionStep(
+        'formsg',
+        'mrfSubmission',
+      )
+
+      await expect(
+        updateStepParametersService({
+          user,
+          pipeId: flow.id,
+          stepId: step.id,
+          parameters: {},
+        }),
+      ).rejects.toThrow('Action can only be updated by system')
+
+      const reloaded = await Step.query().findById(step.id)
+      expect(reloaded?.parameters).toEqual({ original: true })
+    })
+
+    it('rejects a step whose key is not in the app registry', async () => {
+      const { user, flow, step } = await addActionStep(
+        'postman',
+        'noSuchAction',
+      )
+
+      await expect(
+        updateStepParametersService({
+          user,
+          pipeId: flow.id,
+          stepId: step.id,
+          parameters: {},
+        }),
+      ).rejects.toThrow('No such trigger or action')
+    })
+
+    it('rejects a step whose app is not in the registry', async () => {
+      const { user, flow, step } = await addActionStep('noSuchApp', 'forEach')
+
+      await expect(
+        updateStepParametersService({
+          user,
+          pipeId: flow.id,
+          stepId: step.id,
+          parameters: {},
+        }),
+      ).rejects.toThrow('No such trigger or action')
+    })
+
+    it("runs the action's own parameter validation", async () => {
+      const { user, flow, step } = await addActionStep('toolbox', 'forEach')
+
+      await expect(
+        updateStepParametersService({
+          user,
+          pipeId: flow.id,
+          stepId: step.id,
+          parameters: { items: 'not a variable' },
+        }),
+      ).rejects.toBeInstanceOf(BadUserInputError)
+    })
+  })
+
   it('merges parameters across repeated calls instead of overwriting', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
@@ -261,7 +354,7 @@ describe('updateStepParametersService', () => {
     await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello world' },
     })
 
@@ -269,7 +362,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { destinationEmail: ['a@b.com'] },
     })
 
@@ -311,7 +404,7 @@ describe('updateStepParametersService', () => {
     const first = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
       traceId: 'trace-update',
     })
@@ -330,7 +423,7 @@ describe('updateStepParametersService', () => {
     const second = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { destinationEmail: ['a@b.com'] },
       traceId: 'trace-update',
     })
@@ -342,7 +435,7 @@ describe('updateStepParametersService', () => {
     const laterSession = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Later' },
       traceId: 'trace-update-2',
     })
@@ -393,7 +486,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
     })
 
@@ -444,7 +537,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
       connectionId: connection.id,
     })
@@ -497,7 +590,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user: intruder,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: connection.id,
       }),
@@ -545,7 +638,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: connection.id,
       }),
@@ -585,7 +678,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: randomUUID(), // does not exist
       }),
@@ -643,7 +736,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user: collaborator,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: ownerConnection.id,
       }),
@@ -990,7 +1083,7 @@ describe('no connectionRegistrationType — connectionId set directly', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
       connectionId: connection.id,
     })

@@ -3,7 +3,8 @@ import { randomUUID } from 'crypto'
 /**
  * Collaborator duplicate rules:
  * - Editors and viewers get their own copy.
- * - The copy has no connections and no pipe config.
+ * - The copy has no connections.
+ * - The copy's config holds only duplicatedFromFlowId, the pipe it was copied from.
  * - Step names, variables, and non-sensitive parameters stay.
  * - File, table, and secret parameters are removed.
  * - The original pipe changes only duplicateCount.
@@ -41,7 +42,7 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       await Step.query().delete()
       await Flow.query().delete()
 
-      owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+      owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
       collaborator = await User.query().insert({
         email: `${randomUUID()}@open.gov.sg`,
       })
@@ -142,12 +143,12 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
 
     const duplicate = async () => {
       const duplicated = await duplicateFlow(
-        null,
+        {},
         { input: { id: flow.id } },
         contextFor(collaborator),
       )
-      const copy = await Flow.query().findById(duplicated.id)
-      const copiedSteps = await copy
+      const copy = await Flow.query().findById(duplicated!.id!)
+      const copiedSteps = await copy!
         .$relatedQuery('steps')
         .orderBy('position', 'asc')
       return { copy, copiedSteps }
@@ -156,8 +157,8 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
     it('gives the copy to the collaborator', async () => {
       const { copy } = await duplicate()
 
-      expect(copy.userId).toBe(collaborator.id)
-      expect(copy.name).toBe('[COPY] Source Flow')
+      expect(copy!.userId).toBe(collaborator.id)
+      expect(copy!.name).toBe('[COPY] Source Flow')
     })
 
     it('does not copy any connection, including the collaborator own', async () => {
@@ -169,10 +170,33 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       }
     })
 
-    it('does not copy the pipe config', async () => {
+    it('does not copy the pipe config, and records the source pipe', async () => {
       const { copy } = await duplicate()
 
-      expect(copy.config ?? {}).toEqual({})
+      expect(copy!.config).toEqual({ duplicatedFromFlowId: flow.id })
+    })
+
+    it('records the copy, not the original, when a copy is duplicated again', async () => {
+      const { copy } = await duplicate()
+      const nextUser = await User.query().insert({
+        email: `${randomUUID()}@open.gov.sg`,
+      })
+      await FlowCollaborator.query().insert({
+        flowId: copy!.id,
+        userId: nextUser.id,
+        role,
+        updatedBy: collaborator.id,
+      })
+
+      const secondCopy = await duplicateFlow(
+        {},
+        { input: { id: copy!.id } },
+        contextFor(nextUser),
+      )
+
+      const reloaded = await Flow.query().findById(secondCopy!.id!)
+      expect(reloaded!.name).toBe('[COPY] [COPY] Source Flow')
+      expect(reloaded!.config).toEqual({ duplicatedFromFlowId: copy!.id })
     })
 
     it('does not copy sensitive step parameters', async () => {
@@ -217,14 +241,16 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       await duplicate()
 
       const original = await Flow.query().findById(flow.id)
-      const originalSteps = await original
+      const originalSteps = await original!
         .$relatedQuery('steps')
         .orderBy('position', 'asc')
-      expect(original.config.duplicateCount).toBe(1)
-      expect(new Date(original.updatedAt).getTime()).toBe(
+      expect(original!.config!.duplicateCount).toBe(1)
+      expect(new Date(original!.updatedAt).getTime()).toBe(
         new Date(flow.updatedAt).getTime(),
       )
-      expect(original.config.errorConfig?.notificationFrequency).toBe('always')
+      expect(original!.config!.errorConfig?.notificationFrequency).toBe(
+        'always',
+      )
       expect(originalSteps.map((step) => step.connectionId)).toEqual(
         steps.map((step) => step.connectionId),
       )
@@ -258,10 +284,10 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       }
 
       const original = await Flow.query().findById(flow.id)
-      expect(original.config.duplicateCount).toBe(5)
-      expect(original.config.isForceClogged).toBe(true)
-      expect(original.config.rejectIfOverMaxQps).toBe(false)
-      expect(original.config.errorConfig).toEqual({
+      expect(original!.config!.duplicateCount).toBe(5)
+      expect(original!.config!.isForceClogged).toBe(true)
+      expect(original!.config!.rejectIfOverMaxQps).toBe(false)
+      expect(original!.config!.errorConfig).toEqual({
         notificationFrequency: 'once_per_day',
         notificationRecipients: ['viewer'],
       })

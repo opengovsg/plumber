@@ -1,12 +1,13 @@
 import { IDynamicAction } from '@plumber/types'
 
 import apps from '@/apps'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import globalVariable from '@/helpers/global-variable'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const dynamicAction: MutationResolvers['dynamicAction'] = async (
+const dynamicAction: NonNullable<MutationResolvers['dynamicAction']> = async (
   _parent,
   params,
   context,
@@ -32,7 +33,7 @@ const dynamicAction: MutationResolvers['dynamicAction'] = async (
 
   // if app requires connection, only proceed if connection has been set up
   if (app.auth && !connection) {
-    return null
+    throw new BadUserInputError('Connection has not been set up')
   }
 
   const $ = await globalVariable({
@@ -43,7 +44,7 @@ const dynamicAction: MutationResolvers['dynamicAction'] = async (
     user: context.currentUser,
   })
 
-  const command = app.dynamicData.find(
+  const command = app.dynamicData?.find(
     (data) => data.key === dynamicActionKey,
   ) as IDynamicAction | undefined
 

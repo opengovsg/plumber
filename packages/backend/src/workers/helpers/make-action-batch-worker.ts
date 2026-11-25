@@ -14,7 +14,7 @@ import { type Span } from 'dd-trace'
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { M365_BATCH_SIZE, WORKER_CONCURRENCY } from '@/config/workers'
-import { attachHiddenCauseIfStepError } from '@/errors/step'
+import { keepErrorKindViaCause } from '@/errors/step'
 import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { withLock } from '@/helpers/distributed-lock'
@@ -34,6 +34,7 @@ import {
 import { advanceAfterStep } from './advance-after-step'
 import { handleFailedJob } from './handle-failed-job'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { fileLockRequeueDelayMs } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -125,6 +126,7 @@ type FailedJob = {
  */
 type BatchContext = {
   queueName: string
+  queueRateLimit: IActionBatchQueue['queueRateLimit']
   worker: WorkerPro<IActionJobData>
   job: JobPro<IActionJobData>
   span: Span | null
@@ -242,7 +244,9 @@ function tagBatchStart(
     ),
     stepId: joinUnique(batchJobs.map((batchJob) => batchJob.data.stepId)),
     jobId: joinUnique(
-      batchJobs.map((batchJob) => makeActionJobId(ctx.queueName, batchJob.id)),
+      batchJobs.map((batchJob) =>
+        makeActionJobId(ctx.queueName, requireBullMQJobId(batchJob)),
+      ),
     ),
     ...longestQueueTiming,
     'batch.size': batchSize,
@@ -294,7 +298,7 @@ async function isolateFailedJob(
   const permanentError = new UnrecoverableError(
     error instanceof Error ? error.message : String(error),
   )
-  attachHiddenCauseIfStepError(permanentError, error)
+  keepErrorKindViaCause(permanentError, error)
   batchJob.setAsFailed(permanentError)
 
   try {
@@ -371,6 +375,13 @@ async function finalizeSucceededJob(
   }
 }
 
+function requireBullMQJobId(job: JobPro<IActionJobData>): string {
+  if (!job.id) {
+    throw new UnrecoverableError('Batched action job is missing its BullMQ ID')
+  }
+  return job.id
+}
+
 /**
  * Phase A - build each job's execution context (helper A), PER JOB, then
  * partition in batch order (so the shared write preserves row order). A prepare
@@ -387,7 +398,7 @@ async function prepareBatch(
   batchJobs: JobPro<IActionJobData>[],
 ): Promise<{ preparedOk: PreparedJob[]; prepareFailed: FailedJob[] }> {
   const jobIds = batchJobs.map((batchJob) =>
-    makeActionJobId(queueName, batchJob.id),
+    makeActionJobId(queueName, requireBullMQJobId(batchJob)),
   )
 
   const prepareResults = await Promise.all(
@@ -626,6 +637,17 @@ async function processBatch(ctx: BatchContext): Promise<void> {
   const batchJobs = job.getBatch()
   // groupAffinity puts one group in each batch. The container job has no gid.
   tagBatchStart(ctx, batchJobs, batchJobs[0]?.gid)
+  await Promise.all(
+    batchJobs.map((batchJob) =>
+      recordLateScheduledStart({
+        job: batchJob,
+        queueName: ctx.queueName,
+        // Only grouped jobs wait on the group concurrency cap.
+        rateLimited:
+          ctx.queueRateLimit !== undefined || batchJob.opts.group !== undefined,
+      }),
+    ),
+  )
 
   const { preparedOk, prepareFailed } = await prepareBatch(
     ctx.queueName,
@@ -679,6 +701,7 @@ async function processBatch(ctx: BatchContext): Promise<void> {
     }
     throw routingError
   }
+  const runBatch = action.runBatch.bind(action)
 
   // Every prepared job shares one `${fileId}::${tableId}::${connectionId}` group,
   // so one lock key (from the app queue's getLockKey) covers the batch. Taken
@@ -700,7 +723,7 @@ async function processBatch(ctx: BatchContext): Promise<void> {
     let runBatchError: unknown = null
     const runStart = Date.now()
     try {
-      runResults = await action.runBatch(
+      runResults = await runBatch(
         preparedOk.map(({ prepared }) => ({ $: prepared.$ })),
       )
     } catch (error) {
@@ -760,7 +783,13 @@ export function makeActionBatchWorker(
     // Fix the trace service name to workers.action.batch regardless of queue
     // name, so all batch processing is monitored together.
     tracer.wrap('workers.action.batch', async (job) =>
-      processBatch({ queueName, worker, job, span: tracer.scope().active() }),
+      processBatch({
+        queueName,
+        queueRateLimit: params.batchConfig.queueRateLimit,
+        worker,
+        job,
+        span: tracer.scope().active(),
+      }),
     ),
     workerOptions,
   )

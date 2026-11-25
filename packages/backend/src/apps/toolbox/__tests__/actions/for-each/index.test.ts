@@ -7,6 +7,7 @@ import {
   processItems,
 } from '@/apps/toolbox/common/get-for-each-variables'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 
 import action from '../../../actions/for-each'
 import {
@@ -126,7 +127,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -152,7 +153,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      await action.run($)
+      await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -171,7 +172,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -194,8 +195,9 @@ describe('For each action', () => {
     it('should throw error when checkbox items validation fails', async () => {
       $.step.parameters.items = 'item1,item2,item3'
 
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
+      await expect(action.run!($)).rejects.toThrow(StepError)
+      await expect(action.run!($)).rejects.toThrow('Invalid input list')
+      await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
     })
   })
 
@@ -250,7 +252,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -287,7 +289,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -319,7 +321,7 @@ describe('For each action', () => {
       }
 
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -357,7 +359,7 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -394,7 +396,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -445,7 +447,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -482,7 +484,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -519,7 +521,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -550,7 +552,7 @@ describe('For each action', () => {
       }
 
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -584,7 +586,7 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -606,34 +608,61 @@ describe('For each action', () => {
   })
 
   describe('error handling', () => {
-    it('should throw StepError for empty input', async () => {
-      $.step.parameters.items = ''
+    it.each([
+      { description: 'empty', items: '' },
+      { description: 'whitespace-only', items: '   ' },
+      { description: 'invalid JSON', items: '{ invalid json' },
+      { description: 'missing', items: undefined },
+      { description: 'null', items: null },
+      {
+        description: 'JSON missing required fields',
+        items: JSON.stringify({ invalidField: 'value' }),
+      },
+      {
+        description: 'table failing the table schema',
+        items: { ...VALID_TABLE_DATA, columns: 'not-a-column-list' },
+      },
+    ])(
+      'should throw a config StepError for $description input',
+      async ({ items }) => {
+        $.step.parameters.items = items
 
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
+        await expect(action.run!($)).rejects.toThrow(StepError)
+        await expect(action.run!($)).rejects.toThrow('Invalid input list')
+        await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
+      },
+    )
+
+    it('should throw a config StepError for an empty list in a test run', async () => {
+      $.execution.testRun = true
+      $.step.parameters.items = []
+
+      await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
     })
 
-    it('should throw StepError for whitespace-only input', async () => {
-      $.step.parameters.items = '   '
-
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
-    })
-
-    it('should throw StepError for invalid JSON', async () => {
-      $.step.parameters.items = '{ invalid json'
-
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
-    })
-
-    it('should throw StepError for JSON missing required fields', async () => {
-      $.step.parameters.items = JSON.stringify({
-        invalidField: 'value',
+    it('should throw an internal StepError and log when processing valid input fails', async () => {
+      $.step.parameters.items = VALID_TABLE_DATA
+      mockedProcessItems.mockImplementationOnce(() => {
+        throw new TypeError('columns is not iterable')
       })
+      const loggerErrorSpy = vi
+        .spyOn(logger, 'error')
+        .mockImplementation(() => logger)
 
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
+      await expect(action.run!($)).rejects.toMatchObject({
+        kind: 'internal',
+        message: expect.stringContaining('Invalid input list'),
+      })
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          event: 'for-each-process-input-failed',
+          errorName: 'TypeError',
+          errorMessage: 'columns is not iterable',
+          flowId: 'fake-pipe',
+          stepId: 'for-each',
+        }),
+      )
     })
   })
 })

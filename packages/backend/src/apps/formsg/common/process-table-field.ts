@@ -21,20 +21,31 @@ const createColumn = (label: string, index: number): TableColumn => {
   }
 }
 
+function parseColumnNames(question: string): string[] {
+  const { content: columnNames } = extractLastTopLevelBracketContent(question)
+  return columnNames ? columnNames.split(',').map((name) => name.trim()) : []
+}
+
+/**
+ * @param columnTitles Schema column titles. The question suffix cannot be
+ * parsed when a title has an unmatched bracket.
+ */
 export default function convertTableAnswerArrayToTableObject(
   question: string,
   answerArray: string[][],
+  columnTitles?: string[],
 ) {
-  const { content: columnNames } = extractLastTopLevelBracketContent(question)
-  const columnNamesArray = columnNames.split(',').map((name) => name.trim())
+  const columnNamesArray = columnTitles ?? parseColumnNames(question)
+  const firstRow = answerArray[0]
 
   const columns =
-    // make sure that column names do not contain commas
-    columnNamesArray.length === answerArray[0].length
+    // A blank table has no row to measure, so titles come from the question.
+    !firstRow
       ? columnNamesArray.map((column, index) => createColumn(column, index))
-      : answerArray[0].map((_, index) =>
-          createColumn(`Col ${index + 1}`, index),
-        )
+      : // make sure that column names do not contain commas
+        columnNamesArray.length === firstRow.length
+        ? columnNamesArray.map((column, index) => createColumn(column, index))
+        : firstRow.map((_, index) => createColumn(`Col ${index + 1}`, index))
 
   /**
    * NOTE: we do not show table rows that do not have any data

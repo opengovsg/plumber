@@ -37,19 +37,24 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
-      await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
-        Math.round(expectedBaseDelay + expectedBaseDelay / 2),
-      )
-      await expect(exponentialBackoffWithJitter(2, null, err)).resolves.toEqual(
+      await expect(
+        exponentialBackoffWithJitter(1, undefined, err),
+      ).resolves.toEqual(Math.round(expectedBaseDelay + expectedBaseDelay / 2))
+      await expect(
+        exponentialBackoffWithJitter(2, undefined, err),
+      ).resolves.toEqual(
         Math.round(
           expectedBaseDelay * 2 /* Full delay for 1st retry */ +
             expectedBaseDelay /* 50% of full delay*/,
         ),
       )
-      await expect(exponentialBackoffWithJitter(3, null, err)).resolves.toEqual(
+      await expect(
+        exponentialBackoffWithJitter(3, undefined, err),
+      ).resolves.toEqual(
         Math.round(
           expectedBaseDelay * 4 /* Full delay for 2nd retry */ +
             expectedBaseDelay * 2 /* 50% of full delay*/,
@@ -72,21 +77,22 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
-      await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
-        expectedBaseDelay,
-      )
-      await expect(exponentialBackoffWithJitter(2, null, err)).resolves.toEqual(
-        expectedBaseDelay * 2,
-      )
-      await expect(exponentialBackoffWithJitter(3, null, err)).resolves.toEqual(
-        expectedBaseDelay * 4,
-      )
-      await expect(exponentialBackoffWithJitter(4, null, err)).resolves.toEqual(
-        expectedBaseDelay * 8,
-      )
+      await expect(
+        exponentialBackoffWithJitter(1, undefined, err),
+      ).resolves.toEqual(expectedBaseDelay)
+      await expect(
+        exponentialBackoffWithJitter(2, undefined, err),
+      ).resolves.toEqual(expectedBaseDelay * 2)
+      await expect(
+        exponentialBackoffWithJitter(3, undefined, err),
+      ).resolves.toEqual(expectedBaseDelay * 4)
+      await expect(
+        exponentialBackoffWithJitter(4, undefined, err),
+      ).resolves.toEqual(expectedBaseDelay * 8)
     },
   )
 
@@ -94,9 +100,9 @@ describe('Backoff', () => {
     const err = new Error('test error')
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
-      DEFAULT_DELAY_MS,
-    )
+    await expect(
+      exponentialBackoffWithJitter(1, undefined, err),
+    ).resolves.toEqual(DEFAULT_DELAY_MS)
     expect(mocks.logError).toHaveBeenCalledWith(
       'Triggered BullMQ retry without RetriableError',
       { event: 'bullmq-retry-without-retriable-error' },
@@ -108,12 +114,13 @@ describe('Backoff', () => {
       error: 'test error',
       delayInMs: 10,
       delayType: 'queue',
+      kind: 'internal',
     })
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
-      10,
-    )
+    await expect(
+      exponentialBackoffWithJitter(1, undefined, err),
+    ).resolves.toEqual(10)
     expect(mocks.logError).toHaveBeenCalledWith(
       'Triggered BullMQ retry with RetriableError of the wrong delay type',
       {
@@ -129,6 +136,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs: 1000,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
       vi.spyOn(Date, 'now').mockReturnValue(123456789)
@@ -139,7 +147,7 @@ describe('Backoff', () => {
       } as unknown as JobPro<IActionJobData>
 
       await expect(
-        exponentialBackoffWithJitter(1, null, err, job),
+        exponentialBackoffWithJitter(1, undefined, err, job),
       ).resolves.toEqual(1000)
 
       expect(updateData).toHaveBeenCalledWith({
@@ -155,12 +163,13 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs: 1000,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
-      await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
-        1000,
-      )
+      await expect(
+        exponentialBackoffWithJitter(1, undefined, err),
+      ).resolves.toEqual(1000)
     })
 
     it('logs and still returns the delay if stamping retryTimestamp fails', async () => {
@@ -168,6 +177,7 @@ describe('Backoff', () => {
         error: 'test error',
         delayInMs: 1000,
         delayType: 'step',
+        kind: 'internal',
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
       const updateErr = new Error('redis down')
@@ -178,7 +188,7 @@ describe('Backoff', () => {
       } as unknown as JobPro<IActionJobData>
 
       await expect(
-        exponentialBackoffWithJitter(1, null, err, job),
+        exponentialBackoffWithJitter(1, undefined, err, job),
       ).resolves.toEqual(1000)
 
       expect(mocks.logError).toHaveBeenCalledWith(

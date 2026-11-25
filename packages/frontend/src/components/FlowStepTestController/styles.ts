@@ -4,7 +4,7 @@ export const flowStepTestControllerStyles = {
   container: {
     direction: 'row' as StackProps['direction'],
     spacing: 4,
-    py: 4,
+    py: 6,
     justify: 'flex-end',
     borderTop: '1px solid',
     borderTopColor: 'base.divider.medium',

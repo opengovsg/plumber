@@ -5,14 +5,15 @@ import type {
 } from '@plumber/types'
 
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 
-import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
+import { type AuthData, parseAuthData } from '../../common/auth-data'
 import {
   NO_TABLES_MESSAGE,
   TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import { validateCanAccessFile } from '../../common/file-privacy'
+import { toInternalStepError } from '../../common/internal-step-error'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -20,26 +21,6 @@ import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RE
 import batchQueueConfig from '../../queue/batch'
 import getDataOutMetadata from './get-data-out-metadata'
 import { parametersSchema } from './schemas'
-
-// Small wrapper around constructMsGraphValuesArrayForRowWrite which throws
-// StepError. As StepError requires $, this helps avoid $ becoming viral through
-// our codebase.
-//
-// constructMsGraphValuesArrayForRowWrite is a generic helper function and
-// should not be restricted to codepaths with $.
-function buildRowUpdateArgs(
-  _$: IGlobalVariable,
-  ...args: Parameters<typeof constructMsGraphValuesArrayForRowWrite>
-): ReturnType<typeof constructMsGraphValuesArrayForRowWrite> {
-  try {
-    return constructMsGraphValuesArrayForRowWrite(...args)
-  } catch (err) {
-    throw new StepError(
-      `Error creating table row: ${err.message}`,
-      'Double check that your step is configured correctly',
-    )
-  }
-}
 
 interface TableHeaderInfo {
   rowIndex: number
@@ -58,12 +39,45 @@ type ParsedJob = {
 function parseRowParams($: IGlobalVariable) {
   const parametersParseResult = parametersSchema.safeParse($.step.parameters)
   if (parametersParseResult.success === false) {
-    throw new StepError(
-      'There was a problem with the input.',
-      parametersParseResult.error.issues[0].message,
-    )
+    throw new StepError({
+      name: 'There was a problem with the input.',
+      solution: parametersParseResult.error.issues[0].message,
+      kind: 'config',
+    })
   }
   return parametersParseResult.data
+}
+
+/**
+ * The batch worker records a per-job failure as-is, so it must already carry a kind.
+ */
+function wrapUnexpectedJobError($: IGlobalVariable, error: unknown): StepError {
+  if (error instanceof StepError) {
+    return error
+  }
+  return toInternalStepError($, error, {
+    name: 'Could not add a row to your Excel table.',
+    event: 'm365-excel-create-table-row-unexpected-error',
+  })
+}
+
+function getAuthDataOrThrow($: IGlobalVariable): AuthData {
+  const result = parseAuthData($)
+  switch (result.status) {
+    case 'missing':
+      throw new StepError({
+        name: 'M365 connection is missing',
+        solution: GenericSolution.MalformedConnectionData,
+        kind: 'config',
+      })
+    case 'malformed':
+      throw toInternalStepError($, result.error, {
+        name: 'M365 connection data is invalid',
+        event: 'm365-excel-malformed-auth-data',
+      })
+    case 'ok':
+      return result.data
+  }
 }
 
 // Performs a single multi-row insert for a batch of createTableRow jobs that
@@ -101,7 +115,10 @@ async function runBatch(
     try {
       parsed.push({ index, $, params: parseRowParams($) })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
@@ -166,9 +183,13 @@ async function runBatch(
   //   non-retriable error): isolate EVERY job (reported `failed`, never retried)
   //   since retrying cannot help.
   try {
+    const ownerEmail = firstJob.user?.email
+    if (!ownerEmail) {
+      throw new Error('createTableRow batch has no pipe owner')
+    }
     await validateCanAccessFile(
-      firstJob.user?.email,
-      extractAuthDataWithPlumberFolder(firstJob),
+      ownerEmail,
+      getAuthDataOrThrow(firstJob),
       fileId,
       firstJob.http,
     )
@@ -176,8 +197,9 @@ async function runBatch(
     if (error instanceof RetriableError) {
       throw error
     }
+    const stepError = wrapUnexpectedJobError(firstJob, error)
     for (const { index } of parsed) {
-      results[index] = { status: 'failed', error }
+      results[index] = { status: 'failed', error: stepError }
     }
     return results
   }
@@ -206,10 +228,12 @@ async function runBatch(
   // This occurs when a user selected all the columns and created a table by accident...
   // Reference: https://learn.microsoft.com/en-us/answers/questions/1837007/excel-api-cant-reach-data-on-the-last-column-xfd
   if (!tableHeaderInfoResponse.data.values?.[0]?.length) {
-    throw new StepError(
-      'Could not read table headers.',
-      'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
-    )
+    throw new StepError({
+      name: 'Could not read table headers.',
+      solution:
+        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
+      kind: 'config',
+    })
   }
 
   const tableHeaderInfo: TableHeaderInfo = {
@@ -220,18 +244,20 @@ async function runBatch(
   // Build each parsed job's ordered values row INDIVIDUALLY, isolating a per-job
   // build failure (e.g. a `columnName` that doesn't exist in the table) the same
   // way a bad-params job is isolated above - one un-buildable row must not sink
-  // the whole batch. buildRowUpdateArgs throws a StepError, recorded as that
-  // job's failure (and re-thrown on the single-job `run` path). The schema parse
+  // the whole batch. constructMsGraphValuesArrayForRowWrite throws a StepError,
+  // recorded as that job's failure (and re-thrown on the single-job `run`
+  // path). The schema parse
   // above can't catch this: a non-existent column is still a valid non-empty
   // string, so it only fails here, against the table's real columns. We disallow
   // blacklisted formulas and sanitise when necessary.
   const writable: Array<{ index: number; $: IGlobalVariable }> = []
-  const values: Array<ReturnType<typeof buildRowUpdateArgs>> = []
+  const values: Array<
+    ReturnType<typeof constructMsGraphValuesArrayForRowWrite>
+  > = []
   parsed.forEach(({ index, $, params }) => {
     try {
       values.push(
-        buildRowUpdateArgs(
-          $,
+        constructMsGraphValuesArrayForRowWrite(
           tableHeaderInfo.columnNames,
           params.columnValues.map((col) => ({
             columnName: col.columnName,
@@ -241,7 +267,10 @@ async function runBatch(
       )
       writable.push({ index, $ })
     } catch (error) {
-      results[index] = { status: 'failed', error }
+      results[index] = {
+        status: 'failed',
+        error: wrapUnexpectedJobError($, error),
+      }
     }
   })
 
@@ -407,9 +436,18 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     if ($.execution.testRun) {
       // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
-      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user.email, $)
     }
 
     // A test run (or a single-job drain off the old queue) is just a batch of

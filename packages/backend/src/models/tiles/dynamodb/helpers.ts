@@ -28,6 +28,7 @@ export function handleDynamoDBError(error: unknown): never {
           error: message,
           delayInMs: 'default',
           delayType: 'step',
+          kind: 'internal',
         })
       }
       if (
@@ -90,8 +91,9 @@ export function mapColumnIdsToNames(
 
   const mappedData: Record<string, string | number> = {}
   for (const [key, value] of Object.entries(data)) {
-    if (columnMap.get(key)) {
-      mappedData[columnMap.get(key)] = value
+    const columnName = columnMap.get(key)
+    if (columnName) {
+      mappedData[columnName] = value
     }
   }
   return mappedData

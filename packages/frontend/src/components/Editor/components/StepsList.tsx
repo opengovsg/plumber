@@ -15,8 +15,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
-import { extractBranchesWithSteps, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
-import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
+import { extractBranchesWithSteps } from '@/helpers/toolbox'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import { EDITOR_RIGHT_DRAWER_WIDTH } from '../constants'
@@ -30,8 +29,6 @@ interface StepsListProps {
 export function StepsList({ isNested }: StepsListProps) {
   const {
     triggerStep,
-    actionStepsBeforeGroup,
-    groupedSteps,
     appsWithActions,
     groupingActions,
     actionStepsToDisplay,
@@ -39,8 +36,6 @@ export function StepsList({ isNested }: StepsListProps) {
   const { flow, isDrawerOpen, isMobile, readOnly } = useContext(EditorContext)
   const { mrfSteps, mrfApprovalSteps, approvalBranches } =
     useContext(MrfContext)
-  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
-    useIfThenV2Enabled()
 
   const { calculateReorderedSteps, handleReorderUpdate } = useReorderSteps(
     flow.id,
@@ -103,22 +98,7 @@ export function StepsList({ isNested }: StepsListProps) {
     [actionStepsToDisplay, groupingActions],
   )
 
-  const nonIfThenActionSteps = actionStepsBeforeGroup.filter(
-    (step) => step.key !== TOOLBOX_ACTIONS.IfThen,
-  )
-
-  // Disables last add step and hide in-between add step buttons
-  const hasExactlyOneEmptyActionStep =
-    nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
-
-  // Disables last add step button but show empty action instead
-  const hasNoActionSteps = nonIfThenActionSteps.length === 0
-  const shouldShowEmptyAction = hasNoActionSteps && !groupedSteps.length
-  // for backwards compatibility where empty step is created
-  const shouldDisableAddButton =
-    (hasExactlyOneEmptyActionStep || hasNoActionSteps) && !groupedSteps.length
-
-  if (!appsWithActions || !groupingActions || isIfThenV2Loading) {
+  if (!appsWithActions || !groupingActions) {
     return (
       <Center height="100vh" position="fixed" width="full" top={0} left={0}>
         <PrimarySpinner fontSize="4xl" />
@@ -134,128 +114,34 @@ export function StepsList({ isNested }: StepsListProps) {
         }
     : 0
 
-  if (isIfThenV2Enabled) {
-    const hasNoActionSteps = actionStepsToDisplay.length === 0
-    const hasExactlyOneEmptyActionStep =
-      actionStepsToDisplay.length === 1 && !actionStepsToDisplay[0].appKey
-    // Same trigger add-button rules as the old layout, kept for backwards
-    // compatibility.
-    const shouldShowEmptyAction = hasNoActionSteps
-    const shouldDisableTriggerAddButton =
-      hasExactlyOneEmptyActionStep || hasNoActionSteps
+  const hasNoActionSteps = actionStepsToDisplay.length === 0
+  const hasExactlyOneEmptyActionStep =
+    actionStepsToDisplay.length === 1 && !actionStepsToDisplay[0].appKey
+  // Kept for backwards compatibility with pipes created with an empty step.
+  const shouldShowEmptyAction = hasNoActionSteps
+  const shouldDisableTriggerAddButton =
+    hasExactlyOneEmptyActionStep || hasNoActionSteps
 
-    // A for-each swallows every later step, so it stays outside the
-    // reorderable set and is always last.
-    const forEachItem = blockItems.find(
-      (item): item is ForEachBlock => item.type === 'forEachBlock',
-    )
-    const reorderableItems = blockItems.filter(
-      (item): item is IfThenBlock | SingleStep => item.type !== 'forEachBlock',
-    )
-    const sortableBlockItems = reorderableItems.map((item) => ({
-      id: item.type === 'ifThenBlock' ? item.ifThenStep.id : item.step.id,
-      item,
-    }))
-    const canReorderBlocks = !readOnly && reorderableItems.length > 1
-    const lastReorderableId =
-      sortableBlockItems[sortableBlockItems.length - 1]?.id
-    const forEachIndex = forEachItem
-      ? actionStepsToDisplay.findIndex(
-          (step) => step.id === forEachItem.forEachStep.id,
-        )
-      : -1
-
-    return (
-      <Flex
-        {...editorStyles.stepHeaderContainer}
-        flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
-        px={leftStepPadding}
-        maxWidth={`calc(100% - ${
-          isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
-        })`}
-        sx={{
-          scrollbarGutter: 'stable',
-        }}
-      >
-        {triggerStep && (
-          <FlowStepWithAddButton
-            step={triggerStep}
-            isLastStep={hasNoActionSteps}
-            isNested={isNested}
-            allowReorder={false}
-            stepsBeforeGroup={[]}
-            groupedSteps={[]}
-            addButtonProps={{
-              isHidden: readOnly,
-              isDisabled: shouldDisableTriggerAddButton,
-              showEmptyAction: shouldShowEmptyAction,
-            }}
-          />
-        )}
-
-        <SortableList
-          items={sortableBlockItems}
-          onChange={handleReorderBlockItems}
-          renderItem={(sortableItem, isOverlay) => {
-            const { id, item } = sortableItem
-            // A trailing for-each, not a reorderable item, claims the "last
-            // step" slot when present.
-            const isLast = !forEachItem && id === lastReorderableId
-
-            if (item.type === 'ifThenBlock') {
-              return (
-                <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
-                  <IfThen
-                    block={item}
-                    isLastBlock={isLast}
-                    allowReorder={canReorderBlocks}
-                  />
-                </SortableList.Item>
-              )
-            }
-
-            return (
-              <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
-                <Flex
-                  width={isDrawerOpen || isMobile ? '100%' : 'auto'}
-                  flexDir="column"
-                  position="relative"
-                >
-                  <FlowStepWithAddButton
-                    step={item.step}
-                    isLastStep={isLast}
-                    isNested={isNested}
-                    allowReorder={canReorderBlocks}
-                    stepsBeforeGroup={[]}
-                    groupedSteps={[]}
-                    // Reads the if-then V2 gate once here, not per step.
-                    asConditionBlock
-                    addButtonProps={{
-                      isHidden: readOnly || !!isOverlay,
-                      isDisabled: false,
-                      showEmptyAction: false,
-                    }}
-                  />
-                </Flex>
-              </SortableList.Item>
-            )
-          }}
-        />
-
-        {forEachItem && (
-          // FlowStepGroup expects branch-shaped grouping, so the for-each's
-          // steps get rebuilt into that shape instead of rendered directly.
-          <FlowStepGroup
-            stepsBeforeGroup={actionStepsToDisplay.slice(0, forEachIndex)}
-            groupedSteps={extractBranchesWithSteps(
-              actionStepsToDisplay.slice(forEachIndex),
-              0,
-            )}
-          />
-        )}
-      </Flex>
-    )
-  }
+  // A for-each swallows every later step, so it stays outside the
+  // reorderable set and is always last.
+  const forEachItem = blockItems.find(
+    (item): item is ForEachBlock => item.type === 'forEachBlock',
+  )
+  const reorderableItems = blockItems.filter(
+    (item): item is IfThenBlock | SingleStep => item.type !== 'forEachBlock',
+  )
+  const sortableBlockItems = reorderableItems.map((item) => ({
+    id: item.type === 'ifThenBlock' ? item.ifThenStep.id : item.step.id,
+    item,
+  }))
+  const canReorderBlocks = !readOnly && reorderableItems.length > 1
+  const lastReorderableId =
+    sortableBlockItems[sortableBlockItems.length - 1]?.id
+  const forEachIndex = forEachItem
+    ? actionStepsToDisplay.findIndex(
+        (step) => step.id === forEachItem.forEachStep.id,
+      )
+    : -1
 
   return (
     <Flex
@@ -272,49 +158,54 @@ export function StepsList({ isNested }: StepsListProps) {
       {triggerStep && (
         <FlowStepWithAddButton
           step={triggerStep}
-          isLastStep={
-            actionStepsBeforeGroup.length === 0 && groupedSteps.length === 0
-          }
+          isLastStep={hasNoActionSteps}
           isNested={isNested}
           allowReorder={false}
-          stepsBeforeGroup={[]} // no reason to pass in for this
-          groupedSteps={groupedSteps}
           addButtonProps={{
             isHidden: readOnly,
-            isDisabled: shouldDisableAddButton,
+            isDisabled: shouldDisableTriggerAddButton,
             showEmptyAction: shouldShowEmptyAction,
           }}
         />
       )}
 
       <SortableList
-        items={actionStepsBeforeGroup}
-        onChange={handleReorderSteps}
-        renderItem={(step, isOverlay) => {
-          const { id, position } = step
+        items={sortableBlockItems}
+        onChange={handleReorderBlockItems}
+        renderItem={(sortableItem, isOverlay) => {
+          const { id, item } = sortableItem
+          // A trailing for-each, not a reorderable item, claims the "last
+          // step" slot when present.
+          const isLast = !forEachItem && id === lastReorderableId
+
+          if (item.type === 'ifThenBlock') {
+            return (
+              <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
+                <IfThen
+                  block={item}
+                  isLastBlock={isLast}
+                  allowReorder={canReorderBlocks}
+                />
+              </SortableList.Item>
+            )
+          }
+
           return (
             <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
               <Flex
-                key={`${id}-${position}`}
                 width={isDrawerOpen || isMobile ? '100%' : 'auto'}
                 flexDir="column"
                 position="relative"
               >
                 <FlowStepWithAddButton
-                  step={step}
-                  isLastStep={
-                    groupedSteps.length === 0 &&
-                    actionStepsBeforeGroup[actionStepsBeforeGroup.length - 1]
-                      .id === step.id
-                  }
+                  step={item.step}
+                  isLastStep={isLast}
                   isNested={isNested}
-                  allowReorder={nonIfThenActionSteps.length > 1}
-                  stepsBeforeGroup={actionStepsBeforeGroup}
-                  groupedSteps={groupedSteps}
+                  allowReorder={canReorderBlocks}
                   addButtonProps={{
                     isHidden: readOnly || !!isOverlay,
-                    isDisabled: shouldDisableAddButton,
-                    showEmptyAction: shouldShowEmptyAction,
+                    isDisabled: false,
+                    showEmptyAction: false,
                   }}
                 />
               </Flex>
@@ -322,10 +213,15 @@ export function StepsList({ isNested }: StepsListProps) {
           )
         }}
       />
-      {groupedSteps.length > 0 && (
+
+      {forEachItem && (
+        // FlowStepGroup expects branch-shaped grouping, so the for-each's
+        // steps get rebuilt into that shape instead of rendered directly.
         <FlowStepGroup
-          stepsBeforeGroup={actionStepsBeforeGroup}
-          groupedSteps={groupedSteps}
+          groupedSteps={extractBranchesWithSteps(
+            actionStepsToDisplay.slice(forEachIndex),
+            0,
+          )}
         />
       )}
     </Flex>

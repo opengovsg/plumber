@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import apps from '@/apps'
 
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
-import type { FormsgPayloadWorkflowContent } from '../../common/types'
-import {
-  exampleV4Submission,
-  makeExampleV4FormSchema,
-} from './v4-submission.mock'
+import type {
+  FormSchemaField,
+  FormsgPayloadWorkflowContent,
+} from '../../common/types'
+import { NricFilter } from '../../triggers/new-submission'
 
 // mocks hoisted here so that they can be used in import mocks
 const mocks = vi.hoisted(() => {
@@ -31,7 +31,11 @@ const mocks = vi.hoisted(() => {
     getSdk: vi.fn(() => mockSdk),
     parseFormEnv: vi.fn(() => 'prod'),
     storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
-    fetchFormSchema: vi.fn(() => null),
+    // Only form_fields is read downstream, so fixtures supply just that.
+    fetchFormSchema: vi.fn(
+      async (): Promise<{ form: { form_fields: FormSchemaField[] } } | null> =>
+        null,
+    ),
     decryptFormAttachmentsV3OrV4: vi.fn(() => ({})),
   }
 })
@@ -96,7 +100,11 @@ function makeWorkflowContent(
   }
 }
 
-function makeGlobalVariable(): IGlobalVariable {
+// IGlobalVariable.request is optional, but every test here goes through the
+// webhook path where it is always present.
+type GlobalVariableWithRequest = IGlobalVariable & { request: IRequest }
+
+function makeGlobalVariable(): GlobalVariableWithRequest {
   return {
     request: {
       query: {
@@ -145,11 +153,11 @@ function makeGlobalVariable(): IGlobalVariable {
       updatedAt: `${new Date().getTime()}`,
     },
     app: apps.formsg,
-  } as unknown as IGlobalVariable
+  } as unknown as GlobalVariableWithRequest
 }
 
 describe('decrypt form response - MRF specific', () => {
-  let $: IGlobalVariable
+  let $: GlobalVariableWithRequest
 
   beforeEach(() => {
     $ = makeGlobalVariable()
@@ -364,82 +372,6 @@ describe('decrypt form response - MRF specific', () => {
     // v4-shaped content is detected via the per-response `provenance` object
     const V4_PROVENANCE = { submittedAt: '2023-07-06T10:26:27.505Z' }
 
-    it('should route a real v4 submission through processResponsesV4', async () => {
-      // schema titles come from the shared fixture's schema, not the
-      // responses' inline "[Myinfo] "-prefixed questions
-      mocks.fetchFormSchema.mockResolvedValueOnce(makeExampleV4FormSchema())
-      mocks.cryptoV3Decrypt.mockReturnValueOnce(exampleV4Submission)
-
-      const result = await decryptFormResponse($)
-
-      expect(result).toEqual({ verified: true, internalId: 'submissionId' })
-
-      const fields = $.request.body.fields
-      expect(Object.keys(fields)).toHaveLength(54)
-
-      // MyInfo-prefilled text field; the { value } unwrap proves the v4
-      // branch was taken (the v3 path would have kept the answer object)
-      expect(fields['69eedf3b2e18526ffea6335c']).toEqual({
-        order: 1,
-        fieldType: 'textfield',
-        question: 'Name',
-        answer: 'AH KOW, TAN',
-      })
-      // date is reformatted dd/MM/yyyy → dd MMM yyyy
-      expect(fields['69eedf4120948ed94fae09b9']).toMatchObject({
-        fieldType: 'date',
-        question: 'Date of birth',
-        answer: '12 Jan 1980',
-      })
-      // radiobutton: regular option and others input
-      expect(fields['69eeddcf8844a134ddbadc56'].answer).toBe('Option 2')
-      expect(fields['69eeddd53c9ffa7a2b464687'].answer).toBe('Others: adg')
-      // checkbox: FormSG's internal others marker becomes "Others: <input>"
-      expect(fields['69eedde76df93497297710b1'].answerArray).toEqual([
-        'Option 2',
-        'Others: adw',
-        'Option 1',
-      ])
-      // verified email keeps only the value, not the verification signature
-      expect(fields['69eede812e18526ffea60af3']).toMatchObject({
-        fieldType: 'email',
-        answer: 'ahkow@open.gov.local',
-      })
-      // address goes through processLocalAddress (empty level + unit numbers
-      // are combined into one empty slot)
-      expect(fields['69eede9f2f788da6393fbd91'].answerArray).toEqual([
-        '123',
-        'TAN AH MENG ROAD',
-        '',
-        '',
-        '123456',
-      ])
-      // signature is summarised downstream and its points dropped
-      expect(fields['69eedeb17cfa1c89fc419340'].answer).toBe(
-        'Signature captured',
-      )
-      expect(fields['69eedeb17cfa1c89fc419340'].answerArray).toBeUndefined()
-      // table becomes a matrix plus a serialised table object
-      const table = fields['69eedec5fd2757b0584e0be5']
-      expect(table.question).toBe('Table (Column 1, Column 2)')
-      expect(table.answerArray).toEqual([
-        ['a', 'Option 1'],
-        ['b', 'Option 2'],
-      ])
-      expect(JSON.parse(table.answer).rows).toHaveLength(2)
-      // attachment keeps the filename (no file-processing actions configured)
-      expect(fields['69eedecafd2757b0584e0c54']).toMatchObject({
-        order: 54,
-        fieldType: 'attachment',
-        answer: 'Screenshot.png',
-      })
-      // the MRF "uinFin (Step N)" verified key maps back to uinFin/sgidUinFin
-      expect($.request.body.verifiedSubmitterInfo).toEqual({
-        uinFin: 'S1234567D',
-        sgidUinFin: 'S1234567D',
-      })
-    })
-
     it('should produce a request body identical to the v3 path for equivalent content', async () => {
       const $v3 = makeGlobalVariable()
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
@@ -475,6 +407,88 @@ describe('decrypt form response - MRF specific', () => {
 
       expect($v4.request.body).toEqual($v3.request.body)
       expect($v3.request.body.fields.field1.answer).toBe('hello')
+    })
+
+    describe('table column titles', () => {
+      const COL_1_ID = Buffer.from('Col 1').toString('hex')
+      const COL_2_ID = Buffer.from('Col 2').toString('hex')
+
+      function mockTableSchema() {
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            form_fields: [
+              {
+                _id: 'tbl',
+                title: 'Items',
+                fieldType: 'table',
+                columns: [
+                  { title: 'Name (optional', _id: 'col1' },
+                  { title: 'Qty', _id: 'col2' },
+                ],
+              },
+            ],
+          },
+        })
+      }
+
+      it.each([
+        ['an empty', {}, []],
+        [
+          'a filled',
+          { 'row-a': { rowNum: 0, value: { col1: 'Apple', col2: '3' } } },
+          [{ data: { [COL_1_ID]: 'Apple', [COL_2_ID]: '3' } }],
+        ],
+      ])(
+        'gives %s v4 table the schema columns when a title has an unmatched bracket',
+        async (_, answer, rows) => {
+          mockTableSchema()
+          mocks.cryptoV3Decrypt.mockReturnValueOnce({
+            responses: {
+              tbl: {
+                fieldType: 'table',
+                question: 'Items',
+                answer,
+                provenance: V4_PROVENANCE,
+              },
+            },
+            verified: undefined,
+          })
+
+          await decryptFormResponse($)
+
+          const table = $.request.body.fields.tbl
+          expect(table).not.toHaveProperty('tableColumnTitles')
+          expect(JSON.parse(table.answer)).toMatchObject({
+            rows,
+            columns: [
+              { id: COL_1_ID, label: 'Name (optional' },
+              { id: COL_2_ID, label: 'Qty' },
+            ],
+          })
+        },
+      )
+
+      it('keeps parsing the question for a v3 table', async () => {
+        mockTableSchema()
+        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+          responses: {
+            tbl: {
+              fieldType: 'table',
+              answer: [{ col1: 'Apple', col2: '3' }],
+            },
+          },
+          verified: undefined,
+        })
+
+        await decryptFormResponse($)
+
+        expect(
+          JSON.parse($.request.body.fields.tbl.answer).columns,
+        ).toMatchObject([
+          { id: COL_1_ID, label: 'Col 1' },
+          { id: COL_2_ID, label: 'Col 2' },
+        ])
+      })
     })
   })
 
@@ -546,6 +560,28 @@ describe('decrypt form response - MRF specific', () => {
   })
 
   describe('verifiedSubmitterInfo for MRF submissions', () => {
+    it.each([
+      { key: 'myInfoUinFin (Step 1)', logged: true },
+      { key: 'cpUen (Step 1)', logged: false },
+    ])('logs unknown verified key $key: $logged', async ({ key, logged }) => {
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { [key]: 'S1234567A' },
+      })
+
+      await decryptFormResponse($)
+
+      const warning = {
+        event: 'formsg-unsupported-payload',
+        reason: 'unknown_verified_key',
+        formId: 'formId123',
+        key,
+      }
+      expect(mocks.consoleWarn.mock.calls.map(([, meta]) => meta)).toEqual(
+        logged ? [warning] : [],
+      )
+    })
+
     it('should map "uinFin (Step 1)" to uinFin and sgidUinFin', async () => {
       $.request.body.data.workflowContent = makeWorkflowContent(1)
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
@@ -558,6 +594,55 @@ describe('decrypt form response - MRF specific', () => {
       expect($.request.body.verifiedSubmitterInfo).toEqual({
         uinFin: 'S1234567A',
         sgidUinFin: 'S1234567A',
+      })
+    })
+
+    it('should map "cpUen (Step 1)" and "cpUid (Step 1)" to cpUen and cpUid', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(1)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: {
+          'cpUen (Step 1)': '201912345A',
+          'cpUid (Step 1)': 'S1234567D',
+        },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        cpUen: '201912345A',
+        cpUid: 'S1234567D',
+      })
+    })
+
+    it('should still map plain cpUen and cpUid keys correctly', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(0)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { cpUen: '201912345A', cpUid: 'S1234567D' },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        cpUen: '201912345A',
+        cpUid: 'S1234567D',
+      })
+    })
+
+    it('should apply the NRIC filter to step-suffixed uinFin keys', async () => {
+      $.step.parameters.nricFilter = NricFilter.Mask
+      $.request.body.data.workflowContent = makeWorkflowContent(1)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: { 'uinFin (Step 1)': 'S1234567A' },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        uinFin: 'xxxxx567A',
+        sgidUinFin: 'xxxxx567A',
       })
     })
 

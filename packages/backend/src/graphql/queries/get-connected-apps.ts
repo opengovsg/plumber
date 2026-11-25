@@ -2,11 +2,9 @@ import App from '@/models/app'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getConnectedApps: QueryResolvers['getConnectedApps'] = async (
-  _parent,
-  _params,
-  context,
-) => {
+const getConnectedApps: NonNullable<
+  QueryResolvers['getConnectedApps']
+> = async (_parent, _params, context) => {
   let apps = await App.findAll()
 
   const connections = await context.currentUser
@@ -39,15 +37,15 @@ const getConnectedApps: QueryResolvers['getConnectedApps'] = async (
       )
 
       app.connectionCount = connection?.count || 0
-      app.flowCount = 0
-
+      let flowCount = 0
       flows.forEach((flow) => {
         const usedFlow = flow.steps.find((step) => step.appKey === app.key)
 
         if (usedFlow) {
-          app.flowCount += 1
+          flowCount += 1
         }
       })
+      app.flowCount = flowCount
 
       return app
     })

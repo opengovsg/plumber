@@ -12,14 +12,14 @@ class ExecutionStep extends Base {
   executionId!: string
   stepId!: string
   dataIn!: IJSONObject
-  dataOut!: IJSONObject
-  errorDetails: IJSONObject
-  status: 'success' | 'failure'
-  appKey: string
-  jobId: string
-  step: Step
-  metadata: IExecutionStepMetadata
-  key: string
+  dataOut!: IJSONObject | null
+  errorDetails?: IJSONObject | null
+  status!: 'success' | 'failure'
+  appKey?: string | null
+  jobId?: string | null
+  step!: Step
+  metadata!: IExecutionStepMetadata
+  key?: string | null
   execution?: Execution
 
   static tableName = 'execution_steps'
@@ -47,6 +47,10 @@ class ExecutionStep extends Base {
           // this is purely used to tell frontend that there is a past test submission
           lastTestSubmissionDate: {
             type: 'string',
+          },
+          formFieldIds: {
+            type: 'array',
+            items: { type: 'string' },
           },
           iteration: {
             type: 'number',

@@ -9,6 +9,7 @@ import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
 import FileLockContentionError from '@/errors/file-lock-contention'
+import { keepErrorKindViaCause } from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import tracer from '@/helpers/tracer'
 import Step from '@/models/step'
@@ -17,6 +18,7 @@ import { processAction } from '@/services/action'
 
 import { advanceAfterStep } from './advance-after-step'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordLateScheduledStart } from './record-late-scheduled-start'
 import { requeueOnFileLockContention } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -88,6 +90,8 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
+  const queueHasRateLimit = Boolean(params.queueConfig.queueRateLimit)
+  const queueHasGroupLimits = Boolean(params.queueConfig.groupLimits)
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
     tracer.wrap(
@@ -98,6 +102,11 @@ export function makeActionWorker(
         const span = tracer.scope().active()
 
         const jobData = job.data
+        if (!job.id) {
+          throw new UnrecoverableError(
+            `Job in ${queueName} is missing its BullMQ ID`,
+          )
+        }
         const jobId = makeActionJobId(queueName, job.id)
 
         // The reason why we dont add .throwIfNotFound() here is to prevent job
@@ -117,6 +126,15 @@ export function makeActionWorker(
           workerVersion: appConfig.version,
         })
 
+        await recordLateScheduledStart({
+          job,
+          queueName,
+          // An ungrouped job on a group-limited queue never waits on a group limit.
+          rateLimited:
+            queueHasRateLimit ||
+            (queueHasGroupLimits && job.opts.group !== undefined),
+        })
+
         const processResult = await processAction({ ...jobData, jobId }).catch(
           async (err) => {
             // Lost the per-file lock race (see file-lock.ts). Re-queue onto the
@@ -128,9 +146,14 @@ export function makeActionWorker(
             // This happens when the prerequisite steps for the action fails
             // (e.g. db error, missing execution, flow, step, etc...) in such
             // cases, we do not want to retry
-            throw new UnrecoverableError(
+            const unrecoverableError = new UnrecoverableError(
               err.message || 'Action failed to execute',
             )
+            // handleFailedJob logs each failure's kind for SLI computation, and
+            // reads the kind from this error's `cause`. Without the StepError
+            // as cause, every failure here would count as internal.
+            keepErrorKindViaCause(unrecoverableError, err)
+            throw unrecoverableError
           },
         )
 

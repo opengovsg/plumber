@@ -103,10 +103,12 @@ export async function resolveCaseIdentifier(
     logger.error(
       `Case search response for case ref ${caseIdentifier} did not match the expected shape`,
     )
-    throw new StepError(
-      `Unable to read the case search result for case ref ${caseIdentifier}`,
-      'Please check that you have configured your step correctly',
-    )
+    // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
+    throw new StepError({
+      name: `Unable to read the case search result for case ref ${caseIdentifier}`,
+      solution: 'Please check that you have configured your step correctly',
+      kind: 'internal',
+    })
   }
 
   const uuids = [
@@ -119,17 +121,19 @@ export async function resolveCaseIdentifier(
   const matchCount = Math.max(parsed.data.total ?? 0, uuids.length)
 
   if (matchCount > 1) {
-    throw new StepError(
-      `More than one case found for case ref ${caseIdentifier}`,
-      'Please ensure that the case ref is valid',
-    )
+    throw new StepError({
+      name: `More than one case found for case ref ${caseIdentifier}`,
+      solution: 'Please ensure that the case ref is valid',
+      kind: 'config',
+    })
   }
 
   if (uuids.length !== 1) {
-    throw new StepError(
-      `No case found for case ref ${caseIdentifier}`,
-      'Please ensure that the case ref is valid',
-    )
+    throw new StepError({
+      name: `No case found for case ref ${caseIdentifier}`,
+      solution: 'Please ensure that the case ref is valid',
+      kind: 'config',
+    })
   }
 
   return uuids[0]

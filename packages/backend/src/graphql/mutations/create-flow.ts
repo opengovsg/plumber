@@ -1,11 +1,18 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
+
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createFlow: MutationResolvers['createFlow'] = async (
+const createFlow: NonNullable<MutationResolvers['createFlow']> = async (
   _parent,
   params,
   context,
 ) => {
-  const trimmedFlowName = params.input.flowName.trim()
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  const trimmedFlowName = input.flowName.trim()
   if (trimmedFlowName === '') {
     throw new Error('Pipe name needs to have at least 1 character.')
   }

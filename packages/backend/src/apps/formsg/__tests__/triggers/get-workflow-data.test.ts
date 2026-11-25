@@ -115,13 +115,37 @@ describe('parseWorkflowData', () => {
       expect(result?.trigger.defaultStepName).toBe('MRF Step 1')
       expect(result?.actions[0].defaultStepName).toBe('MRF Step 2')
     })
+
+    it('should parse a hybrid step', () => {
+      const formSchema = createFormSchema([
+        {
+          _id: 'step-001',
+          edit: ['field-a'],
+          workflow_type: 'static',
+        },
+        {
+          _id: 'step-002',
+          edit: ['field-b'],
+          workflow_type: 'hybrid',
+        },
+      ])
+
+      const result = parseWorkflowData($, formSchema)
+
+      expect(result?.actions[0].type).toBe('hybrid')
+    })
   })
 
   describe('invalid workflow data', () => {
     it('should throw StepError when workflow is undefined', () => {
       const formSchema = createFormSchema(undefined)
 
-      expect(() => parseWorkflowData($, formSchema)).toThrow('Invalid MRF data')
+      expect(() => parseWorkflowData($, formSchema)).toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining('"name":"Invalid MRF data"'),
+          kind: 'internal',
+        }),
+      )
     })
   })
 })

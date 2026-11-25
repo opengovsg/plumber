@@ -1,5 +1,6 @@
 import { raw } from 'objection'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import Flow from '@/models/flow'
 import {
   getMrfTestStartStep,
@@ -10,12 +11,17 @@ import testStep from '@/services/test-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const executeStep: MutationResolvers['executeStep'] = async (
+const executeStep: NonNullable<MutationResolvers['executeStep']> = async (
   _parent,
   params,
   context,
 ) => {
-  const { stepId, testRunMetadata } = params.input
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const { stepId } = input
+  const testRunMetadata = input.testRunMetadata ?? undefined
 
   // Just checking for permissions here
   let stepToTest = await context.currentUser

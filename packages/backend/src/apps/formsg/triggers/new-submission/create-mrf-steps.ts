@@ -16,6 +16,9 @@ async function deleteAllStepsInMrfBranch(
   trx: Transaction,
 ) {
   const mrfStep = allSteps.find((step) => step.id === mrfStepId)
+  if (!mrfStep) {
+    throw new Error(`MRF step ${mrfStepId} not found in flow's steps`)
+  }
   const nextMrfStep = allSteps.find(
     (step) =>
       step.position > mrfStep.position &&
@@ -67,12 +70,17 @@ export async function createMrfSteps(
   outerTrx?: Transaction,
 ) {
   const { trigger, actions } = mrfWorkflow
+  const flowId = $.flow?.id
+  const triggerStepId = $.step?.id
+  if (!flowId || !triggerStepId) {
+    throw new Error('MRF steps need both the flow and its trigger step')
+  }
 
   const run = async (trx: Transaction) => {
     const triggerStepName = trigger.defaultStepName
     // Update the trigger step parameters
     const updatedTriggerStep = await Step.query(trx).patchAndFetchById(
-      $.step.id,
+      triggerStepId,
       {
         parameters: {
           mrf: trigger,
@@ -84,7 +92,7 @@ export async function createMrfSteps(
       },
     )
 
-    const allExistingSteps = await Step.query(trx).where('flow_id', $.flow.id)
+    const allExistingSteps = await Step.query(trx).where('flow_id', flowId)
 
     const existingMrfSteps = allExistingSteps.filter((step) => {
       return step.type === 'action' && step.key === MRF_KEY
@@ -97,11 +105,13 @@ export async function createMrfSteps(
 
     // Delete steps that no longer exist in actions
     const stepsToDelete = existingMrfSteps.filter((step) => {
+      // lodash.get can't resolve a path's type through IJSONObject, so it
+      // falls back to a type far broader than the string this actually is.
       const formWorkflowStepId = get(
         step.parameters,
         'mrf.formWorkflowStepId',
         null,
-      )
+      ) as string | null
       return !formWorkflowStepId || !actionStepIds.has(formWorkflowStepId)
     })
 
@@ -162,7 +172,7 @@ export async function createMrfSteps(
       }
       // Create new mrf steps after the last created mrf step (if any)
       const newStep = await Step.query(trx).insert({
-        flowId: $.flow.id,
+        flowId: flowId,
         type: 'action',
         appKey: MRF_APP_KEY,
         key: MRF_KEY,
@@ -188,7 +198,7 @@ export async function createMrfSteps(
     if (newMrfSteps.length > 0) {
       // Shift down all steps after the newly added mrf steps
       await Step.query(trx)
-        .where('flow_id', $.flow.id)
+        .where('flow_id', flowId)
         .where('position', '>=', newMrfSteps[0].position)
         .where((builder) => {
           builder.whereNot('key', MRF_KEY).orWhereNull('key')
@@ -228,7 +238,7 @@ export async function createMrfSteps(
     }
 
     // this is to fill the gaps in the step positions
-    await Step.resetStepOrdering($.flow.id, trx)
+    await Step.resetStepOrdering(flowId, trx)
   }
 
   if (outerTrx) {

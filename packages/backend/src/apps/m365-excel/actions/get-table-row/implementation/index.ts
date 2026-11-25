@@ -90,10 +90,12 @@ export default async function getTableRowImpl(
   // of by callers) so it still fires even when no row is found.
   if (columns.length > TEST_STEP_MAX_COLUMNS) {
     if ($.execution.testRun) {
-      throw new StepError(
-        `Your Excel table has more than ${TEST_STEP_MAX_COLUMNS} columns.`,
-        'Reduce the number of columns in your table and try testing this step again.',
-      )
+      throw new StepError({
+        name: `Your Excel table has more than ${TEST_STEP_MAX_COLUMNS} columns.`,
+        solution:
+          'Reduce the number of columns in your table and try testing this step again.',
+        kind: 'config',
+      })
     }
 
     logger.error('Excel table exceeds test step column limit', {
@@ -109,10 +111,11 @@ export default async function getTableRowImpl(
   const columnIndices = filters.map(({ lookupColumn }) => {
     const idx = columns.indexOf(lookupColumn)
     if (idx === -1) {
-      throw new StepError(
-        `Column "${lookupColumn}" does not exist in your table.`,
-        `Check that your Excel table contains the "${lookupColumn}" column.`,
-      )
+      throw new StepError({
+        name: `Column "${lookupColumn}" does not exist in your table.`,
+        solution: `Check that your Excel table contains the "${lookupColumn}" column.`,
+        kind: 'config',
+      })
     }
     return idx
   })

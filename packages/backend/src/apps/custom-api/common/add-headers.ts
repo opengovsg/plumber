@@ -20,7 +20,7 @@ function isConfiguredOrigin(
   try {
     return (
       new URL(configuredUrl).origin ===
-      new URL(requestConfig.url, requestConfig.baseURL).origin
+      new URL(requestConfig.url ?? '', requestConfig.baseURL).origin
     )
   } catch {
     return false

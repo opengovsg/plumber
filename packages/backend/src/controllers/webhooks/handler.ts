@@ -81,6 +81,13 @@ export default async (request: IRequest, response: Response) => {
       logger.warn(`Rate limited flow ${flowId}`, {
         event: 'webhook-rate-limited',
         flowId,
+        // Lets the rate-limit Datadog workflow email the pipe owner.
+        flowName: flow.name,
+        ownerEmail: flow.user.email,
+        maxQps,
+        // IMPORTANT: unverified. Checking the signature here would add work to
+        // every rejected request during a flood.
+        fromFormSg: request.headers['x-formsg-signature'] !== undefined,
       })
 
       if (rejectIfOverMaxQps) {
@@ -141,7 +148,7 @@ export default async (request: IRequest, response: Response) => {
 
     const verifyResult = await triggerApp.auth.verifyWebhook($)
 
-    if (!verifyResult.verified) {
+    if (!verifyResult.verified || !verifyResult.internalId) {
       return response.sendStatus(401)
     }
     internalId = verifyResult.internalId
@@ -236,10 +243,28 @@ export default async (request: IRequest, response: Response) => {
     return sendWebhookResponse(response, customWebhookResponse)
   }
 
+  if (!executionId) {
+    logger.error('Webhook trigger did not create an execution', {
+      flowId,
+      stepId: triggerStep.id,
+    })
+    return response.sendStatus(500)
+  }
+
   const nextStep = await retryOnTransientDbError(
     () => triggerStep.getNextStep(),
     { context: { flowId, stepId: triggerStep.id } },
   )
+
+  if (!nextStep) {
+    logger.error('Webhook trigger has no next step', {
+      flowId,
+      stepId: triggerStep.id,
+      executionId,
+    })
+    return response.sendStatus(500)
+  }
+
   const jobName = `${executionId}-${nextStep.id}`
 
   const jobData = {

@@ -97,7 +97,7 @@ const pipeStepInputSchema = z.object({
     .record(z.string(), z.unknown())
     .optional()
     .describe(
-      'Initial parameter values for this step. For toolbox/ifThen and toolbox/onlyContinueIf steps, conditions is an array of OR-groups, each { rows: [...] }, where each row is { field, is: "is"|"not", condition, text }, e.g. conditions: [{ rows: [{ field: "{{1.status}}", is: "is", condition: "equals", text: "done" }] }]. ifThen additionally requires branchName.',
+      'Optional initial values. Normally omitted: the chat flow saves every value, including If-then conditions, with update_step_parameters after creation.',
     ),
 })
 
@@ -121,7 +121,7 @@ function toNestedStepInput(
 }
 
 const createPipeDescription =
-  'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.'
+  "Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. Pass only each step's app and trigger or action key. Every value, including If-then conditions, is saved with update_step_parameters once the step ids exist."
 
 const ifBlockGuidance =
   'A toolbox/ifThen step is an If block: put the steps that should run only when its condition is TRUE inside its own `steps` array (at least one). Steps listed after the ifThen entry in the outer list are outside the block and run regardless of the condition. An If block cannot contain another ifThen or a forEach.'
@@ -351,7 +351,7 @@ export function createMcpBridgeTools(
         parameters: z
           .record(z.string(), z.unknown())
           .describe(
-            "Parameter key/value pairs to save. Only keys matching the step's field schema are kept.",
+            'Parameter key/value pairs to save. Only keys matching the step\'s field schema are kept. For toolbox/ifThen and toolbox/onlyContinueIf steps, conditions is an array of OR-groups, each { rows: [...] }, where each row is { field, is: "is"|"not", condition, text }, e.g. conditions: [{ rows: [{ field: "{{step.<uuid>.fields.status.answer}}", is: "is", condition: "equals", text: "done" }] }]. ifThen additionally requires branchName.',
           ),
         connection_id: z
           .uuid()

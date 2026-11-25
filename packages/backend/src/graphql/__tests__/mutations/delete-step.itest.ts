@@ -1,5 +1,13 @@
 import { NotFoundError } from 'objection'
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import deleteStep from '@/graphql/mutations/delete-step'
 import logger from '@/helpers/logger'
@@ -15,17 +23,11 @@ import {
 } from './flow.mock'
 import { generateMockContext } from './tiles/table.mock'
 
-// Defaults to false in beforeEach below so pre-existing tests here stay
-// byte-identical. The opportunistic-upgrade tests override it per case.
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
-
 describe('deleteStep mutation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let context: Context
   let testFlow: Flow
   let testSteps: Step[]
@@ -38,7 +40,6 @@ describe('deleteStep mutation', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Mock the patchLastUpdated method
     vi.spyOn(Flow.prototype, 'patchLastUpdated').mockImplementation(
@@ -102,7 +103,7 @@ describe('deleteStep mutation', () => {
 
   it('should throw error when no steps to delete', async () => {
     await expect(
-      deleteStep(null, { input: { ids: [], ...defaultFlowInput } }, context),
+      deleteStep({}, { input: { ids: [], ...defaultFlowInput } }, context),
     ).rejects.toThrow('Nothing to delete')
   })
 
@@ -125,7 +126,7 @@ describe('deleteStep mutation', () => {
 
     await expect(
       deleteStep(
-        null,
+        {},
         {
           input: { ids: [testSteps[0].id, otherStep.id], ...defaultFlowInput },
         },
@@ -136,7 +137,7 @@ describe('deleteStep mutation', () => {
 
   it('should delete a single trigger step and create a new one', async () => {
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
       context,
     )
@@ -154,7 +155,7 @@ describe('deleteStep mutation', () => {
 
   it('should delete contiguous action steps and update positions', async () => {
     await deleteStep(
-      null,
+      {},
       {
         input: { ids: [testSteps[1].id, testSteps[2].id], ...defaultFlowInput },
       },
@@ -184,7 +185,7 @@ describe('deleteStep mutation', () => {
 
     await expect(
       deleteStep(
-        null,
+        {},
         {
           input: { ids: [testSteps[1].id, fourthStep.id], ...defaultFlowInput },
         },
@@ -206,19 +207,19 @@ describe('deleteStep mutation', () => {
     )
 
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
       context,
     )
 
     // Verify the referencing step was invalidated
     const invalidatedStep = await Step.query().findById(referencingStep.id)
-    expect(invalidatedStep.status).toBe('incomplete')
+    expect(invalidatedStep!.status).toBe('incomplete')
   })
 
   it('should call patchLastUpdated when deleting trigger step', async () => {
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
       context,
     )
@@ -227,7 +228,7 @@ describe('deleteStep mutation', () => {
 
   it('should call patchLastUpdated when deleting action steps', async () => {
     await deleteStep(
-      null,
+      {},
       {
         input: { ids: [testSteps[1].id, testSteps[2].id], ...defaultFlowInput },
       },
@@ -238,7 +239,7 @@ describe('deleteStep mutation', () => {
 
   it('should allow owner to delete steps', async () => {
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
       context,
     )
@@ -254,7 +255,7 @@ describe('deleteStep mutation', () => {
   it('should allow editor to delete steps', async () => {
     context.currentUser = editor
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
       context,
     )
@@ -271,7 +272,7 @@ describe('deleteStep mutation', () => {
     context.currentUser = nonCollaborator
     await expect(
       deleteStep(
-        null,
+        {},
         { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
         context,
       ),
@@ -288,7 +289,7 @@ describe('deleteStep mutation', () => {
     context.currentUser = viewer
     await expect(
       deleteStep(
-        null,
+        {},
         { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
         context,
       ),
@@ -334,7 +335,9 @@ describe('deleteStep mutation', () => {
       blockFlow.$relatedQuery('steps').orderBy('position', 'asc')
 
     beforeEach(async () => {
-      loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+      loggerErrorSpy = vi
+        .spyOn(logger, 'error')
+        .mockImplementation(() => logger)
       blockFlow = await owner.$relatedQuery('flows').insertAndFetch({
         name: 'Block Flow',
       })
@@ -349,7 +352,7 @@ describe('deleteStep mutation', () => {
       const after = await addPlain(5)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [ifThen.id], ...blockFlowInput } },
         context,
       )
@@ -370,7 +373,7 @@ describe('deleteStep mutation', () => {
       const after = await addPlain(5)
 
       await deleteStep(
-        null,
+        {},
         {
           input: { ids: [ifThen.id, s3.id, s4.id], ...blockFlowInput },
         },
@@ -388,7 +391,7 @@ describe('deleteStep mutation', () => {
       const s4 = await addPlain(4)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [legacy.id], ...blockFlowInput } },
         context,
       )
@@ -406,7 +409,7 @@ describe('deleteStep mutation', () => {
       const ifThen = await addIfThen(2, { endStepId: s4.id })
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [s4.id], ...blockFlowInput } },
         context,
       )
@@ -422,7 +425,7 @@ describe('deleteStep mutation', () => {
       const ifThen = await addIfThen(2, { endStepId: s3.id })
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [s3.id], ...blockFlowInput } },
         context,
       )
@@ -438,7 +441,7 @@ describe('deleteStep mutation', () => {
       const ifThen = await addIfThen(2, { endStepId: 'does-not-exist' })
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [ifThen.id], ...blockFlowInput } },
         context,
       )
@@ -472,7 +475,7 @@ describe('deleteStep mutation', () => {
       )
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [trigger.id], ...blockFlowInput } },
         context,
       )
@@ -543,10 +546,9 @@ describe('deleteStep mutation', () => {
       const ifThenB = await addIfThen(4)
       const childB = await addPlain(5)
       const unrelated = await addPlain(6)
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [unrelated.id], ...blockFlowInput } },
         context,
       )
@@ -558,30 +560,6 @@ describe('deleteStep mutation', () => {
       expect(steps.find((s) => s.id === ifThenB.id)?.config.endStepId).toBe(
         childB.id,
       )
-    })
-
-    it('does not pin any V1 if-then block when the flag is off', async () => {
-      await addTrigger('catchRawWebhook', 'custom-api')
-      const ifThenA = await addIfThen(2)
-      await addPlain(3)
-      const ifThenB = await addIfThen(4)
-      await addPlain(5)
-      const unrelated = await addPlain(6)
-      mocks.getLdFlagValue.mockResolvedValue(false)
-
-      await deleteStep(
-        null,
-        { input: { ids: [unrelated.id], ...blockFlowInput } },
-        context,
-      )
-
-      const steps = await currentSteps()
-      expect(
-        steps.find((s) => s.id === ifThenA.id)?.config.endStepId,
-      ).toBeUndefined()
-      expect(
-        steps.find((s) => s.id === ifThenB.id)?.config.endStepId,
-      ).toBeUndefined()
     })
   })
 })

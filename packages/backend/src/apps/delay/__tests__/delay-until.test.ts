@@ -58,7 +58,7 @@ describe('Delay until action', () => {
       delayUntil: VALID_DATE,
     }
 
-    const result = await delayUntilAction.run($)
+    const result = await delayUntilAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: DEFAULT_TIME },
@@ -71,7 +71,7 @@ describe('Delay until action', () => {
       delayUntilTime: VALID_TIME,
     }
 
-    const result = await delayUntilAction.run($)
+    const result = await delayUntilAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: VALID_TIME },
@@ -85,7 +85,7 @@ describe('Delay until action', () => {
       delayUntilTime: VALID_TIME + whitespaces,
     }
 
-    const result = await delayUntilAction.run($)
+    const result = await delayUntilAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: VALID_TIME },
@@ -98,7 +98,7 @@ describe('Delay until action', () => {
       delayUntilTime: VALID_TIME,
     }
 
-    const result = await delayUntilAction.run($)
+    const result = await delayUntilAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DD_MMM_YYYY_US, delayUntilTime: VALID_TIME },
@@ -111,7 +111,7 @@ describe('Delay until action', () => {
       delayUntilTime: VALID_TIME,
     }
 
-    const result = await delayUntilAction.run($)
+    const result = await delayUntilAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DD_MMM_YYYY_US, delayUntilTime: VALID_TIME },
@@ -125,7 +125,7 @@ describe('Delay until action', () => {
         delayUntilTime: VALID_TIME,
       }
 
-      const result = await delayUntilAction.run($)
+      const result = await delayUntilAction.run!($)
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: '05 Dec 2026', delayUntilTime: VALID_TIME },
@@ -138,7 +138,7 @@ describe('Delay until action', () => {
         delayUntilTime: '9:30', // single-padded hour
       }
 
-      const result = await delayUntilAction.run($)
+      const result = await delayUntilAction.run!($)
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: VALID_DATE, delayUntilTime: '09:30' },
@@ -151,7 +151,7 @@ describe('Delay until action', () => {
         delayUntilTime: '8:05', // single-padded hour
       }
 
-      const result = await delayUntilAction.run($)
+      const result = await delayUntilAction.run!($)
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: '01 Jan 2027', delayUntilTime: '08:05' },
@@ -164,7 +164,7 @@ describe('Delay until action', () => {
         delayUntilTime: '09:30', // already double-padded
       }
 
-      const result = await delayUntilAction.run($)
+      const result = await delayUntilAction.run!($)
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: '05 Dec 2026', delayUntilTime: '09:30' },
@@ -181,7 +181,7 @@ describe('Delay until action', () => {
     mocks.getLastExecutionStep.mockResolvedValue(null)
 
     // throw step error
-    await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
+    await expect(delayUntilAction.run!($)).rejects.toThrow(StepError)
   })
 
   it('throws step error if delay until has an invalid configuration', async () => {
@@ -193,7 +193,82 @@ describe('Delay until action', () => {
     mocks.getLastExecutionStep.mockResolvedValue(null)
 
     // throw step error
-    await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
+    await expect(delayUntilAction.run!($)).rejects.toThrow(StepError)
+  })
+
+  describe('StepError kind', () => {
+    it('is config for an invalid date or time format', async () => {
+      $.step.parameters = {
+        delayUntil: VALID_DATE,
+        delayUntilTime: INVALID_TIME,
+      }
+
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('Incorrect date or time format'),
+        kind: 'config',
+      })
+    })
+
+    it('is config for an empty date variable', async () => {
+      $.step.parameters = {
+        delayUntil: '',
+        delayUntilTime: VALID_TIME,
+      }
+
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('Incorrect date or time format'),
+        kind: 'config',
+      })
+    })
+
+    it('is config when delayTimestamp was already past when the run started', async () => {
+      $.execution.createdAt = DateTime.now().minus({ hours: 1 }).toISO()
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'config',
+      })
+    })
+
+    it('is third-party when delayTimestamp passed after the run started', async () => {
+      const runStart = DateTime.now().minus({ hours: 1 })
+      $.execution.createdAt = runStart.toISO()
+      const delayTimestamp = runStart.plus({ minutes: 30 })
+      $.step.parameters = {
+        delayUntil: delayTimestamp.toPlumberFormat('dd MMM yyyy'),
+        delayUntilTime: delayTimestamp.toPlumberFormat('HH:mm'),
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'third-party',
+      })
+    })
+
+    it('is third-party for a past delayTimestamp when the run start time is unknown', async () => {
+      $.step.parameters = {
+        delayUntil: PAST_DATE,
+        delayUntilTime: DEFAULT_TIME,
+      }
+      mocks.getLastExecutionStep.mockResolvedValue(null)
+
+      await expect(delayUntilAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining(
+          'Delay until timestamp entered is in the past',
+        ),
+        kind: 'third-party',
+      })
+    })
   })
 
   describe('retry logic', () => {
@@ -210,7 +285,7 @@ describe('Delay until action', () => {
         },
       })
 
-      const result = await delayUntilAction.run($)
+      const result = await delayUntilAction.run!($)
 
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -234,7 +309,7 @@ describe('Delay until action', () => {
         },
       })
 
-      await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
+      await expect(delayUntilAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('handles retry when last execution step has no error details', async () => {
@@ -246,7 +321,7 @@ describe('Delay until action', () => {
       // Mock last execution step without error details
       mocks.getLastExecutionStep.mockResolvedValue({})
 
-      await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
+      await expect(delayUntilAction.run!($)).rejects.toThrow(StepError)
     })
   })
 })

@@ -8,23 +8,32 @@
   "packageManager": "pnpm@12.11.2",
   "scripts": {
     "postinstall": "pnpm run gqlc",
-    "setup": "node scripts/with-op-env.mjs --env setup pnpm --filter backend run setup",
-    "dev": "node scripts/with-op-env.mjs turbo watch dev worker --continue",
+    "setup": "node scripts/with-human-dev-env.mjs --env setup pnpm --filter backend run setup",
+    "setup:git": "git config --local core.hooksPath .githooks",
+    "dev": "node scripts/with-human-dev-env.mjs turbo watch dev worker --continue",
     "dev:sample-env": "turbo watch dev worker --continue",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
     "start": "pnpm --filter backend run start",
     "start:worker": "pnpm --filter backend run start:worker",
+    "start:reconciler": "pnpm --filter backend run start:reconciler",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "turbo run format",
     "format:fix": "turbo run format:fix",
     "typecheck": "turbo run typecheck",
-    "typecheck:strict": "turbo run typecheck:strict",
+    "fta": "fta .",
+    "fta:changed": "node scripts/fta-changed.mjs",
     "test": "turbo run test test:unit test:integration",
     "test:ui": "vitest --ui",
     "migrate": "pnpm --filter backend run db:migrate",
-    "teardown": "pnpm --filter backend run teardown"
+    "teardown": "pnpm --filter backend run teardown",
+    "test:e2e": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e",
+    "test:e2e:ui": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run test:e2e:ui",
+    "login:e2e": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run login",
+    "login:e2e:local": "node scripts/with-human-dev-env.mjs --env e2e pnpm --filter @plumber/e2e run login:local",
+    "prompt": "node scripts/with-human-dev-env.mjs node tools/langfuse/prompt.mjs",
+    "prompts:clone": "bash tools/langfuse/clone-prompts.sh"
   },
   "devDependencies": {
     "@1password/sdk": "0.5.0",
@@ -33,6 +42,7 @@
     "@types/node": "22.18.0",
     "@vitest/coverage-v8": "^4.1.11",
     "@vitest/ui": "^4.1.11",
+    "fta-cli": "3.1.0",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "rimraf": "^4.4.1",
@@ -42,5 +52,5 @@
     "vitest": "^4.1.11",
     "wait-on": "^7.2.0"
   },
-  "version": "1.100.1"
+  "version": "1.108.0"
 }

@@ -18,21 +18,17 @@ import { createStepService } from '../create-step'
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
-  getLdFlagValue: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
-  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 describe('createStepService', () => {
   beforeEach(() => {
     mocks.getAllLdFlags.mockResolvedValue({})
     mocks.getRestrictedAppKeys.mockReturnValue([])
-    // The If block flag is on unless a test turns it off.
-    mocks.getLdFlagValue.mockResolvedValue(true)
   })
 
   it('appends a new action step at the end of the pipe', async () => {
@@ -69,7 +65,7 @@ describe('createStepService', () => {
       pipeId: flow.id,
       appKey: 'slack',
       key: 'sendMessageToChannel',
-      previousStepId: lastStep.id,
+      previousStepId: lastStep!.id,
     })
 
     expect(step.appKey).toBe('slack')
@@ -162,7 +158,7 @@ describe('createStepService', () => {
       pipeId: flow.id,
       appKey: 'postman',
       key: 'sendTransactionalEmail',
-      previousStepId: triggerStep.id,
+      previousStepId: triggerStep!.id,
     })
 
     expect(newStep.position).toBe(2)
@@ -423,9 +419,9 @@ describe('createStepService', () => {
       )
     })
 
-    it('places a step after a legacy If block when the flag is off', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(false)
-      const { user, flow, ifThen, email } = await createBlockPipe('legacy-off')
+    it('pins a legacy If block, then places a step after it with afterIfThenBlock on the If step', async () => {
+      const { user, flow, ifThen, email } =
+        await createBlockPipe('legacy-after')
       await Step.query().findById(ifThen.id).patch({ config: {} })
 
       const sms = await createStepService({
@@ -623,6 +619,39 @@ describe('createStepService', () => {
         previousStepId: loadedFlow.steps[0].id,
       }),
     ).rejects.toThrow('Action can only be created by system')
+    expect(await Step.query().where('flow_id', flow.id)).toHaveLength(1)
+  })
+
+  it('throws if the app does not exist', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-step-unknown-app-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Unknown App Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: 'trace-create-unknown-app',
+    })
+    const loadedFlow = await flow.$fetchGraph('steps')
+
+    await expect(
+      createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'noSuchApp',
+        key: 'sendMessageToChannel',
+        previousStepId: loadedFlow.steps[0].id,
+      }),
+    ).rejects.toThrow('No such trigger or action')
+    expect(await Step.query().where('flow_id', flow.id)).toHaveLength(1)
   })
 
   describe('approval branching (MRF)', () => {

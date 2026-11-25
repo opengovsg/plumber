@@ -1,16 +1,20 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { updateFlowStatusService } from '@/services/flow/update-flow-status'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateFlowStatus: NonNullable<
+  MutationResolvers['updateFlowStatus']
+> = async (_parent, params, context) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
-      'flows.id': params.input.id,
+      'flows.id': input.id,
     })
     .withGraphJoined('steps')
     .orderBy('steps.position', 'asc')
@@ -18,9 +22,9 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
 
   return updateFlowStatusService({
     flow,
-    active: params.input.active,
+    active: input.active,
     userId: context.currentUser.id,
-    updatedAt: params.input.updatedAt,
+    updatedAt: input.updatedAt,
   })
 }
 

@@ -55,10 +55,10 @@ export async function advanceAfterStep({
   context,
 }: {
   processResult: AdvanceAfterStepInput
-  currStep: Step
+  currStep: Step | undefined
   context: {
     isQueueDelayable: boolean
-    span: Span
+    span: Span | null
     worker: WorkerPro<IActionJobData>
     job: JobPro<IActionJobData>
   }
@@ -110,7 +110,7 @@ export async function advanceAfterStep({
 
   const jobName = `${executionId}-${nextStep.id}`
 
-  const jobPayload = {
+  const jobPayload: IActionJobData = {
     flowId,
     executionId,
     stepId: nextStep.id,
@@ -119,11 +119,15 @@ export async function advanceAfterStep({
 
   let jobOptions = DEFAULT_JOB_OPTIONS
 
-  if (currStep.appKey === 'delay') {
+  if (currStep?.appKey === 'delay' && currStep.key && executionStep.dataOut) {
+    const delay = delayAsMilliseconds(currStep.key, executionStep.dataOut)
     jobOptions = {
       ...DEFAULT_JOB_OPTIONS,
-      delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
+      delay,
     }
+    // Used to check if the step after a delay step started late, for SLO purposes.
+    // IMPORTANT: a past delayUntil target gives a negative delay, and BullMQ runs that job at once.
+    jobPayload.scheduledAt = Date.now() + Math.max(delay, 0)
   }
 
   try {
@@ -137,6 +141,8 @@ export async function advanceAfterStep({
   } catch (error) {
     // Don't retry if we failed to enqueue the next step (e.g. if
     // getGroupConfigForJob throws an error)
-    throw new UnrecoverableError(error.message)
+    throw new UnrecoverableError(
+      error instanceof Error ? error.message : String(error),
+    )
   }
 }

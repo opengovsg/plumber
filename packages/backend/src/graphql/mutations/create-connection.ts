@@ -1,3 +1,4 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
 import App from '@/models/app'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
@@ -7,17 +8,20 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 // Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive
 // Data Scanner
 
-const createConnection: MutationResolvers['createConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
-  await App.findOneByKey(params.input.key)
+const createConnection: NonNullable<
+  MutationResolvers['createConnection']
+> = async (_parent, params, context) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  await App.findOneByKey(input.key)
 
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
-      id: params.input.flowId,
+      id: input.flowId,
     })
     .throwIfNotFound()
 
@@ -25,8 +29,8 @@ const createConnection: MutationResolvers['createConnection'] = async (
 
   const newConnection = await Connection.transaction(async (trx) => {
     const newConnection = await Connection.query(trx).insertAndFetch({
-      key: params.input.key,
-      formattedData: params.input.formattedData,
+      key: input.key,
+      formattedData: input.formattedData,
       verified: false,
       // Note: if this is a collaborator added connection, the userId is null
       // as it is a shared connection that belongs to a Pipe and not a specific user
@@ -39,7 +43,7 @@ const createConnection: MutationResolvers['createConnection'] = async (
      * We add regardless of whether its a draft, so that it can be used by collaborators later.
      */
     await FlowConnections.addFlowConnection({
-      flowId: params.input.flowId,
+      flowId: input.flowId,
       connectionId: newConnection.id,
       addedBy: context.currentUser.id,
       connectionType: 'connection',

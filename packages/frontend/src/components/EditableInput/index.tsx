@@ -1,8 +1,8 @@
 import { Flex, Text } from '@chakra-ui/react'
 import { IconButton, Input, useIsMobile } from '@opengovsg/design-system-react'
-import { KeyboardEvent, useState } from 'react'
+import { KeyboardEvent, useRef, useState } from 'react'
 import { FaCheck, FaTimes } from 'react-icons/fa'
-import { MdOutlineModeEdit } from 'react-icons/md'
+import { MdModeEdit } from 'react-icons/md'
 
 interface EditableInputProps {
   value: string
@@ -16,6 +16,7 @@ interface EditableInputProps {
   allowEmpty?: boolean
   placeholder?: string
   fontWeight?: number | string
+  fontSize?: string
 }
 
 export default function EditableInput({
@@ -30,11 +31,15 @@ export default function EditableInput({
   placeholder,
   allowEmpty = false,
   fontWeight,
+  fontSize,
 }: EditableInputProps) {
   const isMobile = useIsMobile()
 
   const [isEditing, setIsEditing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  // A ref, because two quick Enter presses can both run before isUpdating re-renders.
+  const isSavingRef = useRef(false)
+  const [isHovered, setIsHovered] = useState(false)
   const [inputValue, setInputValue] = useState(initialValue)
 
   const resetField = () => {
@@ -42,7 +47,18 @@ export default function EditableInput({
     setInputValue(initialValue)
   }
 
+  // The read-only row unmounts while editing, so its mouseleave never fires.
+  // Reset here to stop the tooltip reappearing after save.
+  const startEditing = () => {
+    setIsHovered(false)
+    setInputValue(initialValue)
+    setIsEditing(true)
+  }
+
   const handleSave = async () => {
+    if (isSavingRef.current) {
+      return
+    }
     const trimmedValue = inputValue.trim()
     if (
       !allowEmpty &&
@@ -50,14 +66,24 @@ export default function EditableInput({
     ) {
       resetField()
     } else {
+      isSavingRef.current = true
       setIsUpdating(true)
-      await onSave(trimmedValue)
-      setIsUpdating(false)
-      setIsEditing(false)
+      try {
+        await onSave(trimmedValue)
+        setIsEditing(false)
+      } catch {
+        // Stay in edit mode so the user can retry with the typed value.
+      } finally {
+        isSavingRef.current = false
+        setIsUpdating(false)
+      }
     }
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (isSavingRef.current) {
+      return
+    }
     if (e.key === 'Enter') {
       handleSave()
     }
@@ -74,6 +100,7 @@ export default function EditableInput({
         maxLength={maxLength}
         variant="flushed"
         fontWeight={fontWeight}
+        fontSize={fontSize}
         value={inputValue}
         onKeyDown={handleKeyDown}
         onChange={(e) => setInputValue(e.target.value)}
@@ -103,14 +130,15 @@ export default function EditableInput({
   const readOnlyContent = (
     <Flex
       alignItems="center"
-      gap={3}
+      gap={0}
       onClick={() => {
         if (!readOnly) {
-          setInputValue(initialValue)
-          setIsEditing(true)
+          startEditing()
         }
       }}
       whiteSpace="nowrap"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Text
         textOverflow="ellipsis"
@@ -118,23 +146,27 @@ export default function EditableInput({
         maxW={maxWidth}
         width="auto"
         fontWeight={fontWeight}
+        fontSize={fontSize}
       >
         {initialValue}
       </Text>
       {!readOnly && (
         <IconButton
           onClick={() => {
-            setInputValue(initialValue)
-            setIsEditing(true)
+            startEditing()
           }}
-          icon={<MdOutlineModeEdit size={14} />}
+          icon={<MdModeEdit size={18} />}
           aria-label="Edit"
           size="xs"
           variant="clear"
-          display={isMobile ? 'flex' : 'none'}
-          _groupHover={{
-            display: 'flex',
-          }}
+          colorScheme="secondary"
+          // State-driven instead of _groupHover, so the icon stays hidden
+          // under the cursor after saving until the mouse re-enters the row.
+          // Opacity keeps it in the tab order for keyboard users.
+          opacity={isMobile || isHovered ? 1 : 0}
+          _focusVisible={{ opacity: 1 }}
+          _hover={{ bg: 'interaction.muted.neutral.hover' }}
+          _active={{ bg: 'interaction.muted.neutral.active' }}
         />
       )}
     </Flex>

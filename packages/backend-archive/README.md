@@ -6,7 +6,7 @@ Standalone ECS task that archives old Plumber execution records from Postgres to
 
 The archival pipeline runs nightly as a Fargate task. It:
 
-1. **Scans** Postgres for eligible executions (deleted flows, aged-out non-test executions, aged-out test executions — depending on config flags).
+1. **Scans** Postgres for eligible executions. Config flags pick which: deleted flows, aged-out non-test executions and aged-out test executions. The scan reads the oldest executions first. See [Archival order](#archival-order).
 2. **Serialises** each execution + its steps into a gzip-compressed JSON object and writes it to S3.
 3. **Verifies** the S3 object is present and non-empty.
 4. **Deletes** the rows from `execution_steps` and `executions` in a single transaction (skipped in dry-run mode).
@@ -17,6 +17,23 @@ S3 key format:
 executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 test-executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz
 ```
+
+### Archival order
+
+A run archives the oldest executions first, so a run that stops at `ARCHIVE_MAX_RUNTIME_MS` leaves only newer rows behind.
+
+- Each batch reads executions in `(created_at, id)` order, after the last row of the previous batch. The `executions_created_at_id_index` index serves this keyset.
+- `id` breaks ties between executions created in the same millisecond.
+- Each run starts at the oldest execution. It stops after a batch shorter than `ARCHIVE_BATCH_SIZE`, or at the runtime limit.
+- `created_at` and `id` never change. A row archived in one batch cannot match a later batch, even on a lagging reader.
+- The anti-join on `flows.test_execution_id` needs `flows_test_execution_id_index`. Without it, Postgres hash-joins, loses the index order and sorts every row past the cursor in each batch.
+
+The order has two exceptions:
+
+- Deleted-flow executions have no age cutoff. They are archived in `created_at` order, mixed in with old executions. After the old executions, a full run reads the rest of the index to find them.
+- A row that becomes eligible mid-run behind the cursor waits for the next run. So do executions of a flow deleted after the final short batch, though they are ahead of the cursor.
+
+The `cursor` field of `archival.batch.complete` is the `createdAt` and `id` of the batch's last row. `createdAt` is Postgres text, so it keeps microseconds.
 
 Rehydration (`rehydrate-execution`) runs on demand (not scheduled). It reads archived objects from S3 and writes execution + step rows back into Postgres, setting an `archiveDisabled` guard on the flow to prevent the archival task from immediately re-archiving them.
 
@@ -34,7 +51,7 @@ pnpm run setup
 
 This also creates the `plumber-development-archive-bucket` MinIO bucket used below.
 
-The `-local` archive commands run through `scripts/with-op-env.mjs`, so you also need the 1Password desktop app unlocked and an `op-dev.json` holding an `archival` environment id. The [root README](../../README.md) covers that one-time setup.
+The `-local` archive commands run through `scripts/with-human-dev-env.mjs`, so you also need the 1Password desktop app unlocked and an `op-dev.json` holding an `archival` environment id. The [root README](../../README.md) covers that one-time setup.
 
 ### 2. Supply the environment
 
@@ -65,12 +82,15 @@ S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
 
 The script logs structured JSON to stdout. Key events to look for:
 
-| Event                     | Meaning                                                                          |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `archival.run.start`      | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                  |
-| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.           |
-| `archival.flow.archived`  | All executions for a flow have been processed — lists IDs.                       |
-| `archival.run.complete`   | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
+| Event                              | Meaning                                                                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `archival.run.start`               | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                                  |
+| `archival.batch.complete`          | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.                                                                           |
+| `archival.flow.archived`           | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.               |
+| `archival.run.complete`            | Final summary — `executions_archived` (real + test), `real_executions_archived`, `test_executions_archived`, `executions_skipped`, `durationMs`. |
+| `archival.run.meta_write_failed`   | The `_meta/runs` write failed after archiving. Carries the same counts as `run.complete`.                                                        |
+| `archival.execution.error`         | One execution failed to archive. Carries `executionId`. The row stays in Postgres and the next run retries it.                                   |
+| `archival.execution.verify_failed` | The S3 check after upload failed. Carries `executionId`, `key` and `reason`. The row stays in Postgres and the next run retries it.              |
 
 ### 4. Verify S3 contents
 
@@ -171,6 +191,78 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ---
 
+## Exporting analytics tables
+
+The archival task runs the analytics export each night, before it archives. Archival must not delete executions before the export reads them. [`backend-analytics`](../backend-analytics/README.md) holds the export code and describes what it writes.
+
+`analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
+
+| Flag           | Meaning                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--tables a,b` | Silver tables to write. Default: all. [`backend-analytics`](../backend-analytics/README.md#what-the-export-writes) lists them.             |
+| `--full`       | Write `flow_step` as a full copy for yesterday. Run it after a migration or script writes `steps` directly, since those skip `updated_at`. |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                       |
+| `--s3`         | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`.                             |
+
+Pass exactly one of `--out` and `--s3`.
+
+A local folder belongs to the database that first wrote it. The first run records `APP_ENV`, the reader host and the database in `bronze/_completion/source.json`. A later run against another database stops before writing, because the folder's completion files would make it skip days.
+
+To export production data to your own machine, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine). Then:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:export-local --tables flow_transfer,dim_user --out "$OUT"
+```
+
+`dim_user` holds email addresses. `mktemp -d` creates a private folder outside the repo, so `git add` cannot stage the files. The export writes them readable only by you. Check a file with DuckDB:
+
+```bash
+duckdb -c "DESCRIBE SELECT * FROM read_parquet('$OUT/silver/dim_user/current.parquet')"
+```
+
+Delete the folder after the upload:
+
+```bash
+rm -rf "$OUT"
+```
+
+## Extracting the mutation log
+
+The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It queries `ANALYTICS_REQUEST_LOG_GROUP` with CloudWatch Logs Insights. [`backend-analytics`](../backend-analytics/README.md#mutation_log) describes the rows it writes. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`.
+
+The nightly extraction stops after 30 minutes, and each Logs Insights request after 60 seconds. Archival then starts on time, and the unwritten days stay owed to the next night. A finished run logs `analytics.mutation_log.complete` with `durationMs`. A failed run logs `analytics.mutation_log.error` with `durationMs`, and `timedOut: true` when the 30 minutes ran out.
+
+The same run also writes `flow_edit_daily`, described in [`backend-analytics`](../backend-analytics/README.md#flow_edit_daily).
+
+`analytics:mutation-log` runs the same code for a range of days, for example to extract history:
+
+| Flag                 | Meaning                                                                                                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--from YYYY-MM-DD`  | First Singapore day.                                                                                                                                                                                                                                                |
+| `--to YYYY-MM-DD`    | Last Singapore day, inclusive. Default: `--from`.                                                                                                                                                                                                                   |
+| `--log-group <name>` | Server log group, with `--out` only. Default: `ANALYTICS_REQUEST_LOG_GROUP`. Skips the step and user lookups, since the database reader may belong to another environment.                                                                                          |
+| `--out <dir>`        | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`.                                                                                                                                                                                |
+| `--s3`               | Write to `ANALYTICS_BUCKET`, exactly as the nightly job does. Runs only when `APP_ENV` is `prod` or `staging`. Finished days only, since a completion file marks the day done. Reads `ANALYTICS_REQUEST_LOG_GROUP`, so the source matches the bucket's environment. |
+
+A local folder also records its log group in `bronze/_completion/source.json`. A later run with another log group stops before writing.
+
+The query reads AWS credentials from the default chain. To try one day against production from your own machine:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --log-group plumber-prod/ecs/application-server --out "$OUT"
+```
+
+That checks the query and parsing only. `--log-group` skips the lookups, so `deleteStep` and `register_connection` rows have no pipe, and MCP rows have no user. `flow_edit_daily` then leaves out every MCP row. To check the lookups and `flow_edit_daily` too, point the `archival` 1Password environment at production, as in [From your own machine](#from-your-own-machine), with `ANALYTICS_REQUEST_LOG_GROUP` set to the production log group. Then run without `--log-group`:
+
+```bash
+OUT="$(mktemp -d)"
+pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --out "$OUT"
+```
+
+Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB. Each day logs `analytics.mutation_log.day.scanned` as soon as its queries return, before any lookup or upload. It carries `bytesScanned`, summed over every query that day ran, split windows included, and `queries`, the number of those queries. `bytesScanned` is null when any query returned no statistics. A query still running when its poll times out or is aborted is stopped with `StopQuery`.
+
 ## Counting archived steps by app and action
 
 Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bucket. The `stepCounts` field breaks down the number of archived steps by SGT date → `appKey` → `actionKey` for that run.
@@ -198,7 +290,9 @@ Dates are keyed by the step's `created_at`, converted to SGT (not the archival r
 
 `nullStepCount` in the same object captures steps where `appKey` or `key` could not be resolved (pre-denormalisation rows).
 
-> **Note:** only non-test-run executions (`test_run = false`) contribute to `stepCounts`. Test executions are archived and counted in `executionsArchived` but their steps are excluded from the breakdown.
+> **Note:** only non-test-run executions (`test_run = false`) contribute to `stepCounts`. Test executions are archived but their steps are excluded from the breakdown.
+
+`executionsArchived` counts real and test executions. `realExecutionsArchived` and `testExecutionsArchived` split it by `test_run`.
 
 ### Aggregate across all runs (local)
 
@@ -269,14 +363,21 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 | `ARCHIVE_MAX_RUNTIME_MS`           | **yes**        | —                        | Wall-clock limit for a single run (ms). Set to `0` to disable.                                                                               |
 | `ARCHIVE_DELETED_FLOWS_ONLY`       | no             | `false`                  | Restrict archival to executions belonging to soft-deleted flows.                                                                             |
 | `ARCHIVE_TEST_RUNS`                | no             | `false`                  | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
+| `ANALYTICS_BUCKET`                 | yes (prod)     | —                        | S3 bucket for the analytics `bronze/` and `silver/` files.                                                                                   |
+| `ANALYTICS_REQUEST_LOG_GROUP`      | yes (prod)     | —                        | Server log group the mutation log is extracted from.                                                                                         |
 
 ---
 
 ## Running tests
 
+Run checks through Turbo. It builds `backend-analytics` first, and this package imports that build. The bare package scripts fail with `TS2307` on a clean checkout.
+
 ```bash
-pnpm --filter backend-archive run test:unit
+pnpm exec turbo run typecheck --filter=backend-archive
+pnpm exec turbo run test:unit --filter=backend-archive
 ```
+
+The analytics export tests live in [`backend-analytics`](../backend-analytics/README.md#running-tests).
 
 ---
 

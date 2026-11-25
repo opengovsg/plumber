@@ -1,11 +1,10 @@
-import type { IStep } from '@plumber/types'
 import * as React from 'react'
 
 import AppIcon from '@/components/AppIcon'
 import IntermediateStepCount from '@/components/IntermediateStepCount'
 
 type FlowAppIconsProps = {
-  steps: Partial<IStep>[]
+  steps: { name?: string; iconUrl?: string | null }[]
 }
 
 export default function FlowAppIcons(props: FlowAppIconsProps) {
@@ -20,7 +19,7 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
       <AppIcon
         name={firstStep.name}
         variant="rounded"
-        url={firstStep?.iconUrl}
+        url={firstStep?.iconUrl ?? undefined}
         h={8}
         w={8}
         isTrigger={true}
@@ -34,7 +33,7 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
         <AppIcon
           name={lastStep.name}
           variant="rounded"
-          url={lastStep?.iconUrl}
+          url={lastStep?.iconUrl ?? undefined}
           h={8}
           w={8}
         />

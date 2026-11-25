@@ -1,18 +1,23 @@
-import type { IActionJobData, IApp, IJSONObject } from '@plumber/types'
+import type {
+  IActionJobData,
+  IApp,
+  IJSONObject,
+  StepErrorKind,
+} from '@plumber/types'
 import {
   type JobPro,
   UnrecoverableError,
   WorkerPro,
 } from '@taskforcesh/bullmq-pro'
-import type { AxiosError } from 'axios'
 import { type Span } from 'dd-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { getStepErrorKind } from '@/errors/step'
+import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import Step from '@/models/step'
 
+import { makeHttpError } from '../../../test/utils/make-http-error'
 import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
 
 const mocks = vi.hoisted(() => ({
@@ -109,7 +114,7 @@ describe('action helper functions', () => {
   })
 
   describe('handleFailedStepAndThrow', () => {
-    const EMPTY_HTTP_ERROR = new HttpError({} as unknown as AxiosError)
+    const EMPTY_HTTP_ERROR = makeHttpError()
 
     beforeEach(() => {
       vi.useFakeTimers()
@@ -128,13 +133,11 @@ describe('action helper functions', () => {
         ({ retryAfter, expectedResult }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
 
-          const error = new HttpError({
-            response: {
-              headers: {
-                'retry-after': retryAfter,
-              },
+          const error = makeHttpError({
+            headers: {
+              'retry-after': retryAfter,
             },
-          } as unknown as AxiosError)
+          })
 
           try {
             handleFailedStepAndThrow({
@@ -158,13 +161,11 @@ describe('action helper functions', () => {
         'does not retry Retry-After ($retryAfter) if wait is too long',
         ({ retryAfter }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
-          const error = new HttpError({
-            response: {
-              headers: {
-                'retry-after': retryAfter,
-              },
+          const error = makeHttpError({
+            headers: {
+              'retry-after': retryAfter,
             },
-          } as unknown as AxiosError)
+          })
 
           try {
             handleFailedStepAndThrow({
@@ -189,13 +190,11 @@ describe('action helper functions', () => {
         'does not retry Retry-After if value ("$retryAfter") is invalid',
         ({ retryAfter }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
-          const error = new HttpError({
-            response: {
-              headers: {
-                'retry-after': retryAfter,
-              },
+          const error = makeHttpError({
+            headers: {
+              'retry-after': retryAfter,
             },
-          } as unknown as AxiosError)
+          })
 
           expect(() =>
             handleFailedStepAndThrow({
@@ -208,11 +207,9 @@ describe('action helper functions', () => {
       )
 
       it.each([504, 429])('retries some http status codes (%d)', (code) => {
-        const error = new HttpError({
-          response: {
-            status: code,
-          },
-        } as unknown as AxiosError)
+        const error = makeHttpError({
+          status: code,
+        })
         expect(() =>
           handleFailedStepAndThrow({
             errorDetails: {},
@@ -222,16 +219,14 @@ describe('action helper functions', () => {
         ).toThrow(RetriableError)
       })
 
-      it.each([
-        { details: { error: 'read ECONNRESET' } },
-        { details: { error: 'connect ETIMEDOUT 1.2.3.4:123' } },
-      ])(
-        'retries errors with retriable messages ($details.error)',
-        (errorDetails: IJSONObject) => {
+      it.each(['read ECONNRESET', 'connect ETIMEDOUT 1.2.3.4:123'])(
+        'retries errors with retriable messages (%s)',
+        (message) => {
+          const error = makeHttpError({ message })
           expect(() =>
             handleFailedStepAndThrow({
-              errorDetails: errorDetails,
-              executionError: EMPTY_HTTP_ERROR,
+              errorDetails: { details: error.details },
+              executionError: error,
               context: MOCK_CONTEXT,
             }),
           ).toThrow(RetriableError)
@@ -248,6 +243,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'queue',
+              kind: 'internal',
             }),
             context: {
               ...MOCK_CONTEXT,
@@ -255,6 +251,9 @@ describe('action helper functions', () => {
             },
           })
         } catch (e) {
+          if (!(e instanceof Error)) {
+            expect.unreachable()
+          }
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
@@ -271,6 +270,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'queue',
+              kind: 'internal',
             }),
             context: MOCK_CONTEXT,
           }),
@@ -296,6 +296,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'group',
+              kind: 'internal',
             }),
             context: {
               ...MOCK_CONTEXT,
@@ -303,6 +304,9 @@ describe('action helper functions', () => {
             },
           })
         } catch (e) {
+          if (!(e instanceof Error)) {
+            expect.unreachable()
+          }
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
@@ -319,6 +323,7 @@ describe('action helper functions', () => {
               error: 'test error',
               delayInMs: 100,
               delayType: 'group',
+              kind: 'internal',
             }),
             context: MOCK_CONTEXT,
           }),
@@ -333,6 +338,7 @@ describe('action helper functions', () => {
           error: 'test error',
           delayInMs: 100,
           delayType: 'group',
+          kind: 'internal',
         })
 
         expect(() =>
@@ -345,26 +351,84 @@ describe('action helper functions', () => {
           }),
         ).toThrow(error)
       })
+
+      it.each<StepErrorKind>(['config', 'third-party', 'internal'])(
+        'retries a RetriableError with kind %s',
+        (kind) => {
+          const error = new RetriableError({
+            error: 'test error',
+            delayInMs: 100,
+            delayType: 'step',
+            kind,
+          })
+
+          expect(() =>
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError: error,
+              context: MOCK_CONTEXT,
+            }),
+          ).toThrow(error)
+          expect(mocks.addSpanTags).toHaveBeenCalledWith({ willRetry: 'true' })
+        },
+      )
+
+      it.each<RetriableError['delayType']>(['step', 'group', 'queue'])(
+        'hides the RetriableError as the cause once %s retries run out',
+        (delayType) => {
+          const error = new RetriableError({
+            error: 'test error',
+            delayInMs: 100,
+            delayType,
+            kind: 'third-party',
+          })
+
+          let thrown: unknown
+          try {
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError: error,
+              context: {
+                ...MOCK_CONTEXT,
+                job: {
+                  attemptsMade: MAXIMUM_JOB_ATTEMPTS - 1,
+                  attemptsStarted: MAXIMUM_JOB_ATTEMPTS,
+                } as unknown as JobPro<IActionJobData>,
+              },
+            })
+          } catch (e) {
+            thrown = e
+          }
+
+          expect(thrown).toBeInstanceOf(UnrecoverableError)
+          expect((thrown as Error).cause).toBe(error)
+          expect(Object.keys(thrown as Error)).not.toContain('cause')
+          expect(getStepErrorKind((thrown as Error).cause)).toBe('third-party')
+        },
+      )
     })
 
     describe('other error type handling', () => {
       it.each([
         {
-          stepError: new StepError(
-            'http-step-error',
-            'test solution',
-            new HttpError({
-              response: {
-                headers: {
-                  'retry-after': '15',
-                },
+          stepError: new StepError({
+            name: 'http-step-error',
+            solution: 'test solution',
+            kind: 'internal',
+            cause: makeHttpError({
+              headers: {
+                'retry-after': '15',
               },
-            } as unknown as AxiosError),
-          ),
+            }),
+          }),
           isRetried: true,
         },
         {
-          stepError: new StepError('non-http-step-error', 'test solution'),
+          stepError: new StepError({
+            name: 'non-http-step-error',
+            solution: 'test solution',
+            kind: 'internal',
+          }),
           isRetried: false,
         },
       ])(
@@ -386,7 +450,12 @@ describe('action helper functions', () => {
       it.each([
         new StepError({ name: 'n', solution: 's', kind: 'config' }),
         new StepError({ name: 'n', solution: 's', kind: 'third-party' }),
-        new StepError('n', 's', EMPTY_HTTP_ERROR),
+        new StepError({
+          name: 'n',
+          solution: 's',
+          kind: 'internal',
+          cause: EMPTY_HTTP_ERROR,
+        }),
       ])(
         'attaches the StepError as a non-enumerable cause of the UnrecoverableError',
         (stepError) => {
@@ -412,9 +481,7 @@ describe('action helper functions', () => {
           name: 'n',
           solution: 's',
           kind: 'third-party',
-          cause: new HttpError({
-            response: { status: 504 },
-          } as unknown as AxiosError),
+          cause: makeHttpError({ status: 504 }),
         })
 
         let thrown: unknown
@@ -433,7 +500,46 @@ describe('action helper functions', () => {
         expect(Object.keys(thrown as Error)).not.toContain('cause')
       })
 
-      it.each([
+      it.each<{ executionError: unknown; kind: StepErrorKind }>([
+        {
+          executionError: new StepError({
+            name: 'n',
+            solution: 's',
+            kind: 'config',
+            cause: makeHttpError({ status: 429 }),
+          }),
+          kind: 'config',
+        },
+        {
+          executionError: new StepError({
+            name: 'n',
+            solution: 's',
+            kind: 'third-party',
+            cause: makeHttpError({ status: 504 }),
+          }),
+          kind: 'third-party',
+        },
+        { executionError: makeHttpError({ status: 504 }), kind: 'internal' },
+      ])(
+        'gives the RetriableError for a retriable HTTP error the kind $kind',
+        ({ executionError, kind }) => {
+          let thrown: unknown
+          try {
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError,
+              context: MOCK_CONTEXT,
+            })
+          } catch (e) {
+            thrown = e
+          }
+
+          expect(thrown).toBeInstanceOf(RetriableError)
+          expect((thrown as RetriableError).kind).toBe(kind)
+        },
+      )
+
+      it.each<{ errorDetails: IJSONObject; executionError: unknown }>([
         {
           errorDetails: {
             status: 500,
@@ -470,13 +576,7 @@ describe('action helper functions', () => {
         },
       ])(
         'does not retry other types of errors',
-        ({
-          errorDetails,
-          executionError,
-        }: {
-          errorDetails: IJSONObject
-          executionError: unknown
-        }) => {
+        ({ errorDetails, executionError }) => {
           expect(() =>
             handleFailedStepAndThrow({
               errorDetails,
@@ -495,6 +595,7 @@ describe('action helper functions', () => {
             error: 'test error',
             delayInMs: 100,
             delayType: 'step',
+            kind: 'internal',
           }),
           expectedTagValue: 'true',
         },

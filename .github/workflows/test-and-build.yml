@@ -65,6 +65,22 @@ jobs:
       - run: pnpm run format
       - run: echo "✅ Format check passed."
 
+  fta:
+    name: Complexity (FTA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          # fta:changed needs the merge base with origin/develop-v2.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - run: pnpm run fta:changed
+      - run: echo "✅ FTA check passed."
+
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
@@ -78,20 +94,6 @@ jobs:
           npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       - run: pnpm run typecheck
       - run: echo "✅ Typecheck passed."
-
-  typecheck-strict:
-    name: Typecheck (strict)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-        with:
-          npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
-      - run: pnpm run typecheck:strict
-      - run: echo "✅ Strict typecheck passed."
 
   build:
     name: Build
@@ -160,7 +162,7 @@ jobs:
           api_key: ${{ secrets.DD_API_KEY }}
           # we need to pin this for now since 5.68.0 breaks the ci
           js-tracer-version: 5.67.0
-      - run: pnpm exec turbo run test:unit --filter=backend-archive
+      - run: pnpm exec turbo run test:unit --filter=backend-archive --filter=backend-analytics
         env:
           # Required to allow Datadog to trace Vitest tests
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
@@ -188,7 +190,7 @@ jobs:
           api_key: ${{ secrets.DD_API_KEY }}
           # we need to pin this for now since 5.68.0 breaks the ci
           js-tracer-version: 5.67.0
-      - run: pnpm exec turbo run test:integration --filter=backend
+      - run: pnpm exec turbo run test:integration --filter=backend --filter=backend-analytics
         env:
           # Required to allow Datadog to trace Vitest tests
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}

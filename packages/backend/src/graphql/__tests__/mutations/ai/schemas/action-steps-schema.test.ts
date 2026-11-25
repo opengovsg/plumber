@@ -205,7 +205,7 @@ describe('actionStepsSchema validation', () => {
 
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(true)
-      expect(result.data[0].parameters?.depth).toBe(0)
+      expect(result.data![0].parameters?.depth).toBe(0)
     })
 
     it('fills in if-then parameter defaults when parameters is omitted', () => {

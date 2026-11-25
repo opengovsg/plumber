@@ -29,7 +29,7 @@ const stepQueryResult = vi.fn().mockResolvedValue({
   },
 })
 
-describe.each([['ddb'], ['pg']])(
+describe.each([['ddb'], ['pg']] as const)(
   'tiles find single row action: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -80,6 +80,9 @@ describe.each([['ddb'], ['pg']])(
           id: '123',
           userId: context.currentUser.id,
         },
+        execution: {
+          id: '789',
+        },
         step: {
           id: '456',
           appKey: tiles.name,
@@ -109,14 +112,14 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should allow owners to find single row', async () => {
-      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should return an empty columns if no rows are found', async () => {
       const filters = $.step.parameters.filters as TableRowFilter[]
       filters[0].value = 'not a valid value'
-      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
       const emptyRow = dummyColumnIds.reduce(
         (acc, c) => {
           acc[c] = ''
@@ -135,13 +138,13 @@ describe.each([['ddb'], ['pg']])(
 
     it('should allow editors to find single row', async () => {
       $.user = editor
-      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should not allow viewers to find single row', async () => {
       $.user = viewer
-      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+      await expect(findSingleRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should throw correct error if Tile deleted', async () => {
@@ -156,8 +159,56 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ table_id: $.step.parameters.tableId })
-      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+      await expect(findSingleRowAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Tile not found"'),
+        kind: 'config',
+      })
     })
+
+    it('should throw a config error if a filter column is not in the tile', async () => {
+      const filters = $.step.parameters.filters as TableRowFilter[]
+      filters[0].columnId = 'invalid_column'
+      await expect(findSingleRowAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid filters"'),
+        kind: 'config',
+      })
+    })
+
+    it('should throw a config error if a filter has no operator', async () => {
+      $.step.parameters.filters = [
+        { columnId: dummyColumnIds[0], value: 'abc' },
+      ]
+      await expect(findSingleRowAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Invalid filters"'),
+        kind: 'config',
+      })
+    })
+
+    it('should throw a config error if the found row is deleted before it is read', async () => {
+      vi.spyOn(
+        databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
+        'getRawRowById',
+      ).mockResolvedValueOnce(null)
+      await expect(findSingleRowAction.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('"name":"Row not found"'),
+        kind: 'config',
+      })
+    })
+
+    it.runIf(databaseType === 'ddb')(
+      'should skip a filter with no operator if another filter uses its column',
+      async () => {
+        const filters = $.step.parameters.filters as TableRowFilter[]
+        $.step.parameters.filters = [
+          filters[0],
+          { columnId: dummyColumnIds[0], value: 'abc' },
+        ]
+        await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
+        expect($.setActionItem).toHaveBeenCalledWith({
+          raw: expect.objectContaining({ rowsFound: 1 }),
+        })
+      },
+    )
 
     it('should call getTableRows with scan limit if exists in step config', async () => {
       const getTableRowsSpy = vi
@@ -169,7 +220,7 @@ describe.each([['ddb'], ['pg']])(
           rows: [],
           stringifiedCursor: undefined,
         })
-      await findSingleRowAction.run($)
+      await findSingleRowAction.run!($)
       expect(getTableRowsSpy).toHaveBeenCalledWith({
         tableId: $.step.parameters.tableId,
         filters: $.step.parameters.filters,
@@ -189,7 +240,7 @@ describe.each([['ddb'], ['pg']])(
           stringifiedCursor: undefined,
         })
       $.step.parameters.returnLastRow = true
-      await findSingleRowAction.run($)
+      await findSingleRowAction.run!($)
       expect(getTableRowsSpy).toHaveBeenCalledWith({
         tableId: $.step.parameters.tableId,
         filters: $.step.parameters.filters,

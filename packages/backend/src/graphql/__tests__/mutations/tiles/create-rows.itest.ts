@@ -22,7 +22,7 @@ const ddbCreateTableRowsSpy: ReturnType<typeof vi.spyOn> = vi.spyOn(
   'createTableRows',
 )
 
-describe.each([['pg'], ['ddb']])(
+describe.each<[DatabaseType]>([['pg'], ['ddb']])(
   'create rows mutation: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -61,7 +61,7 @@ describe.each([['pg'], ['ddb']])(
       }
 
       await createRows(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -94,7 +94,7 @@ describe.each([['pg'], ['ddb']])(
       }
 
       await createRows(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -137,7 +137,7 @@ describe.each([['pg'], ['ddb']])(
       context.currentUser = editor
       await expect(
         createRows(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -153,7 +153,7 @@ describe.each([['pg'], ['ddb']])(
       context.currentUser = viewer
       await expect(
         createRows(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,

@@ -145,16 +145,16 @@ tmp/
 # claude stuff
 .claude/settings.local.json
 
-docs/plans/
-docs/superpowers/
-.codegraph
+docs/*
+!docs/adr
+!docs/WINDOWS_DEV.md
 
-# superset worktree port allocation (local / per-machine, never committed)
-/.superset/port-registry
-/.superset/port-registry.lock
-/.superset/config.local.json
+.codegraph
 
 # local 1Password environment ids (per-developer, never committed)
 /op-dev.json
 
 .pnpm-store/
+
+# local analytics exports hold user emails
+analytics-out/

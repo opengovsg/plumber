@@ -7,7 +7,10 @@ import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
-import { fieldTypeEnum } from '../../common/constants'
+import {
+  fieldTypeEnum,
+  UNEXPECTED_RESPONSE_SOLUTION,
+} from '../../common/constants'
 import { fetchCaseFields } from '../../common/fetch-case-fields'
 import throwGatherSGStepError from '../../common/throw-errors'
 import getDataOutMetadata from './get-data-out-metadata'
@@ -195,7 +198,17 @@ const action: IRawAction = {
       }
 
       const rawResponse = await $.http.post('/cases', payload)
-      const { data } = responseSchema.parse(rawResponse.data)
+      const response = responseSchema.safeParse(rawResponse.data)
+      if (!response.success) {
+        const firstError = fromZodError(response.error).details[0]
+        // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
+        throw new StepError({
+          name: `${String(firstError.path[0])}: ${firstError.message}`,
+          solution: UNEXPECTED_RESPONSE_SOLUTION,
+          kind: 'internal',
+        })
+      }
+      const { data } = response.data
 
       $.setActionItem({
         raw: {
@@ -203,21 +216,34 @@ const action: IRawAction = {
         },
       })
     } catch (error) {
-      logger.error('Failed to create case on GatherSG:', error)
+      logger.error('Failed to create case on GatherSG', {
+        event: 'gathersg-create-case-failed',
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        flowId: $.flow?.id,
+        stepId: $.step.id,
+      })
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
-        throw new StepError(
-          `${String(firstError.path[0])}: ${firstError.message}`,
-          GenericSolution.ReconfigureInvalidField,
-        )
+        throw new StepError({
+          name: `${String(firstError.path[0])}: ${firstError.message}`,
+          solution: GenericSolution.ReconfigureInvalidField,
+          kind: 'config',
+        })
+      }
+      if (error instanceof StepError) {
+        throw error
       }
       if (error instanceof HttpError) {
         throwGatherSGStepError(error)
       }
-      throw new StepError(
-        `An error occurred: '${error.message}'`,
-        'Please check that you have configured your step correctly',
-      )
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      throw new StepError({
+        name: `An error occurred: '${errorMessage}'`,
+        solution: 'Please check that you have configured your step correctly',
+        kind: 'internal',
+      })
     }
   },
 }

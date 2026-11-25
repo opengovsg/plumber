@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 
+import type { Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createTable from '@/graphql/mutations/tiles/create-table'
@@ -51,7 +52,7 @@ describe('create table mutation', () => {
 
   it('should create a blank table', async () => {
     const table = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: true } },
       context,
     )
@@ -67,7 +68,7 @@ describe('create table mutation', () => {
 
   it('should create a table and with placeholder rows and columns', async () => {
     const table = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: false } },
       context,
     )
@@ -84,13 +85,13 @@ describe('create table mutation', () => {
 
   it('should be able create tables with the same name', async () => {
     const table = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: false } },
       context,
     )
 
     const table2 = await createTable(
-      null,
+      {},
       { input: { name: 'Test Table', isBlank: false } },
       context,
     )
@@ -100,7 +101,7 @@ describe('create table mutation', () => {
 
   it('should throw an error when table name is empty', async () => {
     await expect(
-      createTable(null, { input: { name: '', isBlank: false } }, context),
+      createTable({}, { input: { name: '', isBlank: false } }, context),
     ).rejects.toThrow()
   })
 
@@ -120,7 +121,7 @@ describe('create table mutation', () => {
 
     it('should add all flow collaborators to table_collaborators when flowId is provided', async () => {
       const table = await createTable(
-        null,
+        {},
         {
           input: {
             name: 'Flow Table',
@@ -137,7 +138,7 @@ describe('create table mutation', () => {
         table_id: table.id,
       })
       expect(ownerCollab).toBeDefined()
-      expect(ownerCollab.role).toBe('owner')
+      expect(ownerCollab!.role).toBe('owner')
 
       // Verify flow editor is added as table editor
       const editorCollab = await TableCollaborator.query().findOne({
@@ -145,7 +146,7 @@ describe('create table mutation', () => {
         table_id: table.id,
       })
       expect(editorCollab).toBeDefined()
-      expect(editorCollab.role).toBe('editor')
+      expect(editorCollab!.role).toBe('editor')
 
       // Verify flow viewer is added as table viewer
       const viewerCollab = await TableCollaborator.query().findOne({
@@ -153,7 +154,7 @@ describe('create table mutation', () => {
         table_id: table.id,
       })
       expect(viewerCollab).toBeDefined()
-      expect(viewerCollab.role).toBe('viewer')
+      expect(viewerCollab!.role).toBe('viewer')
 
       // Verify flow connection is created
       const flowConnection = await FlowConnections.query().findOne({
@@ -161,21 +162,21 @@ describe('create table mutation', () => {
         connection_id: table.id,
       })
       expect(flowConnection).toBeDefined()
-      expect(flowConnection.connectionType).toBe('table')
+      expect(flowConnection!.connectionType).toBe('table')
     })
 
     it('should throw error when user is not the flow owner', async () => {
       // Create context with flow editor (not owner)
       const editorContext: Context = {
-        req: null,
-        res: null,
+        req: null as unknown as Request,
+        res: null as unknown as Response,
         currentUser: flowEditor,
         isAdminOperation: false,
       }
 
       await expect(
         createTable(
-          null,
+          {},
           {
             input: {
               name: 'Editor Flow Table',
@@ -193,7 +194,7 @@ describe('create table mutation', () => {
 
       await expect(
         createTable(
-          null,
+          {},
           {
             input: {
               name: 'Flow Table',

@@ -8,7 +8,7 @@ import logger from '@/helpers/logger'
 import type { QueryResolvers } from '../../__generated__/types.generated'
 import { fetchTableWithViewOnlyCheck } from './view-only.helper'
 
-const getTable: QueryResolvers['getTable'] = async (
+const getTable: NonNullable<QueryResolvers['getTable']> = async (
   _parent,
   params,
   context,

@@ -12,6 +12,7 @@ import {
   resolveCaseIdentifier,
 } from '../../common/case-identifier'
 import throwGatherSGStepError from '../../common/throw-errors'
+import { GatherSGError } from '../../common/types'
 import { processFields } from '../../common/utils'
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -51,20 +52,38 @@ const action: IRawAction = {
         })
         rawData = data
       } catch (error) {
-        logger.error(`Failed to get case details for case ${caseUuid}:`, error)
-        throw new StepError(
-          `Invalid case uuid: ${caseUuid}`,
-          'Please check that you have configured your step correctly',
-          error,
-        )
+        logger.error(`Failed to get case details for case ${caseUuid}`, {
+          event: 'gathersg-get-case-request-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          caseUuid,
+          stepId: $.step.id,
+        })
+        if (
+          error instanceof HttpError &&
+          error.response?.status === 404 &&
+          (error.response.data?.error as GatherSGError | undefined)?.code ===
+            'RESOURCE_NOT_FOUND'
+        ) {
+          throw new StepError({
+            name: `Invalid case uuid: ${caseUuid}`,
+            solution:
+              'Please check that you have configured your step correctly',
+            kind: 'config',
+            cause: error,
+          })
+        }
+        throw error
       }
 
       const fields = rawData.data?.fields
       if (!fields) {
-        throw new StepError(
-          `No data found for case ${caseUuid}`,
-          'Please check that you have configured your step correctly',
-        )
+        // internal: only an Ownself Gather API change breaks this, and Plumber owns keeping up with it.
+        throw new StepError({
+          name: `No data found for case ${caseUuid}`,
+          solution: 'Please check that you have configured your step correctly',
+          kind: 'internal',
+        })
       }
 
       // hex encode the field names
@@ -90,10 +109,11 @@ const action: IRawAction = {
     } catch (error) {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
-        throw new StepError(
-          `${firstError.message}`,
-          GenericSolution.ReconfigureInvalidField,
-        )
+        throw new StepError({
+          name: `${firstError.message}`,
+          solution: GenericSolution.ReconfigureInvalidField,
+          kind: 'config',
+        })
       }
 
       if (error instanceof StepError) {
@@ -105,13 +125,22 @@ const action: IRawAction = {
       }
 
       logger.error(
-        `Failed to get case details for case ${$.step.parameters.caseUuid}:`,
-        error,
+        `Failed to get case details for case ${$.step.parameters.caseUuid}`,
+        {
+          event: 'gathersg-get-case-details-failed',
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          caseUuid: $.step.parameters.caseUuid,
+          stepId: $.step.id,
+        },
       )
-      throw new StepError(
-        `An error occurred: '${error.message}'`,
-        'Please check that you have configured your step correctly',
-      )
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      throw new StepError({
+        name: `An error occurred: '${errorMessage}'`,
+        solution: 'Please check that you have configured your step correctly',
+        kind: 'internal',
+      })
     }
   },
 }

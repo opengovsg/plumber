@@ -64,7 +64,7 @@ export interface TableOperations {
     scanLimit?: number
   }): Promise<{
     rows: TableRowOutput[]
-    stringifiedCursor?: string
+    stringifiedCursor?: string | null
   }>
   getRawRowById(params: {
     tableId: string

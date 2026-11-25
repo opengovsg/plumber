@@ -73,7 +73,7 @@ describe('Get test execution steps mutation', () => {
       { flowId: 'flow-id' },
       context,
     )
-    expect(result.map((r) => r.stepId)).toEqual([
+    expect(result!.map((r) => r!.stepId)).toEqual([
       'step-id-1',
       'step-id-2',
       'step-id-3',

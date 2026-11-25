@@ -30,8 +30,8 @@ describe('duplicateFlow endStepId remap', () => {
     })
     const steps = (await flow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: {},
@@ -54,7 +54,7 @@ describe('duplicateFlow endStepId remap', () => {
     await Step.query().delete()
     await Flow.query().delete()
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
       req: null,
       currentUser: owner,
@@ -62,7 +62,7 @@ describe('duplicateFlow endStepId remap', () => {
       isAdminOperation: false,
     } as unknown as Context
 
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
   })
 
   it('remaps a block marker to the copied endStep id', async () => {
@@ -74,7 +74,7 @@ describe('duplicateFlow endStepId remap', () => {
     const [, ifThen, s3] = steps
     await ifThen.$query().patch({ config: { endStepId: s3.id } })
 
-    await duplicateFlow(null, { input: { id: flow.id } }, context)
+    await duplicateFlow({}, { input: { id: flow.id } }, context)
 
     const copies = await copiedSteps()
     const copiedIfThen = copies[1]
@@ -92,7 +92,7 @@ describe('duplicateFlow endStepId remap', () => {
     const [, ifThen] = steps
     await ifThen.$query().patch({ config: { endStepId: ifThen.id } })
 
-    await duplicateFlow(null, { input: { id: flow.id } }, context)
+    await duplicateFlow({}, { input: { id: flow.id } }, context)
 
     const copies = await copiedSteps()
     const copiedIfThen = copies[1]
@@ -110,19 +110,56 @@ describe('duplicateFlow endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: 'does-not-exist' } })
 
     await expect(
-      duplicateFlow(null, { input: { id: flow.id } }, context),
+      duplicateFlow({}, { input: { id: flow.id } }, context),
     ).rejects.toThrow(/dangling endStepId/)
 
     const copy = await Flow.query().where('name', '[COPY] Source Flow').first()
     expect(copy).toBeUndefined()
     const original = await Flow.query().findById(flow.id)
-    expect(original.config?.duplicateCount).toBeUndefined()
+    expect(original!.config?.duplicateCount).toBeUndefined()
     expect(loggerErrorSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'duplicate-flow-dangling-end-step',
         danglingSourceStepIds: [ifThen.id],
       }),
     )
+  })
+
+  it('records the source pipe on the copy only', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+
+    const duplicated = await duplicateFlow(
+      {},
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const copy = await Flow.query().findById(duplicated!.id!)
+    const original = await Flow.query().findById(flow.id)
+    expect(copy!.config?.duplicatedFromFlowId).toBe(flow.id)
+    expect(original!.config?.duplicatedFromFlowId).toBeUndefined()
+  })
+
+  it('records the direct source when a copy is duplicated again', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    const firstCopy = await duplicateFlow(
+      {},
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const secondCopy = await duplicateFlow(
+      {},
+      { input: { id: firstCopy!.id! } },
+      context,
+    )
+
+    const reloaded = await Flow.query().findById(secondCopy!.id!)
+    expect(reloaded!.config?.duplicatedFromFlowId).toBe(firstCopy!.id)
   })
 
   it('does not copy AI builder history onto the duplicated pipe', async () => {
@@ -146,11 +183,11 @@ describe('duplicateFlow endStepId remap', () => {
     })
 
     const duplicated = await duplicateFlow(
-      null,
+      {},
       { input: { id: flow.id } },
       context,
     )
-    const copy = await Flow.query().findById(duplicated.id)
+    const copy = await Flow.query().findById(duplicated!.id!)
     const copies = await copiedSteps()
 
     expect(copy?.config?.aiBuilderConfig).toBeUndefined()
@@ -159,8 +196,8 @@ describe('duplicateFlow endStepId remap', () => {
 
     const original = await Flow.query().findById(flow.id)
     const originalTrigger = await Step.query().findById(steps[0].id)
-    expect(original.config?.aiBuilderConfig?.traceId).toBe('trace-source')
-    expect(originalTrigger.config.aiBuilderConfig).toEqual([
+    expect(original!.config?.aiBuilderConfig?.traceId).toBe('trace-source')
+    expect(originalTrigger!.config.aiBuilderConfig).toEqual([
       { traceId: 'trace-source', tool: 'create_pipe' },
     ])
   })
@@ -186,17 +223,17 @@ describe('duplicateFlow endStepId remap', () => {
     })
 
     const duplicated = await duplicateFlow(
-      null,
+      {},
       { input: { id: flow.id } },
       context,
     )
 
-    const copy = await Flow.query().findById(duplicated.id)
+    const copy = await Flow.query().findById(duplicated!.id!)
     const [copiedTrigger] = await copiedSteps()
-    expect(copy.config?.archiveDisabled).toBeUndefined()
-    expect(copy.config?.maxQps).toBeUndefined()
-    expect(copy.config?.rejectIfOverMaxQps).toBeUndefined()
-    expect(copy.config?.isForceClogged).toBeUndefined()
+    expect(copy!.config?.archiveDisabled).toBeUndefined()
+    expect(copy!.config?.maxQps).toBeUndefined()
+    expect(copy!.config?.rejectIfOverMaxQps).toBeUndefined()
+    expect(copy!.config?.isForceClogged).toBeUndefined()
     expect(copiedTrigger.config?.adminOverride).toBeUndefined()
   })
 
@@ -209,7 +246,7 @@ describe('duplicateFlow endStepId remap', () => {
     })
 
     await expect(
-      duplicateFlow(null, { input: { id: flow.id } }, {
+      duplicateFlow({}, { input: { id: flow.id } }, {
         ...context,
         currentUser: stranger,
       } as unknown as Context),

@@ -15,9 +15,6 @@ interface GroupStepWithAddButtonProps {
   isOverlay?: boolean
   allowReorder?: boolean
   showEmptyAction?: boolean
-  canChildStepsReorder?: boolean
-  /** Draw an only-continue-if step as a CONTINUE IF condition block. */
-  asConditionBlock?: boolean
 }
 
 export default function GroupStepWithAddButton(
@@ -30,20 +27,17 @@ export default function GroupStepWithAddButton(
     isOverlay,
     allowReorder,
     showEmptyAction,
-    canChildStepsReorder,
-    asConditionBlock = false,
   } = props
   const { isDrawerOpen, readOnly } = useContext(EditorContext)
 
   return (
     <>
-      {asConditionBlock && isOnlyContinueIfStep(step) ? (
+      {isOnlyContinueIfStep(step) ? (
         <OnlyContinueIf
           step={step}
           isLastStep={isLastStep}
           isNested={true}
           allowReorder={allowReorder}
-          canChildStepsReorder={canChildStepsReorder}
         />
       ) : (
         <FlowStep
@@ -52,7 +46,6 @@ export default function GroupStepWithAddButton(
           isNested={true}
           isLastStep={isLastStep}
           allowReorder={allowReorder}
-          canChildStepsReorder={canChildStepsReorder}
         />
       )}
       {!isOverlay && (
@@ -64,7 +57,6 @@ export default function GroupStepWithAddButton(
           showEmptyAction={showEmptyAction}
           step={step}
           allowReorder={allowReorder}
-          canChildStepsReorder={canChildStepsReorder}
         />
       )}
     </>

@@ -1,6 +1,6 @@
 import * as winston from 'winston'
 
-import appConfig from '@/config/app'
+import appEnvConfig from '@/config/app/load-app-env'
 import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 
 const levels = {
@@ -12,7 +12,7 @@ const levels = {
 }
 
 const level = () => {
-  return appConfig.isDev ? 'debug' : 'http'
+  return appEnvConfig.isDev ? 'debug' : 'http'
 }
 
 const colors = {
@@ -29,7 +29,7 @@ const format = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
   redactSecrets(),
-  appConfig.isDev
+  appEnvConfig.isDev
     ? winston.format.prettyPrint({ colorize: true })
     : winston.format.json(),
 )

@@ -1,6 +1,6 @@
 import { IJSONObject, IStepError, StepErrorKind } from '@plumber/types'
 
-import HttpError from './http'
+import RetriableError from './retriable-error'
 
 //
 // Some generic solutions for common errors
@@ -13,50 +13,27 @@ export enum GenericSolution {
 export interface StepErrorOptions {
   name: string
   solution: string
-  kind?: StepErrorKind
-  cause?: HttpError
+  kind: StepErrorKind
+  // Not always an HttpError: SDK errors (e.g. SES) are kept so their kind can still be classified.
+  cause?: unknown
 }
 
 export default class StepError extends Error {
-  readonly kind?: StepErrorKind
+  readonly kind: StepErrorKind
 
   constructor(
-    options: StepErrorOptions,
+    { name, solution, kind, cause }: StepErrorOptions,
     extraProperties?: Record<string, unknown>,
-  )
-  /** @deprecated Pass a `StepErrorOptions` object with a `kind` instead. */
-  constructor(
-    name: string,
-    solution: string,
-    error?: HttpError,
-    extraProperties?: Record<string, unknown>,
-  )
-  constructor(
-    nameOrOptions: string | StepErrorOptions,
-    solutionOrExtraProperties?: string | Record<string, unknown>,
-    positionalError?: HttpError,
-    positionalExtraProperties?: Record<string, unknown>,
   ) {
-    // Unmigrated call sites can pass an undefined name from an API response body.
-    const isPositional =
-      typeof nameOrOptions !== 'object' || nameOrOptions === null
-    const { name, solution, kind, cause } = isPositional
-      ? {
-          name: nameOrOptions as string,
-          solution: solutionOrExtraProperties as string,
-          kind: undefined,
-          cause: positionalError,
-        }
-      : nameOrOptions
-    const extraProperties = isPositional
-      ? positionalExtraProperties
-      : (solutionOrExtraProperties as Record<string, unknown> | undefined)
-
     const stepError: IStepError = {
       name,
       solution,
       kind,
-      details: cause?.details as IJSONObject,
+      details: (typeof cause === 'object' &&
+      cause !== null &&
+      'details' in cause
+        ? cause.details
+        : undefined) as IJSONObject,
       ...extraProperties,
     }
     const computedMessage = JSON.stringify(stepError)
@@ -67,23 +44,21 @@ export default class StepError extends Error {
 }
 
 export function getStepErrorKind(error: unknown): StepErrorKind {
-  if (error instanceof StepError) {
-    // Unmigrated call sites have no kind yet, and an unknown cause counts as a Plumber bug.
-    return error.kind ?? 'internal'
+  if (error instanceof StepError || error instanceof RetriableError) {
+    return error.kind
   }
   return 'internal'
 }
 
 /**
- * Lets `handleFailedJob` read the kind from the error that replaced the StepError.
+ * Lets `handleFailedJob` read the kind of an error that another error replaced.
  *
  * IMPORTANT: non-enumerable, so log redaction never walks into the StepError's HTTP cause.
  */
-export function attachHiddenCauseIfStepError(
-  target: Error,
-  error: unknown,
-): void {
-  if (!(error instanceof StepError) || Object.hasOwn(target, 'cause')) {
+export function keepErrorKindViaCause(target: Error, error: unknown): void {
+  const carriesKind =
+    error instanceof StepError || error instanceof RetriableError
+  if (!carriesKind || Object.hasOwn(target, 'cause')) {
     return
   }
   Object.defineProperty(target, 'cause', {

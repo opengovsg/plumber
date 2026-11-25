@@ -1,4 +1,5 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, StepErrorKind } from '@plumber/types'
+import type { AxiosRequestConfig } from 'axios'
 
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -9,11 +10,11 @@ import { getLastHitGraphApiType, GraphApiType } from '../graph-api-type'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
 
 type ThrowingHandler = (
-  ...args: Parameters<IApp['requestErrorHandler']>
+  ...args: Parameters<NonNullable<IApp['requestErrorHandler']>>
 ) => never
 
 type MaybeThrowingHandler = (
-  ...args: Parameters<IApp['requestErrorHandler']>
+  ...args: Parameters<NonNullable<IApp['requestErrorHandler']>>
 ) => never | void
 
 const handleIntermittentError: MaybeThrowingHandler = ($, error) => {
@@ -22,6 +23,7 @@ const handleIntermittentError: MaybeThrowingHandler = ($, error) => {
       error: `Retrying ETIMEDOUT ${error.message} from M365 Excel`,
       delayType: 'step',
       delayInMs: 'default',
+      kind: 'third-party',
     })
   }
 }
@@ -44,8 +46,8 @@ const handle404: ThrowingHandler = ($, error) => {
   logger.error('Received HTTP 404 from MS Graph', {
     event: 'm365-http-404-invalid-version',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -56,6 +58,7 @@ const handle404: ThrowingHandler = ($, error) => {
     error: 'Retrying HTTP 404 from M365 Excel',
     delayType: 'step',
     delayInMs: 'default',
+    kind: 'third-party',
   })
 }
 
@@ -74,12 +77,14 @@ const handle429: ThrowingHandler = ($, error) => {
   //
   // Since they apply per-file, we delay only the group when retrying.
   if (
-    getLastHitGraphApiType(error.response.config.url) === GraphApiType.Excel
+    getLastHitGraphApiType(error.response.config?.url ?? '') ===
+    GraphApiType.Excel
   ) {
     throw new RetriableError({
       error: 'Retrying HTTP 429 from Excel endpoint',
       delayType: 'group',
       delayInMs: retryAfterMs,
+      kind: 'internal',
     })
   }
 
@@ -88,8 +93,8 @@ const handle429: ThrowingHandler = ($, error) => {
   logger.error('Received HTTP 429 from MS Graph', {
     event: 'm365-http-429',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -101,6 +106,7 @@ const handle429: ThrowingHandler = ($, error) => {
     error: 'Rate limited by Microsoft Graph.',
     delayType: 'queue',
     delayInMs: retryAfterMs,
+    kind: 'internal',
   })
 }
 
@@ -113,8 +119,8 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
   logger.warn(`Received HTTP ${status} from MS Graph`, {
     event: `m365-http-${status}`,
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -130,6 +136,7 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
     // From past data, 503s happen only for a single request, so we can just
     // retry this individual step instead of jamming the group.
     delayType: 'step',
+    kind: 'third-party',
   })
 }
 
@@ -150,12 +157,25 @@ const EXCEL_504_ERROR_MESSAGE = {
    - Fix: Simplify the formulas, or set the calculation mode to Manual (Formulas tab > Calculation Options).`,
 }
 
+// Unlike other 5xx, a workbook write's 504 is config: Graph times out on the
+// user's slow formulas.
+function get504Kind(config: AxiosRequestConfig | undefined): StepErrorKind {
+  // Excludes the OAuth token renewal, which any action can trigger.
+  const isWorkbookCall =
+    getLastHitGraphApiType(config?.url ?? '') === GraphApiType.Excel
+  const isWrite = config?.method !== undefined && config.method !== 'get'
+  const isCreateSession = config?.url?.endsWith('/createSession') ?? false
+  return isWorkbookCall && isWrite && !isCreateSession
+    ? 'config'
+    : 'third-party'
+}
+
 const handle504: ThrowingHandler = function ($, error) {
   logger.warn('Received HTTP 504 from MS Graph', {
     event: 'm365-http-504',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -163,10 +183,11 @@ const handle504: ThrowingHandler = function ($, error) {
 
   // For test runs, fail immediately with user-friendly message
   if ($.execution?.testRun) {
-    throw new StepError(
-      EXCEL_504_ERROR_MESSAGE.name,
-      EXCEL_504_ERROR_MESSAGE.solution,
-    )
+    throw new StepError({
+      name: EXCEL_504_ERROR_MESSAGE.name,
+      solution: EXCEL_504_ERROR_MESSAGE.solution,
+      kind: get504Kind(error.response.config),
+    })
   }
 
   // For live runs, throw RetriableError with user-friendly message
@@ -176,6 +197,7 @@ const handle504: ThrowingHandler = function ($, error) {
     delayType: 'step',
     delayInMs: 'default',
     maxAttempts: EXCEL_504_MAX_ATTEMPTS,
+    kind: get504Kind(error.response.config),
   })
 }
 
@@ -186,8 +208,8 @@ const handle509: ThrowingHandler = function ($, error) {
   logger.error('Received HTTP 509 from MS Graph', {
     event: 'm365-http-509',
     tenant: $.auth?.data?.tenantKey as string,
-    baseUrl: error.response.config.baseURL,
-    url: error.response.config.url,
+    baseUrl: error.response.config?.baseURL,
+    url: error.response.config?.url,
     flowId: $.flow?.id,
     stepId: $.step?.id,
     executionId: $.execution?.id,
@@ -201,6 +223,7 @@ const handle509: ThrowingHandler = function ($, error) {
     error: 'Bandwidth limited by Microsoft Graph.',
     delayType: 'queue',
     delayInMs: retryAfterMs,
+    kind: 'internal',
   })
 }
 

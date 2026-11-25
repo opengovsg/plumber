@@ -1,10 +1,11 @@
 {
   "name": "backend-archive",
-  "version": "1.100.1",
+  "version": "1.108.0",
   "private": true,
   "scripts": {
-    "prebuild": "rimraf ./dist",
+    "prebuild": "rimraf ./dist && pnpm run build:deps",
     "build": "tsc && tsc-alias",
+    "build:deps": "pnpm --filter \"backend-archive^...\" run build",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "test:unit": "vitest --config ./vitest.config.ts",
     "lint": "oxlint .",
@@ -12,14 +13,18 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
-    "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
+    "archive:backfill": "pnpm run build:deps && ts-node --swc src/scripts/archive-executions.ts",
+    "archive:backfill-local": "pnpm run build:deps && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
     "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
-    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:rehydrate-local": "node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts",
+    "analytics:export": "pnpm run build:deps && ts-node --swc src/scripts/export-analytics.ts",
+    "analytics:export-local": "pnpm run build:deps && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/export-analytics.ts",
+    "analytics:mutation-log": "pnpm run build:deps && ts-node --swc src/scripts/export-mutation-log.ts",
+    "analytics:mutation-log-local": "pnpm run build:deps && node ../../scripts/with-human-dev-env.mjs --env archival ts-node --swc src/scripts/export-mutation-log.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
-    "@plumber/types": "workspace:*",
+    "backend-analytics": "workspace:*",
     "dotenv": "catalog:",
     "knex": "catalog:",
     "luxon": "catalog:",
@@ -35,7 +40,7 @@
     "@types/pg": "^8.6.1",
     "nodemon": "^3.1.14",
     "rimraf": "^4.4.1",
-    "ts-node": "^10.9.1",
+    "ts-node": "catalog:",
     "tsconfig-paths": "^4.2.0",
     "typescript": "catalog:",
     "vitest": "^4.1.11"

@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto'
 
+import type { Request, Response } from 'express'
 import { NotFoundError } from 'objection'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -17,17 +18,11 @@ import { generateMockCollaborator, generateMockUser } from './flow.mock'
 const REFRESH_PIPE_MESSAGE =
   'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.'
 
-// Defaults to false in every beforeEach below so pre-existing tests here
-// stay byte-identical. The opportunistic-upgrade tests override it per case.
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
-
 describe('createStep mutation integration tests', async () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let testFlow: Flow
   let existingSteps: Step[]
   let context: Context
@@ -50,7 +45,6 @@ describe('createStep mutation integration tests', async () => {
   // Clean up (and seed) database before each test.
   beforeEach(async () => {
     vi.resetAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Clear out all rows. Adjust deletion order if using foreign keys.
     await FlowConnections.query().delete()
@@ -59,15 +53,15 @@ describe('createStep mutation integration tests', async () => {
 
     const testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
     context = {
-      req: null,
-      currentUser: testUser,
-      res: null,
+      req: null as unknown as Request,
+      currentUser: testUser!,
+      res: null as unknown as Response,
       isAdminOperation: false,
     }
-    owner = testUser
+    owner = testUser!
 
     // Create a test connection
-    testConnection = await testUser
+    testConnection = await testUser!
       .$relatedQuery('connections')
       .insertAndFetch({
         key: 'postman',
@@ -77,7 +71,7 @@ describe('createStep mutation integration tests', async () => {
       })
 
     // Create a flow associated with the test user.
-    testFlow = await testUser.$relatedQuery('flows').insertAndFetch({
+    testFlow = await testUser!.$relatedQuery('flows').insertAndFetch({
       name: 'Test Flow',
       // additional flow properties as needed
       updatedBy: owner.id,
@@ -157,15 +151,15 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     // Ensure the new step is returned as expected.
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendMessage')
-    expect(newStep.appKey).toBe('telegram-bot')
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendMessage')
+    expect(newStep!.appKey).toBe('telegram-bot')
     // New step's position should be previousStep.position + 1.
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
 
     // Verify overall that there are three steps related to the flow.
     const steps = await testFlow
@@ -174,7 +168,7 @@ describe('createStep mutation integration tests', async () => {
     expect(steps).toHaveLength(4)
     expect(steps.map((step) => step.id)).toEqual([
       existingSteps[0].id,
-      newStep.id,
+      newStep!.id,
       existingSteps[1].id,
       existingSteps[2].id,
     ])
@@ -193,10 +187,10 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
-    expect(newStep.position).toBe(existingSteps[2].position + 1)
+    expect(newStep!.position).toBe(existingSteps[2].position + 1)
     const steps = await testFlow
       .$relatedQuery('steps')
       .orderBy('position', 'asc')
@@ -205,7 +199,7 @@ describe('createStep mutation integration tests', async () => {
       existingSteps[0].id,
       existingSteps[1].id,
       existingSteps[2].id,
-      newStep.id,
+      newStep!.id,
     ])
     // Also, check the ordering.
     expect(steps.map((step) => step.position)).toEqual([1, 2, 3, 4])
@@ -223,7 +217,7 @@ describe('createStep mutation integration tests', async () => {
         previousStep: { id: existingSteps[2].id },
       },
     }
-    await createStep(null, params, context)
+    await createStep({}, params, context)
     expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -248,7 +242,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow()
+    await expect(createStep({}, params, context)).rejects.toThrow()
   })
 
   it('throws an error if the previous step is not found', async () => {
@@ -265,30 +259,30 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow()
+    await expect(createStep({}, params, context)).rejects.toThrow()
   })
 
   it('owner can create a new step', async () => {
-    const newStep = await createStep(null, genericNewStepParams, context)
+    const newStep = await createStep({}, genericNewStepParams, context)
 
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendTransactionalEmail')
-    expect(newStep.appKey).toBe('postman')
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendTransactionalEmail')
+    expect(newStep!.appKey).toBe('postman')
     // New step's position should be previousStep.position + 1.
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
   })
 
   it('editor can create a new step', async () => {
     context.currentUser = editor
-    const newStep = await createStep(null, genericNewStepParams, context)
+    const newStep = await createStep({}, genericNewStepParams, context)
 
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendTransactionalEmail')
-    expect(newStep.appKey).toBe('postman')
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendTransactionalEmail')
+    expect(newStep!.appKey).toBe('postman')
     // New step's position should be previousStep.position + 1.
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
   })
 
   it('editor can create a new step with owner connection', async () => {
@@ -306,26 +300,26 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
     expect(newStep).toBeDefined()
-    expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('sendTransactionalEmail')
-    expect(newStep.appKey).toBe('postman')
-    expect(newStep.position).toBe(existingSteps[0].position + 1)
+    expect(newStep!.type).toBe('action')
+    expect(newStep!.key).toBe('sendTransactionalEmail')
+    expect(newStep!.appKey).toBe('postman')
+    expect(newStep!.position).toBe(existingSteps[0].position + 1)
   })
 
   it('viewer should not be able to create a new step', async () => {
     context.currentUser = viewer
-    await expect(
-      createStep(null, genericNewStepParams, context),
-    ).rejects.toThrow(NotFoundError)
+    await expect(createStep({}, genericNewStepParams, context)).rejects.toThrow(
+      NotFoundError,
+    )
   })
 
   it('non-collaborator should not be able to create a new step', async () => {
     context.currentUser = nonCollaborator
-    await expect(
-      createStep(null, genericNewStepParams, context),
-    ).rejects.toThrow(NotFoundError)
+    await expect(createStep({}, genericNewStepParams, context)).rejects.toThrow(
+      NotFoundError,
+    )
   })
 
   it('creates a step with connection and adds flow connection for owner', async () => {
@@ -344,7 +338,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
     expect((newStep as any).connectionId).toBe(testConnection.id)
@@ -373,9 +367,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow(
-      NotFoundError,
-    )
+    await expect(createStep({}, params, context)).rejects.toThrow(NotFoundError)
   })
 
   // TODO (kevinkim-ogp): update this test when we allow editors to add their own connections to the Pipe
@@ -405,9 +397,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow(
-      NotFoundError,
-    )
+    await expect(createStep({}, params, context)).rejects.toThrow(NotFoundError)
   })
 
   it('throws error when user does not have access to connection', async () => {
@@ -437,9 +427,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    await expect(createStep(null, params, context)).rejects.toThrow(
-      NotFoundError,
-    )
+    await expect(createStep({}, params, context)).rejects.toThrow(NotFoundError)
   })
 
   it('creates a step without connection when connection is not provided', async () => {
@@ -456,7 +444,7 @@ describe('createStep mutation integration tests', async () => {
       },
     }
 
-    const newStep = await createStep(null, params, context)
+    const newStep = await createStep({}, params, context)
 
     expect(newStep).toBeDefined()
     expect((newStep as any).connectionId).toBeNull()
@@ -466,7 +454,7 @@ describe('createStep mutation integration tests', async () => {
     it('defaults to version 1 when app has no stepTransformer', async () => {
       // postman has no stepTransformer - version should default to 1
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
@@ -484,7 +472,7 @@ describe('createStep mutation integration tests', async () => {
 
     it('defaults to version 1 when no appKey is provided', async () => {
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
@@ -510,7 +498,7 @@ describe('createStep mutation integration tests', async () => {
 
       try {
         const newStep = await createStep(
-          null,
+          {},
           {
             input: {
               flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
@@ -548,10 +536,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      const newStep = await createStep(null, params, context)
+      const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('sendTransactionalEmail')
+      expect(newStep!.key).toBe('sendTransactionalEmail')
     })
 
     it('should succeed when input.flow.updatedAt is different from flow.updatedAt for same user', async () => {
@@ -571,10 +559,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      const newStep = await createStep(null, params, context)
+      const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('sendTransactionalEmail')
+      expect(newStep!.key).toBe('sendTransactionalEmail')
     })
 
     it('should throw when input.flow.updatedAt is different from flow.updatedAt for different user', async () => {
@@ -595,10 +583,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         BadUserInputError,
       )
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         REFRESH_PIPE_MESSAGE,
       )
     })
@@ -621,10 +609,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         BadUserInputError,
       )
-      await expect(createStep(null, params, context)).rejects.toThrow(
+      await expect(createStep({}, params, context)).rejects.toThrow(
         REFRESH_PIPE_MESSAGE,
       )
     })
@@ -643,15 +631,19 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      const newStep = await createStep(null, params, context)
+      const newStep = await createStep({}, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('sendTransactionalEmail')
+      expect(newStep!.key).toBe('sendTransactionalEmail')
     })
   })
 })
 
 describe('createStep endStepId write rules', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let testFlow: Flow
   let owner: User
   let context: Context
@@ -670,8 +662,8 @@ describe('createStep endStepId write rules', () => {
   ): Promise<Step[]> {
     return testFlow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: spec.parameters ?? {},
@@ -685,16 +677,15 @@ describe('createStep endStepId write rules', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
     await FlowConnections.query().delete()
     await Step.query().delete()
     await Flow.query().delete()
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
-      req: null,
+      req: null as unknown as Request,
       currentUser: owner,
-      res: null,
+      res: null as unknown as Response,
       isAdminOperation: false,
     } as unknown as Context
 
@@ -710,8 +701,8 @@ describe('createStep endStepId write rules', () => {
     } as any)
   })
 
-  it('rule 1: pins a legacy block when adding after it (lazy upgrade)', async () => {
-    const [, ifThenA, stepA] = await seedSteps([
+  it('rule 1: pins a legacy block when adding after it, and pins unrelated legacy blocks too', async () => {
+    const [, ifThenA, stepA, ifThenB, stepB] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
       { key: 'ifThen', appKey: 'toolbox', type: 'action' },
       { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
@@ -720,7 +711,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -735,7 +726,8 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect(newStep.position).toBe(stepA.position + 1)
+    expect((await reload(ifThenB.id)).config.endStepId).toBe(stepB.id)
+    expect(newStep!.position).toBe(stepA.position + 1)
     expect((newStep as any).config.endStepId).toBeUndefined()
   })
 
@@ -747,7 +739,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -767,12 +759,7 @@ describe('createStep endStepId write rules', () => {
     await expect(reload(blankChild.id)).rejects.toThrow()
     const reloadedIfThenA = await reload(ifThenA.id)
     expect(reloadedIfThenA.config.endStepId).toBe(ifThenA.id)
-    // IMPORTANT: reloaded, not the mutation's own return value — the
-    // cleanup's position shift runs after the insert this resolver's
-    // response was captured from, so the response's own `position` is
-    // stale by one.
-    const reloadedNewStep = await reload((newStep as any).id)
-    expect(reloadedNewStep.position).toBe(reloadedIfThenA.position + 1)
+    expect(newStep!.position).toBe(reloadedIfThenA.position + 1)
 
     const steps = await testFlow
       .$relatedQuery('steps')
@@ -793,7 +780,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -808,8 +795,8 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect(newStep.position).toBe(stepA.position + 1)
-    expect((await reload(other.id)).position).toBe(newStep.position + 1)
+    expect(newStep!.position).toBe(stepA.position + 1)
+    expect((await reload(other.id)).position).toBe(newStep!.position! + 1)
   })
 
   it('rule 1: rolls back when previousStep is not the block endStep', async () => {
@@ -824,7 +811,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -860,7 +847,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -899,7 +886,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -915,7 +902,7 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect(newStep.position).toBe(stepA.position + 1)
+    expect(newStep!.position).toBe(stepA.position + 1)
     expect((newStep as any).config.endStepId).toBeUndefined()
   })
 
@@ -930,7 +917,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -943,7 +930,7 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep.id)
+    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep!.id)
   })
 
   it('rule 2: extends an empty (self-ref) block on the first inside-add', async () => {
@@ -956,7 +943,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: ifThenA.id } })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -969,7 +956,7 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep.id)
+    expect((await reload(ifThenA.id)).config.endStepId).toBe(newStep!.id)
   })
 
   it('rule 2: extends an empty block inside a rejection branch', async () => {
@@ -994,7 +981,7 @@ describe('createStep endStepId write rules', () => {
     })
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1009,11 +996,11 @@ describe('createStep endStepId write rules', () => {
     )
 
     const block = await reload(ifThenA.id)
-    expect(block.config.endStepId).toBe(newStep.id)
+    expect(block.config.endStepId).toBe(newStep!.id)
     // IMPORTANT: preserves the approval marker and doesn't swallow the
     // pre-existing step during the pin.
     expect(block.config.approval).toEqual(rejection.approval)
-    expect(newStep.position).toBeLessThan((await reload(existing.id)).position)
+    expect(newStep!.position).toBeLessThan((await reload(existing.id)).position)
   })
 
   it('rule 2: does NOT extend when the new step is an if-then', async () => {
@@ -1026,7 +1013,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newIfThen = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1055,7 +1042,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepB.id } })
 
     await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1071,36 +1058,6 @@ describe('createStep endStepId write rules', () => {
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepB.id)
   })
 
-  it('rule 3: no-op inside-add on a legacy block (stays lazy)', async () => {
-    const seeded = await seedSteps([
-      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-    ])
-    const [, , stepA] = seeded
-
-    await createStep(
-      null,
-      {
-        input: {
-          flow: flowInput(),
-          previousStep: { id: stepA.id },
-          key: 'sendTransactionalEmail',
-          appKey: 'postman',
-          parameters: {},
-        },
-      },
-      context,
-    )
-
-    const steps = await testFlow.$relatedQuery('steps')
-    expect(steps.every((step) => step.config.endStepId === undefined)).toBe(
-      true,
-    )
-  })
-
   it('rejects a real step id in config.endStepId on create', async () => {
     const seeded = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
@@ -1110,7 +1067,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1136,7 +1093,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1150,7 +1107,7 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    expect((await reload(newStep.id)).config.endStepId).toBe(newStep.id)
+    expect((await reload(newStep!.id!)).config.endStepId).toBe(newStep!.id)
   })
 
   it('rejects the sentinel on a non-if-then step', async () => {
@@ -1161,7 +1118,7 @@ describe('createStep endStepId write rules', () => {
 
     await expect(
       createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1196,7 +1153,7 @@ describe('createStep endStepId write rules', () => {
     ])
 
     const newStep = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1210,8 +1167,8 @@ describe('createStep endStepId write rules', () => {
       context,
     )
 
-    const reloaded = await reload(newStep.id)
-    expect(reloaded.config.endStepId).toBe(newStep.id)
+    const reloaded = await reload(newStep!.id!)
+    expect(reloaded.config.endStepId).toBe(newStep!.id)
     expect(reloaded.config.approval).toEqual(rejection.approval)
   })
 
@@ -1224,7 +1181,7 @@ describe('createStep endStepId write rules', () => {
     await ifThenA.$query().patch({ config: { endStepId: stepA.id } })
 
     const newIfThen = await createStep(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -1240,11 +1197,11 @@ describe('createStep endStepId write rules', () => {
     )
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-    expect((await reload(newIfThen.id)).config.endStepId).toBe(newIfThen.id)
+    expect((await reload(newIfThen!.id!)).config.endStepId).toBe(newIfThen!.id)
   })
 
   describe('opportunistic if-then V1 upgrade', () => {
-    it('pins unrelated V1 if-then blocks elsewhere in the flow when the flag is on', async () => {
+    it('pins unrelated V1 if-then blocks elsewhere in the flow', async () => {
       // Both if-thens are legacy. The new step lands before either block, so
       // neither rule 1 nor rule 2 touches them. Any pin here comes only from
       // the general opportunistic pass.
@@ -1255,10 +1212,9 @@ describe('createStep endStepId write rules', () => {
         { key: 'ifThen', appKey: 'toolbox', type: 'action' },
         { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
       ])
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1275,41 +1231,6 @@ describe('createStep endStepId write rules', () => {
       expect((await reload(ifThenB.id)).config.endStepId).toBe(childB.id)
     })
 
-    it('composes with rule 1: upgrades other blocks in the same pass as the adjacent pin', async () => {
-      // Same fixture as the "rule 1: pins a legacy block when adding after
-      // it" test above, but with the flag on. Rule 1 still pins ifThenA as
-      // before. This pass separately pins the unrelated ifThenB, which
-      // rule 1 never touches.
-      const [, ifThenA, stepA, ifThenB, stepB] = await seedSteps([
-        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-      ])
-      mocks.getLdFlagValue.mockResolvedValue(true)
-
-      await createStep(
-        null,
-        {
-          input: {
-            flow: flowInput(),
-            previousStep: { id: stepA.id },
-            previousBlockId: ifThenA.id,
-            key: 'sendTransactionalEmail',
-            appKey: 'postman',
-            parameters: {},
-          },
-        },
-        context,
-      )
-
-      // rule 1's own adjacent pin, unchanged.
-      expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
-      // the opportunistic pass pins the other, unrelated block too.
-      expect((await reload(ifThenB.id)).config.endStepId).toBe(stepB.id)
-    })
-
     it('composes with rule 2: extends a still-legacy block on a plain tail-add', async () => {
       // Same shape as "rule 2: extends an explicit block on a plain
       // tail-add" above, but ifThenA starts marker-less (V1).
@@ -1324,10 +1245,9 @@ describe('createStep endStepId write rules', () => {
         { key: 'ifThen', appKey: 'toolbox', type: 'action' },
         { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
       ])
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1349,35 +1269,6 @@ describe('createStep endStepId write rules', () => {
       expect((await reload(ifThenB.id)).config.endStepId).toBe(stepB.id)
     })
 
-    it('does not pin any V1 if-then block when the flag is off', async () => {
-      const [, ifThenA, , ifThenB, , trailing] = await seedSteps([
-        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
-      ])
-      mocks.getLdFlagValue.mockResolvedValue(false)
-
-      await createStep(
-        null,
-        {
-          input: {
-            flow: flowInput(),
-            previousStep: { id: trailing.id },
-            key: 'sendTransactionalEmail',
-            appKey: 'postman',
-            parameters: {},
-          },
-        },
-        context,
-      )
-
-      expect((await reload(ifThenA.id)).config.endStepId).toBeUndefined()
-      expect((await reload(ifThenB.id)).config.endStepId).toBeUndefined()
-    })
-
     it('deletes a leftover V1 blank placeholder member when a real step is added ahead of it', async () => {
       // The V1 branch initializer leaves a blank child (no appKey/key) as
       // the block's only member. Inserting a real step between the if-then
@@ -1387,10 +1278,9 @@ describe('createStep endStepId write rules', () => {
         { key: 'ifThen', appKey: 'toolbox', type: 'action' },
         { key: null, appKey: null, type: 'action' },
       ])
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       const newStep = await createStep(
-        null,
+        {},
         {
           input: {
             flow: flowInput(),
@@ -1416,32 +1306,6 @@ describe('createStep endStepId write rules', () => {
       expect(steps.map((step) => step.position)).toEqual(
         steps.map((_step, index) => index + 1),
       )
-    })
-
-    it('keeps a leftover V1 blank placeholder member when the flag is off', async () => {
-      const [, ifThenStep, blankChild] = await seedSteps([
-        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-        { key: null, appKey: null, type: 'action' },
-      ])
-      mocks.getLdFlagValue.mockResolvedValue(false)
-
-      await createStep(
-        null,
-        {
-          input: {
-            flow: flowInput(),
-            previousStep: { id: ifThenStep.id },
-            key: 'sendTransactionalEmail',
-            appKey: 'postman',
-            parameters: {},
-          },
-        },
-        context,
-      )
-
-      expect((await reload(blankChild.id)).id).toBe(blankChild.id)
-      expect((await reload(ifThenStep.id)).config.endStepId).toBeUndefined()
     })
   })
 })

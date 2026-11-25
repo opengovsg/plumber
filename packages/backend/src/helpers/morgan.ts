@@ -20,6 +20,18 @@ const morganOptions: morgan.Options<Request, Response> = {
   },
 }
 
+const REQUEST_LOG_USER_ID = 'requestLogUserId'
+
+// The GraphQL context resolves the user after this middleware runs.
+// Morgan writes the line when the response finishes, so the id is set by then.
+export function setRequestLogUserId(res: Response, userId: string): void {
+  res.locals[REQUEST_LOG_USER_ID] = userId
+}
+
+morgan.token('user-id', (_req: Request, res: Response) => {
+  return res.locals?.[REQUEST_LOG_USER_ID]
+})
+
 morgan.token('cf-connecting-ip', (req: Request) => {
   if (req.headers['cf-connecting-ip']) {
     return req.headers['cf-connecting-ip'] as string
@@ -66,6 +78,7 @@ const morganJsonFormat = JSON.stringify({
   'response-time': ':response-time',
   'ip-address': ':remote-addr',
   'cf-connecting-ip': ':cf-connecting-ip',
+  'user-id': ':user-id',
   'graphql-query': ':graphql-query',
   'graphql-variables': ':graphql-variables',
 })

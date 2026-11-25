@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStepPositions from '@/graphql/mutations/update-step-positions'
@@ -7,16 +15,6 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
-
-// Defaults to false in beforeEach below so pre-existing tests here stay
-// byte-identical; the opportunistic-upgrade tests override it per case.
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 
@@ -69,6 +67,10 @@ const MOCK_STEPS = [
 ] as const
 
 describe('updateStepPositions mutation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let context: any
   let fakeSteps: any[]
   let fakeFlow: any
@@ -79,7 +81,6 @@ describe('updateStepPositions mutation', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Set up flow patch and fetch spy first
     flowPatchAndFetchSpy = vi.fn().mockReturnValue({
@@ -98,7 +99,7 @@ describe('updateStepPositions mutation', () => {
       $query: vi.fn().mockReturnValue({
         patchAndFetch: flowPatchAndFetchSpy,
       }),
-      // Used by upgradeIfThenV1BlocksIfEnabled's re-fetch. MOCK_STEPS has no
+      // Used by upgradeIfThenV1Blocks's re-fetch. MOCK_STEPS has no
       // if-then steps, so it's a no-op regardless of what this returns.
       $relatedQuery: vi.fn().mockReturnValue({
         orderBy: vi.fn().mockResolvedValue(MOCK_STEPS),
@@ -117,7 +118,7 @@ describe('updateStepPositions mutation', () => {
       const trx = {
         raw: vi.fn().mockResolvedValue({}),
       } as any
-      return callback(trx)
+      return callback!(trx)
     })
 
     // Mock Step.query
@@ -169,7 +170,7 @@ describe('updateStepPositions mutation', () => {
       },
     }
 
-    await updateStepPositions(null, { input }, context)
+    await updateStepPositions({}, { input }, context)
 
     // should call and update the step positions
     expect(stepFindByIdSpy).toHaveBeenCalledTimes(3)
@@ -201,7 +202,7 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Step not found',
     )
   })
@@ -222,10 +223,10 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: must update contiguous action steps!',
     )
   })
@@ -246,10 +247,10 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: must update contiguous action steps!',
     )
   })
@@ -273,10 +274,10 @@ describe('updateStepPositions mutation', () => {
       },
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: step positions are out of bounds.',
     )
   })
@@ -307,10 +308,10 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Pipe is active. Cannot update step in active pipe!',
     )
   })
@@ -338,10 +339,10 @@ describe('updateStepPositions mutation', () => {
       },
     }
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: steps were not found',
     )
   })
@@ -350,6 +351,10 @@ describe('updateStepPositions mutation', () => {
 // Real-DB integration tests, kept separate from the mock-based suite above
 // so the repair runs against real flow steps.
 describe('updateStepPositions endStepId repair', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   let testFlow: Flow
   let owner: User
   let context: Context
@@ -370,8 +375,8 @@ describe('updateStepPositions endStepId repair', () => {
   ): Promise<Step[]> {
     return testFlow.$relatedQuery('steps').insertAndFetch(
       specs.map((spec, index) => ({
-        key: spec.key,
-        appKey: spec.appKey,
+        key: spec.key ?? undefined,
+        appKey: spec.appKey ?? undefined,
         type: spec.type,
         position: index + 1,
         parameters: spec.parameters ?? {},
@@ -392,9 +397,8 @@ describe('updateStepPositions endStepId repair', () => {
 
   beforeEach(async () => {
     vi.restoreAllMocks()
-    mocks.getLdFlagValue.mockResolvedValue(false)
 
-    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    owner = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!
     context = {
       req: null,
       currentUser: owner,
@@ -407,7 +411,7 @@ describe('updateStepPositions endStepId repair', () => {
       updatedBy: owner.id,
     })
 
-    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => null)
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
   })
 
   it('moves the endStep marker to the new highest member after an interior reorder', async () => {
@@ -422,7 +426,7 @@ describe('updateStepPositions endStepId repair', () => {
 
     // Reorder the block interior [s3, s4, s5] -> [s5, s3, s4].
     await updateStepPositions(
-      null,
+      {},
       {
         input: {
           stepPositions: [
@@ -452,7 +456,7 @@ describe('updateStepPositions endStepId repair', () => {
 
     // Reorder two later steps that sit outside the block.
     await updateStepPositions(
-      null,
+      {},
       {
         input: {
           stepPositions: [
@@ -469,7 +473,7 @@ describe('updateStepPositions endStepId repair', () => {
     expect(wasRepaired()).toBe(false)
   })
 
-  it('reorders a legacy (marker-less) flow without writing any marker', async () => {
+  it('pins a legacy block, then repairs its marker after an interior reorder', async () => {
     const [, legacy, s3, s4] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
       { key: 'ifThen', appKey: 'toolbox', type: 'action' },
@@ -478,7 +482,7 @@ describe('updateStepPositions endStepId repair', () => {
     ])
 
     await updateStepPositions(
-      null,
+      {},
       {
         input: {
           stepPositions: [
@@ -491,8 +495,8 @@ describe('updateStepPositions endStepId repair', () => {
       context,
     )
 
-    expect((await reload(legacy.id)).config.endStepId).toBeUndefined()
-    expect(wasRepaired()).toBe(false)
+    expect((await reload(legacy.id)).config.endStepId).toBe(s3.id)
+    expect(wasRepaired()).toBe(true)
   })
 
   describe('opportunistic if-then V1 upgrade', () => {
@@ -529,10 +533,9 @@ describe('updateStepPositions endStepId repair', () => {
     it('pins both legacy blocks to their pre-reorder extents so the drag does not absorb the trailing step', async () => {
       const [, ifThenA, childA, ifThenB, childB, trailing] =
         await seedTwoBlockFlow()
-      mocks.getLdFlagValue.mockResolvedValue(true)
 
       await updateStepPositions(
-        null,
+        {},
         { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
         context,
       )
@@ -542,20 +545,6 @@ describe('updateStepPositions endStepId repair', () => {
       expect((await reload(ifThenA.id)).config.endStepId).toBe(childA.id)
       expect((await reload(ifThenB.id)).config.endStepId).toBeDefined()
       expect((await reload(trailing.id)).config.endStepId).toBeUndefined()
-    })
-
-    it('does not pin any V1 if-then block when the flag is off', async () => {
-      const [, ifThenA, childA, ifThenB, childB] = await seedTwoBlockFlow()
-      mocks.getLdFlagValue.mockResolvedValue(false)
-
-      await updateStepPositions(
-        null,
-        { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
-        context,
-      )
-
-      expect((await reload(ifThenA.id)).config.endStepId).toBeUndefined()
-      expect((await reload(ifThenB.id)).config.endStepId).toBeUndefined()
     })
   })
 })

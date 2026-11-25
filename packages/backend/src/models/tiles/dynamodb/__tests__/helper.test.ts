@@ -120,6 +120,9 @@ describe('dynamodb helpers', () => {
         ElectroError.prototype,
       )
       expect(() => handleDynamoDBError(throughputExceededError)).toThrow(
+        expect.objectContaining({ kind: 'internal' }),
+      )
+      expect(() => handleDynamoDBError(throughputExceededError)).toThrow(
         RetriableError,
       )
     })

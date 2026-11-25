@@ -2,7 +2,7 @@ import type { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut: rawDataOut } = executionStep
   if (!rawDataOut) {
     return null

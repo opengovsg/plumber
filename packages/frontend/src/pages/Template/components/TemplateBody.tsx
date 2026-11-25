@@ -1,5 +1,4 @@
-import { Box, Divider, Flex, Text } from '@chakra-ui/react'
-import { Infobox } from '@opengovsg/design-system-react'
+import { Box, Divider, Flex } from '@chakra-ui/react'
 import type { IApp, ITemplateStep } from '@plumber/types'
 import { Fragment, useMemo } from 'react'
 
@@ -44,20 +43,16 @@ export default function TemplateBody(props: TemplateBodyProps) {
 
   return (
     <Flex
+      // Fills the space above the caption so a short template centres there.
+      // A long one outgrows it and scrolls from the top padding.
+      flex={1}
       flexDir="column"
       justifyContent="center"
       alignItems="center"
       w={{ base: '100%', md: '90%', lg: '60%' }}
       mx="auto"
-      py={{ base: '0.75rem', md: '1.5rem' }}
+      py={10}
     >
-      <Infobox icon={<></>} variant="primary" mb={6}>
-        <Text textStyle="body-1">
-          This is a preview of your workflow. Add details to use this template
-          as-is. Or, add more steps to customise it to your use case.
-        </Text>
-      </Infobox>
-
       {/* Steps to display before if-then */}
       {templateStepsBeforeGroup.map((templateStep, index) => (
         <Fragment key={index}>

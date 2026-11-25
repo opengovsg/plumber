@@ -85,7 +85,7 @@ describe('Login with SSO', () => {
     mocks.validateAndParseEmail.mockResolvedValueOnce('officer@agency.gov.sg')
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'user-1' } as User)
 
-    const result = await loginWithSso(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSso({}, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.ssoCallback).toHaveBeenCalledWith({
       code: 'auth-code',
@@ -116,7 +116,7 @@ describe('Login with SSO', () => {
     mocks.validateAndParseEmail.mockResolvedValueOnce(false)
 
     await expect(
-      loginWithSso(null, STUB_PARAMS, STUB_CONTEXT),
+      loginWithSso({}, STUB_PARAMS, STUB_CONTEXT),
     ).rejects.toBeInstanceOf(ForbiddenError)
     expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
     expect(mocks.setAuthCookie).not.toHaveBeenCalled()
@@ -131,7 +131,7 @@ describe('Login with SSO', () => {
       codeVerifier: 'verifier',
     })
 
-    await expect(loginWithSso(null, STUB_PARAMS, STUB_CONTEXT)).rejects.toThrow(
+    await expect(loginWithSso({}, STUB_PARAMS, STUB_CONTEXT)).rejects.toThrow(
       'SSO login session is invalid or expired',
     )
     expect(mocks.ssoCallback).not.toHaveBeenCalled()
@@ -140,7 +140,7 @@ describe('Login with SSO', () => {
   it('does not start SSO when the feature flag is off', async () => {
     mocks.getLdFlagValue.mockResolvedValueOnce('off')
 
-    await expect(loginWithSso(null, STUB_PARAMS, STUB_CONTEXT)).rejects.toThrow(
+    await expect(loginWithSso({}, STUB_PARAMS, STUB_CONTEXT)).rejects.toThrow(
       'SSO is not enabled',
     )
     expect(mocks.consumeSsoLoginCookie).not.toHaveBeenCalled()

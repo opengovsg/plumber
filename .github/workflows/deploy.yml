@@ -45,6 +45,8 @@ on:
         required: true
       SLACK_CHANNEL_ID:
         required: true
+      POSTHOG_API_KEY:
+        required: false
 
 permissions: {}
 
@@ -61,6 +63,27 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+          # git describe needs the history back to the latest release tag.
+          fetch-depth: 0
+
+      - name: Resolve app version
+        id: app-version
+        shell: bash
+        env:
+          # Empty outside release events.
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          # Release tags are the version source of truth. package.json versions are not bumped.
+          if [ -n "${RELEASE_TAG}" ]; then
+            # A commit can carry several release tags, so git describe may not pick the one being deployed.
+            version="${RELEASE_TAG}"
+          else
+            # Branch deploys (staging, uat) resolve to e.g. 1.107.0-12-gc3a6733.
+            version="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*')"
+          fi
+          echo "version=${version#v}" >> "${GITHUB_OUTPUT}"
+          echo "App version: ${version#v}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2.2.0
@@ -88,23 +111,66 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ vars.POSTHOG_PROJECT_ID }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+          INPUTS_RELEASE_VERSION: ${{ inputs.release-version }}
+          APP_VERSION: ${{ steps.app-version.outputs.version }}
           IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
         run: |
-          docker build . -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
+          docker build . -t "${IMAGE}" \
+            --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" \
+            --build-arg RELEASE_VERSION="${INPUTS_RELEASE_VERSION}" \
+            --build-arg APP_VERSION \
+            --build-arg POSTHOG_PROJECT_ID \
+            --build-arg POSTHOG_HOST \
+            --build-arg GITHUB_ACTIONS=true \
+            --build-arg GITHUB_SHA="${GITHUB_SHA}" \
+            --build-arg GITHUB_REF_NAME="${GITHUB_REF_NAME}" \
+            --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}" \
+            --build-arg GITHUB_SERVER_URL="${GITHUB_SERVER_URL}" \
+            --secret id=NPM_TASKFORCESH_TOKEN \
+            --secret id=POSTHOG_API_KEY
 
-      - name: Scan built image with Inspector
-        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@c87d8a405e237cfdf16e5dd3808d28d088d7cb6f # v1.6.1
+      - name: Scan repository with Inspector
+        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@6b57bbc6000f30afb3cfc2d00b9c442ddc4f1fc9 # v1.7.0
         id: inspector
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
         with:
-          artifact_type: 'container'
-          artifact_path: '${{ steps.ecr-image-uri.outputs.image }}'
+          artifact_type: 'repository'
+          artifact_path: './'
           critical_threshold: 5
           high_threshold: 10
+          fail_on_malicious_packages: true
+
+      - name: Check Inspector malware findings
+        id: malware
+        env:
+          SCAN_RESULTS_PATH: ${{ steps.inspector.outputs.inspector_scan_results }}
+        run: |
+          set -euo pipefail
+
+          if ! count=$(jq -esr '
+            if length == 1 then .[0] else error("Expected one scan result") end
+            |
+            [.sbom.metadata.properties[]
+             | select(.name == "amazon:inspector:sbom_scanner:malicious_packages")
+             | .value | tostring]
+            | if length == 1 and (.[0] | test("^(0|[1-9][0-9]*)$"))
+              then .[0] else error("Invalid malware count") end
+          ' "$SCAN_RESULTS_PATH"); then
+            echo "::warning::Could not validate Inspector malware count. Review the full scan."
+            echo "detected=1" >> "$GITHUB_OUTPUT"
+            echo "summary=Could not validate Inspector malware count. Review the full scan." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          detected=0
+          if [ "$count" != "0" ]; then
+            detected=1
+          fi
+          echo "detected=$detected" >> "$GITHUB_OUTPUT"
+          echo "summary=Inspector reported $count malicious packages." >> "$GITHUB_OUTPUT"
 
       - name: Display CycloneDX SBOM (JSON)
         env:
@@ -127,8 +193,8 @@ jobs:
             ${{ steps.inspector.outputs.artifact_sbom }}
           retention-days: 7
 
-      - name: Notify Slack if vulnerability threshold is exceeded
-        if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
+      - name: Notify Slack if vulnerability threshold is exceeded or malware is detected
+        if: ${{ !cancelled() && (steps.inspector.outputs.vulnerability_threshold_exceeded == '1' || steps.malware.outputs.detected == '1') }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
@@ -136,7 +202,7 @@ jobs:
           payload: |
             channel: "${{ secrets.SLACK_CHANNEL_ID }}"
             username: "Plumber Deployment Scanner"
-            text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            text: ":warning: *Inspector security alert* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). CVE threshold exceeded: ${{ steps.inspector.outputs.vulnerability_threshold_exceeded }}. ${{ steps.malware.outputs.summary }} Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Push image to ECR after scan passes
         env:
@@ -224,7 +290,7 @@ jobs:
 
       - name: (Server) Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
         with:
           task-definition: ecs-task-definition.json
           container-name: server
@@ -232,7 +298,7 @@ jobs:
 
       - name: (Worker) Fill in the new image ID in the Amazon ECS task definition
         id: full-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           container-name: worker
@@ -268,7 +334,7 @@ jobs:
 
       - name: (Archival) Fill in the new image ID in the Amazon ECS task definition
         id: archival-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
         with:
           task-definition: ecs-archival-task-definition.json
           container-name: archival
@@ -277,4 +343,26 @@ jobs:
       - name: (Archival) Register task definition
         env:
           TASK_DEF_FILE: ${{ steps.archival-task-def.outputs.task-definition }}
+        run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"
+
+      - name: (Reconciler) Replace variables in task definition
+        run: |
+          cp ecs/reconciler-task-definition.json ecs-reconciler-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-reconciler-task-definition.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-reconciler-task-definition.json
+        env:
+          INPUTS_AWS_ACCOUNT_ID: ${{ inputs.aws-account-id }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+
+      - name: (Reconciler) Fill in the new image ID in the Amazon ECS task definition
+        id: reconciler-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
+        with:
+          task-definition: ecs-reconciler-task-definition.json
+          container-name: reconciler
+          image: ${{ steps.ecr-image-uri.outputs.image }}
+
+      - name: (Reconciler) Register task definition
+        env:
+          TASK_DEF_FILE: ${{ steps.reconciler-task-def.outputs.task-definition }}
         run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"

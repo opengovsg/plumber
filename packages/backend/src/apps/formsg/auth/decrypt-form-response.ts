@@ -16,12 +16,20 @@ import type { FormsgPayloadWorkflowContent } from '../common/types'
 import { NricFilter } from '../triggers/new-submission/index'
 import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 import { computeSubmissionTime } from './helpers/compute-submission-time'
+import { logUnsupportedPayload } from './helpers/log-unsupported-payload'
 import { processResponsesV3 } from './helpers/process-v3-responses'
-import { processResponsesV4 } from './helpers/process-v4-responses'
+import {
+  type MappedFormField,
+  processResponsesV4,
+} from './helpers/process-v4-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
+const KNOWN_VERIFIED_KEYS = new Set(['uinFin', 'sgidUinFin', 'cpUen', 'cpUid'])
+// V4 and MRF payloads suffix verified keys with the step, e.g. "cpUen (Step 1)".
+// Brackets break the variable regex, so we map them back to the legacy keys.
+const VERIFIED_KEY_STEP_SUFFIX = / \(Step \d+\)$/
 
 function processLocalAddress(answerArray: string[]): string[] {
   const answer = [...answerArray]
@@ -85,7 +93,7 @@ function isVerifiedEmailField(
 
 export async function decryptFormResponse(
   $: IGlobalVariable,
-): ReturnType<IAuth['verifyWebhook']> {
+): ReturnType<NonNullable<IAuth['verifyWebhook']>> {
   if (!$.request) {
     logger.error('No trigger item provided')
     return { verified: false, internalId: null }
@@ -97,7 +105,7 @@ export async function decryptFormResponse(
       event: 'formsg-missing-connection',
       flowId: $.flow.id,
       stepId: $.step.id,
-      userId: $.user.id,
+      userId: $.user?.id,
     })
     return { verified: false, internalId: null }
   }
@@ -113,7 +121,10 @@ export async function decryptFormResponse(
   try {
     formSgSdk.webhooks.authenticate(
       headers['x-formsg-signature'] as string,
-      $.webhookUrl,
+      // webhookUrl is only unset when $ is built without a flow; this
+      // function only ever runs as a webhook trigger's verifyWebhook, which
+      // always builds $ with one (see controllers/webhooks/handler.ts).
+      $.webhookUrl as string,
     )
   } catch {
     logger.error('Unable to verify formsg signature')
@@ -124,7 +135,11 @@ export async function decryptFormResponse(
   const version = data.version
 
   const shouldStoreAttachments = $.flow.hasFileProcessingActions
-  let submission: DecryptedContent | null = null
+  let submission:
+    | (Omit<DecryptedContent, 'responses'> & {
+        responses: MappedFormField[]
+      })
+    | null = null
   let attachments: DecryptedAttachments | null = null
 
   if (version >= 3) {
@@ -176,8 +191,8 @@ export async function decryptFormResponse(
         formSecretKey,
         data,
       )
-      submission = decryptedResponse?.content
-      attachments = decryptedResponse?.attachments
+      submission = decryptedResponse?.content ?? null
+      attachments = decryptedResponse?.attachments ?? null
     } else {
       submission = formSgSdk.crypto.decrypt(formSecretKey, data)
     }
@@ -191,7 +206,7 @@ export async function decryptFormResponse(
     const verifiedEmails: string[] = []
 
     for (const [index, formField] of submission.responses.entries()) {
-      const { _id, ...rest } = formField
+      const { _id, tableColumnTitles, ...rest } = formField
       // perform null character sanitisation for all answer fields so that it can be inserted into the DB
       if (rest.answer && typeof rest.answer === 'string') {
         rest.answer = rest.answer.replaceAll('\u0000', '')
@@ -212,10 +227,15 @@ export async function decryptFormResponse(
             row.map((column) => column.replaceAll('\u0000', '')),
           )
 
-          rest.answer = convertTableAnswerArrayToTableObject(
-            rest.question,
-            rest.answerArray,
-          )
+          // Table fields carry a 2-D answerArray; FormField's answer/answerArray
+          // are otherwise mutually exclusive, but we also store a derived
+          // table object under answer for these.
+          ;(rest as { answer?: unknown }).answer =
+            convertTableAnswerArrayToTableObject(
+              rest.question,
+              rest.answerArray,
+              tableColumnTitles,
+            )
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>
             typeof answer === 'string'
@@ -223,6 +243,17 @@ export async function decryptFormResponse(
               : answer,
           )
         }
+      } else if (
+        rest.fieldType === 'table' &&
+        Array.isArray(rest.answerArray)
+      ) {
+        // An empty table has no rows. It still needs a table object, or the
+        // variable label is blank.
+        rest.answer = convertTableAnswerArrayToTableObject(
+          rest.question,
+          [],
+          tableColumnTitles,
+        )
       }
 
       // delete metadata from fields
@@ -242,7 +273,8 @@ export async function decryptFormResponse(
         // opaque S3 ID.
         attachmentFilename = rest.answer ?? ''
 
-        if (shouldStoreAttachments) {
+        // A blank optional attachment has no file. A filename still needs its map.
+        if (shouldStoreAttachments && (attachments || rest.answer)) {
           let s3FolderId = data.submissionId
           if (data.workflowContent) {
             // we add a suffix if it's an mrf step to prevent
@@ -316,10 +348,19 @@ export async function decryptFormResponse(
     const verifiedSubmitterInfo: Record<string, string> = {}
     if (submission.verified) {
       for (const key of Object.keys(submission.verified)) {
+        // TODO: FormSG only collects login data on Step 1 today. Revisit if
+        // FormSG adds logins on later steps, since step keys would collide.
+        const baseKey = key.replace(VERIFIED_KEY_STEP_SUFFIX, '')
+        if (!KNOWN_VERIFIED_KEYS.has(baseKey)) {
+          logUnsupportedPayload('unknown_verified_key', {
+            formId: data.formId,
+            key,
+          })
+        }
         let value = submission.verified[key]
 
         // @deprecated: filterNrics not supported new pipes
-        if (NRIC_VERIFIED_FIELDS.has(key)) {
+        if (NRIC_VERIFIED_FIELDS.has(baseKey)) {
           value = filterNric($, value)
           if (!value) {
             continue
@@ -327,18 +368,11 @@ export async function decryptFormResponse(
         }
 
         // for backwards compatibility with old forms that were created with sgID authType
-        if (
-          key === 'uinFin' ||
-          key === 'sgidUinFin' ||
-          // v3 mrf forms send nric as "uinFin (Step 1)"
-          // brackets break the variable regex and is not the same as mock data
-          // we need to map it back to uinFin
-          key.startsWith('uinFin')
-        ) {
+        if (baseKey === 'uinFin' || baseKey === 'sgidUinFin') {
           verifiedSubmitterInfo['uinFin'] = value
           verifiedSubmitterInfo['sgidUinFin'] = value
         } else {
-          verifiedSubmitterInfo[key] = value
+          verifiedSubmitterInfo[baseKey] = value
         }
       }
     }
@@ -361,8 +395,10 @@ export async function decryptFormResponse(
       $.request.body.paymentContent = data.paymentContent
     }
 
-    delete $.request.headers
-    delete $.request.query
+    // Express's Request types headers/query as always-present; we clear them
+    // here to avoid holding onto raw webhook request data longer than needed.
+    delete ($.request as { headers?: unknown }).headers
+    delete ($.request as { query?: unknown }).query
 
     const internalId = data.submissionId
 

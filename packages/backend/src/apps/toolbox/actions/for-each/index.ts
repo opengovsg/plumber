@@ -8,6 +8,7 @@ import {
 } from '@/apps/toolbox/common/get-for-each-variables'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import {
@@ -57,7 +58,11 @@ const action: IRawAction = {
     const parsedResult = inputSchema.safeParse({ data: rawItems, testRun })
 
     if (parsedResult.success === false) {
-      throw new StepError('Invalid input list', 'Select a valid input list')
+      throw new StepError({
+        name: 'Invalid input list',
+        solution: 'Select a valid input list',
+        kind: 'config',
+      })
     }
 
     try {
@@ -111,8 +116,20 @@ const action: IRawAction = {
         },
       }
     } catch (err) {
-      console.error(err)
-      throw new StepError('Invalid input list', 'Select a valid input list')
+      logger.error('For each failed to process a parsed input list', {
+        event: 'for-each-process-input-failed',
+        errorName: err instanceof Error ? err.name : typeof err,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+        executionId: $.execution?.id,
+      })
+      // The input already passed validation, so a failure here is a Plumber bug.
+      throw new StepError({
+        name: 'Invalid input list',
+        solution: 'Select a valid input list',
+        kind: 'internal',
+      })
     }
   },
 }

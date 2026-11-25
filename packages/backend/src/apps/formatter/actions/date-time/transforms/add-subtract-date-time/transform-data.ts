@@ -54,10 +54,28 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
       throw error
     }
 
-    throw new StepError(
-      `Configuration problem: '${firstZodParseError(error)}'`,
-      GenericSolution.ReconfigureInvalidField,
-    )
+    throw new StepError({
+      name: `Configuration problem: '${firstZodParseError(error)}'`,
+      solution: GenericSolution.ReconfigureInvalidField,
+      kind: 'config',
+    })
+  }
+}
+
+function parseValue(
+  dateTimeFormat: z.infer<typeof dateTimeFormatSchema>['dateTimeFormat'],
+  valueToTransform: string,
+): DateTime {
+  try {
+    return parseDateTime(dateTimeFormat, valueToTransform)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    throw new StepError({
+      name: `Error processing dates: '${errorMessage}'`,
+      solution:
+        'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
+      kind: 'config',
+    })
   }
 }
 
@@ -67,8 +85,17 @@ export const transformData: TransformSpec['transformData'] = async (
 ) => {
   try {
     const { dateTimeFormat, ops } = getParams($)
-    const valueAsDateTime = parseDateTime(dateTimeFormat, valueToTransform)
+    const valueAsDateTime = parseValue(dateTimeFormat, valueToTransform)
     const result = performDateMath(valueAsDateTime, ops)
+
+    // Luxon returns an invalid date when a user's amount goes past its range.
+    if (!result.isValid) {
+      throw new StepError({
+        name: 'The amount of time is out of range',
+        solution: 'Enter a smaller amount of time.',
+        kind: 'config',
+      })
+    }
 
     $.setActionItem({
       raw: {
@@ -80,9 +107,12 @@ export const transformData: TransformSpec['transformData'] = async (
       throw error
     }
 
-    throw new StepError(
-      `Error processing dates: '${error.message}'`,
-      'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
-    )
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    throw new StepError({
+      name: `Error processing dates: '${errorMessage}'`,
+      solution:
+        'There was an unexpected problem. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+      kind: 'internal',
+    })
   }
 }

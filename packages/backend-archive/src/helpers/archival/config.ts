@@ -101,4 +101,7 @@ export const archivalConfig = {
   // Wall-clock limit for a single archival run. The loop exits cleanly once
   // this is exceeded so the task finishes well within the nightly schedule window.
   archiveMaxRuntimeMs: requireIntStrict('ARCHIVE_MAX_RUNTIME_MS'),
+  appEnv: process.env.APP_ENV ?? 'development',
+  analyticsBucket: process.env.ANALYTICS_BUCKET,
+  analyticsRequestLogGroup: process.env.ANALYTICS_REQUEST_LOG_GROUP,
 }

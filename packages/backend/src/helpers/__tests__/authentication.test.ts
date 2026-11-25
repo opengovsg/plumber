@@ -43,13 +43,37 @@ describe('GraphQL Authentication', () => {
       } as unknown as any)
       expect(mocks.parseAdminToken).toHaveBeenCalled()
       expect(mocks.getAdminTokenUser).toHaveBeenCalled()
-      expect(result.currentUser.id).toEqual('test-user-id')
+      expect(result.currentUser!.id).toEqual('test-user-id')
     })
 
     it('does not invoke admin-related functions if admin header not set', async () => {
       await setCurrentUserContext({ req: { headers: {} } } as unknown as any)
       expect(mocks.parseAdminToken).not.toHaveBeenCalled()
       expect(mocks.getAdminTokenUser).not.toHaveBeenCalled()
+    })
+
+    it('puts the logged-in user id on the response for the request log', async () => {
+      mocks.getLoggedInUser.mockResolvedValueOnce({ id: 'user-1' })
+      const res = { locals: {} as Record<string, unknown> }
+
+      await setCurrentUserContext({
+        req: { headers: {} },
+        res,
+      } as unknown as any)
+
+      expect(res.locals.requestLogUserId).toBe('user-1')
+    })
+
+    it('leaves the request log user id unset when nobody is logged in', async () => {
+      mocks.getLoggedInUser.mockResolvedValueOnce(null)
+      const res = { locals: {} as Record<string, unknown> }
+
+      await setCurrentUserContext({
+        req: { headers: {} },
+        res,
+      } as unknown as any)
+
+      expect(res.locals.requestLogUserId).toBeUndefined()
     })
   })
 

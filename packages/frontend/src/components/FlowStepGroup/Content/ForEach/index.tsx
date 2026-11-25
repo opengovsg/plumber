@@ -32,13 +32,9 @@ import {
 
 interface ForEachProps {
   groupedSteps: IStep[][]
-  stepsBeforeGroup: IStep[]
 }
 
-/**
- * A for-each V2 loop drawn as a REPEAT condition block, picked over
- * `ForEachV1` by `FlowStepGroup`.
- */
+/** A for-each loop drawn as a REPEAT condition block. */
 export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
   const { currentStepId, flow, isDrawerOpen, onDrawerClose, readOnly } =
@@ -206,7 +202,6 @@ export default function ForEach(props: ForEachProps) {
                     <Flex w="100%" flexDir="column">
                       <GroupStepWithAddButton
                         step={item.step}
-                        asConditionBlock
                         canAddStep={true}
                         isLastStep={isLastItem}
                         isOverlay={isOverlay}

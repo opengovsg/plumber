@@ -10,17 +10,26 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 
 1. Install Docker and make sure it's running
 2. Install code dependencies by running `pnpm install`
-3. Install global dependencies:
+3. Enable the repo's git hooks by running `pnpm run setup:git`
+4. Install global dependencies:
    1. [Codegraph](https://github.com/colbymchenry/codegraph)
-4. Install the [1Password desktop app](https://1password.com/downloads) and sign in
-5. In 1Password, turn on Settings > Developer > Integrate with other apps. Turn on Touch ID (or Windows Hello) under Settings > Security so you can answer the prompt
-6. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your three environment ids. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
+5. Install the [1Password desktop app](https://1password.com/downloads) and sign in
+6. In 1Password, turn on Settings > Developer > Integrate with other apps. Turn on Touch ID (or Windows Hello) under Settings > Security so you can answer the prompt
+7. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your environment ids. The `e2e` id is the shared E2E environment, needed only for E2E tests. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
    - `inheritedEnvironments` is optional. List environment ids there to load common team-level env vars before your own. Your own environment's variables override theirs
-7. Setup services `pnpm run setup`
-8. Run `pnpm run migrate` (only for first time setup). When prompted (see [Running DB migrations](#running-db-migrations)), choose "Local dev"
-9. Start the server `pnpm run dev`
+8. Setup services `pnpm run setup`
+9. Run `pnpm run migrate` (only for first time setup). When prompted (see [Running DB migrations](#running-db-migrations)), choose "Local dev"
+10. Start the server `pnpm run dev`
 
 `pnpm run setup` and `pnpm run dev` each fetch their secrets from 1Password, so both prompt once and both need the app running. There is no `.env` file.
+
+### Worktrees
+
+`pnpm run setup:git` sets `core.hooksPath` to `.githooks` for the main checkout and all its worktrees. Git then ignores personal hooks in `.git/hooks`.
+
+- `.githooks/post-checkout` sets up each new worktree.
+- In a linked worktree, `pnpm run dev` uses its own ports from 13000 upward, so several worktrees can run the dev server at once. The worktree keeps those ports until `git worktree remove` deletes it. The main checkout keeps 3000/3001.
+- Export `PLUMBER_WORKTREE_PORT_BASE` to change the start port for new worktrees. Port assignment briefly listens on the port below it as a lock.
 
 ### Running DB migrations
 
@@ -39,6 +48,36 @@ Plumber doesn't officially support Windows as a dev environment, but some contri
 
 See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup steps and known issues.
 
+## AI Builder observability
+
+AI Builder exports traces to Rome through the existing Langfuse processors and Cloudflare Access headers.
+It also exports the same traces to PostHog.
+The PostHog project token and host live in `packages/shared/src/constants.ts`.
+The frontend uses the same values.
+The host must accept `/i/v0/ai/otel`.
+
+PostHog receives AI Builder and PAIR action traces, including prompts, responses, and tool calls.
+Base64 images and files are redacted from PostHog's copy. Rome retains the original content.
+PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
+`OTEL_BSP_MAX_EXPORT_BATCH_SIZE=50` caps the span count.
+PostHog identifies users by their Plumber user ID.
+It groups AI Builder turns by `chatId` and PAIR action calls by execution ID.
+`withAiTelemetryContext` in `packages/backend/src/helpers/ai/posthog-client.ts` sets both values.
+Both destinations retain the OpenTelemetry trace ID.
+The server flushes both destinations after draining HTTP requests during graceful shutdown.
+
+In staging, send a chat that calls a tool and compare both trace timelines.
+Confirm matching trace IDs, tool spans, token usage, and PostHog user attribution.
+No custom truncation or byte-aware batch splitting is applied.
+PostHog can reject exports above its 4 MB limit, losing that batch from PostHog.
+OpenTelemetry export warnings and errors appear in backend logs.
+Rome continues exporting independently.
+See [PostHog's OpenTelemetry documentation](https://posthog.com/docs/ai-observability/installation/opentelemetry).
+
 ## Acknowledgements
 
 Plumber is a fork of the open source project [Automatisch](https://github.com/automatisch/automatisch). We would like to thank the team for their contributions to the open source community. Please refer to the license files [[1](./LICENSE.md),[2](./LICENSE.agpl)] for more information.
+
+## End-to-end tests
+
+See [the E2E workspace](packages/e2e/README.md) for staging tests, configuration, and the repository migration rollout.

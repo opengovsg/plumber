@@ -1,7 +1,10 @@
-import { IFlowConfig } from '@plumber/types'
+import { IFlowConfig, IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 
-import { processAction } from '../action'
+import StepError from '@/errors/step'
+
+import { processAction, setActionOutputError } from '../action'
 
 const mocks = vi.hoisted(() => {
   const executionStep = {
@@ -129,6 +132,16 @@ vi.mock('@/queues/action', () => ({
   enqueueActionJob: vi.fn(),
 }))
 
+vi.mock('@/helpers/distributed-lock', () => ({
+  withLock: vi.fn(
+    (
+      lockKey: string,
+      _fn: unknown,
+      opts: { onContention: (lockKey: string) => unknown },
+    ) => opts.onContention(lockKey),
+  ),
+}))
+
 const OPTIONS = {
   flowId: 'flow-id',
   stepId: 'step-id',
@@ -164,5 +177,105 @@ describe('processAction', () => {
       const result = await processAction(OPTIONS)
       expect(result.executionError).toBeNull()
     })
+  })
+
+  describe('Action run', () => {
+    it('runs the action as a method of its action command', async () => {
+      const actionCommand = {
+        run: vi.fn(function (this: unknown) {
+          if (this !== actionCommand) {
+            throw new Error('run was called without its action command')
+          }
+        }),
+        preprocessVariable: undefined as undefined,
+      }
+      mocks.step.getActionCommand.mockReturnValueOnce(actionCommand)
+
+      const result = await processAction(OPTIONS)
+
+      expect(actionCommand.run).toHaveBeenCalledOnce()
+      expect(result.executionError).toBeNull()
+    })
+  })
+
+  describe('Test run file lock contention', () => {
+    it('records an internal StepError', async () => {
+      mocks.globalVariable.mockReturnValueOnce({
+        step: { parameters: {} },
+        actionOutput: { data: null, error: null },
+        execution: { id: 'execution-id' },
+        app: {
+          key: 'webhook',
+          queue: { getLockKey: () => 'lock-key' },
+        },
+      } as unknown as ReturnType<typeof mocks.globalVariable>)
+
+      const result = await processAction({ ...OPTIONS, testRun: true })
+
+      expect(result.executionError).toBeInstanceOf(StepError)
+      expect(result.executionError).toMatchObject({ kind: 'internal' })
+    })
+  })
+})
+
+describe('setActionOutputError', () => {
+  function makeGlobalVariable(): IGlobalVariable {
+    return {
+      actionOutput: { data: null, error: null },
+    } as unknown as IGlobalVariable
+  }
+
+  it.each<[string, Error]>([
+    [
+      'an array',
+      z.object({ a: z.string() }).safeParse(undefined).error as z.ZodError,
+    ],
+    ['a number', new Error('404')],
+    ['a string', new Error('"x"')],
+    ['null', new Error('null')],
+  ])('stores the raw message when it parses to %s', (_, error: Error) => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError($, error)
+
+    expect($.actionOutput.error).toEqual({ error: error.message })
+  })
+
+  it('stores the parsed object when the message is a JSON object', () => {
+    const $ = makeGlobalVariable()
+    const error = new StepError({
+      name: 'Bad input',
+      solution: 'Fix it',
+      kind: 'config',
+    })
+
+    setActionOutputError($, error)
+
+    expect($.actionOutput.error).toEqual(JSON.parse(error.message))
+  })
+
+  it.each([
+    ['an object', { a: 1 }],
+    ['an array', [1]],
+  ])('drops a parsed message field that is %s', (_, message: unknown) => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError(
+      $,
+      new Error(JSON.stringify({ message, kind: 'internal' })),
+    )
+
+    expect($.actionOutput.error).toEqual({ kind: 'internal' })
+  })
+
+  it('keeps a parsed message field that is a string', () => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError(
+      $,
+      new Error(JSON.stringify({ message: 'oops', kind: 'internal' })),
+    )
+
+    expect($.actionOutput.error).toEqual({ message: 'oops', kind: 'internal' })
   })
 })

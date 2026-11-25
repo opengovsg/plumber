@@ -88,9 +88,18 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
     if ($.execution.testRun) {
-      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user.email, $)
     }
 
     const parametersParseResult = lookupParametersSchema.safeParse(
@@ -98,10 +107,11 @@ const action: IRawAction = {
     )
 
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'There was a problem with the input.',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
 
     const { fileId, tableId, filters } = parametersParseResult.data

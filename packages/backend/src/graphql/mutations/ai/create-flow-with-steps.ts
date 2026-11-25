@@ -1,6 +1,7 @@
 import type { IStep } from '@plumber/types'
 import z from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -11,14 +12,14 @@ import { MutationResolvers } from '../../__generated__/types.generated'
 import { getActionStepsSchema } from './schemas/action-steps-schema'
 import { generateSchema } from './schemas/schema-generator'
 
-const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
-  _parent,
-  params,
-  context,
-) => {
-  const {
-    input: { steps, flowName, aiBuilderConfig },
-  } = params
+const createFlowWithSteps: NonNullable<
+  MutationResolvers['createFlowWithSteps']
+> = async (_parent, params, context) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const { steps, flowName, aiBuilderConfig } = input
 
   const restrictedApps = getRestrictedAppKeys(
     await getAllLdFlags(context.currentUser.email),
@@ -45,7 +46,8 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
       if (index === 0) {
         return step.position === 1
       }
-      return step.position === steps[index - 1].position + 1
+      const previousPosition = steps[index - 1].position
+      return previousPosition != null && step.position === previousPosition + 1
     })
   ) {
     throw new Error('Must be contiguous steps!')
@@ -79,7 +81,16 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
     const flow = await context.currentUser.$relatedQuery('flows', trx).insert({
       name: trimmedFlowName,
       config: {
-        aiBuilderConfig,
+        aiBuilderConfig: {
+          ...aiBuilderConfig,
+          // Analytics diffs these against the saved steps to see how much users change the proposal.
+          // The contiguity check above guarantees step.position === index + 1.
+          suggested: steps.map((step, index) => ({
+            position: index + 1,
+            appKey: step.appKey ?? null,
+            key: step.key ?? null,
+          })),
+        },
       },
     })
 

@@ -1,3 +1,4 @@
+import { trace } from '@opentelemetry/api'
 import type { Request, Response } from 'express'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -8,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   // so it stashes the promise here for tests to await before asserting on
   // anything onFinish does asynchronously (Flow/Connection lookups, writes).
   onFinishPromise: Promise.resolve() as Promise<unknown>,
+  observationSpan: { end: vi.fn() },
+  finishUsage: {
+    steps: [] as unknown[],
+    totalUsage: { inputTokens: 0, cachedInputTokens: 0 },
+  },
 }))
 
 vi.mock('@ai-sdk/mcp', () => ({
@@ -27,7 +33,7 @@ vi.mock('ai', async (importOriginal) => {
           onFinish?: (event: { text: string }) => Promise<void>
         }) => {
           if (onFinish) {
-            mocks.onFinishPromise = onFinish({ text: '' })
+            mocks.onFinishPromise = onFinish({ text: '', ...mocks.finishUsage })
           }
           return { toUIMessageStream: vi.fn().mockReturnValue({}) }
         },
@@ -78,17 +84,13 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
       chatPromptName: 'chat',
       chatSummaryPromptName: 'chat-summary',
       version: 'production',
+      disabledMcpServers: [],
     },
   }),
 }))
 
 vi.mock('@/helpers/pair', () => ({
-  chatModel: 'mock-model',
-  model: 'mock-model',
-  MODEL_TYPE: 'mock-model-type',
-  engineProvider: {
-    chat: vi.fn().mockReturnValue('mock-model'),
-  },
+  model: { modelId: 'mock-model' },
 }))
 
 vi.mock('@/helpers/stream', () => ({
@@ -104,24 +106,50 @@ vi.mock('jsonwebtoken', () => ({
 }))
 
 vi.mock('@langfuse/tracing', () => ({
+  // Mirrors the real observe: the span ends when the handler settles unless endOnExit is false.
   observe: vi.fn(
-    (fn: (...args: unknown[]) => unknown) =>
-      (...args: unknown[]) =>
-        fn(...args),
+    (fn: (...args: unknown[]) => unknown, options?: { endOnExit?: boolean }) =>
+      async (...args: unknown[]) => {
+        try {
+          return await fn(...args)
+        } finally {
+          if (options?.endOnExit !== false) {
+            mocks.observationSpan.end()
+          }
+        }
+      },
   ),
   getActiveTraceId: vi.fn().mockReturnValue('trace-123'),
   updateActiveObservation: vi.fn(),
   updateActiveTrace: vi.fn(),
 }))
 
-vi.mock('@opentelemetry/api', () => ({
-  trace: { getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }) },
-}))
+vi.mock('@opentelemetry/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@opentelemetry/api')>()
+  return {
+    ...actual,
+    trace: {
+      ...actual.trace,
+      getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }),
+    },
+  }
+})
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  type StreamTextTransform,
+  streamText,
+  type TextStreamPart,
+  type ToolSet,
+} from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import { getPrompt } from '@/helpers/ai/get-prompt'
+import { getAllLdFlags } from '@/helpers/launch-darkly'
+import logger from '@/helpers/logger'
+import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 
@@ -151,6 +179,37 @@ function makeRes() {
 
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 
+// Runs the route's support URL transform over a model reply that writes the placeholder.
+async function streamSupportLink(): Promise<string> {
+  const [[{ experimental_transform }]] = vi.mocked(streamText).mock.calls
+  const transform = (
+    experimental_transform as StreamTextTransform<ToolSet>[]
+  )[1]({ tools: {}, stopStream: () => undefined })
+  const reader = new ReadableStream<TextStreamPart<ToolSet>>({
+    start(controller) {
+      controller.enqueue({
+        type: 'text-delta',
+        id: 't1',
+        text: '{{SUPPORT_FORM_URL}}',
+      })
+      controller.enqueue({ type: 'text-end', id: 't1' })
+      controller.close()
+    },
+  })
+    .pipeThrough(transform)
+    .getReader()
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) {
+      return text
+    }
+    if (value.type === 'text-delta') {
+      text += value.text
+    }
+  }
+}
+
 describe('chat handler — GitBook MCP integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -171,7 +230,7 @@ describe('chat handler — GitBook MCP integration', () => {
       mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
     )
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
@@ -206,7 +265,7 @@ describe('chat handler — GitBook MCP integration', () => {
       mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
     )
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
@@ -217,8 +276,8 @@ describe('chat handler — GitBook MCP integration', () => {
     )
   })
 
-  it('substitutes the support form URL placeholder with the chat ID pre-filled', async () => {
-    const handler = router.stack[0].route.stack[0].handle
+  it('streams the support form URL with the chat ID pre-filled', async () => {
+    const handler = router.stack[0].route!.stack[0].handle
     await handler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       makeReq({ chatId: '123e4567-e89b-12d3-a456-426614174000' }) as any,
@@ -227,31 +286,192 @@ describe('chat handler — GitBook MCP integration', () => {
       vi.fn(),
     )
 
+    expect(await streamSupportLink()).toBe(
+      'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
+    )
+  })
+
+  it('streams the bare support form URL when chatId is absent', async () => {
+    const handler = router.stack[0].route!.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    expect(await streamSupportLink()).toBe(
+      'https://form.gov.sg/64929532701266001209ac32',
+    )
+  })
+
+  it('wires the cache checkpoints and support URL transform into streamText', async () => {
+    const handler = router.stack[0].route!.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ messages, prepareStep, experimental_transform }]] =
+      vi.mocked(streamText).mock.calls
+    expect(messages![0]).toEqual(
+      expect.objectContaining({
+        role: 'system',
+        content: expect.stringContaining('Support: {{SUPPORT_FORM_URL}}'),
+        providerOptions: {
+          anthropic: { cacheControl: { type: 'ephemeral' } },
+        },
+      }),
+    )
+    expect(prepareStep).toEqual(expect.any(Function))
+    expect(experimental_transform).toHaveLength(3)
+  })
+
+  it('passes tools to streamText in name order', async () => {
+    vi.mocked(createMcpBridgeTools).mockReturnValueOnce({
+      update_step: vi.fn(),
+      create_pipe: vi.fn(),
+    } as unknown as ReturnType<typeof createMcpBridgeTools>)
+    vi.mocked(experimental_createMCPClient).mockResolvedValueOnce({
+      tools: vi
+        .fn()
+        .mockResolvedValue({ search_docs: vi.fn(), get_page: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+    const handler = router.stack[0].route!.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ tools }]] = vi.mocked(streamText).mock.calls
+    expect(Object.keys(tools ?? {})).toEqual([
+      'create_pipe',
+      'get_page',
+      'search_docs',
+      'update_step',
+    ])
+  })
+})
+
+describe('chat handler — GitBook MCP disabled', () => {
+  const mockBridgeTools = { plumber_tool: vi.fn() }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        version: 'production',
+        disabledMcpServers: ['gitbook'],
+      },
+    })
+    vi.mocked(createMcpBridgeTools).mockReturnValue(
+      mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
+    )
+    vi.mocked(experimental_createMCPClient).mockResolvedValue({
+      tools: vi.fn().mockResolvedValue({ search_documentation: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+  })
+
+  it('does not call the GitBook MCP client and streams with bridge tools only', async () => {
+    const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    const handler = router.stack[0].route!.stack[0].handle
+    const res = makeRes()
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq() as any, res as any, vi.fn())
+
+    expect(experimental_createMCPClient).not.toHaveBeenCalled()
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
+        tools: mockBridgeTools,
+      }),
+    )
+    expect(res.status).not.toHaveBeenCalled()
+    expect(infoSpy).toHaveBeenCalledWith(
+      'Starting AI chat stream',
+      expect.objectContaining({ disabledMcpServers: ['gitbook'] }),
+    )
+    expect(errorSpy).not.toHaveBeenCalled()
+    expect(warnSpy).not.toHaveBeenCalled()
+
+    infoSpy.mockRestore()
+    errorSpy.mockRestore()
+    warnSpy.mockRestore()
+  })
+
+  it('streams a conversation that already contains a completed GitBook dynamic-tool part', async () => {
+    const actual = await vi.importActual<typeof import('ai')>('ai')
+    vi.mocked(convertToModelMessages).mockImplementationOnce(
+      actual.convertToModelMessages,
+    )
+
+    const handler = router.stack[0].route!.stack[0].handle
+    const res = makeRes()
+    await handler(
+      makeReq({
+        messages: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                text: 'what data classification can plumber handle?',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              { type: 'step-start' },
+              {
+                type: 'dynamic-tool',
+                toolCallId: 'tool-123',
+                toolName: 'searchDocumentation',
+                state: 'output-available',
+                input: { query: 'data classification' },
+                output: {
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Plumber handles Restricted and Sensitive-Normal.',
+                    },
+                  ],
+                },
+              },
+              {
+                type: 'text',
+                text: 'Plumber handles Restricted and Sensitive-Normal data.',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'thanks' }],
+          },
+        ],
+      }) as unknown as Request,
+      res as unknown as Response,
+      vi.fn(),
+    )
+
+    expect(res.status).not.toHaveBeenCalled()
+    expect(experimental_createMCPClient).not.toHaveBeenCalled()
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tools: mockBridgeTools,
         messages: expect.arrayContaining([
           expect.objectContaining({
-            role: 'system',
-            content: expect.stringContaining(
-              'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
-            ),
+            role: 'tool',
+            content: expect.arrayContaining([
+              expect.objectContaining({
+                type: 'tool-result',
+                toolCallId: 'tool-123',
+                toolName: 'searchDocumentation',
+              }),
+            ]),
           }),
         ]),
       }),
     )
-  })
-
-  it('falls back to the bare support form URL when chatId is absent', async () => {
-    const handler = router.stack[0].route.stack[0].handle
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await handler(makeReq() as any, makeRes() as any, vi.fn())
-
-    const [[{ messages }]] = vi.mocked(streamText).mock.calls
-    const systemMessage = messages.find((m) => m.role === 'system')
-    expect(systemMessage?.content).toContain(
-      'Support: https://form.gov.sg/64929532701266001209ac32',
-    )
-    expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
   })
 })
 
@@ -266,7 +486,7 @@ describe('chat handler continuation', () => {
       actual.convertToModelMessages,
     )
     const pipeId = '123e4567-e89b-12d3-a456-426614174000'
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     await handler(
       makeReq({
         messages: [
@@ -344,7 +564,7 @@ describe('chat handler continuation', () => {
   })
 
   it('allows 20 model steps and signals tool-call pauses in finish metadata', async () => {
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     await handler(
       makeReq() as unknown as Request,
       makeRes() as unknown as Response,
@@ -367,7 +587,7 @@ describe('chat handler continuation', () => {
       messageMetadata({ part: { type: 'finish', finishReason: 'tool-calls' } }),
     ).toEqual({
       traceId: 'trace-123',
-      model: 'mock-model-type',
+      model: 'mock-model',
       finishReason: 'tool-calls',
     })
     expect(
@@ -387,6 +607,7 @@ describe('chat handler — data-columnTable emission', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
+        disabledMcpServers: [],
       },
     })
   })
@@ -406,13 +627,16 @@ FIELD: columns
       onFinish?: (event: { text: string }) => Promise<void>
     }) => {
       if (onFinish) {
-        mocks.onFinishPromise = onFinish({ text: columnTableText })
+        mocks.onFinishPromise = onFinish({
+          text: columnTableText,
+          ...mocks.finishUsage,
+        })
       }
       return { toUIMessageStream: vi.fn().mockReturnValue({}) }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as typeof streamText)
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -465,6 +689,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
+        disabledMcpServers: [],
       },
     })
     // Simulate a create_pipe (or similar) tool call having already set the
@@ -496,7 +721,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
       { id: 'conn-1', formattedData: { screenName: 'My Workspace' } },
     ])
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -531,7 +756,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
     ])
     mockConnections([])
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -558,7 +783,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
     // Dangling reference: the connection was deleted/inaccessible.
     mockConnections([])
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -604,7 +829,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -616,5 +841,115 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         (s: { connectionLabel: string | null }) => s.connectionLabel,
       ),
     ).toEqual(['My Workspace', 'My Workspace'])
+  })
+})
+
+describe('chat handler — observation span lifecycle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+  function deferred<T = void>() {
+    let resolve!: (value: T) => void
+    let reject!: (reason: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  // The real response stream closes only after onFinish has finished.
+  function mockDrain(drained: Promise<void>) {
+    vi.mocked(pipeWebResponseToExpress).mockImplementationOnce(async () => {
+      await mocks.onFinishPromise
+      await drained
+    })
+  }
+
+  function startHandler() {
+    const handler = router.stack[0].route!.stack[0].handle
+    // oxlint-disable-next-line typescript/no-explicit-any
+    return handler(makeReq() as any, makeRes() as any, vi.fn()) as Promise<void>
+  }
+
+  it('ends the observation span once, only after the response stream drains', async () => {
+    const drain = deferred()
+    mockDrain(drain.promise)
+
+    const handled = startHandler()
+    await flush()
+
+    // onFinish has run, but the stream is still open.
+    expect(mocks.observationSpan.end).not.toHaveBeenCalled()
+
+    drain.resolve()
+    await handled
+
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
+    // Never end the AI SDK's own ai.streamText span from the callbacks.
+    expect(trace.getActiveSpan).not.toHaveBeenCalled()
+  })
+
+  it('waits for onFinish processing after a non-terminal onError', async () => {
+    const flowLookup = deferred<null>()
+    vi.mocked(Flow.query).mockReturnValue({
+      findById: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue(flowLookup.promise),
+      }),
+      // oxlint-disable-next-line typescript/no-explicit-any
+    } as any)
+    vi.mocked(createMcpBridgeTools).mockImplementationOnce(
+      (_user, _traceId, onPipeChange) => {
+        onPipeChange?.('pipe-1')
+        return {} as ReturnType<typeof createMcpBridgeTools>
+      },
+    )
+    vi.mocked(streamText).mockImplementationOnce((({
+      onFinish,
+      onError,
+    }: {
+      onFinish: (event: object) => Promise<void>
+      onError: (event: { error: unknown }) => void
+    }) => {
+      onError({ error: new Error('boom') })
+      mocks.onFinishPromise = onFinish({ text: '', ...mocks.finishUsage })
+      return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+    }) as unknown as typeof streamText)
+    mockDrain(Promise.resolve())
+
+    const handled = startHandler()
+    await flush()
+
+    // onError has fired, but onFinish is still loading the pipe state.
+    expect(mocks.observationSpan.end).not.toHaveBeenCalled()
+
+    flowLookup.resolve(null)
+    await handled
+
+    expect(mocks.writerWrite).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'data-pipeState' }),
+    )
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends the span once when the handler fails before streamText starts', async () => {
+    vi.mocked(getPrompt).mockRejectedValueOnce(new Error('prompt down'))
+
+    await startHandler()
+
+    expect(streamText).not.toHaveBeenCalled()
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends the span once when the handler rejects before the try block', async () => {
+    vi.mocked(getAllLdFlags).mockRejectedValueOnce(new Error('ld down'))
+
+    await expect(startHandler()).rejects.toThrow('ld down')
+
+    expect(streamText).not.toHaveBeenCalled()
+    expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)
   })
 })

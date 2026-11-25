@@ -32,7 +32,7 @@ Run from [packages/backend/](../../packages/backend/) or via `pnpm --filter back
 
 ## App plugin model
 
-Every integration lives under [packages/backend/src/apps/<key>/](../../packages/backend/src/apps/) and default-exports an `IApp` (`@plumber/types`) describing metadata, `triggers`, `actions`, optional `auth`, and optional `queue`. New apps must also be registered in [packages/backend/src/apps/index.ts](../../packages/backend/src/apps/index.ts). Triggers/actions are individual modules combined via an `index.ts` array (see e.g. [packages/backend/src/apps/postman/actions/index.ts](../../packages/backend/src/apps/postman/actions/index.ts)). Static assets in each app's `assets/` are served at `/apps/<key>/assets/...` via [packages/backend/src/helpers/app-assets-handler.ts](../../packages/backend/src/helpers/app-assets-handler.ts).
+Integrations live under [packages/backend/src/apps/](../../packages/backend/src/apps/). [apps.md](apps.md) holds the rules for adding or changing an app, trigger or action, and loads when you edit those files.
 
 ## Flow execution pipeline
 
@@ -59,6 +59,7 @@ GraphQL schema and resolvers also live here ([packages/backend/src/graphql/](../
 ## Conventions
 
 - **Tests**: try to add unit tests (`*.test.ts`) for any new code.
+- **Hard deletes**: never hard-delete rows from `users` or `flows`. Soft-delete with `.delete()`. A purge needs a plan that first copies the rows' analytics facts, without emails, to the analytics bucket's `bronze/`. [analytics-history.critical.itest.ts](../../packages/backend/src/db/__tests__/analytics-history.critical.itest.ts) fails if a foreign key would cascade such a delete.
 - **APIs**: prefer adding REST endpoints over new root GraphQL fields (queries/mutations) when exposing new functionality.
 - **Axios errors**: never re-throw or log an axios error. It carries the request URL, request headers and response body, which can hold credentials or other sensitive data. Convert it to a new `Error` naming only the HTTP status code and `error.message`. Do not attach the original as `cause`, since loggers serialise the whole chain. For the pattern, see `sanitiseError` in [packages/backend/src/apps/formsg/auth/download-encrypted-attachment.ts](../../packages/backend/src/apps/formsg/auth/download-encrypted-attachment.ts).
 
@@ -77,36 +78,51 @@ The backend has three error families. Do not add a new family.
 ### Which error to throw
 
 - A step failure the user sees: throw `StepError` with a `kind`.
+  - Throw it only from a step's entry point (e.g. an action's `run` or `runBatch`).
+  - A shared helper returns a typed result or throws a non-`StepError` instead. Callers outside a step (e.g. dynamic data) also use it.
+  - For the pattern, see `parseAuthData` and its caller `getAuthDataOrThrow` in `apps/m365-excel/`.
 - A user-visible failure outside a step: throw `UserFacingError`, in GraphQL resolvers and REST endpoints (e.g. AI builder) alike.
 - Exception: a GraphQL resolver that needs a client error code (e.g. `BAD_USER_INPUT`) throws a class from `errors/graphql-errors/`. They extend the library type `GraphQLError` (see "Library error types"), so they are not a new family.
-- Anything else counts as a Plumber bug. This includes a raw `RetriableError` or `HttpError` that ran out of retries.
+- Anything else counts as a Plumber bug. This includes a raw `HttpError` that ran out of retries.
 
 ### `StepError`
 
-- Construct it with options: `new StepError({ name, solution, kind, cause })`. `cause` is an optional `HttpError`.
-- The positional constructor `new StepError(name, solution, error, extraProperties)` is `@deprecated`. Never use it in new code.
-- Never migrate existing call sites. Humans migrate them, one app per PR.
-- `kind` stays optional until every call site is migrated. New code always passes it.
+- Construct it with options: `new StepError({ name, solution, kind, cause })`. `kind` is required. `cause` is optional.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
-- The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
-- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` without `kind` and any other error return `internal`.
+- The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`). `IStepError.kind` stays optional, because older saved rows have none.
+- `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. Any error other than `StepError` or `RetriableError` returns `internal`.
 - `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) adds `event: 'action-job-failed'`, `willRetry`, `kind` and `appKey` to its per-attempt error log. Monitors read it with `@willRetry:false`, because logs are not sampled.
-- The log reads `kind` from the failed job's error when it is a `StepError`, else from its `cause`. Code that replaces a `StepError` with another error (e.g. `UnrecoverableError`) calls `attachHiddenCauseIfStepError` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- The log reads `kind` from the failed job's error when it is a `StepError` or a `RetriableError`, else from its `cause`. Code that replaces either with another error (e.g. `UnrecoverableError`) calls `keepErrorKindViaCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- A `RetriableError` requires a `kind` for its final failure once retries run out. Its `kind` never changes retry decisions, even `config`.
+- When `handleHttpError` retries an `HttpError`, its `RetriableError` takes the `kind` of the thrown error. A raw `HttpError` gives `internal`.
 
 #### Choosing `kind`
 
 The thrower chooses `kind`. Never derive it later from messages or status codes.
 
-- `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries: `handleFailedStepAndThrow` (`helpers/actions/handle-failed-step-and-throw.ts`) throws `UnrecoverableError` for it.
-- `third-party`: an external service failed. Counts as bad, but apart from Plumber bugs.
+- `config`: the user's configuration caused the failure. Counts as good in the pipe run SLA. Never retries, unless its cause is an `HttpError` that `handleHttpError` (`helpers/actions/handle-failed-step-and-throw.ts`) retries.
+  - The final failure still logs `kind: config`, because the `RetriableError` takes the `StepError`'s `kind`.
+  - `HttpError` (`errors/http.ts`) parses `Retry-After` once, in the constructor. Call `getRetryInfo()` when deciding a retry, so a `Retry-After` date's wait is measured then. Change `Retry-After` only through `setRetryAfter`.
+- `third-party`: an external service is down or unreachable (e.g. 5xx, network errors, timeouts), or another step caused the failure (see "App-specific cases"). Counts as bad, but apart from Plumber bugs.
 - `internal`: a Plumber bug. Counts as bad.
+
+Rules for choosing:
+
+- Choose `config` only with high confidence. When unsure, choose `internal` or `third-party`. custom-api is the exception (see "App-specific cases"). A later PR can tighten it with prod evidence.
+- The thrower may branch on input values it holds (e.g. whether a date is ISO 8601).
+- In a catch-all, only listed user-fixable 4xx statuses or error codes become `config`. Each listed code has a test. Unlisted 4xx → `internal`. 5xx and network errors (`isNetworkError` in `errors/http.ts`) → `third-party`.
 
 Special cases:
 
 - A rate limit (429, `RATE-LIMITED`) is `internal`. Plumber must drain its queues fast enough to avoid rate limits.
-- A user's own endpoint failing (custom-api) is `config`. The user owns the endpoint.
-- Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
+- Any error other than `StepError` or `RetriableError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
+- An error likely caused by an external API changing its format is `internal`, not `third-party` (e.g. an unexpected response body). Plumber owns keeping up with API changes.
+
+App-specific cases:
+
+- custom-api is an escape hatch for power users, and Plumber guarantees nothing about it. Every failure is `config`, unless it is clearly a Plumber bug (e.g. a non-`HttpError`). This includes 429, 5xx, timeouts and network errors. Retriable causes still retry (see `config` above).
+- A control-flow action makes no outbound call (e.g. delay). If an earlier step caused its failure, choose `third-party` (e.g. delay-until misses its time because an earlier step retried after a rate limit).
 
 ### `UserFacingError`
 

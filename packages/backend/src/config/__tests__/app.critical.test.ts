@@ -5,7 +5,7 @@ import path from 'node:path'
  * Business-critical: local dev environment variable precedence.
  *
  *   1. (top priority) shell env vars, so that we support harnesses like
- *      superset / cursor
+ *      worktree scripts / cursor
  *   2. 1password environment
  *   3. vars from .env-example
  *
@@ -17,7 +17,7 @@ import path from 'node:path'
 import { parse } from 'dotenv'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// BASE_URL is one of the keys .superset/run.sh exports per worktree, and app.ts
+// BASE_URL is one of the keys `pnpm run dev` sets per worktree, and app.ts
 // reads it without a hardcoded default.
 const KEY = 'BASE_URL'
 

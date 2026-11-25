@@ -76,7 +76,7 @@ describe('updateConnection', () => {
       // Editor tries to update - should hit ownership guard
       await expect(
         updateConnection(
-          null,
+          {},
           {
             input: {
               id: ownerConnection.id,
@@ -95,7 +95,7 @@ describe('updateConnection', () => {
       context.currentUser = editor
 
       const result = await updateConnection(
-        null,
+        {},
         {
           input: {
             id: collaboratorConnection.id,
@@ -106,13 +106,13 @@ describe('updateConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(collaboratorConnection.id)
-      expect(result.formattedData.screenName).toBe('Updated Shared Slack')
+      expect(result!.id).toBe(collaboratorConnection.id)
+      expect(result!.formattedData!.screenName).toBe('Updated Shared Slack')
     })
 
     it('should allow owner to update their own personal connection', async () => {
       const result = await updateConnection(
-        null,
+        {},
         {
           input: {
             id: ownerConnection.id,
@@ -123,13 +123,13 @@ describe('updateConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(ownerConnection.id)
-      expect(result.formattedData.screenName).toBe('Updated Owner Slack')
+      expect(result!.id).toBe(ownerConnection.id)
+      expect(result!.formattedData!.screenName).toBe('Updated Owner Slack')
     })
 
     it('should allow owner to update shared connection in their flow', async () => {
       const result = await updateConnection(
-        null,
+        {},
         {
           input: {
             id: collaboratorConnection.id,
@@ -140,8 +140,8 @@ describe('updateConnection', () => {
         context,
       )
 
-      expect(result.id).toBe(collaboratorConnection.id)
-      expect(result.formattedData.screenName).toBe('Owner Updated Shared')
+      expect(result!.id).toBe(collaboratorConnection.id)
+      expect(result!.formattedData!.screenName).toBe('Owner Updated Shared')
     })
   })
 })

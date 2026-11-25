@@ -1,12 +1,10 @@
 import './ConfettiEmbeddedSurvey.css'
 import { Box, Skeleton, VStack } from '@chakra-ui/react'
 import {
-  Answer,
   ConfettiController,
   ConfettiProvider,
-  Question,
   SurveyQuestionFactory,
-} from '@opengovsg/confetti'
+} from '@opengovsg/confetti/components'
 import {
   forwardRef,
   useEffect,
@@ -17,10 +15,8 @@ import {
 } from 'react'
 
 import {
-  decideSubmit,
   isReadyToSubmit,
-  resolveQuestionError,
-  SurveyCompleteness,
+  resolveSubmit,
 } from './ConfettiEmbeddedSurvey.helpers'
 
 // How long to wait for the survey before treating it as unavailable and
@@ -34,6 +30,8 @@ export interface ConfettiEmbeddedSurveyRef {
    * on the survey.
    */
   submitIfComplete: () => boolean
+  /** Whether the survey rendered, as opposed to timing out unseen. */
+  hasLoaded: () => boolean
 }
 
 interface ConfettiEmbeddedSurveyProps {
@@ -41,6 +39,8 @@ interface ConfettiEmbeddedSurveyProps {
   publishableKey: string
   apiBaseUrl?: string
   respondent?: string
+  /** Pass `true` when the caller already checked history, to skip a fetch. */
+  isSurveyVisible?: boolean
   metadata?: Record<string, string>
   onReadyToSubmitChange?: (isReady: boolean) => void
 }
@@ -54,19 +54,6 @@ function NotifyLoaded({ onLoaded }: { onLoaded: () => void }) {
   return null
 }
 
-function NotifyReadyToSubmit({
-  isReady,
-  onReadyToSubmitChange,
-}: {
-  isReady: boolean
-  onReadyToSubmitChange?: (isReady: boolean) => void
-}) {
-  useEffect(() => {
-    onReadyToSubmitChange?.(isReady)
-  }, [isReady, onReadyToSubmitChange])
-  return null
-}
-
 const ConfettiEmbeddedSurvey = forwardRef<
   ConfettiEmbeddedSurveyRef,
   ConfettiEmbeddedSurveyProps
@@ -77,14 +64,13 @@ const ConfettiEmbeddedSurvey = forwardRef<
       publishableKey,
       apiBaseUrl,
       respondent,
+      isSurveyVisible,
       metadata,
       onReadyToSubmitChange,
     },
     ref,
   ) => {
-    const submitRef = useRef<() => void>()
-    const completenessRef = useRef<SurveyCompleteness>(null)
-    const answersRef = useRef<Record<Question['id'], Answer>>({})
+    const submitRef = useRef<() => boolean>()
     const [isLoaded, setIsLoaded] = useState(false)
     const [hasLoadTimedOut, setHasLoadTimedOut] = useState(false)
 
@@ -99,28 +85,13 @@ const ConfettiEmbeddedSurvey = forwardRef<
     }, [isLoaded])
 
     useEffect(() => {
-      if (hasLoadTimedOut && !isLoaded) {
-        onReadyToSubmitChange?.(
-          isReadyToSubmit({
-            completeness: completenessRef.current,
-            hasLoadTimedOut,
-          }),
-        )
-      }
-    }, [hasLoadTimedOut, isLoaded, onReadyToSubmitChange])
+      onReadyToSubmitChange?.(isReadyToSubmit({ isLoaded, hasLoadTimedOut }))
+    }, [isLoaded, hasLoadTimedOut, onReadyToSubmitChange])
 
     useImperativeHandle(ref, () => ({
-      submitIfComplete: () => {
-        const decision = decideSubmit({
-          completeness: completenessRef.current,
-          hasLoadTimedOut,
-        })
-        if (decision !== 'submit') {
-          return false
-        }
-        submitRef.current?.()
-        return true
-      },
+      hasLoaded: () => isLoaded,
+      submitIfComplete: () =>
+        resolveSubmit({ isLoaded, hasLoadTimedOut, submit: submitRef.current }),
     }))
 
     return (
@@ -137,38 +108,25 @@ const ConfettiEmbeddedSurvey = forwardRef<
             publishableKey={publishableKey}
             apiBaseUrl={apiBaseUrl}
             respondent={respondent}
+            isSurveyVisible={isSurveyVisible}
             metadata={metadata}
           >
             <ConfettiController>
-              {({ questions, update, errors, submit, isCompleted }) => {
+              {({ questions, update, errors, submit }) => {
                 submitRef.current = submit
-                completenessRef.current = isCompleted
                 return (
                   <>
                     <NotifyLoaded onLoaded={() => setIsLoaded(true)} />
-                    <NotifyReadyToSubmit
-                      isReady={isReadyToSubmit({
-                        completeness: isCompleted,
-                        hasLoadTimedOut,
-                      })}
-                      onReadyToSubmitChange={onReadyToSubmitChange}
-                    />
                     {questions
                       .filter((question) => question.visible)
                       .map((question) => (
                         <SurveyQuestionFactory
                           key={question.id}
                           question={question}
-                          error={resolveQuestionError({
-                            question,
-                            error: errors[question.id],
-                            answer: answersRef.current[question.id],
-                            showRequiredError: !isCompleted,
-                          })}
-                          onChange={(answer: Answer) => {
-                            answersRef.current[question.id] = answer
+                          error={errors[question.id]}
+                          onChange={(answer) =>
                             update({ question: question.position, answer })
-                          }}
+                          }
                         />
                       ))}
                   </>

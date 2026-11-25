@@ -32,7 +32,7 @@ describe('Queue config', () => {
       key: 'findSingleRow',
       appKey: 'tiles',
     })
-    const groupConfig = await tilesApp.queue.getGroupConfigForJob({
+    const groupConfig = await tilesApp.queue!.getGroupConfigForJob!({
       flowId: 'test-flow-id',
       stepId: 'test-step-id',
       executionId: 'test-step-id',
@@ -42,7 +42,7 @@ describe('Queue config', () => {
     })
   })
 
-  it('sets group ID to null', async () => {
+  it('sets group ID to undefined', async () => {
     mocks.stepQueryResult.mockResolvedValueOnce({
       parameters: {
         tableId: 'mock-table-id',
@@ -50,16 +50,16 @@ describe('Queue config', () => {
       key: 'createRow',
       appKey: 'tiles',
     })
-    const groupConfig = await tilesApp.queue.getGroupConfigForJob({
+    const groupConfig = await tilesApp.queue!.getGroupConfigForJob!({
       flowId: 'test-flow-id',
       stepId: 'test-step-id',
       executionId: 'test-step-id',
     })
-    expect(groupConfig).toEqual(null)
+    expect(groupConfig).toEqual(undefined)
   })
 
   it('sets group concurrency to 1', () => {
-    expect(tilesApp.queue.groupLimits).toEqual({
+    expect(tilesApp.queue!.groupLimits).toEqual({
       type: 'concurrency',
       concurrency: 1,
     })

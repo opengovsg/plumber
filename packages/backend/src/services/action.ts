@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import type {
   IActionRunResult,
   IGlobalVariable,
+  IJSONObject,
   TestRunStepMetadata,
 } from '@plumber/types'
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
@@ -66,8 +67,8 @@ async function enqueueFirstForEachStep({
   const results = await Promise.allSettled(
     Array.from({ length: iterations }, (_, i) =>
       enqueueActionJob({
-        appKey: firstStepInForEach.appKey,
-        actionKey: firstStepInForEach.key,
+        appKey: firstStepInForEach.appKey ?? null,
+        actionKey: firstStepInForEach.key ?? null,
         jobName: `${executionId}-${firstStepInForEach.id}-${i + 1}`,
         jobData: {
           flowId: flowId,
@@ -96,20 +97,34 @@ async function enqueueFirstForEachStep({
 }
 
 /**
- * error may be anything thrown (including null/undefined), not just an Error
- * instance, so message extraction can't assume `.message` exists. A bare
- * String(error) would turn a null error into the valid-JSON string "null"
- * (silently clearing actionOutput.error below) and an undefined error into
- * the unhelpful literal string "undefined".
+ * errorDetails accepts only a JSON object, but some messages are other JSON, e.g. a ZodError message is an array.
  */
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
+function getErrorDetails(error: unknown): IJSONObject {
+  // A thrown value may be null or undefined, and String(undefined) is unhelpful.
+  const message =
+    error instanceof Error
+      ? error.message
+      : error === null || error === undefined
+        ? 'Unknown error'
+        : String(error)
+  try {
+    const parsed: unknown = JSON.parse(message)
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      // Winston interpolates a top-level message into the log text, so an object logs only "[object Object]" or throws.
+      // IMPORTANT: String() also throws for JSON like {"toString":1}, whose own toString hides Object.prototype.toString.
+      const { message: parsedMessage, ...rest } = parsed as IJSONObject
+      return typeof parsedMessage === 'object' && parsedMessage !== null
+        ? rest
+        : (parsed as IJSONObject)
+    }
+  } catch {
+    // A non-JSON message falls through to the default below.
   }
-  if (error === null || error === undefined) {
-    return 'Unknown error'
-  }
-  return String(error)
+  return { error: message }
 }
 
 /**
@@ -131,15 +146,9 @@ export function setActionOutputError($: IGlobalVariable, error: unknown): void {
       statusText: error.response.statusText,
     })
   } else {
-    const message = getErrorMessage(error)
-    try {
-      const parsedError = JSON.parse(message)
-      $.actionOutput.error = parsedError
-      logger.error('Action error', parsedError)
-    } catch {
-      $.actionOutput.error = { error: message }
-      logger.error('Action error', { error: message })
-    }
+    const errorDetails = getErrorDetails(error)
+    $.actionOutput.error = errorDetails
+    logger.error('Action error', errorDetails)
   }
 }
 
@@ -156,7 +165,7 @@ export type PreparedActionExecution = {
   flow: Flow
   execution: Execution
   $: IGlobalVariable
-  actionCommand: Awaited<ReturnType<Step['getActionCommand']>>
+  actionCommand: NonNullable<Awaited<ReturnType<Step['getActionCommand']>>>
   forEachContext: ForEachContext
   computedParameters: ReturnType<typeof computeParameters>
   metadata: TestRunStepMetadata
@@ -204,9 +213,14 @@ export async function prepareActionExecution(
     metadata.isLastStep = true
   }
 
+  const app = await step.getApp()
+  if (!app) {
+    throw new Error(`App not found for step: ${step.id}`)
+  }
+
   const $ = await globalVariable({
     flow,
-    app: await step.getApp(),
+    app,
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
@@ -234,6 +248,12 @@ export async function prepareActionExecution(
     })
 
   const actionCommand = await step.getActionCommand()
+  if (!actionCommand) {
+    throw new Error(`Action command not found for step: ${step.id}`)
+  }
+  if (!actionCommand.run) {
+    throw new Error(`Action command has no run() for step: ${step.id}`)
+  }
   const forEachContext: ForEachContext = {
     executionStepMetadata: metadata,
     forEachStepPosition,
@@ -413,7 +433,7 @@ export async function resolveNextStep({
         'pause-execution command not allowed for actions',
       )
     default:
-      nextStep = await step.getNextStep()
+      nextStep = (await step.getNextStep()) ?? null
   }
 
   return nextStep
@@ -484,10 +504,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     let executionError: unknown = null
     try {
       // Cannot assign directly to runResult due to void return type.
+      // IMPORTANT: Call through actionCommand so run keeps its this.
       const result =
         testRun && actionCommand.testRun
           ? await actionCommand.testRun($, metadata)
-          : await actionCommand.run($, metadata)
+          : await actionCommand.run?.($, metadata)
       if (result) {
         runResult = result
       }
@@ -512,10 +533,11 @@ export const processAction = async (options: ProcessActionOptions) => {
       // resolver's `executionStep` return) instead of throwing out of
       // processAction as a raw error.
       if (testRun) {
-        const executionError = new StepError(
-          'This file is busy right now.',
-          'Please try again in a moment.',
-        )
+        const executionError = new StepError({
+          name: 'This file is busy right now.',
+          solution: 'Please try again in a moment.',
+          kind: 'internal',
+        })
         setActionOutputError($, executionError)
         return recordAndResolve({}, executionError)
       }

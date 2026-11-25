@@ -16,7 +16,7 @@ import {
 
 function verify(table: TableMetadata, context: Context, password: string) {
   return verifyTableViewPassword(
-    null,
+    {},
     { input: { tableId: table.id, password } },
     context,
   )
@@ -42,7 +42,7 @@ describe('verify table view password mutation', () => {
     })
     table = mockTable.table
     viewOnlyKey = await enableViewPassword(table)
-    table = await TableMetadata.query().findById(table.id)
+    table = (await TableMetadata.query().findById(table.id))!
   })
 
   it('issues a view token for the correct password', async () => {

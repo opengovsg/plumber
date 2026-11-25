@@ -3,7 +3,7 @@ import { IStepConfig } from '@plumber/types'
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
 import {
   extractSelfEndStepIntent,
-  upgradeIfThenV1BlocksIfEnabled,
+  upgradeIfThenV1Blocks,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
@@ -18,12 +18,24 @@ import {
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createStep: MutationResolvers['createStep'] = async (
+const createStep: NonNullable<MutationResolvers['createStep']> = async (
   _parent,
   params,
   context,
 ) => {
   const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const flowId = input.flow?.id
+  const flowUpdatedAt = input.flow?.updatedAt
+  const previousStepId = input.previousStep?.id
+  if (!flowId || !flowUpdatedAt) {
+    throw new BadUserInputError('Missing flow')
+  }
+  if (!previousStepId) {
+    throw new BadUserInputError('Missing previousStep')
+  }
 
   /**
    * appKey and key are optional, we allow creating of empty step for if-then branches
@@ -55,11 +67,11 @@ const createStep: MutationResolvers['createStep'] = async (
     const flow = await context.currentUser
       .withAccessibleFlows({ trx, requiredRole: 'editor' })
       .findOne({
-        id: input.flow.id,
+        id: flowId,
       })
       .throwIfNotFound()
 
-    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     // if connectionId is specified, verify that the connection exists
     // and the user has the appropriate permissions to use it
@@ -83,7 +95,7 @@ const createStep: MutationResolvers['createStep'] = async (
     const previousStep = await flow
       .$relatedQuery('steps', trx)
       .findOne({
-        id: input.previousStep.id,
+        id: previousStepId,
       })
       .throwIfNotFound()
 
@@ -96,11 +108,11 @@ const createStep: MutationResolvers['createStep'] = async (
         trx,
         flow,
         previousStep,
-        appKey: input.appKey,
-        key: input.key,
-        parameters: input.parameters,
+        appKey: input.appKey ?? undefined,
+        key: input.key ?? undefined,
+        parameters: input.parameters ?? undefined,
         config: newStepConfig,
-        connectionId: input.connection?.id,
+        connectionId: input.connection?.id ?? undefined,
       })
     } catch (error) {
       if (error instanceof InvalidApprovalConfigError) {
@@ -109,27 +121,36 @@ const createStep: MutationResolvers['createStep'] = async (
       throw error
     }
 
-    // Opportunistically pins any other legacy if-then block, if the flag is
-    // on for the pipe owner.
-    // IMPORTANT: must run before validateEndStepOnCreateStep. Its rule 2
-    // (tail-extend) only recognizes a block as extendable once it's explicit
-    // V2, so pinning first lets a still-legacy tail-added block see its own
-    // fresh pin and extend, instead of staying unmarked and being skipped.
-    const preInsertSteps = (
-      await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
-    ).filter((flowStep) => flowStep.id !== step.id)
-    await upgradeIfThenV1BlocksIfEnabled(trx, flow, preInsertSteps)
-
+    // Opportunistically pins any other legacy if-then block.
+    const upgradeLegacyBlocks = async () => {
+      const preInsertSteps = (
+        await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
+      ).filter((flowStep) => flowStep.id !== step.id)
+      await upgradeIfThenV1Blocks(trx, flow, preInsertSteps)
+    }
     // IMPORTANT: throws (and rolls back the whole creation) on any marker
     // violation.
-    await fixupEndStepOnCreateStep({
-      trx,
-      flow,
-      previousBlockId: input.previousBlockId,
-      previousStep,
-      newStep: step,
-      wantsSelfEndStep,
-    })
+    const fixupEndStep = () =>
+      fixupEndStepOnCreateStep({
+        trx,
+        flow,
+        previousBlockId: input.previousBlockId,
+        previousStep,
+        newStep: step,
+        wantsSelfEndStep,
+      })
+
+    // Rule 1 (add after a block) pins its own block. Upgrading first could
+    // delete a blank previousStep and pin the block to the new step instead.
+    // Rule 2 (tail-extend) only extends an explicit V2 block, so it needs the
+    // upgrade first.
+    if (input.previousBlockId != null) {
+      await fixupEndStep()
+      await upgradeLegacyBlocks()
+    } else {
+      await upgradeLegacyBlocks()
+      await fixupEndStep()
+    }
 
     // NOTE: add flow connection to the flow_connections table
     // only add by default if the user is the owner of the flow
@@ -152,8 +173,11 @@ const createStep: MutationResolvers['createStep'] = async (
       trx,
     })
 
+    // Blank placeholder cleanup can shift this step's position after insert.
+    const persistedStep = await step.$query(trx)
+
     return {
-      ...step,
+      ...persistedStep,
       flowId: flow.id,
       flow: {
         updatedAt: updatedFlow.updatedAt,

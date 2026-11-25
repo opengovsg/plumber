@@ -3,7 +3,8 @@
   "environments": {
     "dev": "your dev environment id",
     "setup": "your setup environment id",
-    "archival": "your archival environment id"
+    "archival": "your archival environment id",
+    "e2e": "the shared E2E environment id"
   },
   "inheritedEnvironments": ["team environment 1", "team environment 2"]
 }

@@ -37,7 +37,7 @@ export const updateTableSchema = z.object({
   deletedColumns: z.array(z.string().uuid()).optional(),
 })
 
-const updateTable: MutationResolvers['updateTable'] = async (
+const updateTable: NonNullable<MutationResolvers['updateTable']> = async (
   _parent,
   params,
   context,
@@ -52,7 +52,7 @@ const updateTable: MutationResolvers['updateTable'] = async (
 
   await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
-  const table = await TableMetadata.query().findById(tableId)
+  const table = await TableMetadata.query().findById(tableId).throwIfNotFound()
 
   const tableOperations = getTableOperations(table.db)
 

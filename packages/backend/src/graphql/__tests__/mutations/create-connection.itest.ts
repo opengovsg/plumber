@@ -52,7 +52,7 @@ describe('createConnection', () => {
     it('should not create connection without a flowId', async () => {
       await expect(
         createConnection(
-          null,
+          {},
           {
             // @ts-expect-error - intentionally exclude the flowId
             input: {
@@ -68,7 +68,7 @@ describe('createConnection', () => {
 
   describe('with flowId', () => {
     it('should add connection to flow_connections', async () => {
-      await createConnection(null, { input: defaultInput }, context)
+      await createConnection({}, { input: defaultInput }, context)
 
       const flowConnections = await FlowConnections.query()
       expect(flowConnections).toHaveLength(1)
@@ -77,20 +77,20 @@ describe('createConnection', () => {
     describe('access control', () => {
       it('should allow owner to create connection', async () => {
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
         expect(result).toBeDefined()
-        expect(result.key).toBe('slack')
+        expect(result!.key).toBe('slack')
       })
 
       it('should allow editor to create connection', async () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -102,7 +102,7 @@ describe('createConnection', () => {
         context.currentUser = viewer
 
         await expect(
-          createConnection(null, { input: defaultInput }, context),
+          createConnection({}, { input: defaultInput }, context),
         ).rejects.toThrow()
       })
 
@@ -111,7 +111,7 @@ describe('createConnection', () => {
 
         await expect(
           createConnection(
-            null,
+            {},
             { input: { ...defaultInput, flowId: testFlow.id } },
             context,
           ),
@@ -124,24 +124,24 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
-        const connection = await Connection.query().findById(result.id)
-        expect(connection.userId).toBeNull()
+        const connection = await Connection.query().findById(result!.id!)
+        expect(connection!.userId).toBeNull()
       })
 
       it('owner-created connection has owner userId', async () => {
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
-        const connection = await Connection.query().findById(result.id)
-        expect(connection.userId).toBe(owner.id)
+        const connection = await Connection.query().findById(result!.id!)
+        expect(connection!.userId).toBe(owner.id)
       })
     })
 
@@ -150,49 +150,49 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
         const flowConnection = await FlowConnections.query().findOne({
           flow_id: testFlow.id,
-          connection_id: result.id,
+          connection_id: result!.id,
         })
 
         expect(flowConnection).toBeDefined()
-        expect(flowConnection.connectionType).toBe('connection')
-        expect(flowConnection.addedBy).toBe(editor.id)
+        expect(flowConnection!.connectionType).toBe('connection')
+        expect(flowConnection!.addedBy).toBe(editor.id)
       })
 
       it('owner-created connection is added to flow_connections when flow has collaborators', async () => {
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
         const flowConnection = await FlowConnections.query().findOne({
           flow_id: testFlow.id,
-          connection_id: result.id,
+          connection_id: result!.id,
         })
 
         expect(flowConnection).toBeDefined()
-        expect(flowConnection.addedBy).toBe(owner.id)
+        expect(flowConnection!.addedBy).toBe(owner.id)
       })
 
       it('owner-created connection is NOT added to flow_connections when flow has no collaborators', async () => {
         const soloFlow = await generateMockFlow(context, randomUUID())
 
         const result = await createConnection(
-          null,
+          {},
           { input: { ...defaultInput, flowId: soloFlow.id } },
           context,
         )
 
         const flowConnection = await FlowConnections.query().findOne({
           flow_id: soloFlow.id,
-          connection_id: result.id,
+          connection_id: result!.id,
         })
 
         expect(flowConnection).toBeUndefined()
@@ -204,13 +204,13 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
         const personalConnections = await editor.$relatedQuery('connections')
-        const found = personalConnections.find((c) => c.id === result.id)
+        const found = personalConnections.find((c) => c.id === result!.id)
 
         expect(found).toBeUndefined()
       })
@@ -219,13 +219,13 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
 
         const ownerConnections = await owner.$relatedQuery('connections')
-        const found = ownerConnections.find((c) => c.id === result.id)
+        const found = ownerConnections.find((c) => c.id === result!.id)
 
         expect(found).toBeUndefined()
       })

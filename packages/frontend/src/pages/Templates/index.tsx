@@ -1,66 +1,37 @@
-import { useQuery } from '@apollo/client'
-import { Box, Flex, Grid, Text } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
-import type { ITemplate } from '@plumber/types'
-import { useContext, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { useApps } from '@/hooks/useApps'
-import { useTemplateSearch } from '@/hooks/useTemplateSearch'
 
 import TemplateModal from '../Template'
-import TemplateTile from './components/TemplateTile'
-import TemplateTileSkeleton from './components/TemplateTileSkeleton'
+import TemplateResults from './components/TemplateResults'
+import { useTemplateBrowser } from './hooks/useTemplateBrowser'
 
 const TEMPLATES_TITLE = 'Templates'
-const TEMPLATES_COUNT = 9
-const SEARCH_RESULTS_COUNT = 5
 // Matches the left padding of PageTitle so content lines up with the heading.
 const GUTTER = { base: 2, md: 8 }
 
 export default function Templates(): JSX.Element {
-  const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
-
-  // TODO (kevinkim-ogp): remove this when Pair is released to all users
-  // we do this to avoid adding extra flags or parameters into the query
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const isPairEnabled = getFlagValue('app_pair') as boolean
-  const templates: ITemplate[] =
-    data?.getTemplates?.filter((template: ITemplate) => {
-      if (isPairEnabled) {
-        return template.id !== '2a84e2f6-4806-46a2-890a-0dba1411b12f' // ROUTE_SUPPORT_ENQUIRIES_TEMPLATE
-      } else if (!isPairEnabled) {
-        return template.id !== '8f0a3052-db94-45de-b984-29647f2b09c9' // ROUTE_SUPPORT_ENQUIRIES_WITH_PAIR_TEMPLATE
-      }
-      return true
-    }) ?? []
-  const { templateId } = useParams()
-  const template = templates?.find((template) => template.id === templateId)
-
+  const navigate = useNavigate()
+  const {
+    templates,
+    visibleTemplates,
+    setSearchQuery,
+    searchQuery,
+    isSearching,
+    isLoading: templatesLoading,
+    searchError,
+    skeletonCount,
+  } = useTemplateBrowser()
   const { data: apps, loading: appsLoading } = useApps()
 
-  const [searchQuery, setSearchQuery] = useState('')
-  const isSearching = searchQuery.trim() !== ''
-  const {
-    templateIds: matchedTemplateIds,
-    loading: searchLoading,
-    error: searchError,
-  } = useTemplateSearch(searchQuery)
-  // Ranking runs over every template, so drop the ones this user cannot see
-  // before taking the top results.
-  const matchedTemplates = matchedTemplateIds
-    .flatMap((id) => templates.find((template) => template.id === id) ?? [])
-    .slice(0, SEARCH_RESULTS_COUNT)
-
-  const isLoading = templatesLoading || appsLoading || searchLoading
-  const skeletonCount = isSearching ? SEARCH_RESULTS_COUNT : TEMPLATES_COUNT
-  const visibleTemplates = isSearching ? matchedTemplates : templates
+  const { templateId } = useParams()
+  const template = templates.find((template) => template.id === templateId)
 
   return (
     <>
@@ -81,32 +52,19 @@ export default function Templates(): JSX.Element {
           />
         </Box>
 
-        {isSearching && !isLoading && visibleTemplates.length === 0 && (
-          <Text textStyle="body-1" px={GUTTER} mb={8}>
-            {searchError
-              ? 'Template search is unavailable. Try again later.'
-              : 'No matching templates found.'}
-          </Text>
-        )}
-
-        <Grid
-          gridTemplateColumns={{
-            base: '1fr',
-            md: '1fr 1fr',
-            lg: '1fr 1fr 1fr',
-          }}
-          px={GUTTER}
-          gap={6}
-          mb={8}
-        >
-          {isLoading
-            ? Array.from({ length: skeletonCount }).map((_, index) => (
-                <TemplateTileSkeleton key={index} />
-              ))
-            : visibleTemplates.map((template) => (
-                <TemplateTile key={template.id} template={template} />
-              ))}
-        </Grid>
+        <Box px={GUTTER} mb={8}>
+          <TemplateResults
+            templates={visibleTemplates}
+            isLoading={templatesLoading || appsLoading}
+            skeletonCount={skeletonCount}
+            isSearching={isSearching}
+            searchError={searchError}
+            onSelectTemplate={(template) =>
+              navigate(URLS.TEMPLATE(template.id))
+            }
+            gap={6}
+          />
+        </Box>
 
         <Flex
           flexDir={{ base: 'column', md: 'row' }}

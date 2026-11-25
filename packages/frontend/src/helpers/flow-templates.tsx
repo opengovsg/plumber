@@ -1,3 +1,4 @@
+import { isSetupGuideAppEvent, type SetupGuideAppEvent } from '@plumber/shared'
 import { IFlowTemplateConfig } from '@plumber/types'
 import { ComponentType } from 'react'
 import * as Icons from 'react-icons/bi'
@@ -31,7 +32,7 @@ export const TemplateIcon = ({
 const FORM_ID_PLACEHOLDER = '<<form_id>>'
 const TILE_ID_PLACEHOLDER = '<<tile_id>>'
 const tileLink = URLS.TILE(TILE_ID_PLACEHOLDER)
-export const HELP_MESSAGE_MAP: Record<string, string> = {
+export const HELP_MESSAGE_MAP: Record<SetupGuideAppEvent, string> = {
   formsg_newSubmission: `Connect your form to this step. Here is an [example](https://form.gov.sg/${FORM_ID_PLACEHOLDER}) for this template.`,
   tiles_createTileRow: `We’ve already created a [Tile](${tileLink}) for you that you can customise in this step.`,
   tiles_findSingleRow: `This step finds a row in your [Tile](${tileLink}) based on conditions you set.`,
@@ -49,7 +50,9 @@ export function replacePlaceholdersForHelpMessage(
   if (!appEventKey || !templateConfig) {
     return ''
   }
-  let helpMessage = HELP_MESSAGE_MAP[appEventKey] ?? ''
+  let helpMessage = isSetupGuideAppEvent(appEventKey)
+    ? HELP_MESSAGE_MAP[appEventKey]
+    : ''
   const { formId, tileId } = templateConfig
   if (formId) {
     helpMessage = helpMessage.replace(FORM_ID_PLACEHOLDER, formId)

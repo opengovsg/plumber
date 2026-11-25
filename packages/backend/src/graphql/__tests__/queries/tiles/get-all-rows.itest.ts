@@ -18,7 +18,7 @@ import {
 } from '../../mutations/tiles/table.mock'
 import { insertMockTableRows } from './table-row.mock'
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'get all rows query: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -55,7 +55,7 @@ describe.each([['ddb'], ['pg']])(
       )
 
       const { rows } = await getAllRows(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -81,7 +81,7 @@ describe.each([['ddb'], ['pg']])(
       }
 
       const { rows } = await getAllRows(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -105,14 +105,14 @@ describe.each([['ddb'], ['pg']])(
       let rows: ITableRow[] = []
       do {
         const { rows: pageRows, stringifiedCursor } = await getAllRows(
-          null,
+          {},
           {
             tableId: dummyTable.id,
             stringifiedCursor: cursor,
           },
           context,
         )
-        cursor = stringifiedCursor
+        cursor = stringifiedCursor!
         rows = rows.concat(pageRows)
       } while (cursor)
       expect(rows.length).toBe(numRowsToInsert)
@@ -120,7 +120,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should return empty array if no rows', async () => {
       const { rows } = await getAllRows(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -143,7 +143,7 @@ describe.each([['ddb'], ['pg']])(
       await dummyTable.$relatedQuery('columns').deleteById(dummyColumnIds[0])
 
       const { rows: returnedRows } = await getAllRows(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -166,7 +166,7 @@ describe.each([['ddb'], ['pg']])(
       })
 
       const { rows: returnedRows } = await getAllRows(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -181,7 +181,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         getAllRows(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -192,7 +192,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = viewer
       await expect(
         getAllRows(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -209,7 +209,7 @@ describe.each([['ddb'], ['pg']])(
         .andWhere('user_id', editor.id)
       await expect(
         getAllRows(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -227,12 +227,12 @@ describe.each([['ddb'], ['pg']])(
           })
           .where('table_id', dummyTable.id)
           .andWhere('user_id', context.currentUser.id)
-        await getAllRows(null, { tableId: dummyTable.id }, context)
-        const { lastAccessedAt } = await TableCollaborator.query().findOne({
+        await getAllRows({}, { tableId: dummyTable.id }, context)
+        const { lastAccessedAt } = (await TableCollaborator.query().findOne({
           table_id: dummyTable.id,
           user_id: context.currentUser.id,
-        })
-        expect(new Date(lastAccessedAt).getTime()).toBeGreaterThan(
+        }))!
+        expect(new Date(lastAccessedAt!).getTime()).toBeGreaterThan(
           new Date(oldLastAccessedAt).getTime(),
         )
       })
@@ -246,12 +246,12 @@ describe.each([['ddb'], ['pg']])(
           })
           .where('table_id', dummyTable.id)
           .andWhere('user_id', context.currentUser.id)
-        await getAllRows(null, { tableId: dummyTable.id }, context)
-        const { lastAccessedAt } = await TableCollaborator.query().findOne({
+        await getAllRows({}, { tableId: dummyTable.id }, context)
+        const { lastAccessedAt } = (await TableCollaborator.query().findOne({
           table_id: dummyTable.id,
           user_id: context.currentUser.id,
-        })
-        expect(new Date(lastAccessedAt).getTime()).toEqual(
+        }))!
+        expect(new Date(lastAccessedAt!).getTime()).toEqual(
           new Date(oldLastAccessedAt).getTime(),
         )
       })

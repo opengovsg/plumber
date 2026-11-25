@@ -1,0 +1,2016 @@
+┌──────────────────────┬────────────┬──────────────────────┬───────────────────┐
+│ File                 ┆ Num. lines ┆ FTA Score (Lower is  ┆ Assessment        │
+│                      ┆            ┆ better)              ┆                   │
+╞══════════════════════╪════════════╪══════════════════════╪═══════════════════╡
+│ src/hooks/useChatStr ┆ 475        ┆ 69.07                ┆ Needs improvement │
+│ eam.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 489        ┆ 68.10                ┆ Needs improvement │
+│ extEditor/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 383        ┆ 66.72                ┆ Needs improvement │
+│ extEditor/utils.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...uilder/components ┆ 416        ┆ 66.13                ┆ Needs improvement │
+│ /ChatInterface/Promp ┆            ┆                      ┆                   │
+│ tInput.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 404        ┆ 65.94                ┆ Needs improvement │
+│ tepTestController/in ┆            ┆                      ┆                   │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Tile/components/T ┆ 404        ┆ 65.88                ┆ Needs improvement │
+│ ableBanner/ImportCsv ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 397        ┆ 65.69                ┆ Needs improvement │
+│ index.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...lder/components/C ┆ 379        ┆ 65.36                ┆ Needs improvement │
+│ hatInterface/Dynamic ┆            ┆                      ┆                   │
+│ Picker.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 379        ┆ 64.99                ┆ Needs improvement │
+│ tep/index.tsx        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 304        ┆ 64.99                ┆ Needs improvement │
+│ tepTestController/ut ┆            ┆                      ┆                   │
+│ ils.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/SingleS ┆ 390        ┆ 64.91                ┆ Needs improvement │
+│ elect/SingleSelectPr ┆            ┆                      ┆                   │
+│ ovider.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 436        ┆ 64.89                ┆ Needs improvement │
+│ extEditor/MenuBar.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Varia ┆ 340        ┆ 63.92                ┆ Needs improvement │
+│ blesList/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...figurationModal/C ┆ 359        ┆ 63.52                ┆ Needs improvement │
+│ hooseAppAndEvent/Cho ┆            ┆                      ┆                   │
+│ oseApp.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/Editor. ┆ 358        ┆ 63.27                ┆ Needs improvement │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...r/components/Step ┆ 352        ┆ 63.17                ┆ Needs improvement │
+│ sPreview/StepParamet ┆            ┆                      ┆                   │
+│ erRows.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/FlowStepG ┆ 358        ┆ 63.15                ┆ Needs improvement │
+│ roup/Content/IfThen/ ┆            ┆                      ┆                   │
+│ IfThen.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/RichTe ┆ 348        ┆ 62.78                ┆ Needs improvement │
+│ xtEditor/TableVariab ┆            ┆                      ┆                   │
+│ lePill.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/ViewA ┆ 225        ┆ 62.40                ┆ Needs improvement │
+│ sEmailModal/index.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 312        ┆ 61.89                ┆ Needs improvement │
+│ nents/TableRow/Table ┆            ┆                      ┆                   │
+│ Cell.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Attac ┆ 263        ┆ 61.42                ┆ Needs improvement │
+│ hmentSuggestions/uti ┆            ┆                      ┆                   │
+│ ls.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 295        ┆ 61.20                ┆ Needs improvement │
+│ r/components/StepsLi ┆            ┆                      ┆                   │
+│ st.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Builder/component ┆ 291        ┆ 61.08                ┆ Needs improvement │
+│ s/AddFormsgConnectio ┆            ┆                      ┆                   │
+│ nModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Surve ┆ 290        ┆ 61.07                ┆ Needs improvement │
+│ y/SurveyProvider.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 292        ┆ 60.72                ┆ Needs improvement │
+│ rLayout/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 259        ┆ 60.34                ┆ Needs improvement │
+│ nents/Table.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AddAp ┆ 275        ┆ 60.28                ┆ Needs improvement │
+│ pConnection/index.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ts/ControlledAuto ┆ 277        ┆ 60.22                ┆ Needs improvement │
+│ complete/AddNewOptio ┆            ┆                      ┆                   │
+│ nModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 265        ┆ 59.94                ┆ Could be better   │
+│ r/helpers/steps-util ┆            ┆                      ┆                   │
+│ s.ts                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...e/components/Tabl ┆ 260        ┆ 59.83                ┆ Could be better   │
+│ eBanner/TableCollabo ┆            ┆                      ┆                   │
+│ rators.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/He ┆ 230        ┆ 59.81                ┆ Could be better   │
+│ aderBar.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/FlowStepG ┆ 244        ┆ 59.79                ┆ Could be better   │
+│ roup/Content/IfThen/ ┆            ┆                      ┆                   │
+│ Branch.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 263        ┆ 59.63                ┆ Could be better   │
+│ Row/index.tsx        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 243        ┆ 59.61                ┆ Could be better   │
+│ helpers.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Choos ┆ 240        ┆ 59.19                ┆ Could be better   │
+│ eConnectionSubstep/i ┆            ┆                      ┆                   │
+│ ndex.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 243        ┆ 59.18                ┆ Could be better   │
+│ rLayout/EditorToolba ┆            ┆                      ┆                   │
+│ r.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Input ┆ 259        ┆ 59.13                ┆ Could be better   │
+│ Creator/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowR ┆ 179        ┆ 58.82                ┆ Could be better   │
+│ ow/FlowContextMenu.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pages/Tile/compon ┆ 246        ┆ 58.76                ┆ Could be better   │
+│ ents/TableHeader/Sea ┆            ┆                      ┆                   │
+│ rchBar.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...es/AiBuilder/comp ┆ 253        ┆ 58.70                ┆ Could be better   │
+│ onents/ChatInterface ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tiles/comp ┆ 202        ┆ 58.34                ┆ Could be better   │
+│ onents/TileList.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Contr ┆ 230        ┆ 58.17                ┆ Could be better   │
+│ olledAutocomplete/in ┆            ┆                      ┆                   │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ttings/FlowCollab ┆ 204        ┆ 58.11                ┆ Could be better   │
+│ orators/Collaborator ┆            ┆                      ┆                   │
+│ sTable.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 178        ┆ 58.09                ┆ Could be better   │
+│ rSettings/Notificati ┆            ┆                      ┆                   │
+│ ons.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/FlowStepGr ┆ 230        ┆ 58.01                ┆ Could be better   │
+│ oup/components/Block ┆            ┆                      ┆                   │
+│ Header.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ilder/components/ ┆ 219        ┆ 57.95                ┆ Could be better   │
+│ ChatInterface/Choice ┆            ┆                      ┆                   │
+│ Picker.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ges/AiBuilder/com ┆ 224        ┆ 57.77                ┆ Could be better   │
+│ ponents/StepsPreview ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Attac ┆ 204        ┆ 57.74                ┆ Could be better   │
+│ hmentSuggestions/ind ┆            ┆                      ┆                   │
+│ ex.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 208        ┆ 57.57                ┆ Could be better   │
+│ AiBuilderContext.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/variable ┆ 210        ┆ 57.56                ┆ Could be better   │
+│ s.ts                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppCo ┆ 215        ┆ 57.47                ┆ Could be better   │
+│ nnectionRow/index.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ges/AiBuilder/com ┆ 206        ┆ 57.42                ┆ Could be better   │
+│ ponents/ConnectFormP ┆            ┆                      ┆                   │
+│ opover.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...igurationModal/Ch ┆ 207        ┆ 57.22                ┆ Could be better   │
+│ ooseAndAddConnection ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/Variab ┆ 164        ┆ 57.22                ┆ Could be better   │
+│ lesList/TableVariabl ┆            ┆                      ┆                   │
+│ eModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/toolbox. ┆ 214        ┆ 57.21                ┆ Could be better   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ges/Transfers/com ┆ 115        ┆ 57.20                ┆ Could be better   │
+│ ponents/TransferRequ ┆            ┆                      ┆                   │
+│ estRow.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useS3Opera ┆ 193        ┆ 57.14                ┆ Could be better   │
+│ tions.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/FlowStepG ┆ 199        ┆ 56.99                ┆ Could be better   │
+│ roup/Content/ForEach ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ts/EditorLayout/U ┆ 116        ┆ 56.89                ┆ Could be better   │
+│ npublishConfirmation ┆            ┆                      ┆                   │
+│ Dialog.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nModal/ChooseAndA ┆ 195        ┆ 56.63                ┆ Could be better   │
+│ ddConnection/AddConn ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/editor.t ┆ 187        ┆ 56.49                ┆ Could be better   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...orSettings/FlowCo ┆ 192        ┆ 56.36                ┆ Could be better   │
+│ nnections/Connection ┆            ┆                      ┆                   │
+│ sTable.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 150        ┆ 56.33                ┆ Could be better   │
+│ rSettings/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../components/Table ┆ 105        ┆ 56.25                ┆ Could be better   │
+│ Header/NewColumnHead ┆            ┆                      ┆                   │
+│ erCell.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tiles/comp ┆ 184        ┆ 56.25                ┆ Could be better   │
+│ onents/CreateTileBut ┆            ┆                      ┆                   │
+│ ton.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 189        ┆ 56.21                ┆ Could be better   │
+│ components/ExitAlert ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ile/components/Ta ┆ 194        ┆ 56.21                ┆ Could be better   │
+│ bleHeader/ColumnHead ┆            ┆                      ┆                   │
+│ erCell.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/TableBanne ┆ 200        ┆ 56.11                ┆ Could be better   │
+│ r/ShareLinkPasswordS ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...seAndAddConnectio ┆ 187        ┆ 56.06                ┆ Could be better   │
+│ n/ConfigureExcelConn ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Execu ┆ 189        ┆ 55.91                ┆ Could be better   │
+│ tionGroup/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Confe ┆ 122        ┆ 55.87                ┆ Could be better   │
+│ ttiEmbeddedSurvey.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ages/AiBuilder/co ┆ 184        ┆ 55.85                ┆ Could be better   │
+│ mponents/StepsPrevie ┆            ┆                      ┆                   │
+│ w/Step.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useStepMet ┆ 177        ┆ 55.38                ┆ Could be better   │
+│ adata.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...owStepGroup/helpe ┆ 170        ┆ 55.31                ┆ Could be better   │
+│ rs/getConditionBlock ┆            ┆                      ┆                   │
+│ Preview.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pConfigurationMod ┆ 177        ┆ 55.22                ┆ Could be better   │
+│ al/ChooseAppAndEvent ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...er/components/Cha ┆ 158        ┆ 55.19                ┆ Could be better   │
+│ tInterface/TileSetup ┆            ┆                      ┆                   │
+│ Picker.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Execu ┆ 131        ┆ 55.18                ┆ Could be better   │
+│ tionRow/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 157        ┆ 55.16                ┆ Could be better   │
+│ ubstep/index.tsx     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...AddConnection/Con ┆ 165        ┆ 55.06                ┆ Could be better   │
+│ figureDatabricksConn ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ttachmentSuggesti ┆ 174        ┆ 55.00                ┆ Could be better   │
+│ ons/components/Sugge ┆            ┆                      ┆                   │
+│ stions.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/MenuA ┆ 154        ┆ 55.00                ┆ Could be better   │
+│ lertDialog/index.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../FlowStepGroup/Co ┆ 182        ┆ 54.99                ┆ Could be better   │
+│ ntent/OnlyContinueIf ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...tMessages/ChatMes ┆ 133        ┆ 54.74                ┆ Could be better   │
+│ sageToolbar/Feedback ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Surve ┆ 157        ┆ 54.72                ┆ Could be better   │
+│ y/engine.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...igurationModal/Fl ┆ 92         ┆ 54.65                ┆ Could be better   │
+│ owStepConfigurationC ┆            ┆                      ┆                   │
+│ ontext.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useReorder ┆ 171        ┆ 54.62                ┆ Could be better   │
+│ Steps.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Executions/compon ┆ 91         ┆ 54.54                ┆ Could be better   │
+│ ents/SearchWithFilte ┆            ┆                      ┆                   │
+│ rInput.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/inde ┆ 156        ┆ 54.45                ┆ Could be better   │
+│ x.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/conte ┆ 108        ┆ 54.35                ┆ Could be better   │
+│ xts/TableContext.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edita ┆ 169        ┆ 54.35                ┆ Could be better   │
+│ bleInput/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowR ┆ 154        ┆ 54.12                ┆ Could be better   │
+│ ow/index.tsx         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Applicatio ┆ 144        ┆ 54.05                ┆ Could be better   │
+│ n/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...EditorSettings/Fl ┆ 131        ┆ 54.03                ┆ Could be better   │
+│ owShare/AddNewCollab ┆            ┆                      ┆                   │
+│ orator.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/FlowStep/c ┆ 155        ┆ 53.98                ┆ Could be better   │
+│ omponents/DeleteStep ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pConfigurationMod ┆ 162        ┆ 53.98                ┆ Could be better   │
+│ al/hooks/useIsAppSel ┆            ┆                      ┆                   │
+│ ectable.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../components/ChatI ┆ 123        ┆ 53.88                ┆ Could be better   │
+│ nterface/ColumnTable ┆            ┆                      ┆                   │
+│ Picker.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Group ┆ 143        ┆ 53.86                ┆ Could be better   │
+│ edMultiRow/index.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 143        ┆ 53.80                ┆ Could be better   │
+│ /Streamdown.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 157        ┆ 53.79                ┆ Could be better   │
+│ tepGroup/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/conte ┆ 132        ┆ 53.77                ┆ Could be better   │
+│ xts/ContextMenuConte ┆            ┆                      ┆                   │
+│ xt.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Executions ┆ 153        ┆ 53.75                ┆ Could be better   │
+│ ForFlow/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Sugge ┆ 86         ┆ 53.67                ┆ Could be better   │
+│ stionsWrapper/index. ┆            ┆                      ┆                   │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Annou ┆ 104        ┆ 53.63                ┆ Could be better   │
+│ ncementModal/index.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Surve ┆ 149        ┆ 53.57                ┆ Could be better   │
+│ y/storage.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 142        ┆ 53.52                ┆ Could be better   │
+│ extEditorWithPresets ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/FlowSte ┆ 128        ┆ 53.52                ┆ Could be better   │
+│ p/components/Approve ┆            ┆                      ┆                   │
+│ Reject.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/ExecutionS ┆ 109        ┆ 53.48                ┆ Could be better   │
+│ tep/components/Retry ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/DragD ┆ 151        ┆ 53.47                ┆ Could be better   │
+│ ropInput/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/index ┆ 155        ┆ 53.37                ┆ Could be better   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/StepsPre ┆ 153        ┆ 53.36                ┆ Could be better   │
+│ view/PreviewConditio ┆            ┆                      ┆                   │
+│ nBlock.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/hooks ┆ 143        ┆ 53.16                ┆ Could be better   │
+│ /useFetchAllRows.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Execu ┆ 148        ┆ 52.97                ┆ Could be better   │
+│ tionStep/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...xtensions/formsg/ ┆ 132        ┆ 52.90                ┆ Could be better   │
+│ triggers/check-step- ┆            ┆                      ┆                   │
+│ button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Markd ┆ 105        ┆ 52.80                ┆ Could be better   │
+│ ownRenderer/index.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/hooks ┆ 76         ┆ 52.78                ┆ Could be better   │
+│ /useCreateRow.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Sorta ┆ 90         ┆ 52.62                ┆ Could be better   │
+│ bleList/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tiles/inde ┆ 138        ┆ 52.62                ┆ Could be better   │
+│ x.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/TextF ┆ 119        ┆ 52.60                ┆ Could be better   │
+│ ield/index.tsx       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ents/RichTextEdit ┆ 109        ┆ 52.60                ┆ Could be better   │
+│ or/ResizableImageExt ┆            ┆                      ┆                   │
+│ ension.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 129        ┆ 52.53                ┆ Could be better   │
+│ nents/TilePasswordPr ┆            ┆                      ┆                   │
+│ ompt.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../SortableList/com ┆ 90         ┆ 52.42                ┆ Could be better   │
+│ ponents/SortableItem ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/co ┆ 119        ┆ 52.36                ┆ Could be better   │
+│ mponents/FeatureSect ┆            ┆                      ┆                   │
+│ ion.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nts/ExecutionStep ┆ 86         ┆ 52.34                ┆ Could be better   │
+│ /components/RetryAll ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...uilder/components ┆ 145        ┆ 52.30                ┆ Could be better   │
+│ /StepsPreview/Previe ┆            ┆                      ┆                   │
+│ wItems.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pages/Tile/compon ┆ 127        ┆ 52.09                ┆ Could be better   │
+│ ents/TableBanner/Sha ┆            ┆                      ┆                   │
+│ reLink.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ct/components/Sel ┆ 134        ┆ 52.03                ┆ Could be better   │
+│ ectCombobox/SelectCo ┆            ┆                      ┆                   │
+│ mbobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ages/Tile/compone ┆ 74         ┆ 52.00                ┆ Could be better   │
+│ nts/TableBanner/Brea ┆            ┆                      ┆                   │
+│ dCrumb.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/Announcem ┆ 77         ┆ 51.96                ┆ Could be better   │
+│ entModal/ProgressInd ┆            ┆                      ┆                   │
+│ icator.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/LaunchD ┆ 113        ┆ 51.89                ┆ Could be better   │
+│ arkly.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Executions ┆ 130        ┆ 51.88                ┆ Could be better   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/MrfCont ┆ 104        ┆ 51.78                ┆ Could be better   │
+│ ext.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Tile/components/T ┆ 106        ┆ 51.73                ┆ Could be better   │
+│ ableFooter/DeleteRow ┆            ┆                      ┆                   │
+│ sModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/SgidCallba ┆ 100        ┆ 51.70                ┆ Could be better   │
+│ ck/SgidAccountSelect ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/Execut ┆ 96         ┆ 51.59                ┆ Could be better   │
+│ ionGroup/GroupStatus ┆            ┆                      ┆                   │
+│ Filter.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...urationModal/hook ┆ 75         ┆ 51.56                ┆ Could be better   │
+│ s/useConnectionRegis ┆            ┆                      ┆                   │
+│ tration.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...StepGroup/Content ┆ 127        ┆ 51.52                ┆ Could be better   │
+│ /IfThen/HoverAddStep ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/StepsTo ┆ 116        ┆ 51.48                ┆ Could be better   │
+│ Display.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...gurationModal/Cho ┆ 104        ┆ 51.47                ┆ Could be better   │
+│ oseAppAndEvent/Choos ┆            ┆                      ┆                   │
+│ eEvent.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Fa ┆ 93         ┆ 51.35                ┆ Could be better   │
+│ qSection.tsx         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 115        ┆ 51.32                ┆ Could be better   │
+│ Row/useAutofill.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Input ┆ 124        ┆ 51.30                ┆ Could be better   │
+│ Creator/BooleanRadio ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NewsD ┆ 87         ┆ 51.21                ┆ Could be better   │
+│ rawer/index.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Templates/ ┆ 112        ┆ 51.21                ┆ Could be better   │
+│ index.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useDynamic ┆ 122        ┆ 51.21                ┆ Could be better   │
+│ Data.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...der/components/St ┆ 80         ┆ 51.20                ┆ Could be better   │
+│ epsPreview/RichTextP ┆            ┆                      ┆                   │
+│ review.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...tepGroup/Content/ ┆ 116        ┆ 51.19                ┆ Could be better   │
+│ IfThen/AddAfterBlock ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Select/components ┆ 102        ┆ 51.17                ┆ Could be better   │
+│ /DropdownItem/Dropdo ┆            ┆                      ┆                   │
+│ wnItem.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Execu ┆ 109        ┆ 51.10                ┆ Could be better   │
+│ tionHeader/index.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../send-transaction ┆ 103        ┆ 51.10                ┆ Could be better   │
+│ al-email/check-step- ┆            ┆                      ┆                   │
+│ button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/AttachmentSugge ┆ 96         ┆ 50.97                ┆ Could be better   │
+│ stions/components/Ch ┆            ┆                      ┆                   │
+│ eckbox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 97         ┆ 50.97                ┆ Could be better   │
+│ extEditor/PreviewBut ┆            ┆                      ┆                   │
+│ ton.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/RichTe ┆ 126        ┆ 50.97                ┆ Could be better   │
+│ xtEditor/StepVariabl ┆            ┆                      ┆                   │
+│ ePlugin.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Execution/ ┆ 116        ┆ 50.89                ┆ Could be better   │
+│ index.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 123        ┆ 50.63                ┆ Could be better   │
+│ r/components/AddStep ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/Variables ┆ 118        ┆ 50.56                ┆ Could be better   │
+│ List/VariableItemWit ┆            ┆                      ┆                   │
+│ hModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 117        ┆ 50.53                ┆ Could be better   │
+│ Col.tsx/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Layou ┆ 100        ┆ 50.45                ┆ Could be better   │
+│ t/NavigationSidebar. ┆            ┆                      ┆                   │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 78         ┆ 50.43                ┆ Could be better   │
+│ Select/index.tsx     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nts/FlowStepGroup ┆ 100        ┆ 50.32                ┆ Could be better   │
+│ /Content/ForEach/For ┆            ┆                      ┆                   │
+│ EachV1.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 102        ┆ 50.30                ┆ Could be better   │
+│ rRightDrawer/Step.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Transfers/ ┆ 64         ┆ 50.28                ┆ Could be better   │
+│ index.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...dal/ChooseAndAddC ┆ 104        ┆ 50.27                ┆ Could be better   │
+│ onnection/ChooseConn ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ditorSettings/Flo ┆ 87         ┆ 50.24                ┆ Could be better   │
+│ wShare/CollaboratorL ┆            ┆                      ┆                   │
+│ istRow.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/config/urls.ts   ┆ 74         ┆ 50.21                ┆ Could be better   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 72         ┆ 50.20                ┆ Could be better   │
+│ nents/TableBanner/Ed ┆            ┆                      ┆                   │
+│ itMode.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 109        ┆ 50.18                ┆ Could be better   │
+│ rSettings/FlowTransf ┆            ┆                      ┆                   │
+│ er.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/FlowSte ┆ 99         ┆ 50.17                ┆ Could be better   │
+│ pTestController/Test ┆            ┆                      ┆                   │
+│ Result.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...seAndAddConnectio ┆ 62         ┆ 49.98                ┆ OK                │
+│ n/ChooseConnectionDr ┆            ┆                      ┆                   │
+│ opdown.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Varia ┆ 59         ┆ 49.98                ┆ OK                │
+│ blesList/utils.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 110        ┆ 49.78                ┆ OK                │
+│ rLayout/PublishButto ┆            ┆                      ┆                   │
+│ n.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ges/Template/comp ┆ 89         ┆ 49.76                ┆ OK                │
+│ onents/TemplateStepC ┆            ┆                      ┆                   │
+│ ontent.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 105        ┆ 49.73                ┆ OK                │
+│ nents/TableRow/index ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/validate ┆ 103        ┆ 49.73                ┆ OK                │
+│ StepParams.ts        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...lect/components/S ┆ 69         ┆ 49.69                ┆ OK                │
+│ electPopover/SelectP ┆            ┆                      ┆                   │
+│ opover.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useIfThenV ┆ 101        ┆ 49.66                ┆ OK                │
+│ 2Enabled.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NewsD ┆ 59         ┆ 49.58                ┆ OK                │
+│ rawer/NewsItem.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/FlowSt ┆ 94         ┆ 49.57                ┆ OK                │
+│ epConfigurationModal ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/Announce ┆ 99         ┆ 49.53                ┆ OK                │
+│ mentModal/Announceme ┆            ┆                      ┆                   │
+│ ntItem.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ges/Tile/componen ┆ 62         ┆ 49.51                ┆ OK                │
+│ ts/TableBanner/Share ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pages/Tile/compon ┆ 87         ┆ 49.49                ┆ OK                │
+│ ents/TableRow/Checkb ┆            ┆                      ┆                   │
+│ oxCell.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 78         ┆ 49.45                ┆ OK                │
+│ rRightDrawer/StepHea ┆            ┆                      ┆                   │
+│ der.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/SsoCallbac ┆ 104        ┆ 49.38                ┆ OK                │
+│ k/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/SiteW ┆ 60         ┆ 49.20                ┆ OK                │
+│ ideBanner/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 96         ┆ 49.14                ┆ OK                │
+│ nents/TableHeader/in ┆            ┆                      ┆                   │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/config/app.ts    ┆ 80         ┆ 49.12                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ages/ChatMessageT ┆ 60         ┆ 49.11                ┆ OK                │
+│ oolbar/FeedbackFormC ┆            ┆                      ┆                   │
+│ ontent.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/RichTex ┆ 98         ┆ 49.02                ┆ OK                │
+│ tEditor/TableVariabl ┆            ┆                      ┆                   │
+│ ePlugin.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../ChooseAndAddConn ┆ 109        ┆ 48.98                ┆ OK                │
+│ ection/SetConnection ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/SgidCallba ┆ 89         ┆ 48.97                ┆ OK                │
+│ ck/index.tsx         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ents/CreateFlowMo ┆ 68         ┆ 48.93                ┆ OK                │
+│ dal/FlowNameAndModeC ┆            ┆                      ┆                   │
+│ ontent.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Login ┆ 91         ┆ 48.92                ┆ OK                │
+│ Form/index.tsx       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ionStep/component ┆ 70         ┆ 48.86                ┆ OK                │
+│ s/RetryAllIterations ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/index.tsx        ┆ 68         ┆ 48.86                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 54         ┆ 48.81                ┆ OK                │
+│ extEditor/Suggestion ┆            ┆                      ┆                   │
+│ s.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Template/c ┆ 72         ┆ 48.81                ┆ OK                │
+│ omponents/TemplateBo ┆            ┆                      ┆                   │
+│ dy.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...tepsPreview/helpe ┆ 93         ┆ 48.80                ┆ OK                │
+│ rs/resolveFieldDispl ┆            ┆                      ┆                   │
+│ ayValue.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nts/FlowStep/comp ┆ 94         ┆ 48.74                ┆ OK                │
+│ onents/DuplicateStep ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...urationModal/Choo ┆ 92         ┆ 48.73                ┆ OK                │
+│ seAppAndEvent/Toolbo ┆            ┆                      ┆                   │
+│ xEvent.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/SingleSe ┆ 94         ┆ 48.64                ┆ OK                │
+│ lect/components/Sele ┆            ┆                      ┆                   │
+│ ctMenu.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FileU ┆ 76         ┆ 48.63                ┆ OK                │
+│ pload/index.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Input ┆ 84         ┆ 48.52                ┆ OK                │
+│ Creator/MultiRowInpu ┆            ┆                      ┆                   │
+│ t.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../Tile/components/ ┆ 67         ┆ 48.50                ┆ OK                │
+│ TableHeader/EditColu ┆            ┆                      ┆                   │
+│ mnName.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...StepGroup/Content ┆ 84         ┆ 48.42                ┆ OK                │
+│ /IfThen/useDuplicate ┆            ┆                      ┆                   │
+│ Branch.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/StepsP ┆ 94         ┆ 48.33                ┆ OK                │
+│ review/helpers/previ ┆            ┆                      ┆                   │
+│ ewItems.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/ExecutionStep/h ┆ 91         ┆ 48.28                ┆ OK                │
+│ ooks/useExecutionSte ┆            ┆                      ┆                   │
+│ pStatus.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/Editor ┆ 68         ┆ 48.27                ┆ OK                │
+│ Settings/FlowCollabo ┆            ┆                      ┆                   │
+│ rators.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/authenti ┆ 80         ┆ 48.25                ┆ OK                │
+│ cationSteps.ts       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Surve ┆ 92         ┆ 48.20                ┆ OK                │
+│ y/surveys.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Login ┆ 59         ┆ 48.15                ┆ OK                │
+│ Form/SgidLoginSectio ┆            ┆                      ┆                   │
+│ n.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ges/AiBuilder/com ┆ 53         ┆ 48.11                ┆ OK                │
+│ ponents/ChatMessages ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Error ┆ 53         ┆ 48.02                ┆ OK                │
+│ FlowStepHeader/index ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/StepExe ┆ 82         ┆ 48.02                ┆ OK                │
+│ cutions.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/Authent ┆ 69         ┆ 47.92                ┆ OK                │
+│ ication.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Builder/component ┆ 80         ┆ 47.86                ┆ OK                │
+│ s/ChatMessages/ChatM ┆            ┆                      ┆                   │
+│ essage.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Error ┆ 69         ┆ 47.85                ┆ OK                │
+│ Result/SpecificError ┆            ┆                      ┆                   │
+│ Result.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...es/Tile/component ┆ 51         ┆ 47.82                ┆ OK                │
+│ s/TableHeader/Column ┆            ┆                      ┆                   │
+│ Filter.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Tile/components/T ┆ 57         ┆ 47.82                ┆ OK                │
+│ ableBanner/ExportCsv ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Apoll ┆ 50         ┆ 47.79                ┆ OK                │
+│ oProvider/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useNavigat ┆ 68         ┆ 47.78                ┆ OK                │
+│ ionGuard.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 94         ┆ 47.60                ┆ OK                │
+│ tep/components/StepA ┆            ┆                      ┆                   │
+│ ppIcon.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/Execut ┆ 88         ┆ 47.30                ┆ OK                │
+│ ionGroup/IterationSe ┆            ┆                      ┆                   │
+│ lector.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ages/Tile/compone ┆ 68         ┆ 47.28                ┆ OK                │
+│ nts/TableHeader/Colu ┆            ┆                      ┆                   │
+│ mnSort.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ vite.config.ts       ┆ 68         ┆ 47.28                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nts/StepsPreview/ ┆ 85         ┆ 47.08                ┆ OK                │
+│ helpers/dynamicField ┆            ┆                      ┆                   │
+│ Options.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/hook ┆ 70         ┆ 46.84                ┆ OK                │
+│ s/useFlowCreation.ts ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/formsg.t ┆ 81         ┆ 46.80                ┆ OK                │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Publi ┆ 45         ┆ 46.72                ┆ OK                │
+│ cLayout/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...StepGroup/compone ┆ 65         ┆ 46.43                ┆ OK                │
+│ nts/GroupStepWithAdd ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...lowStepGroup/hook ┆ 53         ┆ 46.35                ┆ OK                │
+│ s/useDeleteStepConfi ┆            ┆                      ┆                   │
+│ rmation.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...emplate/component ┆ 70         ┆ 46.29                ┆ OK                │
+│ s/GroupTemplateStepC ┆            ┆                      ┆                   │
+│ ontent.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nts/Editor/compon ┆ 76         ┆ 46.23                ┆ OK                │
+│ ents/FlowStepWithAdd ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useTemplat ┆ 56         ┆ 46.20                ┆ OK                │
+│ eSearch.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useApps.ts ┆ 61         ┆ 46.06                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 60         ┆ 45.91                ┆ OK                │
+│ rs/parse-csv.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/processE ┆ 64         ┆ 45.89                ┆ OK                │
+│ xecutionSteps.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/SsoInitiat ┆ 57         ┆ 45.60                ┆ OK                │
+│ e/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/Tile/components ┆ 48         ┆ 45.59                ┆ OK                │
+│ /TableBanner/Refresh ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/isFieldH ┆ 76         ┆ 45.54                ┆ OK                │
+│ idden.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NewsD ┆ 52         ┆ 45.51                ┆ OK                │
+│ rawer/NewsItemTag.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/StepsPrevi ┆ 70         ┆ 45.37                ┆ OK                │
+│ ew/helpers/columnVal ┆            ┆                      ┆                   │
+│ ueTable.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...er/components/Cha ┆ 45         ┆ 45.36                ┆ OK                │
+│ tMessages/StreamingM ┆            ┆                      ┆                   │
+│ essage.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/RichT ┆ 68         ┆ 45.35                ┆ OK                │
+│ extEditor/VariableBa ┆            ┆                      ┆                   │
+│ dge.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 58         ┆ 45.26                ┆ OK                │
+│ r/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../components/Table ┆ 42         ┆ 45.16                ┆ OK                │
+│ Banner/ImportExportT ┆            ┆                      ┆                   │
+│ oolbar.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/link.ts  ┆ 64         ┆ 45.11                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/paginati ┆ 60         ┆ 45.00                ┆ OK                │
+│ on.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/comp ┆ 54         ┆ 44.84                ┆ OK                │
+│ onents/ModeSelector. ┆            ┆                      ┆                   │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/usePersist ┆ 69         ┆ 44.77                ┆ OK                │
+│ edState.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nts/EditorRightDr ┆ 38         ┆ 44.70                ┆ OK                │
+│ awer/LearnFromGuideI ┆            ┆                      ┆                   │
+│ nfobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppFl ┆ 60         ┆ 44.47                ┆ OK                │
+│ ows/index.tsx        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...es/Flows/componen ┆ 36         ┆ 44.44                ┆ OK                │
+│ ts/ApproveTransfersI ┆            ┆                      ┆                   │
+│ nfobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/flow-tem ┆ 50         ┆ 44.18                ┆ OK                │
+│ plates.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...uilder/components ┆ 48         ┆ 44.14                ┆ OK                │
+│ /StepsPreview/Variab ┆            ┆                      ┆                   │
+│ lePill.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 63         ┆ 44.09                ┆ OK                │
+│ rs/cell-navigation.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ts/AttachmentSugg ┆ 52         ┆ 44.08                ┆ OK                │
+│ estions/components/T ┆            ┆                      ┆                   │
+│ agList.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Templates/ ┆ 40         ┆ 43.68                ┆ OK                │
+│ components/TemplateT ┆            ┆                      ┆                   │
+│ ile.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/getStepN ┆ 61         ┆ 43.62                ┆ OK                │
+│ ame.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/SelectCo ┆ 52         ┆ 43.61                ┆ OK                │
+│ mbobox/ComboboxClear ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppIc ┆ 41         ┆ 43.35                ┆ OK                │
+│ on/index.tsx         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppCo ┆ 41         ┆ 43.07                ┆ OK                │
+│ nnections/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/post-log ┆ 61         ┆ 42.95                ┆ OK                │
+│ in-redirect.ts       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/ChatIn ┆ 43         ┆ 42.86                ┆ OK                │
+│ terface/MessageLimit ┆            ┆                      ┆                   │
+│ Banner.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Colla ┆ 45         ┆ 42.85                ┆ OK                │
+│ boratorRoleSelect/in ┆            ┆                      ┆                   │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/FlowStepTe ┆ 44         ┆ 42.64                ┆ OK                │
+│ stController/useTest ┆            ┆                      ┆                   │
+│ Details.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/StepsPrevie ┆ 51         ┆ 42.44                ┆ OK                │
+│ w/helpers/previewBlo ┆            ┆                      ┆                   │
+│ ckTitle.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Login ┆ 30         ┆ 42.37                ┆ OK                │
+│ Form/SsoLoginSection ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Empty ┆ 50         ┆ 42.25                ┆ OK                │
+│ FlowStepHeader/index ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowA ┆ 37         ┆ 42.09                ┆ OK                │
+│ ppIcons/index.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Builder/component ┆ 53         ┆ 42.04                ┆ OK                │
+│ s/ChatInterface/Side ┆            ┆                      ┆                   │
+│ Drawer.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...FlowStepGroup/hel ┆ 41         ┆ 41.97                ┆ OK                │
+│ pers/buildConditionS ┆            ┆                      ┆                   │
+│ entence.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 31         ┆ 41.95                ┆ OK                │
+│ rRightDrawer/index.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/FlowStep/c ┆ 29         ┆ 41.95                ┆ OK                │
+│ omponents/TestAgainI ┆            ┆                      ┆                   │
+│ nfobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pConfigurationMod ┆ 43         ┆ 41.70                ┆ OK                │
+│ al/helpers/anchor-pl ┆            ┆                      ┆                   │
+│ acement.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Singl ┆ 56         ┆ 41.17                ┆ OK                │
+│ eSelect/utils/itemUt ┆            ┆                      ┆                   │
+│ ils.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ect/components/Se ┆ 41         ┆ 40.54                ┆ OK                │
+│ lectCombobox/ToggleC ┆            ┆                      ┆                   │
+│ hevron.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/FlowStepConfigu ┆ 28         ┆ 40.48                ┆ OK                │
+│ rationModal/LoadingO ┆            ┆                      ┆                   │
+│ verlay.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/usePaginat ┆ 49         ┆ 40.42                ┆ OK                │
+│ ionAndFilter.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 28         ┆ 40.38                ┆ OK                │
+│ helpers/parseParamet ┆            ┆                      ┆                   │
+│ erValue.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Applicatio ┆ 35         ┆ 40.29                ┆ OK                │
+│ ns/index.tsx         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...tionModal/ChooseA ┆ 27         ┆ 40.27                ┆ OK                │
+│ ppAndEvent/Highlight ┆            ┆                      ┆                   │
+│ edText.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 29         ┆ 39.88                ┆ OK                │
+│ rs/build-csv.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nfigurationModal/ ┆ 25         ┆ 39.80                ┆ OK                │
+│ ChooseAppAndEvent/Ne ┆            ┆                      ┆                   │
+│ wBadge.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/grouped- ┆ 39         ┆ 39.75                ┆ OK                │
+│ multirow-validation. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/computeA ┆ 34         ┆ 39.70                ┆ OK                │
+│ uthStepVariables.ts  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 39         ┆ 39.58                ┆ OK                │
+│ tep/FlowStepWrapper. ┆            ┆                      ┆                   │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useCapture ┆ 23         ┆ 39.56                ┆ OK                │
+│ AiBuilderFlow.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ltiSelect/helpers ┆ 33         ┆ 39.53                ┆ OK                │
+│ /extract-variables-a ┆            ┆                      ┆                   │
+│ s-items.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Singl ┆ 35         ┆ 39.50                ┆ OK                │
+│ eSelect/utils/defaul ┆            ┆                      ┆                   │
+│ tFilter.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 36         ┆ 39.31                ┆ OK                │
+│ nents/TableFooter/Ro ┆            ┆                      ┆                   │
+│ wCount.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ vite-config-utils.ts ┆ 31         ┆ 39.24                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Confe ┆ 37         ┆ 38.89                ┆ OK                │
+│ ttiEmbeddedSurvey.he ┆            ┆                      ┆                   │
+│ lpers.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/ChatInter ┆ 26         ┆ 38.75                ┆ OK                │
+│ face/helpers/tileSet ┆            ┆                      ┆                   │
+│ upReply.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 24         ┆ 38.73                ┆ OK                │
+│ rs/scroll-helper.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Webho ┆ 36         ┆ 38.61                ┆ OK                │
+│ okUrlInfo/index.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/dateTime ┆ 32         ┆ 38.40                ┆ OK                │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/StepsPrev ┆ 27         ┆ 38.29                ┆ OK                │
+│ iew/helpers/toPropos ┆            ┆                      ┆                   │
+│ alSteps.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/app-extensions/i ┆ 20         ┆ 37.15                ┆ OK                │
+│ ndex.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 24         ┆ 36.61                ┆ OK                │
+│ tep/utils.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onfigurationModal ┆ 17         ┆ 36.26                ┆ OK                │
+│ /helpers/selectable- ┆            ┆                      ┆                   │
+│ actions.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Error ┆ 23         ┆ 36.00                ┆ OK                │
+│ Result/index.tsx     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/parseGra ┆ 25         ┆ 35.92                ┆ OK                │
+│ phqlError.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Error ┆ 17         ┆ 35.61                ┆ OK                │
+│ Page/RouteErrorPage. ┆            ┆                      ┆                   │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 23         ┆ 35.27                ┆ OK                │
+│ helpers/getChatToast ┆            ┆                      ┆                   │
+│ Message.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Group ┆ 21         ┆ 35.25                ┆ OK                │
+│ edMultiRow/helpers.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/layou ┆ 17         ┆ 34.97                ┆ OK                │
+│ ts/TileLayout.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/posthog.ts       ┆ 20         ┆ 34.26                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/getNoOpt ┆ 23         ┆ 33.10                ┆ OK                │
+│ ionsMessage.ts       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/StepsPr ┆ 14         ┆ 32.11                ┆ OK                │
+│ eview/helpers/toPrev ┆            ┆                      ┆                   │
+│ iewStep.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 11         ┆ 30.85                ┆ OK                │
+│ Col.tsx/utils.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...hatInterface/help ┆ 12         ┆ 30.52                ┆ OK                │
+│ ers/isTilesListTable ┆            ┆                      ┆                   │
+│ sPicker.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 16         ┆ 30.50                ┆ OK                │
+│ rs/shallow-compare.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/window.t ┆ 11         ┆ 29.79                ┆ OK                │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 8          ┆ 27.64                ┆ OK                │
+│ tepGroup/Content/uti ┆            ┆                      ┆                   │
+│ ls.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NewsD ┆ 423        ┆ 14.14                ┆ OK                │
+│ rawer/NewsItemList.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Ag ┆ 121        ┆ 12.87                ┆ OK                │
+│ encies.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Layou ┆ 111        ┆ 12.87                ┆ OK                │
+│ t/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Template/i ┆ 87         ┆ 12.82                ┆ OK                │
+│ ndex.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Singl ┆ 57         ┆ 12.72                ┆ OK                │
+│ eSelect/SelectContex ┆            ┆                      ┆                   │
+│ t.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Us ┆ 144        ┆ 12.68                ┆ OK                │
+│ eCases.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/exports/componen ┆ 60         ┆ 12.64                ┆ OK                │
+│ ts.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/FlowStepGro ┆ 122        ┆ 12.62                ┆ OK                │
+│ up/Content/IfThen/If ┆            ┆                      ┆                   │
+│ ThenV1.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...chmentSuggestions ┆ 70         ┆ 12.51                ┆ OK                │
+│ /hooks/useAttachment ┆            ┆                      ┆                   │
+│ Options.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Execu ┆ 91         ┆ 12.32                ┆ OK                │
+│ tionStatusMenu/index ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/hooks ┆ 71         ┆ 12.28                ┆ OK                │
+│ /useUpdateRow.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/FlowStep ┆ 106        ┆ 12.26                ┆ OK                │
+│ Group/Content/IfThen ┆            ┆                      ┆                   │
+│ /styles.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/He ┆ 107        ┆ 12.21                ┆ OK                │
+│ roSection.tsx        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/foundation ┆ 125        ┆ 12.21                ┆ OK                │
+│ s/colors.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 55         ┆ 12.04                ┆ OK                │
+│ rs/columns-helper.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/hooks ┆ 125        ┆ 11.98                ┆ OK                │
+│ /useUpdateTable.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/oidc.ts  ┆ 60         ┆ 11.97                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../FlowConnections/ ┆ 71         ┆ 11.84                ┆ OK                │
+│ DeleteFlowConnection ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Varia ┆ 72         ┆ 11.71                ┆ OK                │
+│ blesList/schema.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 65         ┆ 11.64                ┆ OK                │
+│ rSettings/EditorSide ┆            ┆                      ┆                   │
+│ bar.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ettings/FlowTrans ┆ 60         ┆ 11.57                ┆ OK                │
+│ fer/DisallowRequestI ┆            ┆                      ┆                   │
+│ nfobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Debou ┆ 65         ┆ 11.56                ┆ OK                │
+│ ncedSearchInput/inde ┆            ┆                      ┆                   │
+│ x.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppCo ┆ 69         ┆ 11.56                ┆ OK                │
+│ nnectionContextMenu/ ┆            ┆                      ┆                   │
+│ index.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 62         ┆ 11.56                ┆ OK                │
+│ nents/TableFooter/in ┆            ┆                      ┆                   │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppRo ┆ 63         ┆ 11.50                ┆ OK                │
+│ w/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...itorSettings/Flow ┆ 79         ┆ 11.50                ┆ OK                │
+│ Transfer/TransferFlo ┆            ┆                      ┆                   │
+│ wModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/routes.tsx       ┆ 191        ┆ 11.43                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ing/UseCasesPages ┆ 80         ┆ 11.41                ┆ OK                │
+│ /components/SummaryS ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/foundation ┆ 111        ┆ 11.35                ┆ OK                │
+│ s/textStyles.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...le/components/Tab ┆ 61         ┆ 11.33                ┆ OK                │
+│ leBanner/TransferOwn ┆            ┆                      ┆                   │
+│ ership.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/Editor/c ┆ 47         ┆ 11.33                ┆ OK                │
+│ omponents/DisabledFl ┆            ┆                      ┆                   │
+│ owStep.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tiles/comp ┆ 61         ┆ 11.28                ┆ OK                │
+│ onents/style.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/Tile/components ┆ 46         ┆ 11.25                ┆ OK                │
+│ /TableHeader/ColumnR ┆            ┆                      ┆                   │
+│ esizer.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 48         ┆ 11.20                ┆ OK                │
+│ constants.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/comp ┆ 40         ┆ 11.17                ┆ OK                │
+│ onents/ModeTile.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/cache.ts ┆ 78         ┆ 11.17                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/const ┆ 49         ┆ 11.12                ┆ OK                │
+│ ants.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Plumb ┆ 76         ┆ 11.12                ┆ OK                │
+│ erLogo/PlumProLogo.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/cont ┆ 43         ┆ 11.08                ┆ OK                │
+│ exts/CreateFlowConte ┆            ┆                      ┆                   │
+│ xt.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../EditorSettings/F ┆ 56         ┆ 11.08                ┆ OK                │
+│ lowTransfer/WarningI ┆            ┆                      ┆                   │
+│ nfobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/JSONV ┆ 38         ┆ 11.03                ┆ OK                │
+│ iewer/index.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Template/c ┆ 43         ┆ 10.99                ┆ OK                │
+│ omponents/GroupConte ┆            ┆                      ┆                   │
+│ nt.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/comp ┆ 49         ┆ 10.99                ┆ OK                │
+│ onents/EmptyFlows.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Avata ┆ 49         ┆ 10.99                ┆ OK                │
+│ rDropdownMenu/index. ┆            ┆                      ┆                   │
+│ tsx                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/EditorS ┆ 32         ┆ 10.99                ┆ OK                │
+│ ettings.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/Single ┆ 43         ┆ 10.99                ┆ OK                │
+│ Select/hooks/useLook ┆            ┆                      ┆                   │
+│ upItems.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Login ┆ 52         ┆ 10.95                ┆ OK                │
+│ Form/SgidFailureModa ┆            ┆                      ┆                   │
+│ l.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 45         ┆ 10.95                ┆ OK                │
+│ /Attachment.ts       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 44         ┆ 10.95                ┆ OK                │
+│ rSettings/Navbar.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...e/components/Tabl ┆ 47         ┆ 10.90                ┆ OK                │
+│ eHeader/CheckboxHead ┆            ┆                      ┆                   │
+│ erCell.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 42         ┆ 10.90                ┆ OK                │
+│ rLayout/EditorSnackb ┆            ┆                      ┆                   │
+│ ar.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/conte ┆ 46         ┆ 10.90                ┆ OK                │
+│ xts/RowContext.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Optio ┆ 39         ┆ 10.86                ┆ OK                │
+│ nTile/index.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ages/Flows/compon ┆ 55         ┆ 10.86                ┆ OK                │
+│ ents/CreateFlowModal ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/ChatMessage ┆ 45         ┆ 10.81                ┆ OK                │
+│ s/ChatMessageToolbar ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Form/ ┆ 45         ┆ 10.77                ┆ OK                │
+│ index.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NewsD ┆ 66         ┆ 10.67                ┆ OK                │
+│ rawer/TestItemList.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ vite.config.lib.ts   ┆ 47         ┆ 10.67                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...rSettings/FlowTra ┆ 44         ┆ 10.67                ┆ OK                │
+│ nsfer/PublishedFlowI ┆            ┆                      ┆                   │
+│ nfobox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...le/components/Tab ┆ 63         ┆ 10.67                ┆ OK                │
+│ leHeader/DeleteColum ┆            ┆                      ┆                   │
+│ nModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/ChatInterfa ┆ 28         ┆ 10.61                ┆ OK                │
+│ ce/helpers/columnTab ┆            ┆                      ┆                   │
+│ leReply.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useRespons ┆ 23         ┆ 10.58                ┆ OK                │
+│ eHeaders.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Unauthoriz ┆ 53         ┆ 10.58                ┆ OK                │
+│ edTile/MissingTile.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 56         ┆ 10.58                ┆ OK                │
+│ rSettings/EditorDraw ┆            ┆                      ┆                   │
+│ er.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 35         ┆ 10.58                ┆ OK                │
+│ /Sidebar.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Editor/com ┆ 57         ┆ 10.51                ┆ OK                │
+│ ponents/InvalidEdito ┆            ┆                      ┆                   │
+│ rPage.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useUnsaved ┆ 46         ┆ 10.51                ┆ OK                │
+│ Changes.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...le/components/Tab ┆ 37         ┆ 10.51                ┆ OK                │
+│ leBanner/ShareModalC ┆            ┆                      ┆                   │
+│ ontext.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...components/ErrorR ┆ 34         ┆ 10.48                ┆ OK                │
+│ esult/ErrorDetailsCo ┆            ┆                      ┆                   │
+│ llapse.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...dal/ChooseAndAddC ┆ 46         ┆ 10.48                ┆ OK                │
+│ onnection/Connection ┆            ┆                      ┆                   │
+│ Header.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/AppBa ┆ 59         ┆ 10.48                ┆ OK                │
+│ r/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 52         ┆ 10.48                ┆ OK                │
+│ components/IdeaButto ┆            ┆                      ┆                   │
+│ ns.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 31         ┆ 10.37                ┆ OK                │
+│ /SingleSelect.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/PageT ┆ 40         ┆ 10.37                ┆ OK                │
+│ itle/index.tsx       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Unauthoriz ┆ 57         ┆ 10.37                ┆ OK                │
+│ edTile/InvalidTileLi ┆            ┆                      ┆                   │
+│ nk.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ts/DropdownItem/D ┆ 27         ┆ 10.29                ┆ OK                │
+│ ropdownItemTextHighl ┆            ┆                      ┆                   │
+│ ighter.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NewsD ┆ 26         ┆ 10.29                ┆ OK                │
+│ rawer/LottieWebAnima ┆            ┆                      ┆                   │
+│ tion.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 30         ┆ 10.29                ┆ OK                │
+│ nents/TableBanner/in ┆            ┆                      ┆                   │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/types ┆ 21         ┆ 10.27                ┆ OK                │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/hooks ┆ 43         ┆ 10.27                ┆ OK                │
+│ /useDeleteRows.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/ExecutionStep/c ┆ 47         ┆ 10.18                ┆ OK                │
+│ omponents/DelayPause ┆            ┆                      ┆                   │
+│ dAlert.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...mponents/SelectPo ┆ 22         ┆ 10.18                ┆ OK                │
+│ pover/SelectPopoverC ┆            ┆                      ┆                   │
+│ ontext.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Error ┆ 64         ┆ 10.16                ┆ OK                │
+│ Page/index.tsx       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 46         ┆ 10.16                ┆ OK                │
+│ tep/styles.ts        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Layou ┆ 40         ┆ 10.16                ┆ OK                │
+│ t/NavigationDrawer.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/Editor/comp ┆ 54         ┆ 10.16                ┆ OK                │
+│ onents/UnsavedChange ┆            ┆                      ┆                   │
+│ sAlert.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 46         ┆ 10.16                ┆ OK                │
+│ r/styles.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/comp ┆ 35         ┆ 10.16                ┆ OK                │
+│ onents/CreatePipeBut ┆            ┆                      ┆                   │
+│ ton.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/hex-enco ┆ 9          ┆ 10.06                ┆ OK                │
+│ ding.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/config/flags.ts  ┆ 14         ┆ 10.04                ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Varia ┆ 55         ┆ 10.04                ┆ OK                │
+│ blesList/HtmlVariabl ┆            ┆                      ┆                   │
+│ eModal.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Fo ┆ 43         ┆ 10.04                ┆ OK                │
+│ oter.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 15         ┆ 9.93                 ┆ OK                │
+│ new-chat.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ile/components/Ta ┆ 33         ┆ 9.93                 ┆ OK                │
+│ bleFooter/DeleteRows ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Error ┆ 28         ┆ 9.93                 ┆ OK                │
+│ Result/GenericErrorR ┆            ┆                      ┆                   │
+│ esult.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...Landing/UseCasesP ┆ 32         ┆ 9.92                 ┆ OK                │
+│ ages/components/Cont ┆            ┆                      ┆                   │
+│ entBox.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...epGroup/component ┆ 53         ┆ 9.92                 ┆ OK                │
+│ s/DeleteConfirmation ┆            ┆                      ┆                   │
+│ Dialog.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Transfers/ ┆ 40         ┆ 9.92                 ┆ OK                │
+│ components/ViewFlowM ┆            ┆                      ┆                   │
+│ odal.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/contexts/LayoutN ┆ 25         ┆ 9.92                 ┆ OK                │
+│ avigation.tsx        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/client.t ┆ 26         ┆ 9.92                 ┆ OK                │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/compo ┆ 19         ┆ 9.80                 ┆ OK                │
+│ nents/TableRow/NoopC ┆            ┆                      ┆                   │
+│ ell.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 47         ┆ 9.67                 ┆ OK                │
+│ Row/AutofillConfirmD ┆            ┆                      ┆                   │
+│ ialog.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 24         ┆ 9.67                 ┆ OK                │
+│ tepTestController/st ┆            ┆                      ┆                   │
+│ yles.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowR ┆ 27         ┆ 9.67                 ┆ OK                │
+│ ow/DemoFlowModal.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Fe ┆ 48         ┆ 9.67                 ┆ OK                │
+│ atureSectionList.tsx ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Login ┆ 36         ┆ 9.67                 ┆ OK                │
+│ Form/OtpInput.tsx    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...es/Landing/UseCas ┆ 61         ┆ 9.67                 ┆ OK                │
+│ esPages/CampaignMana ┆            ┆                      ┆                   │
+│ gement.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tiles/comp ┆ 39         ┆ 9.53                 ┆ OK                │
+│ onents/EmptyTileList ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Singl ┆ 22         ┆ 9.53                 ┆ OK                │
+│ eSelect/SingleSelect ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Us ┆ 24         ┆ 9.53                 ┆ OK                │
+│ eCasesPages/routes.t ┆            ┆                      ┆                   │
+│ sx                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Attac ┆ 24         ┆ 9.53                 ┆ OK                │
+│ hmentSuggestions/sty ┆            ┆                      ┆                   │
+│ le.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Theme ┆ 31         ┆ 9.53                 ┆ OK                │
+│ Provider/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/ChatInterf ┆ 56         ┆ 9.53                 ┆ OK                │
+│ ace/SecretKeyWarning ┆            ┆                      ┆                   │
+│ Dialog.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/FlowStep/ ┆ 106        ┆ 9.53                 ┆ OK                │
+│ components/StepNameA ┆            ┆                      ┆                   │
+│ ndDemo.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Transfers/ ┆ 26         ┆ 9.53                 ┆ OK                │
+│ layouts/TransfersLay ┆            ┆                      ┆                   │
+│ out.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Us ┆ 89         ┆ 9.39                 ┆ OK                │
+│ eCasesPages/Operatio ┆            ┆                      ┆                   │
+│ ns.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/Announcemen ┆ 21         ┆ 9.39                 ┆ OK                │
+│ tModal/useAnnounceme ┆            ┆                      ┆                   │
+│ ntModal.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowS ┆ 27         ┆ 9.39                 ┆ OK                │
+│ tepGroup/styles.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...pages/Landing/Use ┆ 87         ┆ 9.39                 ┆ OK                │
+│ CasesPages/CustomerS ┆            ┆                      ┆                   │
+│ upport.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/hooks ┆ 17         ┆ 9.39                 ┆ OK                │
+│ /useViewToken.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/AiBuilder/ ┆ 16         ┆ 9.39                 ┆ OK                │
+│ StepConfigContext.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Login ┆ 36         ┆ 9.39                 ┆ OK                │
+│ Form/EmailInput.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 19         ┆ 9.39                 ┆ OK                │
+│ r/constants.ts       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...FlowStepGroup/hel ┆ 11         ┆ 9.38                 ┆ OK                │
+│ pers/truncateConditi ┆            ┆                      ┆                   │
+│ onLabel.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useHandleD ┆ 17         ┆ 9.38                 ┆ OK                │
+│ ynamicLoadError.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Login/inde ┆ 22         ┆ 9.24                 ┆ OK                │
+│ x.tsx                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/SsoLo ┆ 17         ┆ 9.24                 ┆ OK                │
+│ adingScreen/index.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/JSONV ┆ 35         ┆ 9.24                 ┆ OK                │
+│ iewer/style.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Us ┆ 80         ┆ 9.24                 ┆ OK                │
+│ eCasesPages/HumanRes ┆            ┆                      ┆                   │
+│ ource.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useSession ┆ 20         ┆ 9.22                 ┆ OK                │
+│ ExpiredToast.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Porta ┆ 11         ┆ 9.22                 ┆ OK                │
+│ l/index.tsx          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/urls.ts  ┆ 7          ┆ 9.22                 ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...es/AiBuilder/comp ┆ 26         ┆ 9.09                 ┆ OK                │
+│ onents/ChatMessages/ ┆            ┆                      ┆                   │
+│ Loader.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/FlowR ┆ 35         ┆ 9.09                 ┆ OK                │
+│ ow/DemoVideoModalCon ┆            ┆                      ┆                   │
+│ tent.tsx             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/storage. ┆ 14         ┆ 9.09                 ┆ OK                │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ages/Landing/UseC ┆ 27         ┆ 9.09                 ┆ OK                │
+│ asesPages/components ┆            ┆                      ┆                   │
+│ /Quote.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...rtableList/compon ┆ 19         ┆ 9.09                 ┆ OK                │
+│ ents/SortableOverlay ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 19         ┆ 9.09                 ┆ OK                │
+│ rRightDrawer/styles. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/ViewAsEmai ┆ 10         ┆ 9.09                 ┆ OK                │
+│ lModal/buildPreviewD ┆            ┆                      ┆                   │
+│ ocument.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/app-extensions/t ┆ 13         ┆ 9.09                 ┆ OK                │
+│ ypes.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 21         ┆ 9.09                 ┆ OK                │
+│ /Modal.ts            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ilder/components/ ┆ 30         ┆ 9.06                 ┆ OK                │
+│ ChatInterface/Scroll ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/index.ts   ┆ 37         ┆ 8.92                 ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/Us ┆ 17         ┆ 8.92                 ┆ OK                │
+│ eCasesPages/UseCaseL ┆            ┆                      ┆                   │
+│ anding.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Sessi ┆ 33         ┆ 8.92                 ┆ OK                │
+│ onExpiredToast/index ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../ExecutionStep/co ┆ 34         ┆ 8.92                 ┆ OK                │
+│ mponents/AppIconWith ┆            ┆                      ┆                   │
+│ Status.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Singl ┆ 16         ┆ 8.92                 ┆ OK                │
+│ eSelect/types.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useGovtBro ┆ 11         ┆ 8.88                 ┆ OK                │
+│ wser.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nding/UseCasesPag ┆ 26         ┆ 8.75                 ┆ OK                │
+│ es/components/Illust ┆            ┆                      ┆                   │
+│ ration.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Icons ┆ 35         ┆ 8.75                 ┆ OK                │
+│ /BrokenPipeIcon.tsx  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ationModal/Choose ┆ 21         ┆ 8.75                 ┆ OK                │
+│ AppAndEvent/Feedback ┆            ┆                      ┆                   │
+│ Footer.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Flows/comp ┆ 29         ┆ 8.75                 ┆ OK                │
+│ onents/FlowNameInput ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Editor/rou ┆ 49         ┆ 8.75                 ┆ OK                │
+│ tes.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ponents/FlowStepG ┆ 23         ┆ 8.75                 ┆ OK                │
+│ roup/Content/ForEach ┆            ┆                      ┆                   │
+│ /styles.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/ExecutionS ┆ 33         ┆ 8.75                 ┆ OK                │
+│ tep/components/Statu ┆            ┆                      ┆                   │
+│ sIcons.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ts/ChatMessages/C ┆ 23         ┆ 8.57                 ┆ OK                │
+│ hatMessageToolbar/co ┆            ┆                      ┆                   │
+│ nstants.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/FlowStepCon ┆ 21         ┆ 8.57                 ┆ OK                │
+│ figurationModal/Back ┆            ┆                      ┆                   │
+│ Button.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/NoRes ┆ 17         ┆ 8.57                 ┆ OK                │
+│ ultFound/index.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...onents/RichTextEd ┆ 12         ┆ 8.57                 ┆ OK                │
+│ itor/RichTextEditorC ┆            ┆                      ┆                   │
+│ ontext.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 26         ┆ 8.57                 ┆ OK                │
+│ /index.ts            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useIsPlumP ┆ 13         ┆ 8.57                 ┆ OK                │
+│ ro.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/helpers/redirect ┆ 9          ┆ 8.57                 ┆ OK                │
+│ ToLogin.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 11         ┆ 8.57                 ┆ OK                │
+│ rSettings/styles.ts  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/in ┆ 23         ┆ 8.57                 ┆ OK                │
+│ dex.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...er/components/Cha ┆ 30         ┆ 8.57                 ┆ OK                │
+│ tInterface/StepLimit ┆            ┆                      ┆                   │
+│ Banner.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/hooks/useDisable ┆ 16         ┆ 8.37                 ┆ OK                │
+│ DragDrop.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Tile/helpe ┆ 7          ┆ 8.37                 ┆ OK                │
+│ rs/line-break.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...owStepConfigurati ┆ 17         ┆ 8.37                 ┆ OK                │
+│ onModal/InvalidModal ┆            ┆                      ┆                   │
+│ Screen.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Landing/co ┆ 40         ┆ 8.37                 ┆ OK                │
+│ mponents/BackgroundP ┆            ┆                      ┆                   │
+│ attern.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Surve ┆ 18         ┆ 8.37                 ┆ OK                │
+│ y/config.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...nents/Announcemen ┆ 30         ┆ 8.37                 ┆ OK                │
+│ tModal/AnnouncementI ┆            ┆                      ┆                   │
+│ temList.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 12         ┆ 8.16                 ┆ OK                │
+│ /Container.ts        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Inter ┆ 28         ┆ 8.16                 ┆ OK                │
+│ mediateStepCount/ind ┆            ┆                      ┆                   │
+│ ex.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/Templates/compo ┆ 20         ┆ 8.16                 ┆ OK                │
+│ nents/TemplateTileSk ┆            ┆                      ┆                   │
+│ eleton.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Timez ┆ 7          ┆ 8.16                 ┆ OK                │
+│ oneProvider/index.ts ┆            ┆                      ┆                   │
+│ x                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Executions ┆ 28         ┆ 8.16                 ┆ OK                │
+│ /components/StatusIn ┆            ┆                      ┆                   │
+│ put.tsx              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Conta ┆ 14         ┆ 8.16                 ┆ OK                │
+│ iner/index.tsx       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...s/MarkdownRendere ┆ 17         ┆ 8.16                 ┆ OK                │
+│ r/CustomMarkdownComp ┆            ┆                      ┆                   │
+│ onents.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...ing/UseCasesPages ┆ 23         ┆ 8.16                 ┆ OK                │
+│ /components/ContentS ┆            ┆                      ┆                   │
+│ ection.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Plumb ┆ 11         ┆ 8.07                 ┆ OK                │
+│ erLogo/index.tsx     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Edito ┆ 11         ┆ 7.93                 ┆ OK                │
+│ rSettings/FlowConnec ┆            ┆                      ┆                   │
+│ tions.tsx            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 17         ┆ 7.93                 ┆ OK                │
+│ /Radio.ts            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/ErrorRe ┆ 19         ┆ 7.93                 ┆ OK                │
+│ sult/SupportContactM ┆            ┆                      ┆                   │
+│ essage.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 18         ┆ 7.93                 ┆ OK                │
+│ s/index.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/pages/Editor/ind ┆ 10         ┆ 7.83                 ┆ OK                │
+│ ex.tsx               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Group ┆ 12         ┆ 7.69                 ┆ OK                │
+│ edMultiRow/OrDivider ┆            ┆                      ┆                   │
+│ .tsx                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 11         ┆ 7.69                 ┆ OK                │
+│ /Checkbox.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Icons ┆ 13         ┆ 7.43                 ┆ OK                │
+│ /PipeIcon.tsx        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Multi ┆ 12         ┆ 7.43                 ┆ OK                │
+│ Row/RowDivider.tsx   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ .../FlowStepGroup/Co ┆ 7          ┆ 7.43                 ┆ OK                │
+│ ntent/IfThen/BranchC ┆            ┆                      ┆                   │
+│ ontext.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 10         ┆ 7.14                 ┆ OK                │
+│ /FormLabel.ts        ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 27         ┆ 7.14                 ┆ OK                │
+│ /Infobox.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 105        ┆ 6.82                 ┆ OK                │
+│ get-flow.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 11         ┆ 6.82                 ┆ OK                │
+│ /Text.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/components ┆ 25         ┆ 6.82                 ┆ OK                │
+│ /Button.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...omponents/FlowSte ┆ 8          ┆ 6.82                 ┆ OK                │
+│ pGroup/Content/Error ┆            ┆                      ┆                   │
+│ /index.tsx           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/exports/pages.ts ┆ 7          ┆ 6.46                 ┆ OK                │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/app-extensions/f ┆ 11         ┆ 6.46                 ┆ OK                │
+│ ormsg/index.tsx      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/app-extensions/p ┆ 8          ┆ 6.46                 ┆ OK                │
+│ ostman/index.ts      ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Empty ┆ 16         ┆ 6.46                 ┆ OK                │
+│ FlowStepHeader/style ┆            ┆                      ┆                   │
+│ s.ts                 ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/create-flow-with-s ┆            ┆                      ┆                   │
+│ teps.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 14         ┆ 6.05                 ┆ OK                │
+│ s/update-flow-config ┆            ┆                      ┆                   │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 12         ┆ 6.05                 ┆ OK                │
+│ s/tiles/update-table ┆            ┆                      ┆                   │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 10         ┆ 6.05                 ┆ OK                │
+│ s/update-flow-status ┆            ┆                      ┆                   │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/foundation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/index.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 13         ┆ 6.05                 ┆ OK                │
+│ s/create-connection. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 26         ┆ 6.05                 ┆ OK                │
+│ s/duplicate-branch.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/login-with-selecte ┆            ┆                      ┆                   │
+│ d-sgid.ts            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/create-flow-transf ┆            ┆                      ┆                   │
+│ er.ts                ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 12         ┆ 6.05                 ┆ OK                │
+│ s/update-step-positi ┆            ┆                      ┆                   │
+│ ons.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/logout.ts          ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 29         ┆ 6.05                 ┆ OK                │
+│ get-app-connections. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 30         ┆ 6.05                 ┆ OK                │
+│ s/duplicate-flow.ts  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 20         ┆ 6.05                 ┆ OK                │
+│ get-templates.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/bulk-retry-executi ┆            ┆                      ┆                   │
+│ ons.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 9          ┆ 6.05                 ┆ OK                │
+│ healthcheck.ts       ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/tiles/create-table ┆            ┆                      ┆                   │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 25         ┆ 6.05                 ┆ OK                │
+│ tiles/get-table.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/generate-auth-url. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 19         ┆ 6.05                 ┆ OK                │
+│ tiles/get-tables.ts  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/update-flow.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...raphql/mutations/ ┆ 9          ┆ 6.05                 ┆ OK                │
+│ update-flow-transfer ┆            ┆                      ┆                   │
+│ -status.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 17         ┆ 6.05                 ┆ OK                │
+│ s/verify-connection. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 10         ┆ 6.05                 ┆ OK                │
+│ tiles/get-all-rows.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ...hql/mutations/rep ┆ 16         ┆ 6.05                 ┆ OK                │
+│ lace-connection-cred ┆            ┆                      ┆                   │
+│ entials.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/create-flow.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 18         ┆ 6.05                 ┆ OK                │
+│ test-connection.ts   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 21         ┆ 6.05                 ┆ OK                │
+│ get-pending-flow-tra ┆            ┆                      ┆                   │
+│ nsfers.ts            ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 15         ┆ 6.05                 ┆ OK                │
+│ get-flow-connections ┆            ┆                      ┆                   │
+│ .ts                  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 11         ┆ 6.05                 ┆ OK                │
+│ get-flow-transfer-de ┆            ┆                      ┆                   │
+│ tails.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 10         ┆ 6.05                 ┆ OK                │
+│ get-dynamic-data.ts  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 48         ┆ 6.05                 ┆ OK                │
+│ get-app.ts           ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/start-sso-login.ts ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 47         ┆ 6.05                 ┆ OK                │
+│ get-test-execution-s ┆            ┆                      ┆                   │
+│ teps.ts              ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 13         ┆ 6.05                 ┆ OK                │
+│ s/update-connection. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 33         ┆ 6.05                 ┆ OK                │
+│ s/create-step.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 38         ┆ 6.05                 ┆ OK                │
+│ get-executions.ts    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/theme/constants. ┆ 32         ┆ 6.05                 ┆ OK                │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 14         ┆ 6.05                 ┆ OK                │
+│ s/execute-step.ts    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 11         ┆ 6.05                 ┆ OK                │
+│ get-current-user.ts  ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 43         ┆ 6.05                 ┆ OK                │
+│ get-execution-steps. ┆            ┆                      ┆                   │
+│ ts                   ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 8          ┆ 6.05                 ┆ OK                │
+│ s/reset-connection.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 17         ┆ 6.05                 ┆ OK                │
+│ get-connected-apps.t ┆            ┆                      ┆                   │
+│ s                    ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 13         ┆ 6.05                 ┆ OK                │
+│ s/login-with-sgid.ts ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 34         ┆ 6.05                 ┆ OK                │
+│ s/update-step.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 45         ┆ 6.05                 ┆ OK                │
+│ get-flows.ts         ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/create-templated-f ┆            ┆                      ┆                   │
+│ low.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 12         ┆ 6.05                 ┆ OK                │
+│ s/delete-step.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/queries/ ┆ 19         ┆ 6.05                 ┆ OK                │
+│ get-execution.ts     ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 9          ┆ 6.05                 ┆ OK                │
+│ s/bulk-retry-iterati ┆            ┆                      ┆                   │
+│ ons.ts               ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/graphql/mutation ┆ 12         ┆ 6.05                 ┆ OK                │
+│ s/generate-presigned ┆            ┆                      ┆                   │
+│ -post.ts             ┆            ┆                      ┆                   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ src/components/Singl ┆ 8          ┆ 0.00                 ┆ OK                │
+│ eSelect/index.ts     ┆            ┆                      ┆                   │
+└──────────────────────┴────────────┴──────────────────────┴───────────────────┘
+565 files analyzed in 0.0631s.

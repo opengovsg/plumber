@@ -57,12 +57,16 @@ function generateVerifiedSubmitterInfoData(
   authType: string,
   $: IGlobalVariable,
 ): Record<string, Record<string, string>> {
-  const filteredNric = filterNric($, MOCK_NRIC)
   switch (authType) {
     case 'SGID': // deprecated
     case 'SGID_MyInfo': // deprecated
     case 'SP': // deprecated
-    case 'MyInfo':
+    case 'MyInfo': {
+      const filteredNric = filterNric($, MOCK_NRIC)
+      if (filteredNric === null) {
+        // Real decryption drops NRIC keys under "Remove", leaving no verified info.
+        return {}
+      }
       // for backwards compatibility with old forms that were created with sgID authType,
       // we need to return both uinFin and sgidUinFin
       return {
@@ -71,10 +75,12 @@ function generateVerifiedSubmitterInfoData(
           sgidUinFin: filteredNric,
         },
       }
+    }
     case 'CP':
+      // Real decryption never applies the NRIC filter to CorpPass keys.
       return {
         verifiedSubmitterInfo: {
-          cpUid: filteredNric,
+          cpUid: MOCK_NRIC,
           cpUen: MOCK_UEN,
         },
       }
@@ -139,7 +145,7 @@ function generateMockPaymentData(products: Partial<PaymentProduct>[]) {
       payer: 'payer@open.gov.sg',
       url: 'https://form.gov.sg/api/v3/payments/abcde/12345/invoice/download',
       paymentIntent: 'pi_12345',
-      amount: (firstProduct.amount_cents / 100).toFixed(2),
+      amount: ((firstProduct.amount_cents ?? 0) / 100).toFixed(2),
       productService: firstProduct.name,
       dateTime: new Date().toISOString(),
       transactionFee: '0.05',
@@ -229,6 +235,9 @@ function patchMockData(
       }
 
       if (mockData.responses[formFields[i]._id].fieldType === 'email') {
+        if (!$.user) {
+          throw new Error('Test run is missing the triggering user')
+        }
         mockData.responses[formFields[i]._id].answer = $.user.email
       }
 

@@ -39,7 +39,7 @@ export interface IConnection {
   key: string
   data: string
   formattedData?: IJSONObject
-  userId: string
+  userId: string | null
   verified: boolean
   count?: number
   flowCount?: number
@@ -132,15 +132,16 @@ export interface IExecutionStep {
   stepId: IStep['id']
   step: IStep
   dataIn: IJSONObject
-  dataOut: IJSONObject
-  errorDetails: IJSONObject
+  dataOut: IJSONObject | null
+  errorDetails?: IJSONObject | null
   status: 'success' | 'failure'
-  appKey: string
-  jobId?: string
+  appKey?: string | null
+  jobId?: string | null
   createdAt: string
   updatedAt: string
   metadata: IExecutionStepMetadata
-  key: string
+  key?: string | null
+  iconUrl?: string | null
 
   // Only resolved on the front end via GraphQL.
   dataOutMetadata?: IDataOutMetadata
@@ -149,6 +150,13 @@ export interface IExecutionStep {
 export interface IExecutionStepMetadata {
   isMock?: boolean
   lastTestSubmissionDate?: string
+  /**
+   * IDs of every question in the FormSG form at the time of the test run.
+   *
+   * Lets the editor tell a deleted question apart from one a submission merely
+   * omitted, e.g. hidden by logic or left unanswered.
+   */
+  formFieldIds?: string[]
   iteration?: number
   iterations?: number
   iterationStatus?: Record<
@@ -211,10 +219,10 @@ export interface IStep {
   flowId: string
   key?: string
   appKey?: string
-  iconUrl: string
-  webhookUrl: string
+  iconUrl: string | null
+  webhookUrl: string | null
   type: 'action' | 'trigger'
-  connectionId?: string
+  connectionId?: string | null
   status: string
   position: number
   parameters: IJSONObject
@@ -226,7 +234,7 @@ export interface IStep {
   output?: IJSONObject
   appData?: IApp
   retryable?: boolean
-  jobId?: string
+  jobId?: string | null
   createdAt: string
 }
 
@@ -235,6 +243,8 @@ export interface IFlowConfig {
   rejectIfOverMaxQps?: boolean
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
+  // The pipe this one was copied from directly. Follow it back to find the original.
+  duplicatedFromFlowId?: string
   templateConfig?: IFlowTemplateConfig
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
@@ -290,8 +300,8 @@ export interface IFlow {
   steps: IStep[]
   createdAt: string
   updatedAt: string
-  remoteWebhookId: string
-  lastInternalId: () => Promise<string>
+  remoteWebhookId?: string | null
+  lastInternalId: () => Promise<string | null | undefined>
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
   template?: ITemplate
@@ -544,7 +554,7 @@ export interface IFieldMultiSelect extends IBaseField {
   variableTypes?: TDataOutMetadatumType[]
 }
 
-type IFieldMultiRowMultiColSubField = IField & {
+export type IFieldMultiRowMultiColSubField = IField & {
   customStyle?: Record<string, string | number>
 }
 
@@ -998,12 +1008,15 @@ interface IBaseAuth {
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
-  verifyWebhook?($: IGlobalVariable): Promise<{
-    verified: boolean
-    internalId: string | null
-    isSubtrigger?: boolean
-    subtriggerData?: SubtriggerData
-  }>
+  verifyWebhook?($: IGlobalVariable): Promise<
+    | { verified: false; internalId: null }
+    | {
+        verified: true
+        internalId: string
+        isSubtrigger?: boolean
+        subtriggerData?: SubtriggerData
+      }
+  >
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
@@ -1098,7 +1111,9 @@ export interface IBaseTrigger {
    *
    * @param executionStep The execution step to get metadata for.
    */
-  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+  getDataOutMetadata?(
+    executionStep: IExecutionStep,
+  ): Promise<IDataOutMetadata | null>
 
   /**
    * Triggers specify this if they want to display an additional informative
@@ -1137,6 +1152,10 @@ export interface IActionJobData {
    * of the job's original (potentially very stale) enqueue time.
    */
   retryTimestamp?: number
+  /**
+   * The start time a delay step set for this job, in epoch milliseconds.
+   */
+  scheduledAt?: number
 }
 
 export interface IActionRunResult {
@@ -1164,7 +1183,7 @@ export interface IActionOutput {
 }
 
 export interface IActionItem {
-  raw: IJSONObject
+  raw: IJSONObject | null
   meta?: IExecutionStepMetadata
 }
 
@@ -1235,7 +1254,9 @@ export interface IBaseAction {
    *
    * @param executionStep The execution step to get metadata for.
    */
-  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata>
+  getDataOutMetadata?(
+    executionStep: IExecutionStep,
+  ): Promise<IDataOutMetadata | null>
 
   /**
    * Preprocess variables before substituting them into the action's parameters.
@@ -1309,7 +1330,7 @@ export type IHttpClientParams = {
   $: IGlobalVariable
   baseURL?: string
   beforeRequest: TBeforeRequest[]
-  requestErrorHandler: TRequestErrorHandler
+  requestErrorHandler?: TRequestErrorHandler
 }
 
 export type IGlobalVariable = {
@@ -1359,6 +1380,8 @@ export type IGlobalVariable = {
   execution: {
     id: string
     testRun: boolean
+    // ISO 8601. Undefined outside an execution, e.g. in dynamic data.
+    createdAt?: string
   }
   metadata?: IJSONObject
   webhookUrl?: string
@@ -1406,7 +1429,7 @@ export interface IRequest extends Request {
 
 export interface IVerifyConnectionRegistrationOutput {
   registrationVerified: boolean
-  message: string
+  message: string | null | undefined
 }
 
 export interface ITestConnectionOutput extends Partial<IVerifyConnectionRegistrationOutput> {
@@ -1422,6 +1445,7 @@ export type StepErrorKind = 'config' | 'third-party' | 'internal'
 export interface IStepError {
   name: string
   solution: string
+  // Optional because errorDetails saved before kind existed have none.
   kind?: StepErrorKind
   details?: IJSONObject
   partialRetry?: {

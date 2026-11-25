@@ -9,7 +9,7 @@ import { FindSingleRowOutput } from '../../types'
  */
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut } = executionStep
   if (!dataOut?.row || typeof dataOut.row !== 'object') {
     return null
@@ -26,7 +26,10 @@ async function getDataOutMetadata(
       order: 1,
     },
   }
-  const rowData = (dataOut as FindSingleRowOutput).row
+  const rowData = (dataOut as unknown as FindSingleRowOutput).row
+  if (!rowData) {
+    return null
+  }
   const columnNameMetadata = await generateColumnNameMetadata(rowData)
 
   return { ...metadata, ...columnNameMetadata }

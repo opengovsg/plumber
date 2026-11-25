@@ -27,12 +27,17 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - retentionDays)
 
-  let cursor: string | null = null
+  // Pages oldest first, so a run cut short by the runtime limit leaves only newer rows behind.
+  // createdAt is Postgres text, because a JS Date drops microseconds and would re-select the last row.
+  let cursor: { createdAt: string; id: string } | null = null
   let totalArchived = 0
+  let totalTestArchived = 0
   let totalSkipped = 0
+  // IMPORTANT: store counts, not IDs. A flow can own 100k+ executions, and logging every ID
+  // produced multi-MB lines that stdout could not flush before the process exited.
   const archivedByFlow = new Map<
     string,
-    { executionIds: string[]; testExecutionIds: string[] }
+    { executionsCount: number; testExecutionsCount: number }
   >()
   // SGT date (yyyy-MM-dd) -> appKey -> key -> count
   const stepCounts = new Map<string, Map<string, Map<string, number>>>()
@@ -59,8 +64,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     // be filtered down to the same deleted-flows set anyway.
     //
     // Note: this subquery is evaluated live per batch, not snapshotted at run
-    // start. A flow soft-deleted mid-run will have its executions picked up on
-    // the next batch (immediately, with no cutoff check). Retries are therefore
+    // start. A flow soft-deleted mid-run will have its executions ahead of the
+    // cursor picked up by later batches, with no cutoff check. Retries are therefore
     // not fully idempotent with respect to the deleted-flows set — but this is
     // harmless since already-archived rows are removed from source, making
     // double-archiving impossible.
@@ -129,14 +134,24 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     // TODO(perf): the batch query still hits `flows` twice via subqueries
     // (deleted_at, archiveDisabled). If batch times climb, add a partial index
     // on `(id) WHERE config->>'archiveDisabled' = 'true'` for the JSONB filter.
-    const batch = (await eligibilityQuery
+    const rows = (await eligibilityQuery
+      .select(
+        archivalDbReader.raw(
+          'executions.created_at::text as "cursorCreatedAt"',
+        ),
+      )
       // Never archive the designated test execution of any flow (deleted or active).
       // LEFT JOIN anti-join: cheaper than NOT IN (subquery) when the flows table grows.
+      // IMPORTANT: it needs the index on flows.test_execution_id. A hash anti-join loses
+      // the index order, and every batch would then sort all executions past the cursor.
       .leftJoin('flows as f_tex', 'executions.id', 'f_tex.test_execution_id')
       .whereNull('f_tex.test_execution_id')
       .modify((qb) => {
         if (cursor) {
-          qb.whereRaw('executions.id > ?::uuid', [cursor])
+          qb.whereRaw(
+            '(executions.created_at, executions.id) > (?::timestamptz, ?::uuid)',
+            [cursor.createdAt, cursor.id],
+          )
         }
       })
       // Exclude flows with archiveDisabled set in flow config. Applies to all
@@ -148,12 +163,24 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           .select('id')
           .whereRaw(`config->>'archiveDisabled' = 'true'`),
       )
-      .orderBy('executions.id')
-      .limit(batchSize)) as ExecutionRow[]
+      .orderBy([
+        { column: 'executions.created_at' },
+        { column: 'executions.id' },
+      ])
+      .limit(batchSize)) as Array<ExecutionRow & { cursorCreatedAt: string }>
 
-    if (!batch.length) {
+    if (!rows.length) {
       break
     }
+
+    // Cursor advances regardless of outcome. Failed executions stay eligible and are
+    // retried on the next scheduled run.
+    const last = rows[rows.length - 1]
+    cursor = { createdAt: last.cursorCreatedAt, id: last.id }
+
+    const batch: ExecutionRow[] = rows.map(
+      ({ cursorCreatedAt: _cursorCreatedAt, ...execution }) => execution,
+    )
 
     let batchArchived = 0
     let batchSkipped = 0
@@ -171,36 +198,36 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
             }
           }
 
-          // LEFT JOIN steps to fill in app_key/key for old rows that predate
-          // the denormalised columns being added to execution_steps.
-          // TODO: once all pre-denormalisation rows have been archived, drop the
-          // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
-          const steps = (await archivalDbReader('execution_steps')
-            .select(
-              'execution_steps.id',
-              'execution_steps.execution_id as executionId',
-              'execution_steps.step_id as stepId',
-              archivalDbReader.raw(
-                'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
-              ),
-              archivalDbReader.raw(
-                'COALESCE(execution_steps.key, steps.key) as "key"',
-              ),
-              'execution_steps.job_id as jobId',
-              'execution_steps.status',
-              'execution_steps.data_in as dataIn',
-              'execution_steps.data_out as dataOut',
-              'execution_steps.error_details as errorDetails',
-              'execution_steps.metadata',
-              'execution_steps.created_at as createdAt',
-              'execution_steps.updated_at as updatedAt',
-              'execution_steps.deleted_at as deletedAt',
-            )
-            .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
-            .where('execution_steps.execution_id', execution.id)
-            .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
-
           try {
+            // LEFT JOIN steps to fill in app_key/key for old rows that predate
+            // the denormalised columns being added to execution_steps.
+            // TODO: once all pre-denormalisation rows have been archived, drop the
+            // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
+            const steps = (await archivalDbReader('execution_steps')
+              .select(
+                'execution_steps.id',
+                'execution_steps.execution_id as executionId',
+                'execution_steps.step_id as stepId',
+                archivalDbReader.raw(
+                  'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
+                ),
+                archivalDbReader.raw(
+                  'COALESCE(execution_steps.key, steps.key) as "key"',
+                ),
+                'execution_steps.job_id as jobId',
+                'execution_steps.status',
+                'execution_steps.data_in as dataIn',
+                'execution_steps.data_out as dataOut',
+                'execution_steps.error_details as errorDetails',
+                'execution_steps.metadata',
+                'execution_steps.created_at as createdAt',
+                'execution_steps.updated_at as updatedAt',
+                'execution_steps.deleted_at as deletedAt',
+              )
+              .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
+              .where('execution_steps.execution_id', execution.id)
+              .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
+
             const outcome = await archiveExecution(execution, steps, {
               dryRun,
               bucket: archiveBucket,
@@ -235,13 +262,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       if (outcome === 'archived') {
         batchArchived++
         const entry = archivedByFlow.get(execution.flowId) ?? {
-          executionIds: [],
-          testExecutionIds: [],
+          executionsCount: 0,
+          testExecutionsCount: 0,
         }
         if (execution.testRun) {
-          entry.testExecutionIds.push(execution.id)
+          entry.testExecutionsCount++
+          totalTestArchived++
         } else {
-          entry.executionIds.push(execution.id)
+          entry.executionsCount++
         }
         archivedByFlow.set(execution.flowId, entry)
 
@@ -270,9 +298,6 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       }
     }
 
-    // Cursor advances to the last execution in the batch regardless of outcome.
-    // Failed executions stay eligible and are retried on the next scheduled run.
-    cursor = batch[batch.length - 1].id
     totalArchived += batchArchived
     totalSkipped += batchSkipped
 
@@ -284,28 +309,19 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       durationMs: Date.now() - startedAt,
     })
 
+    // A short batch already read to the end of the index. Another query would repeat that scan.
+    if (rows.length < batchSize) {
+      break
+    }
+
     if (!signal.aborted && sleepMs > 0) {
       await sleep(sleepMs)
     }
   }
 
-  for (const [flowId, { executionIds, testExecutionIds }] of archivedByFlow) {
-    logger.info({
-      event: 'archival.flow.archived',
-      flowId,
-      executionIds,
-      testExecutionIds,
-      executionsCount: executionIds.length,
-      testExecutionsCount: testExecutionIds.length,
-    })
+  for (const [flowId, counts] of archivedByFlow) {
+    logger.info({ event: 'archival.flow.archived', flowId, ...counts })
   }
-
-  logger.info({
-    event: 'archival.run.complete',
-    executions_archived: totalArchived,
-    executions_skipped: totalSkipped,
-    durationMs: Date.now() - startedAt,
-  })
 
   const stepCountsObj: Record<
     string,
@@ -319,20 +335,41 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     stepCountsObj[date] = appObj
   }
 
-  await putArchiveObject({
-    s3Client: archiveS3Client,
-    bucket: archiveBucket,
-    key: `_meta/runs/${runAt}.json`,
-    body: JSON.stringify({
-      runAt,
-      dryRun,
-      executionsArchived: totalArchived,
-      executionsSkipped: totalSkipped,
-      flowsAffected: archivedByFlow.size,
-      stepCounts: stepCountsObj,
-      nullStepCount,
-      durationMs: Date.now() - startedAt,
-    }),
-    contentType: 'application/json',
-  })
+  const durationMs = Date.now() - startedAt
+  const counts = {
+    executions_archived: totalArchived,
+    real_executions_archived: totalArchived - totalTestArchived,
+    test_executions_archived: totalTestArchived,
+    executions_skipped: totalSkipped,
+    durationMs,
+  }
+
+  // Write the summary before logging completion, so run.complete only appears
+  // once nothing else can fail.
+  try {
+    await putArchiveObject({
+      s3Client: archiveS3Client,
+      bucket: archiveBucket,
+      key: `_meta/runs/${runAt}.json`,
+      body: JSON.stringify({
+        runAt,
+        dryRun,
+        executionsArchived: totalArchived,
+        realExecutionsArchived: totalArchived - totalTestArchived,
+        testExecutionsArchived: totalTestArchived,
+        executionsSkipped: totalSkipped,
+        flowsAffected: archivedByFlow.size,
+        stepCounts: stepCountsObj,
+        nullStepCount,
+        durationMs,
+      }),
+      contentType: 'application/json',
+    })
+  } catch (err) {
+    // The executions are already archived, so this log is the only remaining record of the run's counts.
+    logger.error({ event: 'archival.run.meta_write_failed', ...counts, err })
+    throw err
+  }
+
+  logger.info({ event: 'archival.run.complete', ...counts })
 }

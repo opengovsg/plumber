@@ -31,7 +31,7 @@ const dynamicData: IDynamicData = {
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     const result: DynamicDataOutput = {
       data: [],
-      error: null,
+      error: undefined,
     }
 
     let cursor: string | undefined

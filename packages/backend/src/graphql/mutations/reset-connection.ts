@@ -1,14 +1,19 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
+
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const resetConnection: MutationResolvers['resetConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const resetConnection: NonNullable<
+  MutationResolvers['resetConnection']
+> = async (_parent, params, context) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   let connection = await context.currentUser
     .$relatedQuery('connections')
     .findOne({
-      id: params.input.id,
+      id: input.id,
     })
     .throwIfNotFound()
 

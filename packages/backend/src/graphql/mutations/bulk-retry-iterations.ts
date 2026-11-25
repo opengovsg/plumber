@@ -1,6 +1,7 @@
-import { chunk } from 'lodash'
+import { chunk, omit } from 'lodash'
 import { raw, ref } from 'objection'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -47,18 +48,21 @@ async function getAllFailedIterations(context: Context, executionId: string) {
   return failedExecutionSteps
 }
 
-const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
-  _parent,
-  params,
-  context,
-) => {
-  if (!params.input.executionId) {
+const bulkRetryIterations: NonNullable<
+  MutationResolvers['bulkRetryIterations']
+> = async (_parent, params, context) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  if (!input.executionId) {
     throw new Error('Execution ID is required')
   }
 
   let failedExecutionSteps = await getAllFailedIterations(
     context,
-    params.input.executionId,
+    input.executionId,
   )
 
   /**
@@ -113,6 +117,10 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
         executionId: executionId,
         executionStepId: executionStepId,
         iteration: metadata.iteration,
+      }
+      // Steps without a job ID were filtered out above.
+      if (jobId == null) {
+        throw new Error(`Execution step ${executionStepId} has no job ID`)
       }
 
       const job = await getActionJob(jobId)
@@ -171,7 +179,8 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
           appKey: appKey,
           actionKey: key,
           jobName: job.name,
-          jobData: job.data,
+          // Omit scheduledAt on manual retry, otherwise this is counted towards SLO. (manual retries are out of scope for SLO)
+          jobData: omit(job.data, 'scheduledAt'),
           jobOptions: DEFAULT_JOB_OPTIONS,
         })
         await Execution.query().findById(executionId).patch({ status: null })
@@ -208,12 +217,12 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
     // Actually we can do some more processing to see which IDs failed but nvm.
     logger.warn('Some attempts in bulk iteration retry failed', {
       event: 'bulk-retry-iteration-some-attempts-failed',
-      executionId: params.input.executionId,
+      executionId: input.executionId,
     })
   } else {
     logger.info('Bulk iteration retry succeeded', {
       event: 'bulk-retry-iteration-success',
-      executionId: params.input.executionId,
+      executionId: input.executionId,
       numRetried: failedExecutionSteps.length,
     })
   }

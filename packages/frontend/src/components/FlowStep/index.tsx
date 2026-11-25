@@ -26,15 +26,20 @@ import StepAppIcon from './components/StepAppIcon'
 import StepNameAndDemo from './components/StepNameAndDemo'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
-import { flowStepStyles, NESTED_FLOW_STEP_HEIGHT } from './styles'
+import {
+  flowStepStyles,
+  bannerFrameStyles,
+  growBox,
+  NESTED_FLOW_STEP_HEIGHT,
+  SELECTED_BORDER_GROWTH,
+  SELECTED_BORDER_WIDTH,
+} from './styles'
 
 type FlowStepProps = {
   step: IStep
   isLastStep: boolean
   isNested?: boolean
   allowReorder?: boolean
-  // we use this to control the width of condition steps in if-then and for-each
-  canChildStepsReorder?: boolean
   // An if-then V2 block titles its condition step with the block's own name,
   // so the block's header reads as the block rather than a generic
   // "Condition".
@@ -60,7 +65,6 @@ export default function FlowStep(
     isLastStep,
     isNested,
     allowReorder = true,
-    canChildStepsReorder = false,
     stepNameOverride,
     isContainerHeader = false,
     isClickable = true,
@@ -91,7 +95,6 @@ export default function FlowStep(
     flow,
     isDrawerOpen,
     isMobile,
-    readOnly,
     shouldWarnOnLeave,
     testExecutionSteps,
     onDrawerClose,
@@ -224,17 +227,19 @@ export default function FlowStep(
     showMrfReadOnlyNote ||
     warnsMrfNoGate
 
+  const cardHeight = isNested
+    ? NESTED_FLOW_STEP_HEIGHT
+    : isApprovalStep
+      ? undefined
+      : '64px'
+  const isSelectedCard = shouldHighlight && !isContainerHeader
+
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
 
   return (
-    <FlowStepWrapper
-      canChildStepsReorder={canChildStepsReorder}
-      allowReorder={allowReorder}
-      isDrawerOpen={isDrawerOpen}
-      isReadOnly={readOnly}
-    >
+    <FlowStepWrapper>
       {!app ? (
         <EmptyFlowStepHeader
           isNested={isNested}
@@ -269,10 +274,8 @@ export default function FlowStep(
                   shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
                 }
                 borderRadius="lg"
-                borderWidth="1px"
                 borderBottomRadius="none"
-                borderBottomWidth={0}
-                w={headerWidth}
+                {...bannerFrameStyles(shouldHighlight, headerWidth)}
               >
                 <Infobox
                   icon={<BiInfoCircle />}
@@ -293,10 +296,8 @@ export default function FlowStep(
                   shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
                 }
                 borderRadius="lg"
-                borderWidth="1px"
                 borderBottomRadius="none"
-                borderBottomWidth={0}
-                w={headerWidth}
+                {...bannerFrameStyles(shouldHighlight, headerWidth)}
                 overflow="hidden"
               >
                 <Infobox
@@ -325,10 +326,8 @@ export default function FlowStep(
                   shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
                 }
                 borderRadius="lg"
-                borderWidth="1px"
                 borderBottomRadius="none"
-                borderBottomWidth={0}
-                w={headerWidth}
+                {...bannerFrameStyles(shouldHighlight, headerWidth)}
               >
                 <Infobox
                   icon={<BiInfoCircle />}
@@ -355,18 +354,23 @@ export default function FlowStep(
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={
-                isNested
-                  ? NESTED_FLOW_STEP_HEIGHT
-                  : isApprovalStep
-                    ? undefined
-                    : '64px'
-              }
+              h={cardHeight}
               minH={isApprovalStep && !isNested ? '124px' : undefined}
               w={headerWidth}
               onClick={isClickable ? handleClick : undefined}
               {...(!isClickable && { cursor: 'default', _hover: {} })}
               {...containerHeaderStyles}
+              {...(isSelectedCard && {
+                borderWidth: SELECTED_BORDER_WIDTH,
+                borderTopWidth: hasInfoBox ? 0 : SELECTED_BORDER_WIDTH,
+                mx: `-${SELECTED_BORDER_GROWTH}`,
+                mb: `-${SELECTED_BORDER_GROWTH}`,
+                mt: hasInfoBox ? 0 : `-${SELECTED_BORDER_GROWTH}`,
+                w: growBox(headerWidth),
+                h: growBox(cardHeight),
+                minH:
+                  isApprovalStep && !isNested ? growBox('124px') : undefined,
+              })}
             >
               <Flex {...flowStepStyles.topHeader}>
                 <StepAppIcon

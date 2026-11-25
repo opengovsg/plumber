@@ -1,9 +1,11 @@
+import { useMutation } from '@apollo/client'
 import { CloseButton, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { IStep } from '@plumber/types'
 import { useContext, useRef } from 'react'
 
 import EditableInput from '@/components/EditableInput'
 import { EditorContext } from '@/contexts/Editor'
+import { RENAME_STEP } from '@/graphql/mutations/rename-step'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
@@ -23,10 +25,11 @@ export default function StepHeader(props: StepHeaderProps) {
   } = useDisclosure()
 
   const {
-    readOnly: isReadOnlyEditor,
+    flow,
+    hasEditPermission,
+    hasFlowTransfer,
     shouldWarnOnLeave,
     onDrawerClose,
-    onUpdateStep,
     setCurrentStepId,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
@@ -47,12 +50,16 @@ export default function StepHeader(props: StepHeaderProps) {
     setShouldWarnOnLeave(false)
   }
 
+  // A dedicated mutation, because updateStep rejects every edit on a published pipe.
+  const [renameStep] = useMutation(RENAME_STEP)
   const onSave = async (value: string) => {
-    await onUpdateStep({
-      ...step,
-      config: {
-        ...step.config,
-        stepName: value,
+    await renameStep({
+      variables: {
+        input: {
+          id: step.id,
+          flow: { id: flow.id, updatedAt: flow.updatedAt },
+          stepName: value,
+        },
       },
     })
   }
@@ -63,7 +70,13 @@ export default function StepHeader(props: StepHeaderProps) {
 
   return (
     <Flex {...styles.stepHeader}>
-      <Flex alignItems="center" maxW="100%">
+      <Flex
+        alignItems="center"
+        maxW="100%"
+        fontSize="18px"
+        fontWeight={500}
+        color="base.content.strong"
+      >
         {displayPosition && (
           <Text whiteSpace="pre-wrap">{displayPosition}.&nbsp;</Text>
         )}
@@ -71,10 +84,12 @@ export default function StepHeader(props: StepHeaderProps) {
           key={step.id}
           value={stepName}
           onSave={onSave}
-          // We don't allow editing the step name for MRF steps
-          readOnly={isReadOnlyEditor || isMrfStep}
+          // Renaming is allowed on published pipes, but not during a pending transfer.
+          readOnly={!hasEditPermission || hasFlowTransfer || isMrfStep}
           placeholder={defaultStepName}
           allowEmpty={true}
+          fontWeight={500}
+          fontSize="18px"
         />
       </Flex>
 

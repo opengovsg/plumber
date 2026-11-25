@@ -17,19 +17,21 @@ describe('createFlowFromTemplate', () => {
       const flow = await createFlowFromTemplate(template.id, user)
 
       const table = await TableMetadata.query()
-        .findById(flow.config.templateConfig.tileId)
+        .findById(flow.config!.templateConfig!.tileId!)
         .withGraphFetched('columns')
-      expect(table.db).toBe('pg')
+      expect(table!.db).toBe('pg')
 
       const { rows } = await getTableOperations('pg').getTableRows({
-        tableId: table.id,
-        columnIds: table.columns.map((column) => column.id),
+        tableId: table!.id,
+        columnIds: table!.columns.map((column) => column.id),
       })
       const rowsByColumnName = await Promise.all(
-        rows.map((row) => table.mapColumnIdsToNames(row.data)),
+        rows.map((row) => table!.mapColumnIdsToNames(row.data)),
       )
       // Columns a template row leaves out come back as null.
-      expect(rowsByColumnName).toMatchObject(template.tileTemplateData.rowData)
+      expect(rowsByColumnName).toMatchObject(
+        template.tileTemplateData!.rowData!,
+      )
     },
   )
 })

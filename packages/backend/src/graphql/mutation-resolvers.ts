@@ -28,6 +28,7 @@ import loginWithSgid from './mutations/login-with-sgid'
 import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
 import registerConnection from './mutations/register-connection'
+import renameStep from './mutations/rename-step'
 import replaceConnectionCredentials from './mutations/replace-connection-credentials'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -85,6 +86,7 @@ export default {
   executeStep,
   deleteFlow,
   createStep,
+  renameStep,
   updateStep,
   updateStepPositions,
   deleteStep,

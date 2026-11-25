@@ -29,7 +29,7 @@ const rateLimitHandler: IApp['requestErrorHandler'] = async function (
     newRetryAfter,
   })
 
-  error.response.headers['retry-after'] = newRetryAfter.toString()
+  error.setRetryAfter(newRetryAfter.toString())
   throw error
 }
 

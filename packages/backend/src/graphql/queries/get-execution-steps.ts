@@ -4,11 +4,9 @@ import paginate from '@/helpers/pagination'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const getExecutionSteps: NonNullable<
+  QueryResolvers['getExecutionSteps']
+> = async (_parent, params, context) => {
   const execution = await context.currentUser
     .withAccessibleExecutions({ requiredRole: 'viewer' })
     .withGraphFetched({ executionSteps: true })
@@ -16,7 +14,8 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
     .findById(params.executionId)
     .throwIfNotFound()
 
-  if (params.iteration > 0 && params.iteration <= 500) {
+  const { iteration } = params
+  if (iteration != null && iteration > 0 && iteration <= 500) {
     // retrieves the latest execution steps for a specific iteration at a time
     const iterationSteps = execution
       .$relatedQuery('executionSteps')
@@ -52,9 +51,7 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
       })
       .select('execution_steps.*', 'latest_steps.min_created_at')
       .where(
-        raw(`(execution_steps.metadata ->> 'iteration')::int = ?`, [
-          params.iteration,
-        ]),
+        raw(`(execution_steps.metadata ->> 'iteration')::int = ?`, [iteration]),
       )
       // use min_created_at to preserve the order of execution steps within the same iteration
       .orderBy('latest_steps.min_created_at', 'asc')

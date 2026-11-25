@@ -29,7 +29,7 @@ const action: IRawAction = {
   arguments: [
     // We're doing an update based on results of our getTableRow action, so just
     // re-use its arguments.
-    ...getTableRowAction['arguments'],
+    ...(getTableRowAction['arguments'] ?? []),
     {
       key: 'columnsToUpdate' as const,
       label: 'Row data',
@@ -86,18 +86,28 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
     if ($.execution.testRun) {
-      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user.email, $)
     }
 
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
 
     if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
+      throw new StepError({
+        name: 'There was a problem with the input.',
+        solution: parametersParseResult.error.issues[0].message,
+        kind: 'config',
+      })
     }
 
     const { fileId, tableId, filters, columnsToUpdate } =
@@ -165,10 +175,12 @@ const action: IRawAction = {
     )
 
     if (updateRowValuesParseResult.success === false) {
-      throw new StepError(
-        `Received invalid row data after update: '${updateRowValuesParseResult.error.issues[0].message}'`,
-        'Double check your Excel file and retry the step if needed',
-      )
+      // internal: only a Graph API change breaks this, and Plumber owns keeping up with it.
+      throw new StepError({
+        name: `Received invalid row data after update: '${updateRowValuesParseResult.error.issues[0].message}'`,
+        solution: 'Double check your Excel file and retry the step if needed',
+        kind: 'internal',
+      })
     }
     const updatedRow = updateRowValuesParseResult.data
 

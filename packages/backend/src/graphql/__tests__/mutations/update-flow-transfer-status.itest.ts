@@ -62,7 +62,7 @@ describe('updateFlowTransferStatus', () => {
     it('should reject setting status back to pending', async () => {
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'pending' } },
           context,
         ),
@@ -73,7 +73,7 @@ describe('updateFlowTransferStatus', () => {
       context.currentUser = otherUser
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'approved' } },
           context,
         ),
@@ -84,7 +84,7 @@ describe('updateFlowTransferStatus', () => {
       context.currentUser = otherUser
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'rejected' } },
           context,
         ),
@@ -95,7 +95,7 @@ describe('updateFlowTransferStatus', () => {
       context.currentUser = otherUser
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'cancelled' } },
           context,
         ),
@@ -107,27 +107,27 @@ describe('updateFlowTransferStatus', () => {
     it('new owner can reject; only status is updated', async () => {
       context.currentUser = newOwner
       const res = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'rejected' } },
         context,
       )
       expect(res.status).toBe('rejected')
 
       const refreshedFlow = await Flow.query().findById(mockFlow.id)
-      expect(refreshedFlow.userId).toBe(owner.id)
+      expect(refreshedFlow!.userId).toBe(owner.id)
     })
 
     it('old owner can cancel; only status is updated', async () => {
       context.currentUser = owner
       const res = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'cancelled' } },
         context,
       )
       expect(res.status).toBe('cancelled')
 
       const refreshedFlow = await Flow.query().findById(mockFlow.id)
-      expect(refreshedFlow.userId).toBe(owner.id)
+      expect(refreshedFlow!.userId).toBe(owner.id)
     })
   })
 
@@ -160,7 +160,7 @@ describe('updateFlowTransferStatus', () => {
 
       context.currentUser = newOwner
       const result = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       )
@@ -169,7 +169,7 @@ describe('updateFlowTransferStatus', () => {
 
       // Flow owner should be updated
       const updatedFlow = await Flow.query().findById(mockFlow.id)
-      expect(updatedFlow.userId).toBe(newOwner.id)
+      expect(updatedFlow!.userId).toBe(newOwner.id)
 
       // Steps with previous connectionId should now point to a different id
       const steps = await Step.query().where('flow_id', mockFlow.id)
@@ -249,8 +249,8 @@ describe('updateFlowTransferStatus', () => {
 
       // Verify initial state: Excel step has connection and is completed
       const initialExcelStep = await Step.query().findById(excelStepId)
-      expect(initialExcelStep.connectionId).toBe(excelConnectionId)
-      expect(initialExcelStep.status).toBe('completed')
+      expect(initialExcelStep!.connectionId).toBe(excelConnectionId)
+      expect(initialExcelStep!.status).toBe('completed')
 
       // Verify execution steps exist
       const initialExecutionSteps = await ExecutionStep.query().whereIn(
@@ -262,7 +262,7 @@ describe('updateFlowTransferStatus', () => {
       // Approve the transfer
       context.currentUser = newOwner
       const result = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       )
@@ -270,8 +270,8 @@ describe('updateFlowTransferStatus', () => {
 
       // Verify Excel step is marked as incomplete and connection is nullified
       const updatedExcelStep = await Step.query().findById(excelStepId)
-      expect(updatedExcelStep.status).toBe('incomplete')
-      expect(updatedExcelStep.connectionId).toBeNull()
+      expect(updatedExcelStep!.status).toBe('incomplete')
+      expect(updatedExcelStep!.connectionId).toBeNull()
 
       // Verify all execution steps for Excel step are deleted
       const excelExecutionSteps = await ExecutionStep.query().where(
@@ -284,11 +284,11 @@ describe('updateFlowTransferStatus', () => {
       const originalConnection =
         await Connection.query().findById(excelConnectionId)
       expect(originalConnection).toBeTruthy()
-      expect(originalConnection.userId).toBe(owner.id)
+      expect(originalConnection!.userId).toBe(owner.id)
 
       // Verify non-Excel steps remain unaffected (Slack step should still work normally)
       const slackStep = await Step.query().findById(slackStepId)
-      expect(slackStep.status).toBe('completed')
+      expect(slackStep!.status).toBe('completed')
     })
 
     it('verifies old owner has editor access to table before adding new owner as collaborator', async () => {
@@ -322,7 +322,7 @@ describe('updateFlowTransferStatus', () => {
       // Approve the transfer as new owner
       context.currentUser = newOwner
       const result = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       )
@@ -383,7 +383,7 @@ describe('updateFlowTransferStatus', () => {
       // Should throw an error indicating old owner lacks permissions
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'approved' } },
           context,
         ),

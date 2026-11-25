@@ -104,15 +104,9 @@ export function startSesConsumer(): void {
 
   sesConsumer.start()
   logger.info('SES consumer started', { queueUrl })
-
-  process.once('SIGTERM', shutdownOnSigterm)
 }
 
-export function stopSesConsumer(): void {
-  sesConsumer?.stop()
-}
-
-async function shutdownOnSigterm(): Promise<void> {
+export async function stopSesConsumer(): Promise<void> {
   if (!sesConsumer) {
     return
   }
@@ -124,5 +118,5 @@ async function shutdownOnSigterm(): Promise<void> {
   // pollingCompleteWaitTimeMs (set at Consumer.create) caps this wait
   // internally, so we do not need an external timeout race here.
   await stopped
-  logger.info('SES consumer shutdown complete (SIGTERM)')
+  logger.info('SES consumer shutdown complete')
 }

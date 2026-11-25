@@ -82,7 +82,7 @@ describe('deleteFromS3', () => {
   it('should successfully delete an object when user owns the flow', async () => {
     await expect(
       deleteUploadedFile(
-        null,
+        {},
         { id: mockS3Id, flowUpdatedAt: mockFlow.updatedAt },
         context,
       ),
@@ -101,7 +101,7 @@ describe('deleteFromS3', () => {
 
     await expect(
       deleteUploadedFile(
-        null,
+        {},
         { id: mockS3Id, flowUpdatedAt: mockFlow.updatedAt },
         context,
       ),
@@ -120,7 +120,7 @@ describe('deleteFromS3', () => {
     })
 
     await deleteUploadedFile(
-      null,
+      {},
       { id: fileToDelete, flowUpdatedAt: mockFlow.updatedAt },
       context,
     )
@@ -137,7 +137,7 @@ describe('deleteFromS3', () => {
 
     await expect(
       deleteUploadedFile(
-        null,
+        {},
         { id: mockS3Id, flowUpdatedAt: mockFlow.updatedAt },
         context,
       ),
@@ -156,7 +156,7 @@ describe('deleteFromS3', () => {
 
     await expect(
       deleteUploadedFile(
-        null,
+        {},
         { id: mockS3Id, flowUpdatedAt: mockFlow.updatedAt },
         context,
       ),

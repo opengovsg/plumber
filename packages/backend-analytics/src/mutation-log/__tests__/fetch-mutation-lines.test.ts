@@ -1,0 +1,307 @@
+import {
+  GetQueryResultsCommand,
+  type ResultField,
+  StartQueryCommand,
+  StopQueryCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('../../logger')
+
+import {
+  fetchMcpToolLines,
+  fetchMutationLines,
+  MAX_QUERY_RESULTS,
+  MCP_TOOL_LOG_QUERY,
+  MUTATION_LOG_QUERY,
+} from '../fetch-mutation-lines'
+
+const START = Date.parse('2026-11-04T16:00:00.000Z')
+const END = Date.parse('2026-11-05T16:00:00.000Z')
+
+function insightsTimestamp(ms: number): string {
+  return new Date(ms).toISOString().replace('T', ' ').replace('Z', '')
+}
+
+function row(ms: number): ResultField[] {
+  return [
+    { field: '@timestamp', value: insightsTimestamp(ms) },
+    { field: 'query', value: 'mutation { logout }' },
+    { field: 'userId', value: 'user-1' },
+    { field: 'status', value: '200' },
+  ]
+}
+
+const BYTES_PER_QUERY = 1_000
+
+/**
+ * Answers each query with rowsFor(startSec, endSec), after one Running poll.
+ */
+function fakeClient(rowsFor: (startSec: number, endSec: number) => number[]) {
+  const queries = new Map<string, number[]>()
+  const ranges: [number, number][] = []
+  const send = vi.fn(async (command: unknown) => {
+    if (command instanceof StartQueryCommand) {
+      const { startTime = 0, endTime = 0 } = command.input
+      ranges.push([startTime, endTime])
+      const queryId = `q${ranges.length}`
+      queries.set(queryId, rowsFor(startTime, endTime))
+      return { queryId }
+    }
+    if (command instanceof GetQueryResultsCommand) {
+      const id = command.input.queryId ?? ''
+      if (!queries.has(`${id}-polled`)) {
+        queries.set(`${id}-polled`, [])
+        return { status: 'Running' }
+      }
+      return {
+        status: 'Complete',
+        results: queries.get(id)?.map(row),
+        statistics: { bytesScanned: BYTES_PER_QUERY },
+      }
+    }
+    throw new Error('unexpected command')
+  })
+  return { client: { send } as never, ranges }
+}
+
+const noSleep = async () => {}
+
+function stoppedQueries(
+  send: ReturnType<typeof vi.fn>,
+): (string | undefined)[] {
+  return send.mock.calls
+    .map(([command]) => command)
+    .filter((command) => command instanceof StopQueryCommand)
+    .map((command) => (command as StopQueryCommand).input.queryId)
+}
+
+describe('fetchMutationLines', () => {
+  it('keeps only lines inside the window', async () => {
+    const { client } = fakeClient(() => [
+      START - 1,
+      START,
+      START + 1_000,
+      END - 1,
+      END,
+    ])
+
+    const { lines, bytesScanned } = await fetchMutationLines({
+      client,
+      logGroup: 'server',
+      startMs: START,
+      endMs: END,
+      sleep: noSleep,
+    })
+
+    expect(bytesScanned).toBe(BYTES_PER_QUERY)
+    expect(lines.map((line) => Date.parse(`${line.timestamp}Z`))).toEqual([
+      START,
+      START + 1_000,
+      END - 1,
+    ])
+    expect(lines[0]).toMatchObject({
+      query: 'mutation { logout }',
+      userId: 'user-1',
+      status: '200',
+      variables: null,
+    })
+  })
+
+  it('splits a window that hits the result cap, without duplicates', async () => {
+    const hourSec = 3_600
+    // A full cap for any window longer than an hour, else one line per second boundary.
+    const { client, ranges } = fakeClient((startSec, endSec) =>
+      endSec - startSec > hourSec
+        ? Array.from({ length: MAX_QUERY_RESULTS }, () => startSec * 1_000)
+        : [startSec * 1_000, endSec * 1_000],
+    )
+
+    const { lines } = await fetchMutationLines({
+      client,
+      logGroup: 'server',
+      startMs: START,
+      endMs: END,
+      sleep: noSleep,
+    })
+
+    const times = lines.map((line) => Date.parse(`${line.timestamp}Z`))
+    expect(ranges.length).toBeGreaterThan(1)
+    expect(new Set(times).size).toBe(times.length)
+    expect(times.every((ms) => ms >= START && ms < END)).toBe(true)
+    expect(Math.min(...times)).toBe(START)
+  })
+
+  it('sums the bytes scanned by every query of a split window', async () => {
+    const hourSec = 3_600
+    const { client, ranges } = fakeClient((startSec, endSec) =>
+      endSec - startSec > hourSec
+        ? Array.from({ length: MAX_QUERY_RESULTS }, () => startSec * 1_000)
+        : [],
+    )
+
+    const { queries, bytesScanned } = await fetchMutationLines({
+      client,
+      logGroup: 'server',
+      startMs: START,
+      endMs: END,
+      sleep: noSleep,
+    })
+
+    // The capped queries are billed too.
+    expect(ranges.length).toBeGreaterThan(2)
+    expect(queries).toBe(ranges.length)
+    expect(bytesScanned).toBe(ranges.length * BYTES_PER_QUERY)
+  })
+
+  it('fails with a TimeoutError when the query runs too long', async () => {
+    vi.useFakeTimers()
+    const send = vi.fn(async (command: unknown) =>
+      command instanceof StartQueryCommand
+        ? { queryId: 'q1' }
+        : { status: 'Running' },
+    )
+
+    try {
+      await expect(
+        fetchMutationLines({
+          client: { send } as never,
+          logGroup: 'server',
+          startMs: START,
+          endMs: END,
+          sleep: async () => {
+            vi.advanceTimersByTime(16 * 60 * 1_000)
+          },
+        }),
+      ).rejects.toMatchObject({
+        name: 'TimeoutError',
+        message: 'Logs Insights query timed out',
+      })
+      expect(stoppedQueries(send)).toEqual(['q1'])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('fails when the query does not complete', async () => {
+    const send = vi.fn(async (command: unknown) =>
+      command instanceof StartQueryCommand
+        ? { queryId: 'q1' }
+        : { status: 'Failed' },
+    )
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        sleep: noSleep,
+      }),
+    ).rejects.toThrow('Logs Insights query ended as Failed')
+    expect(stoppedQueries(send)).toEqual([])
+  })
+
+  it('stops a stalled request when the signal aborts', async () => {
+    const send = vi.fn(
+      (_command: unknown, { abortSignal }: { abortSignal?: AbortSignal }) =>
+        new Promise((_resolve, reject) =>
+          abortSignal?.addEventListener('abort', () =>
+            reject(abortSignal.reason),
+          ),
+        ),
+    )
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        signal: AbortSignal.timeout(10),
+      }),
+    ).rejects.toThrow('aborted due to timeout')
+  })
+
+  it('stops polling a running query when the signal aborts', async () => {
+    const send = vi.fn(async (command: unknown) =>
+      command instanceof StartQueryCommand
+        ? { queryId: 'q1' }
+        : { status: 'Running' },
+    )
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        signal: AbortSignal.timeout(10),
+      }),
+    ).rejects.toThrow('aborted due to timeout')
+    expect(stoppedQueries(send)).toEqual(['q1'])
+  })
+
+  it('keeps the original error when StopQuery fails', async () => {
+    const send = vi.fn(async (command: unknown) => {
+      if (command instanceof StartQueryCommand) {
+        return { queryId: 'q1' }
+      }
+      if (command instanceof StopQueryCommand) {
+        throw new Error('stop failed')
+      }
+      return { status: 'Running' }
+    })
+
+    await expect(
+      fetchMutationLines({
+        client: { send } as never,
+        logGroup: 'server',
+        startMs: START,
+        endMs: END,
+        signal: AbortSignal.timeout(10),
+      }),
+    ).rejects.toThrow('aborted due to timeout')
+  })
+})
+
+describe('MUTATION_LOG_QUERY', () => {
+  it('admits a mutation logged with a leading space', () => {
+    expect(MUTATION_LOG_QUERY).toContain('like /^\\s*mutation/')
+  })
+})
+
+describe('fetchMcpToolLines', () => {
+  it('queries Plumber edit tools and returns each whole event', async () => {
+    const event = '{"message":{"event":"mcp-tool","tool":"delete_step"}}'
+    const send = vi.fn(async (command: unknown) =>
+      command instanceof StartQueryCommand
+        ? { queryId: 'q1' }
+        : {
+            status: 'Complete',
+            results: [
+              [
+                { field: '@timestamp', value: insightsTimestamp(START) },
+                { field: '@message', value: event },
+              ],
+            ],
+          },
+    )
+
+    const { lines, bytesScanned } = await fetchMcpToolLines({
+      client: { send } as never,
+      logGroup: 'server',
+      startMs: START,
+      endMs: END,
+      sleep: noSleep,
+    })
+
+    expect(lines).toEqual([{ timestamp: insightsTimestamp(START), event }])
+    // The fake client returns no statistics.
+    expect(bytesScanned).toBeNull()
+    const [start] = send.mock.calls[0] as [StartQueryCommand]
+    expect(start.input.queryString).toBe(MCP_TOOL_LOG_QUERY)
+    expect(MCP_TOOL_LOG_QUERY).toContain("`message.source` = 'plumber'")
+    expect(MCP_TOOL_LOG_QUERY).toContain("'update_step_parameters'")
+  })
+})

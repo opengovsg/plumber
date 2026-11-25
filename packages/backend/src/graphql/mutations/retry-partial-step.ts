@@ -6,11 +6,9 @@ import { processAction } from '@/services/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const retryPartialStep: NonNullable<
+  MutationResolvers['retryPartialStep']
+> = async (_parent, params, context) => {
   const executionStep = await ExecutionStep.query()
     .findById(params.input.executionStepId)
     .withGraphJoined('execution')
@@ -27,6 +25,11 @@ const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
 
   if (executionStep.status !== 'success' || !executionStep.errorDetails) {
     throw new BadUserInputError('Execution step not partially retriable')
+  }
+
+  // withGraphJoined is a left join, so the type cannot guarantee the execution.
+  if (!executionStep.execution) {
+    throw new Error(`Execution step ${executionStep.id} has no execution`)
   }
 
   try {

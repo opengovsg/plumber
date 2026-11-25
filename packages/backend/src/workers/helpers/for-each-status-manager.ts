@@ -19,7 +19,8 @@ export default async function processForEachStatus({
   nextStepMetadata,
 }: {
   executionId: string
-  currStep: Step
+  // The action worker deliberately looks the step up without throwIfNotFound.
+  currStep: Step | undefined
   nextStepMetadata: IExecutionStepMetadata
 }): Promise<boolean> {
   const isForEach =

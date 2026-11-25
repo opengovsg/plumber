@@ -24,13 +24,12 @@ interface HoverAddStepButtonProps {
   hideLeadingConnector?: boolean
   step: IStep
   allowReorder?: boolean
-  canChildStepsReorder?: boolean
   // Set only when this button stands in for AddAfterBlockButton (an if-then
   // V2 block nested in a for-each body), to pin/upgrade the block's marker
   // as the top-level button would.
   previousBlockId?: string
-  // Opt-in: this button also serves if-then V1 branches and for-each bodies, so
-  // where the new step lands is the caller's to state, not the button's.
+  // Opt-in: this button also serves for-each bodies, so where the new step
+  // lands is the caller's to state, not the button's.
   anchorPlacement?: AnchorPlacement
 }
 
@@ -45,7 +44,6 @@ export function HoverAddStepButton(
     hideLeadingConnector,
     step,
     allowReorder,
-    canChildStepsReorder,
     previousBlockId,
     anchorPlacement,
   } = props
@@ -92,9 +90,7 @@ export function HoverAddStepButton(
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           w={
-            (shouldShowDragHandle || canChildStepsReorder) &&
-            !isDrawerOpen &&
-            !readOnly
+            shouldShowDragHandle && !isDrawerOpen && !readOnly
               ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
               : 'full'
           }

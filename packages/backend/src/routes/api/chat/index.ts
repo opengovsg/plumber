@@ -4,7 +4,6 @@ import {
   updateActiveObservation,
   updateActiveTrace,
 } from '@langfuse/tracing'
-import { trace } from '@opentelemetry/api'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -14,15 +13,14 @@ import {
   streamText,
   type UIMessageStreamWriter,
 } from 'ai'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import { Router } from 'express'
+import type { z } from 'zod'
 
 import appConfig from '@/config/app'
+import { GITBOOK_MCP_SERVER } from '@/config/flags'
 import { BadUserInputError } from '@/errors/graphql-errors'
-import {
-  buildSupportFormUrl,
-  SUPPORT_FORM_URL_PLACEHOLDER,
-} from '@/helpers/ai/build-support-form-url'
+import { buildSupportFormUrl } from '@/helpers/ai/build-support-form-url'
 import {
   closeQuietly,
   connectGitbookMcp,
@@ -38,32 +36,40 @@ import {
   parseWorkflowMetadata,
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
+import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
+import { promptTelemetryMetadata } from '@/helpers/ai/prompt-telemetry'
 import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
 } from '@/helpers/ai/repair-tool-call'
-import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
-import { chatModel, MODEL_TYPE } from '@/helpers/pair'
+import { model } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
-import { AuthenticatedRequest } from '@/types/express/context'
 
+import { getAuthenticatedContext } from '../middleware/authentication'
+import { buildChatSystemMessages } from './build-chat-system-messages'
 import {
-  buildEstablishedConnectionReminder,
+  createCacheBreakpointPreparer,
+  sortToolsByName,
+  sumCacheWriteInputTokens,
+} from './cache-breakpoints'
+import {
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
+  stripReasoningParts,
 } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
 import { parseColumnTableBlock } from './parse-column-table-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { parseTileSetupBlock } from './parse-tile-setup-block'
 import { chatRequestSchema } from './schema'
+import { replaceSupportFormUrlPlaceholder } from './support-form-url-transform'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
 const MAX_MESSAGES = 150
@@ -104,35 +110,29 @@ function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
 }
 
 const handleChatStream = observe(
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (
+    req: Request,
+    res: Response,
+    body: z.infer<typeof chatRequestSchema>,
+  ) => {
     const abortController = new AbortController()
-    const context = req.context
+    const context = getAuthenticatedContext(req)
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
     const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
 
     // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
     const restrictedApps = getRestrictedAppKeys(allLdFlags)
 
-    const { chatPromptName, chatSummaryPromptName, version } =
-      aiBuilderFlag.config
+    const {
+      chatPromptName,
+      chatSummaryPromptName,
+      version,
+      disabledMcpServers,
+    } = aiBuilderFlag.config
+    const disabledMcpServerSet = new Set(disabledMcpServers)
 
     try {
-      const validationResult = chatRequestSchema.safeParse(req.body)
-
-      if (!validationResult.success) {
-        res.status(400).json({
-          error: 'Invalid request body',
-          details: validationResult.error.issues,
-        })
-        return
-      }
-
-      const {
-        messages: rawMessages,
-        chatId,
-        ddRumSessionId,
-        sessionId,
-      } = validationResult.data
+      const { messages: rawMessages, chatId, ddRumSessionId, sessionId } = body
 
       // The RUM session id, preferring the new field but accepting the legacy
       // `sessionId` from clients deployed before the chatId change.
@@ -140,7 +140,9 @@ const handleChatStream = observe(
 
       // Convert UIMessages to ModelMessages
       const messages = convertToModelMessages(
-        rawMessages as Parameters<typeof convertToModelMessages>[0],
+        stripReasoningParts(rawMessages) as Parameters<
+          typeof convertToModelMessages
+        >[0],
         { ignoreIncompleteToolCalls: true },
       )
 
@@ -174,7 +176,8 @@ const handleChatStream = observe(
         chatId,
         ddRumSessionId: rumSessionId,
         userId: context.currentUser.email,
-        model: MODEL_TYPE,
+        model: model.modelId,
+        disabledMcpServers,
       })
 
       // Re-derived fresh every turn from the raw message text and verified
@@ -186,38 +189,43 @@ const handleChatStream = observe(
         rawMessages,
       )
 
-      const systemMessage = {
-        role: 'system' as const,
-        content:
-          buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
-            SUPPORT_FORM_URL_PLACEHOLDER,
-            buildSupportFormUrl(chatId),
-          ) + buildEstablishedConnectionReminder(establishedFormConnection),
-      }
-      const allMessages = [systemMessage, ...messages]
+      const allMessages = [
+        ...buildChatSystemMessages({
+          basePrompt: prompt.prompt,
+          restrictedApps,
+          establishedFormConnection,
+        }),
+        ...messages,
+      ]
 
       let mcpClient: GitbookMcpClient | null = null
-      let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
+      let gitbookTools = {} as NonNullable<
+        Parameters<typeof streamText>[0]['tools']
+      >
 
-      try {
-        const gitbook = await connectGitbookMcp()
-        mcpClient = gitbook.client
-        gitbookTools = wrapMcpToolsWithUsageLogs(
-          // oxlint-disable-next-line typescript/no-explicit-any
-          gitbook.tools as Parameters<typeof streamText>[0]['tools'],
-          {
-            source: 'gitbook',
+      if (!disabledMcpServerSet.has(GITBOOK_MCP_SERVER)) {
+        try {
+          const gitbook = await connectGitbookMcp()
+          mcpClient = gitbook.client
+          gitbookTools = wrapMcpToolsWithUsageLogs(
+            // oxlint-disable-next-line typescript/no-explicit-any
+            gitbook.tools as NonNullable<
+              Parameters<typeof streamText>[0]['tools']
+            >,
+            {
+              source: 'gitbook',
+              traceId,
+              userId: context.currentUser.email,
+            },
+          )
+        } catch (error) {
+          await mcpClient?.close()
+          mcpClient = null
+          logger.error('Failed to connect to GitBook MCP server', {
             traceId,
-            userId: context.currentUser.email,
-          },
-        )
-      } catch (error) {
-        await mcpClient?.close()
-        mcpClient = null
-        logger.error('Failed to connect to GitBook MCP server', {
-          traceId,
-          error: error instanceof Error ? error.message : String(error),
-        })
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
       }
 
       const workflowError = 'Unable to generate the workflow.'
@@ -244,188 +252,197 @@ const handleChatStream = observe(
             },
           )
 
-          const result = streamText({
-            model: chatModel,
-            messages: allMessages,
-            tools: { ...gitbookTools, ...mcpTools },
-            stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
-            experimental_repairToolCall: repairMalformedToolName,
-            experimental_transform: [
-              repairMalformedStreamedToolNames,
-              smoothStream({
-                chunking: 'word', // Stream word-by-word for typing effect
-              }),
-            ],
-            experimental_telemetry: {
-              isEnabled: true,
-              functionId: 'ai-chat-stream',
-              metadata: {
-                name: 'ai-chat-stream',
-                // Langfuse session = the chat session. Falls back to the RUM id for
-                // old clients during rollout, then 'unknown'. The fallbacks are
-                // removed in the cleanup release once old clients have drained.
-                sessionId: chatId || rumSessionId || 'unknown',
-                // Plain metadata (non-special key) so RUM traces can still be
-                // correlated with Langfuse without driving session grouping.
-                ddRumSessionId: rumSessionId || undefined,
-                userId: context.currentUser.email,
-                environment: appConfig.appEnv,
-                promptName: chatPromptName,
-                promptVersion: version,
-                langfusePrompt: prompt.toJSON(),
-                tags: [
-                  'ai-builder',
-                  'stream',
-                  isAtLimit ? 'chat-summary' : 'chat',
+          const result = withAiTelemetryContext(
+            {
+              distinctId: context.currentUser.id,
+              aiSessionId: chatId || rumSessionId || 'unknown',
+            },
+            () =>
+              streamText({
+                model,
+                messages: allMessages,
+                tools: sortToolsByName({ ...gitbookTools, ...mcpTools }),
+                stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
+                prepareStep: createCacheBreakpointPreparer(),
+                experimental_repairToolCall: repairMalformedToolName,
+                experimental_transform: [
+                  repairMalformedStreamedToolNames,
+                  replaceSupportFormUrlPlaceholder(buildSupportFormUrl(chatId)),
+                  smoothStream({
+                    chunking: 'word', // Stream word-by-word for typing effect
+                  }),
                 ],
-              },
-            },
-            abortSignal: abortController.signal,
-            onFinish: async (event) => {
-              try {
-                logger.info('Stream finished', {
-                  traceId,
-                  textLength: event.text.length,
-                })
-
-                updateActiveObservation({ output: event })
-                updateActiveTrace({ output: event })
-
-                // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
-                const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
-                  event.text,
-                )
-                if (hasWorkflowMetadata) {
+                experimental_telemetry: {
+                  isEnabled: true,
+                  functionId: 'ai-chat-stream',
+                  metadata: {
+                    name: 'ai-chat-stream',
+                    // Langfuse session = the chat session. Falls back to the RUM id for
+                    // old clients during rollout, then 'unknown'. The fallbacks are
+                    // removed in the cleanup release once old clients have drained.
+                    sessionId: chatId || rumSessionId || 'unknown',
+                    // Plain metadata (non-special key) so RUM traces can still be
+                    // correlated with Langfuse without driving session grouping.
+                    ...(rumSessionId ? { ddRumSessionId: rumSessionId } : {}),
+                    userId: context.currentUser.email,
+                    environment: appConfig.appEnv,
+                    promptName: chatPromptName,
+                    promptVersion: version,
+                    ...promptTelemetryMetadata(prompt),
+                    tags: [
+                      'ai-builder',
+                      'stream',
+                      isAtLimit ? 'chat-summary' : 'chat',
+                    ],
+                  },
+                },
+                abortSignal: abortController.signal,
+                onFinish: async (event) => {
                   try {
-                    const parsedWorkflowMetadata = parseWorkflowMetadata(
+                    logger.info('Stream finished', {
+                      traceId,
+                      textLength: event.text.length,
+                      steps: event.steps.length,
+                      // IMPORTANT: key names avoid "token". Log redaction masks any key containing it.
+                      inputUsage: event.totalUsage.inputTokens,
+                      cacheReadUsage: event.totalUsage.cachedInputTokens,
+                      cacheWriteUsage: sumCacheWriteInputTokens(event.steps),
+                    })
+
+                    updateActiveObservation({ output: event })
+                    updateActiveTrace({ output: event })
+
+                    // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
+                    const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
                       event.text,
-                      restrictedApps,
                     )
-                    const flowSteps = { ...parsedWorkflowMetadata, traceId }
-                    writer.write({
-                      type: 'data-isChatReady',
-                      data: { isChatReady: true, flowSteps, mcpMode: true },
-                    })
-                  } catch (error) {
-                    const msg =
-                      error instanceof BadUserInputError
-                        ? error.message
-                        : 'Unable to generate the workflow.'
-                    writer.write({
-                      type: 'data-isChatReady',
-                      data: {
-                        isChatReady: true,
-                        error: msg,
-                        mcpMode: true,
-                      },
-                    })
-                  }
-                }
+                    if (hasWorkflowMetadata) {
+                      try {
+                        const parsedWorkflowMetadata = parseWorkflowMetadata(
+                          event.text,
+                          restrictedApps,
+                        )
+                        const flowSteps = { ...parsedWorkflowMetadata, traceId }
+                        writer.write({
+                          type: 'data-isChatReady',
+                          data: { isChatReady: true, flowSteps, mcpMode: true },
+                        })
+                      } catch (error) {
+                        const msg =
+                          error instanceof BadUserInputError
+                            ? error.message
+                            : 'Unable to generate the workflow.'
+                        writer.write({
+                          type: 'data-isChatReady',
+                          data: {
+                            isChatReady: true,
+                            error: msg,
+                            mcpMode: true,
+                          },
+                        })
+                      }
+                    }
 
-                // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
-                if (activePipeId) {
-                  const flow = await Flow.query()
-                    .findById(activePipeId)
-                    .where('user_id', context.currentUser.id)
-                  const steps = flow
-                    ? await flow
-                        .$relatedQuery('steps')
-                        .orderBy('position', 'asc')
-                    : []
+                    // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
+                    if (activePipeId) {
+                      const flow = await Flow.query()
+                        .findById(activePipeId)
+                        .where('user_id', context.currentUser.id)
+                      const steps = flow
+                        ? await flow
+                            .$relatedQuery('steps')
+                            .orderBy('position', 'asc')
+                        : []
 
-                  // Resolve connection labels fresh each turn. A step's
-                  // connection can be repointed independently of the step row.
-                  const connectionIds = [
-                    ...new Set(
-                      steps
-                        .map((step) => step.connectionId)
-                        .filter((id): id is string => !!id),
-                    ),
-                  ]
-                  const connectionsById = connectionIds.length
-                    ? new Map(
-                        (await Connection.query().findByIds(connectionIds)).map(
-                          (connection) => [connection.id, connection],
+                      // Resolve connection labels fresh each turn. A step's
+                      // connection can be repointed independently of the step row.
+                      const connectionIds = [
+                        ...new Set(
+                          steps
+                            .map((step) => step.connectionId)
+                            .filter((id): id is string => !!id),
                         ),
-                      )
-                    : new Map<string, Connection>()
+                      ]
+                      const connectionsById = connectionIds.length
+                        ? new Map(
+                            (
+                              await Connection.query().findByIds(connectionIds)
+                            ).map((connection) => [connection.id, connection]),
+                          )
+                        : new Map<string, Connection>()
 
-                  writer.write({
-                    type: 'data-pipeState',
-                    data: {
-                      pipeId: activePipeId,
-                      steps: steps.map((step) => {
-                        const connection = step.connectionId
-                          ? connectionsById.get(step.connectionId)
-                          : undefined
-                        return {
-                          id: step.id,
-                          appKey: step.appKey,
-                          key: step.key,
-                          type: step.type,
-                          position: step.position,
-                          status: step.status,
-                          parameters: step.parameters,
-                          connectionId: step.connectionId ?? null,
-                          connectionLabel: connection
-                            ? connectionLabel(connection)
-                            : null,
-                          // Lets the preview draw an If block's extent
-                          // the same way the editor does.
-                          endStepId: step.config?.endStepId ?? null,
-                          // MRF stage steps are named after the form's stages.
-                          stepName: step.config?.stepName ?? null,
-                          // Lets the preview hide a reject path the same way
-                          // the editor does.
-                          approval: step.config?.approval ?? null,
-                        }
-                      }),
-                    },
+                      writer.write({
+                        type: 'data-pipeState',
+                        data: {
+                          pipeId: activePipeId,
+                          steps: steps.map((step) => {
+                            const connection = step.connectionId
+                              ? connectionsById.get(step.connectionId)
+                              : undefined
+                            return {
+                              id: step.id,
+                              appKey: step.appKey,
+                              key: step.key,
+                              type: step.type,
+                              position: step.position,
+                              status: step.status,
+                              parameters: step.parameters,
+                              connectionId: step.connectionId ?? null,
+                              connectionLabel: connection
+                                ? connectionLabel(connection)
+                                : null,
+                              // Lets the preview draw an If block's extent
+                              // the same way the editor does.
+                              endStepId: step.config?.endStepId ?? null,
+                              // MRF stage steps are named after the form's stages.
+                              stepName: step.config?.stepName ?? null,
+                              // Lets the preview hide a reject path the same way
+                              // the editor does.
+                              approval: step.config?.approval ?? null,
+                            }
+                          }),
+                        },
+                      })
+                    }
+
+                    // Clarification blocks on both phases
+                    emitTextAnnotations(event.text, writer)
+                  } catch (error) {
+                    logger.error('Error parsing workflow', {
+                      traceId,
+                      error:
+                        error instanceof Error ? error.message : String(error),
+                    })
+
+                    writer.write({
+                      type: 'data-isChatReady',
+                      data: { isChatReady: false, error: workflowError },
+                    })
+                  } finally {
+                    // IMPORTANT: awaiting close() holds the finished reply open while GitBook is unresponsive.
+                    if (mcpClient) {
+                      closeQuietly(mcpClient)
+                    }
+                  }
+                },
+                onError: ({ error }) => {
+                  if (mcpClient) {
+                    closeQuietly(mcpClient)
+                  }
+                  mcpClient = null
+                  const errorMessage =
+                    error instanceof Error ? error.message : String(error)
+
+                  logger.error('Error generating chat response', {
+                    traceId,
+                    error: errorMessage,
                   })
-                }
 
-                // Clarification blocks on both phases
-                emitTextAnnotations(event.text, writer)
-              } catch (error) {
-                logger.error('Error parsing workflow', {
-                  traceId,
-                  error: error instanceof Error ? error.message : String(error),
-                })
-
-                writer.write({
-                  type: 'data-isChatReady',
-                  data: { isChatReady: false, error: workflowError },
-                })
-              } finally {
-                // IMPORTANT: awaiting close() holds the finished reply open while GitBook is unresponsive.
-                if (mcpClient) {
-                  closeQuietly(mcpClient)
-                }
-
-                // Manually end the span since we're streaming
-                trace.getActiveSpan()?.end()
-              }
-            },
-            onError: ({ error }) => {
-              if (mcpClient) {
-                closeQuietly(mcpClient)
-              }
-              mcpClient = null
-              const errorMessage =
-                error instanceof Error ? error.message : String(error)
-
-              logger.error('Error generating chat response', {
-                traceId,
-                error: errorMessage,
-              })
-
-              updateActiveObservation({ output: errorMessage })
-              updateActiveTrace({ output: errorMessage })
-
-              // Manually end the span since we're streaming
-              trace.getActiveSpan()?.end()
-            },
-          })
+                  updateActiveObservation({ output: errorMessage })
+                  updateActiveTrace({ output: errorMessage })
+                },
+              }),
+          )
 
           // Merge text stream into the response with metadata
           writer.merge(
@@ -435,7 +452,7 @@ const handleChatStream = observe(
               // mid-task. The UI uses it to offer Continue.
               messageMetadata: ({ part }) => ({
                 traceId,
-                model: MODEL_TYPE,
+                model: model.modelId,
                 ...(part.type === 'finish' && {
                   finishReason: part.finishReason,
                 }),
@@ -474,16 +491,24 @@ const handleChatStream = observe(
      */
     captureInput: false,
     captureOutput: false,
-    /**
-     * do not automatically end so that we can update the trace and observation
-     * in the onFinish callback
-     */
-    endOnExit: false,
+    // endOnExit stays default: the handler awaits the full response stream, so
+    // the span ends once after it drains, including on pre-stream failures.
   },
 )
 
 const router: Router = Router()
 
-router.post('/', handleChatStream)
+router.post('/', (req: Request, res: Response) => {
+  const validationResult = chatRequestSchema.safeParse(req.body)
+  if (!validationResult.success) {
+    res.status(400).json({
+      error: 'Invalid request body',
+      details: validationResult.error.issues,
+    })
+    return
+  }
+
+  return handleChatStream(req, res, validationResult.data)
+})
 
 export default router

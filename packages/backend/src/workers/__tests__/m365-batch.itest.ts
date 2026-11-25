@@ -94,12 +94,12 @@ vi.mock('@/apps/m365-excel/common/file-privacy', () => ({
 
 // createTableRow's runBatch derives auth data (to pass to validateCanAccessFile)
 // from `$`. The test flows have no real m365 connection, so the real
-// extractAuthDataWithPlumberFolder would throw; stub it to a dummy
+// parseAuthData would report it missing; stub it to a dummy
 // (validateCanAccessFile is mocked above, so the value is never actually used).
 vi.mock('@/apps/m365-excel/common/auth-data', () => ({
-  extractAuthDataWithPlumberFolder: () => ({
-    tenantKey: 'itest-tenant',
-    folderId: 'ITEST-FOLDER',
+  parseAuthData: () => ({
+    status: 'ok',
+    data: { tenantKey: 'itest-tenant', folderId: 'ITEST-FOLDER' },
   }),
 }))
 
@@ -270,7 +270,7 @@ async function buildCreateRowFlow(options: {
 
   return {
     flow,
-    createTableRowStep: flow.steps.find((s) => s.key === 'createTableRow'),
+    createTableRowStep: flow.steps.find((s) => s.key === 'createTableRow')!,
     forEachStep: flow.steps.find((s) => s.key === 'forEach'),
     execution,
   }
@@ -369,7 +369,7 @@ describe('m365-excel batch worker (integration)', () => {
     mocks.getLockKey.mockResolvedValue(null)
     // File access granted by default; the partial-failure tests reject one job.
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
-    userId = (await User.query().findOne({ email: 'tester@open.gov.sg' })).id
+    userId = (await User.query().findOne({ email: 'tester@open.gov.sg' }))!.id
 
     // Pause both workers so we can enqueue every job up front (the batch worker
     // then fetches them all as one batch on resume) and so next-step jobs the
@@ -418,10 +418,12 @@ describe('m365-excel batch worker (integration)', () => {
 
     batchWorker.resume()
 
+    // Each job enqueues its next step after recording its success step.
     await waitFor(
       async () =>
         postConfigs().length === 1 &&
-        (await createTableRowSteps('success')).length === rowValues.length,
+        (await createTableRowSteps('success')).length === rowValues.length &&
+        (await mainActionQueue.getWaiting()).length >= rowValues.length,
     )
 
     // One multi-row POST for the whole batch, header read once.
@@ -554,6 +556,7 @@ describe('m365-excel batch worker (integration)', () => {
         error: 'transient graph error',
         delayInMs: 50,
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
@@ -591,6 +594,7 @@ describe('m365-excel batch worker (integration)', () => {
         error: 'Encountered HTTP 503 from MS',
         delayInMs: 50,
         delayType: 'step',
+        kind: 'internal',
       }),
     )
 
@@ -683,6 +687,14 @@ describe('m365-excel batch worker (integration)', () => {
       ).iterationStatus
     }
 
+    async function allIterationsAre(
+      executionId: string,
+      status: 'success' | 'failure',
+    ): Promise<boolean> {
+      const iterationStatus = await getForEachIterationStatus(executionId)
+      return Object.values(iterationStatus).every((s) => s === status)
+    }
+
     it('resolves the execution to success exactly once when all iterations succeed', async () => {
       mockGraphSuccess(0)
       const setStatusSpy = vi.spyOn(Execution, 'setStatus')
@@ -691,16 +703,19 @@ describe('m365-excel batch worker (integration)', () => {
         rowValue: 'iter',
         withForEach: true,
       })
-      await seedForEachStep(flow.execution, flow.forEachStep)
+      await seedForEachStep(flow.execution, flow.forEachStep!)
       await enqueueIterations(flow)
 
       batchWorker.resume()
 
       await waitFor(async () => {
         const execution = await Execution.query().findById(flow.execution.id)
-        return execution.status === 'success'
+        return execution!.status === 'success'
       })
-      await sleep(200)
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('success')).length === ITERATIONS,
+      )
 
       // One batch -> one POST with all iteration rows.
       const posts = postConfigs()
@@ -733,7 +748,7 @@ describe('m365-excel batch worker (integration)', () => {
         rowValue: 'iter',
         withForEach: true,
       })
-      await seedForEachStep(flow.execution, flow.forEachStep)
+      await seedForEachStep(flow.execution, flow.forEachStep!)
       await enqueueIterations(flow)
 
       batchWorker.resume()
@@ -741,9 +756,14 @@ describe('m365-excel batch worker (integration)', () => {
       // The execution resolves to failure - it must not hang at null.
       await waitFor(async () => {
         const execution = await Execution.query().findById(flow.execution.id)
-        return execution.status === 'failure'
+        return execution!.status === 'failure'
       })
-      await sleep(200)
+      // The execution can fail before every iteration is recorded and patched.
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('failure')).length === ITERATIONS &&
+          (await allIterationsAre(flow.execution.id, 'failure')),
+      )
 
       // Every iteration slot was patched to 'failure' (else the for-each hangs).
       const iterationStatus = await getForEachIterationStatus(flow.execution.id)
@@ -772,7 +792,7 @@ describe('m365-excel batch worker (integration)', () => {
         rowValue: 'iter',
         withForEach: true,
       })
-      await seedForEachStep(flow.execution, flow.forEachStep)
+      await seedForEachStep(flow.execution, flow.forEachStep!)
       await enqueueIterations(flow)
 
       batchWorker.resume()
@@ -780,9 +800,15 @@ describe('m365-excel batch worker (integration)', () => {
       // The execution resolves to failure - it must not hang at null.
       await waitFor(async () => {
         const execution = await Execution.query().findById(flow.execution.id)
-        return execution.status === 'failure'
+        return execution!.status === 'failure'
       })
-      await sleep(200)
+      // The execution fails on the first iteration, before the rest are isolated.
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('failure')).length === ITERATIONS &&
+          (await allIterationsAre(flow.execution.id, 'failure')) &&
+          (await batchQueue.getFailed()).length === ITERATIONS,
+      )
 
       // No POST: runBatch returns before acquiring the session when the shared
       // access check is denied.
@@ -974,7 +1000,8 @@ describe('m365-excel batch worker (integration)', () => {
       await waitFor(
         async () =>
           (await createTableRowSteps('success')).length === good.length &&
-          (await createTableRowSteps('failure')).length === 1,
+          (await createTableRowSteps('failure')).length === 1 &&
+          (await mainActionQueue.getWaiting()).length >= good.length,
       )
       await sleep(200)
 

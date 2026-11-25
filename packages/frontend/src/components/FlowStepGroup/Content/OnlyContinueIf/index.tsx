@@ -24,7 +24,6 @@ interface OnlyContinueIfProps {
   step: IStep
   isNested?: boolean
   allowReorder?: boolean
-  canChildStepsReorder?: boolean
   /** When true, omit the caption, since nothing follows this step to gate. */
   isLastStep?: boolean
 }
@@ -39,7 +38,6 @@ export default function OnlyContinueIf({
   step,
   isNested = false,
   allowReorder = true,
-  canChildStepsReorder = false,
   isLastStep = false,
 }: OnlyContinueIfProps): JSX.Element {
   const { currentStepId, isDrawerOpen, isMobile, readOnly } =
@@ -73,12 +71,7 @@ export default function OnlyContinueIf({
   )
 
   return (
-    <FlowStepWrapper
-      canChildStepsReorder={canChildStepsReorder}
-      allowReorder={allowReorder}
-      isDrawerOpen={isDrawerOpen}
-      isReadOnly={readOnly}
-    >
+    <FlowStepWrapper>
       <Flex flexDir="column" w="100%" alignItems="center">
         <Flex
           pos="relative"

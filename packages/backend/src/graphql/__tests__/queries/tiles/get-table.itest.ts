@@ -17,7 +17,7 @@ import {
   generateMockTableColumns,
 } from '../../mutations/tiles/table.mock'
 
-describe.each([['ddb'], ['pg']])(
+describe.each<[DatabaseType]>([['ddb'], ['pg']])(
   'get single table query: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -45,7 +45,7 @@ describe.each([['ddb'], ['pg']])(
     })
     it('should return table metadata with ordered columns', async () => {
       const table = await getTable(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -56,13 +56,17 @@ describe.each([['ddb'], ['pg']])(
         name: dummyTable.name,
       })
 
-      const columns = await TableMetadataResolver.columns(dummyTable, {}, null)
-      expect(columns.map((c) => c.id)).toEqual(dummyColumnIds)
+      const columns = await TableMetadataResolver.columns(
+        dummyTable,
+        {},
+        null as unknown as Context,
+      )
+      expect(columns!.map((c) => c.id)).toEqual(dummyColumnIds)
     })
 
     it('should return table metadata with role', async () => {
       const table = await getTable(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -77,20 +81,24 @@ describe.each([['ddb'], ['pg']])(
         databaseType,
       })
       const table = await getTable(
-        null,
+        {},
         {
           tableId: insertedTable.id,
         },
         context,
       )
-      const columns = await TableMetadataResolver.columns(table, {}, null)
+      const columns = await TableMetadataResolver.columns(
+        table,
+        {},
+        null as unknown as Context,
+      )
       expect(columns).toHaveLength(0)
     })
 
     it('should throw an error if table does not exist', async () => {
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: randomUUID(),
           },
@@ -107,7 +115,7 @@ describe.each([['ddb'], ['pg']])(
         .andWhere('user_id', editor.id)
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -120,7 +128,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -131,7 +139,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = viewer
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -142,7 +150,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should return all collaborators ordered by roles', async () => {
       const table = await getTable(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -151,7 +159,7 @@ describe.each([['ddb'], ['pg']])(
       const collaborators = await TableMetadataResolver.collaborators(
         table,
         {},
-        null,
+        null as unknown as Context,
       )
       expect(collaborators).toEqual([
         { email: context.currentUser.email, role: 'owner' },

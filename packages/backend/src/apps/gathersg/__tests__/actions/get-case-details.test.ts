@@ -1,7 +1,10 @@
 import type { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import app from '../../..'
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import getCaseDetailsAction from '../../actions/get-case-details'
 
 const mocks = vi.hoisted(() => ({
@@ -96,7 +99,7 @@ describe('get case details', () => {
   })
 
   it('downloads attachment, uploads to s3, and stores s3Id', async () => {
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
       urlPathParams: { caseUuid: MOCK_CASE_UUID },
@@ -156,7 +159,7 @@ describe('get case details', () => {
       },
     }))
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(mocks.putObject).not.toHaveBeenCalled()
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -193,7 +196,7 @@ describe('get case details', () => {
       throw new Error('attachment download failed')
     })
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'Failed to process attachment attach-uuid-1',
     )
   })
@@ -215,7 +218,7 @@ describe('get case details', () => {
       },
     }))
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'exceeds maximum size',
     )
     expect(mocks.putObject).not.toHaveBeenCalled()
@@ -265,7 +268,7 @@ describe('get case details', () => {
         `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID_2}/${MOCK_ATTACHMENT_NAME_2}`,
       )
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpGet).toHaveBeenCalledWith(
       '/cases/:caseUuid/attachments/:attachmentUuid',
@@ -304,7 +307,7 @@ describe('get case details', () => {
   })
 
   it('skips search when the value is a case uuid', async () => {
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect($.http.post).not.toHaveBeenCalled()
     expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
@@ -322,7 +325,7 @@ describe('get case details', () => {
     $.http.post = httpPost as unknown as typeof $.http.post
     $.step.parameters.caseUuid = MOCK_CASE_REF
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpPost).toHaveBeenCalledWith('/cases/search', {
       caseRefs: [MOCK_CASE_REF],
@@ -342,7 +345,7 @@ describe('get case details', () => {
     })) as unknown as typeof $.http.post
     $.step.parameters.caseUuid = MOCK_CASE_REF
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'More than one case found for case ref 261007-00001',
     )
     expect(httpGet).not.toHaveBeenCalled()
@@ -354,7 +357,7 @@ describe('get case details', () => {
     })) as unknown as typeof $.http.post
     $.step.parameters.caseUuid = MOCK_CASE_REF
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'No case found for case ref 261007-00001',
     )
     expect(httpGet).not.toHaveBeenCalled()
@@ -363,9 +366,121 @@ describe('get case details', () => {
   it('throws when the value is neither a case uuid nor a case ref', async () => {
     $.step.parameters.caseUuid = 'not-a-case'
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'Please enter a valid case uuid or case ref',
     )
     expect(httpGet).not.toHaveBeenCalled()
+  })
+
+  describe('error kinds', () => {
+    it('tags a 404 for the case as config and keeps its name', async () => {
+      const error = makeHttpError({
+        status: 404,
+        data: { error: { code: 'RESOURCE_NOT_FOUND', message: 'Not found' } },
+      })
+      httpGet.mockRejectedValueOnce(error)
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'config',
+        cause: error,
+        message: expect.stringContaining(
+          `"name":"Invalid case uuid: ${MOCK_CASE_UUID}"`,
+        ),
+      })
+    })
+
+    it.each([
+      ['an HTML body', '<html>Not Found</html>'],
+      [
+        'another Gather code',
+        { error: { code: 'SOMETHING_ELSE', message: 'Not found' } },
+      ],
+    ])('tags a 404 with %s as internal', async (_label, data) => {
+      const error = makeHttpError({ status: 404, data })
+      httpGet.mockRejectedValueOnce(error)
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'internal',
+        cause: error,
+      })
+    })
+
+    it('tags a 403 UNAUTHORIZED for the case as config', async () => {
+      httpGet.mockRejectedValueOnce(
+        makeHttpError({
+          status: 403,
+          data: { error: { code: 'UNAUTHORIZED', message: 'Forbidden' } },
+        }),
+      )
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('tags a 504 for the case as third-party and keeps the cause', async () => {
+      const error = makeHttpError({
+        status: 504,
+        data: '<html>Gateway Timeout</html>',
+      })
+      httpGet.mockRejectedValueOnce(error)
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'third-party',
+        cause: error,
+      })
+    })
+
+    it('tags a case without fields as internal', async () => {
+      httpGet.mockResolvedValueOnce({ data: { data: {} } })
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'internal',
+        message: expect.stringContaining('No data found for case'),
+      })
+    })
+
+    it.each([
+      ['empty', ''],
+      ['malformed', 'not-a-case'],
+    ])('tags a %s case identifier as config', async (_label, value) => {
+      $.step.parameters.caseUuid = value
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'config',
+      })
+    })
+
+    it('tags an unexpected error as internal', async () => {
+      httpGet.mockRejectedValueOnce(new Error('boom'))
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toMatchObject({
+        kind: 'internal',
+        message: expect.stringContaining("An error occurred: 'boom'"),
+      })
+    })
+
+    it('logs only the error name and message when the action fails', async () => {
+      const logError = vi.spyOn(logger, 'error').mockReturnValue(logger)
+      onTestFinished(() => logError.mockRestore())
+      httpGet.mockRejectedValueOnce(new Error('boom'))
+
+      await expect(getCaseDetailsAction.run!($)).rejects.toThrow()
+
+      const fields = {
+        errorName: 'Error',
+        errorMessage: 'boom',
+        caseUuid: MOCK_CASE_UUID,
+        stepId: $.step.id,
+      }
+      expect(logError).toHaveBeenCalledWith(
+        `Failed to get case details for case ${MOCK_CASE_UUID}`,
+        { event: 'gathersg-get-case-request-failed', ...fields },
+      )
+      expect(logError).toHaveBeenCalledWith(
+        `Failed to get case details for case ${MOCK_CASE_UUID}`,
+        { event: 'gathersg-get-case-details-failed', ...fields },
+      )
+    })
   })
 })

@@ -189,7 +189,9 @@ export async function getDynamicDataService({
         const allowedValues = flowConnections
           .map(
             (fc) =>
-              fc.metadata[APP_CONNECTION_FIELDS[step.appKey].parameterKey],
+              fc.metadata[
+                APP_CONNECTION_FIELDS[step.appKey!].parameterKey ?? ''
+              ],
           )
           .filter((v) => v !== undefined)
           .flat()
