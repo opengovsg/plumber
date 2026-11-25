@@ -83,15 +83,30 @@ export default function UnsavedChangesAlert({
           <AlertDialogCloseButton isDisabled={isSaving} />
 
           <AlertDialogBody>
-            You haven&apos;t saved your changes to this step. Save now to keep
-            them, or keep editing.
+            You haven&apos;t saved this step yet. Save before you leave, or keep
+            editing.
           </AlertDialogBody>
 
           <AlertDialogFooter gap={3}>
             <Button
+              mr="auto"
+              px={0}
+              variant="clear"
+              colorScheme="secondary"
+              _hover={{ bg: 'transparent', textDecoration: 'underline' }}
+              onClick={() => handleLeave()}
+              isDisabled={isSaving}
+            >
+              Discard changes
+            </Button>
+            <Button
               ref={cancelRef}
-              variant={canSave ? 'clear' : 'solid'}
-              colorScheme={canSave ? 'secondary' : undefined}
+              variant="clear"
+              colorScheme="secondary"
+              color="base.content.strong"
+              bg="interaction.muted.neutral.active"
+              _hover={{ bg: 'interaction.tinted.neutral.hover' }}
+              _active={{ bg: 'interaction.tinted.neutral.active' }}
               onClick={onClose}
               isDisabled={isSaving}
             >
