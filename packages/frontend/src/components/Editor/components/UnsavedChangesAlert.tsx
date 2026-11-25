@@ -9,6 +9,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import type { IStep } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { useContext, useState } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -31,9 +32,32 @@ export default function UnsavedChangesAlert({
   requiresCompleteStep = false,
 }: UnsavedChangesAlertProps): React.ReactElement {
   const toast = useToast()
-  const { saveDirtyStepRef, readOnly } = useContext(EditorContext)
+  const posthog = usePostHog()
+  const { saveDirtyStepRef, readOnly, flow } = useContext(EditorContext)
   const [isSaving, setIsSaving] = useState(false)
   const canSave = !readOnly && saveDirtyStepRef.current !== null
+
+  const captureResolved = (
+    choice: 'save_and_continue' | 'discard' | 'keep_editing',
+    outcome?: 'saved' | 'blocked_incomplete' | 'save_failed',
+  ) => {
+    posthog.capture('flow_editor:unsaved_changes_resolved', {
+      choice,
+      outcome,
+      is_publish: requiresCompleteStep,
+      flow_id: flow?.id,
+    })
+  }
+
+  const handleKeepEditing = () => {
+    captureResolved('keep_editing')
+    onClose()
+  }
+
+  const handleDiscard = () => {
+    captureResolved('discard')
+    handleLeave()
+  }
 
   const handleLeave = (savedStep?: IStep) => {
     onLeave?.(savedStep)
@@ -45,7 +69,9 @@ export default function UnsavedChangesAlert({
     try {
       setIsSaving(true)
       savedStep = await saveDirtyStepRef.current?.()
-    } catch {
+    } catch (error) {
+      captureResolved('save_and_continue', 'save_failed')
+      posthog.captureException(error)
       toast({
         status: 'error',
         title: 'Could not save your changes. Please try again.',
@@ -55,6 +81,7 @@ export default function UnsavedChangesAlert({
       setIsSaving(false)
     }
     if (requiresCompleteStep && savedStep?.status === 'incomplete') {
+      captureResolved('save_and_continue', 'blocked_incomplete')
       toast({
         status: 'warning',
         title: 'Your changes are saved. Complete this step before you publish.',
@@ -62,6 +89,7 @@ export default function UnsavedChangesAlert({
       onClose()
       return
     }
+    captureResolved('save_and_continue', 'saved')
     handleLeave(savedStep)
   }
 
@@ -69,7 +97,7 @@ export default function UnsavedChangesAlert({
     <AlertDialog
       isOpen={isOpen}
       leastDestructiveRef={cancelRef}
-      onClose={onClose}
+      onClose={handleKeepEditing}
       // IMPORTANT: the pending save still runs the continuation, so a
       // dismissal here would navigate away from resumed editing.
       closeOnEsc={!isSaving}
@@ -93,7 +121,7 @@ export default function UnsavedChangesAlert({
                 color: 'base.content.default',
                 textDecoration: 'underline',
               }}
-              onClick={() => handleLeave()}
+              onClick={handleDiscard}
               isDisabled={isSaving}
             >
               Discard changes
@@ -106,7 +134,7 @@ export default function UnsavedChangesAlert({
               bg="interaction.muted.neutral.active"
               _hover={{ bg: 'interaction.tinted.neutral.hover' }}
               _active={{ bg: 'interaction.tinted.neutral.active' }}
-              onClick={onClose}
+              onClick={handleKeepEditing}
               isDisabled={isSaving}
             >
               Keep editing
