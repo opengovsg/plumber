@@ -58,10 +58,12 @@ function findAndSubstituteVariables(
 
   // Intentionally put _after_ array check as arrays are also objects.
   if (typeof rawValue === 'object' && rawValue !== null) {
-    return Object.entries(rawValue).reduce(
-      (acc, [k, v]) => ({
-        ...acc,
-        [k]: findAndSubstituteVariables(
+    // IMPORTANT: do not spread an accumulator here. Copying it per key is
+    // quadratic in key count and blocks the event loop on large parameters.
+    return Object.fromEntries(
+      Object.entries(rawValue).map(([k, v]) => [
+        k,
+        findAndSubstituteVariables(
           k,
           v,
           executionSteps,
@@ -69,8 +71,7 @@ function findAndSubstituteVariables(
           forEachContext,
           preserveArrayVariables,
         ),
-      }),
-      {},
+      ]),
     )
   }
 

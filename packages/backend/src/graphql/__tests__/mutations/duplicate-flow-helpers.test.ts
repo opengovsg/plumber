@@ -77,6 +77,35 @@ describe('duplicate flow helper functions', () => {
       const result = updateStepIdForKey(input, {})
       expect(result).toBe('{{step.old-step-1.fields.name}}')
     })
+
+    it('should replace a step ID nested inside another step reference', () => {
+      const input = 'step.step.old-step-1.field'
+      const result = updateStepIdForKey(input, stepIdMap)
+      expect(result).toBe('step.step.new-step-1.field')
+    })
+
+    it('should not replace Object.prototype keys', () => {
+      const input = '{{step.constructor.field}} {{step.__proto__.field}}'
+      const result = updateStepIdForKey(input, stepIdMap)
+      expect(result).toBe(input)
+    })
+
+    it('should rewrite many references with a large step map quickly', () => {
+      const largeStepIdMap = Object.fromEntries(
+        Array.from({ length: 20_000 }, (_, i) => [`old-${i}`, `new-${i}`]),
+      )
+      const input = Array.from(
+        { length: 20_000 },
+        (_, i) => `{{step.old-${i}.field}}`,
+      ).join(' ')
+
+      const start = performance.now()
+      const result = updateStepIdForKey(input, largeStepIdMap)
+
+      expect(performance.now() - start).toBeLessThan(500)
+      expect(result).toContain('{{step.new-19999.field}}')
+      expect(result).not.toContain('old-')
+    })
   })
 
   describe('updateStepVariables', () => {
@@ -291,6 +320,41 @@ describe('duplicate flow helper functions', () => {
         emptyArray: [],
         stringValue: '{{step.new-step-1.value}}',
       })
+    })
+
+    it('processes 10k keys without quadratic copying', () => {
+      const parameters = Object.fromEntries(
+        Array.from({ length: 10_000 }, (_, i) => [
+          `key${i}`,
+          '{{step.old-step-1.value}}',
+        ]),
+      )
+
+      const start = performance.now()
+      const result = updateStepVariables(parameters, stepIdMap)
+
+      expect(performance.now() - start).toBeLessThan(500)
+      expect(Object.keys(result)).toHaveLength(10_000)
+      expect(result.key9999).toBe('{{step.new-step-1.value}}')
+    })
+
+    it('keeps unusual keys as own properties in the same order', () => {
+      const parameters = JSON.parse(
+        '{"b":"x","2":"n","1":"m","__proto__":{"polluted":"y"},"constructor":"c","":"empty"}',
+      )
+
+      const result = updateStepVariables(parameters, stepIdMap)
+
+      expect(Object.keys(result)).toEqual([
+        '1',
+        '2',
+        'b',
+        '__proto__',
+        'constructor',
+        '',
+      ])
+      expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+      expect(({} as Record<string, unknown>).polluted).toBeUndefined()
     })
   })
 })
