@@ -42,6 +42,7 @@ import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
 } from '@/helpers/ai/repair-tool-call'
+import { forwardAsyncErrors } from '@/helpers/forward-async-errors'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
@@ -498,17 +499,20 @@ const handleChatStream = observe(
 
 const router: Router = Router()
 
-router.post('/', (req: Request, res: Response) => {
-  const validationResult = chatRequestSchema.safeParse(req.body)
-  if (!validationResult.success) {
-    res.status(400).json({
-      error: 'Invalid request body',
-      details: validationResult.error.issues,
-    })
-    return
-  }
+router.post(
+  '/',
+  forwardAsyncErrors(async (req: Request, res: Response) => {
+    const validationResult = chatRequestSchema.safeParse(req.body)
+    if (!validationResult.success) {
+      res.status(400).json({
+        error: 'Invalid request body',
+        details: validationResult.error.issues,
+      })
+      return
+    }
 
-  return handleChatStream(req, res, validationResult.data)
-})
+    return handleChatStream(req, res, validationResult.data)
+  }),
+)
 
 export default router

@@ -869,10 +869,10 @@ describe('chat handler — observation span lifecycle', () => {
     })
   }
 
-  function startHandler() {
+  function startHandler(next = vi.fn()) {
     const handler = router.stack[0].route!.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
-    return handler(makeReq() as any, makeRes() as any, vi.fn()) as Promise<void>
+    return handler(makeReq() as any, makeRes() as any, next) as Promise<void>
   }
 
   it('ends the observation span once, only after the response stream drains', async () => {
@@ -945,9 +945,13 @@ describe('chat handler — observation span lifecycle', () => {
   })
 
   it('ends the span once when the handler rejects before the try block', async () => {
-    vi.mocked(getAllLdFlags).mockRejectedValueOnce(new Error('ld down'))
+    const error = new Error('ld down')
+    vi.mocked(getAllLdFlags).mockRejectedValueOnce(error)
+    const next = vi.fn()
 
-    await expect(startHandler()).rejects.toThrow('ld down')
+    await startHandler(next)
+
+    expect(next).toHaveBeenCalledExactlyOnceWith(error)
 
     expect(streamText).not.toHaveBeenCalled()
     expect(mocks.observationSpan.end).toHaveBeenCalledTimes(1)

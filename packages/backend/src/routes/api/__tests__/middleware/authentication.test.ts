@@ -70,6 +70,20 @@ describe('API Authentication Middleware', () => {
       expect(mockNext).toHaveBeenCalledOnce()
     })
 
+    it('forwards a context creation failure to next', async () => {
+      const error = new Error('lookup failed')
+      mocks.setGraphQLContext.mockRejectedValueOnce(error)
+
+      await setCurrentUserContext(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext,
+      )
+
+      expect(mockReq.context).toBeUndefined()
+      expect(mockNext).toHaveBeenCalledExactlyOnceWith(error)
+    })
+
     it('should handle admin operations', async () => {
       const mockContext: UnauthenticatedContext = {
         req: mockReq as Request,

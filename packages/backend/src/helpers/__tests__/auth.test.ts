@@ -97,6 +97,26 @@ describe('Auth helpers', () => {
       vi.useRealTimers()
     })
 
+    it('returns null for a JWT-shaped token whose payload is not JSON', () => {
+      const header = Buffer.from('{"alg":"HS256","typ":"JWT"}').toString(
+        'base64url',
+      )
+      const payload = Buffer.from('not-json').toString('base64url')
+      const token = `${header}.${payload}.signature`
+
+      expect(() => parseAdminToken(token)).not.toThrow()
+      expect(parseAdminToken(token)).toBeNull()
+    })
+
+    it('returns null for a token signed with a different key', () => {
+      const token = jwt.sign(
+        { userEmail: 'coffee@plumber.local' },
+        appConfig.sessionSecretKey,
+      )
+
+      expect(parseAdminToken(token)).toBeNull()
+    })
+
     it('can parse valid admin tokens', () => {
       const token = jwt.sign(
         { userEmail: 'coffee@plumber.local' },
@@ -382,6 +402,7 @@ describe('Auth helpers', () => {
   })
 
   describe('getLoggedInUser', () => {
+    const USER_ID = '9b2f4c1e-3a5d-4e7f-8b6a-1c2d3e4f5a6b'
     const signToken = (payload: object, options?: jwt.SignOptions) =>
       jwt.sign(payload, appConfig.sessionSecretKey, options)
 
@@ -400,19 +421,37 @@ describe('Auth helpers', () => {
     })
 
     it('returns the user for a valid, non-revoked token', async () => {
-      const token = signToken({ userId: 'user-1' })
+      const token = signToken({ userId: USER_ID })
       const req = { cookies: { 'plumber.sid': token } } as any
       mocks.redisExists.mockResolvedValueOnce(0)
-      mocks.findById.mockResolvedValueOnce({ id: 'user-1' })
+      mocks.findById.mockResolvedValueOnce({ id: USER_ID })
 
       const result = await getLoggedInUser(req)
 
-      expect(mocks.findById).toHaveBeenCalledWith('user-1')
-      expect(result).toEqual({ id: 'user-1' })
+      expect(mocks.findById).toHaveBeenCalledWith(USER_ID)
+      expect(result).toEqual({ id: USER_ID })
     })
 
+    it.each([
+      [
+        'an SSO transaction',
+        { state: 'state', nonce: 'nonce', codeVerifier: 'verifier' },
+      ],
+      ['a tile view token', { tileId: 'tile-1', viewOnlyKey: 'key' }],
+      ['a non-UUID user id', { userId: 'not-a-uuid' }],
+    ])(
+      'returns null for %s signed with the session key',
+      async (_name, payload) => {
+        const req = { cookies: { 'plumber.sid': signToken(payload) } } as any
+        mocks.redisExists.mockResolvedValueOnce(0)
+
+        await expect(getLoggedInUser(req)).resolves.toBeNull()
+        expect(mocks.findById).not.toHaveBeenCalled()
+      },
+    )
+
     it('returns null when the user no longer exists', async () => {
-      const token = signToken({ userId: 'user-1' })
+      const token = signToken({ userId: USER_ID })
       const req = { cookies: { 'plumber.sid': token } } as any
       mocks.redisExists.mockResolvedValueOnce(0)
       mocks.findById.mockResolvedValueOnce(undefined)
@@ -421,7 +460,7 @@ describe('Auth helpers', () => {
     })
 
     it('propagates a failed user lookup', async () => {
-      const token = signToken({ userId: 'user-1' })
+      const token = signToken({ userId: USER_ID })
       const req = { cookies: { 'plumber.sid': token } } as any
       const error = new Error('Database unavailable')
       mocks.redisExists.mockResolvedValueOnce(0)
@@ -431,7 +470,7 @@ describe('Auth helpers', () => {
     })
 
     it('returns null for a token revoked by a prior logout', async () => {
-      const token = signToken({ userId: 'user-1' })
+      const token = signToken({ userId: USER_ID })
       const req = { cookies: { 'plumber.sid': token } } as any
       mocks.redisExists.mockResolvedValueOnce(1)
 
@@ -447,14 +486,14 @@ describe('Auth helpers', () => {
     })
 
     it('fails open and logs when the denylist lookup errors', async () => {
-      const token = signToken({ userId: 'user-1' })
+      const token = signToken({ userId: USER_ID })
       const req = { cookies: { 'plumber.sid': token } } as any
       mocks.redisExists.mockRejectedValueOnce(new Error('redis down'))
-      mocks.findById.mockResolvedValueOnce({ id: 'user-1' })
+      mocks.findById.mockResolvedValueOnce({ id: USER_ID })
 
       const result = await getLoggedInUser(req)
 
-      expect(result).toEqual({ id: 'user-1' })
+      expect(result).toEqual({ id: USER_ID })
       expect(mocks.loggerError).toHaveBeenCalledWith(
         'Failed to check auth token denylist',
         expect.objectContaining({

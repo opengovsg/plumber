@@ -2,6 +2,7 @@ import validator from 'email-validator'
 import { Router } from 'express'
 import { z } from 'zod'
 
+import { forwardAsyncErrors } from '@/helpers/forward-async-errors'
 import logger from '@/helpers/logger'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
@@ -53,30 +54,33 @@ router.use((req, res, next) => {
  * Whitelists one or more emails from the suppression list.
  * Requires x-plumber-admin-token header.
  */
-router.post('/email-suppression/whitelist', async (req, res) => {
-  const result = whitelistRequestSchema.safeParse(req.body)
-  if (!result.success) {
-    res.status(400).json({
-      error: 'Invalid request body',
-      details: result.error.issues,
+router.post(
+  '/email-suppression/whitelist',
+  forwardAsyncErrors(async (req, res) => {
+    const result = whitelistRequestSchema.safeParse(req.body)
+    if (!result.success) {
+      res.status(400).json({
+        error: 'Invalid request body',
+        details: result.error.issues,
+      })
+      return
+    }
+
+    const { emails } = result.data
+    const whitelisted = await EmailSuppressionEntry.whitelistEmails(emails)
+
+    logger.info('Admin whitelisted emails from suppression list', {
+      event: 'admin-email-suppression-whitelist',
+      adminEmail: req.context?.currentUser?.email ?? 'unknown',
+      requested: emails,
+      whitelisted,
     })
-    return
-  }
 
-  const { emails } = result.data
-  const whitelisted = await EmailSuppressionEntry.whitelistEmails(emails)
-
-  logger.info('Admin whitelisted emails from suppression list', {
-    event: 'admin-email-suppression-whitelist',
-    adminEmail: req.context?.currentUser?.email ?? 'unknown',
-    requested: emails,
-    whitelisted,
-  })
-
-  res.json({
-    whitelisted,
-    count: whitelisted.length,
-  })
-})
+    res.json({
+      whitelisted,
+      count: whitelisted.length,
+    })
+  }),
+)
 
 export default router

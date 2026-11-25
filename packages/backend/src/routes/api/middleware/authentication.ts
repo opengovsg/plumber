@@ -1,25 +1,24 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import { setCurrentUserContext as setGraphQLContext } from '@/helpers/authentication'
+import { forwardAsyncErrors } from '@/helpers/forward-async-errors'
 import type Context from '@/types/express/context'
 
 /**
  * Middleware to set the current user context on the request object.
  * This reuses the same authentication logic as GraphQL mutations.
  */
-export async function setCurrentUserContext(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  // Reuse the GraphQL context creation logic
-  const context = await setGraphQLContext({ req, res })
+export const setCurrentUserContext = forwardAsyncErrors(
+  async (req, res, next) => {
+    // Reuse the GraphQL context creation logic
+    const context = await setGraphQLContext({ req, res })
 
-  // Attach context to the request object
-  req.context = context
+    // Attach context to the request object
+    req.context = context
 
-  next()
-}
+    next()
+  },
+)
 
 /**
  * Middleware to ensure the user is authenticated before allowing the request to proceed.

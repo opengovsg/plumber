@@ -17,6 +17,7 @@ import InvalidTileViewTokenError from '@/errors/invalid-tile-view-password'
 import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
+import { forwardAsyncErrors } from '@/helpers/forward-async-errors'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import type { UnauthenticatedContext } from '@/types/express/context'
@@ -154,14 +155,14 @@ export const server = new ApolloServer<UnauthenticatedContext>({
 
 let graphqlInstance: RequestHandler | undefined
 
-const graphqlRouteHandler: RequestHandler = async (...args) => {
+const graphqlRouteHandler = forwardAsyncErrors(async (req, res, next) => {
   if (!graphqlInstance) {
     await server.start()
     graphqlInstance = expressMiddleware<UnauthenticatedContext>(server, {
       context: setCurrentUserContext,
     })
   }
-  return graphqlInstance(...args)
-}
+  return graphqlInstance(req, res, next)
+})
 
 export default graphqlRouteHandler

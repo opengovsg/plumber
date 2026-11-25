@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
+import { forwardAsyncErrors } from '@/helpers/forward-async-errors'
 import { listConnectionsService } from '@/services/mcp/list-connections'
 
 import { getAuthenticatedContext } from './middleware/authentication'
@@ -11,27 +12,30 @@ const querySchema = z.object({
   appKey: z.string().min(1),
 })
 
-router.get('/', async (req, res) => {
-  const user = getAuthenticatedContext(req).currentUser
+router.get(
+  '/',
+  forwardAsyncErrors(async (req, res) => {
+    const user = getAuthenticatedContext(req).currentUser
 
-  const parsed = querySchema.safeParse(req.query)
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: 'Invalid request', details: parsed.error.issues })
-    return
-  }
+    const parsed = querySchema.safeParse(req.query)
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid request', details: parsed.error.issues })
+      return
+    }
 
-  const { appKey } = parsed.data
+    const { appKey } = parsed.data
 
-  try {
-    const connections = await listConnectionsService(user, appKey)
-    res.json({
-      data: connections.map((c) => ({ name: c.label, value: c.id })),
-    })
-  } catch {
-    res.status(500).json({ error: 'Internal server error' })
-  }
-})
+    try {
+      const connections = await listConnectionsService(user, appKey)
+      res.json({
+        data: connections.map((c) => ({ name: c.label, value: c.id })),
+      })
+    } catch {
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  }),
+)
 
 export default router
