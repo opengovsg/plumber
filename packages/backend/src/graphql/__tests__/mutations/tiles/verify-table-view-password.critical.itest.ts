@@ -3,6 +3,8 @@
  *
  * 1. "A viewer who has exhausted the allowance of guesses is refused even when
  *    the password is correct."
+ * 2. "All attempts against one Tile from one client share a single counter,
+ *    however the id is written."
  *
  * The attempt is counted before the password is compared, so a correct guess
  * cannot buy its way out of an exhausted allowance.
@@ -60,5 +62,43 @@ describe('verify table view password lockout', () => {
         context,
       ),
     ).rejects.toThrow(RateLimitedError)
+  })
+
+  it('charges every spelling of the table id to one allowance', async () => {
+    const context = generateViewOnlyContext({
+      viewOnlyKey,
+      clientIp: '10.1.0.2',
+    })
+    const spellings = [
+      table.id,
+      table.id.toUpperCase(),
+      `{${table.id}}`,
+      table.id.replaceAll('-', ''),
+    ]
+
+    for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
+      await expect(
+        verifyTableViewPassword(
+          {},
+          {
+            input: {
+              tableId: spellings[i % spellings.length],
+              password: `wrong-${i}`,
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrow(ForbiddenError)
+    }
+
+    for (const tableId of spellings) {
+      await expect(
+        verifyTableViewPassword(
+          {},
+          { input: { tableId, password: VIEW_PASSWORD } },
+          context,
+        ),
+      ).rejects.toThrow(RateLimitedError)
+    }
   })
 })

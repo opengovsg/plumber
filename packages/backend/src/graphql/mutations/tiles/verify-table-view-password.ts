@@ -26,7 +26,9 @@ const verifyTableViewPassword: NonNullable<
   }
 
   const clientIp = getClientIp(context.req)
-  await consumeTilePasswordAttempt(tableId, clientIp)
+  // Postgres accepts many spellings of one uuid. Keying on the raw tableId would
+  // give each spelling its own allowance.
+  await consumeTilePasswordAttempt(table.id, clientIp)
 
   if (
     // If shareable link view key is not provided
@@ -46,7 +48,7 @@ const verifyTableViewPassword: NonNullable<
     throw new ForbiddenError('Invalid password')
   }
 
-  await clearTilePasswordAttempts(tableId, clientIp)
+  await clearTilePasswordAttempts(table.id, clientIp)
 
   const token = generateViewToken(
     table.id,
