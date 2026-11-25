@@ -72,6 +72,7 @@ Use your tool's browser, e.g. Orca's built-in browser, chrome-devtools MCP or Pl
 - Capture the action and the resulting state, not only the final screen.
 - For UI, save an accessibility snapshot and a screenshot.
 - For a change that saves data, reload the page and show the saved value.
+- For a PR that changes the UI, record the evidence and share it on the PR. Follow [Share UI evidence on a PR](./pr-evidence.md).
 
 ## 6. Clean up
 
