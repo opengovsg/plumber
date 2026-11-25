@@ -88,7 +88,7 @@ biometric prompt that an agent cannot answer.
 - **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend run lint:fix`; frontend-only → `pnpm --filter frontend run lint:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it. For user-facing features, also offer `setup-feature-metrics` to set up PostHog success metrics.
 - **Commit messages**: keep the full message under 300 characters.
-- **PR evidence**: when opening or updating a PR that changes the UI, record screenshots and videos and link them on the PR. Follow [docs/agents/pr-evidence.md](docs/agents/pr-evidence.md). Never commit the media.
+- **PR evidence**: when opening or updating a PR that changes the UI, record screenshots and videos and post them on the PR. Follow [docs/agents/pr-evidence.md](docs/agents/pr-evidence.md). Never commit the media.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.
   - **Branch name prefixes**: `feat/<…>` for features, `fix/<…>` for bugfixes, `chore/<…>` for everything else.
   - **Before `gt submit`** (do both, in this order):
@@ -124,7 +124,7 @@ There are two kinds of skills, distinguished by whether they are listed in the s
 - **Upstream skills** — listed in `skills-lock.json`, installed via `skills add <repo> --skill <name> --agent claude-code -y`. Do **not** edit their files (`SKILL.md`, etc.); upstream updates may be merged later and would clobber local changes. Per-repo overrides to their behavior go in the "Skill overrides" section below (or in the relevant `rules/*.md` for package-scoped ones).
 - **Plumber-specific skills** — anything in `.claude/skills/` that is **not** in `skills-lock.json`. These are authored in-repo and are freely editable. Create one with `skills init <name>` from the directory whose `.claude/skills/` should host it (repo root for cross-cutting skills, package root for package-scoped ones).
 
-In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat). `setup-feature-metrics`: set up a feature's rollout, success metrics, dashboard and alerts in PostHog after the author approves a plan. `write-dogfooding-doc`: write a Notion dogfooding doc from a set of changes, with personas and a scenario plan the developer approves. `share-pr-evidence`: publish a PR's UI screenshots and videos as a private page and link it from the PR.
+In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat). `setup-feature-metrics`: set up a feature's rollout, success metrics, dashboard and alerts in PostHog after the author approves a plan. `write-dogfooding-doc`: write a Notion dogfooding doc from a set of changes, with personas and a scenario plan the developer approves. `share-pr-evidence`: post a PR's UI screenshots and videos on the PR, with a private page as the fallback.
 
 In-repo skill `langfuse-prompts`: draft, test and push AI Builder prompt versions through the private `plumber-prompts` repo. See [tools/langfuse/PROMPTS.md](tools/langfuse/PROMPTS.md).
 

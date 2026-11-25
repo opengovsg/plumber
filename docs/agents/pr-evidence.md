@@ -1,6 +1,6 @@
 # Share UI evidence on a PR
 
-Record browser evidence for a PR that changes what users see. Then link it on the PR, so reviewers can check the change without running it.
+Record browser evidence for a PR that changes what users see. Then post it on the PR, so reviewers can check the change without running it.
 
 Any agent can follow these steps. Start the app and log in with [Drive the Plumber UI](./drive-ui.md) first.
 
@@ -8,19 +8,39 @@ Any agent can follow these steps. Start the app and log in with [Drive the Plumb
 
 - Record evidence when the PR changes a page, dialog, form or other UI a user reaches.
 - Skip it for backend-only, docs-only and test-only PRs. Name the tests in the PR instead.
-- Record again after a push that changes the recorded behavior. Update the existing comment and page in place, and name the latest tested commit.
+- Record again after a push that changes the recorded behavior. See [Keep it current](#5-keep-it-current).
 
-## 1. Plan the scenarios
+## 1. Check that you can post
 
-Write one scenario per behavior the PR claims. Take them from the PR description, its test plan and its review threads. For each scenario, note:
+Check this before you record, so a slow capture is never wasted.
 
-- the entry point, e.g. Pipes page, then `+`, then "Use a template"
-- the expected result
-- any setup it needs, e.g. a published pipe or a second user
+```sh
+gh --version
+gh api repos/opengovsg/plumber --jq .permissions.push
+```
 
-Include the regression paths the PR touches, not only the new feature. List each scenario you cannot reach, with the reason.
+- **gh 2.99.0 or later, and `true`**: post with `gh pr comment --attach`. GitHub hosts the media and plays videos inline.
+- **Otherwise, in Claude Code**: follow the `share-pr-evidence` skill. It publishes a private page with the media and links it from the PR.
+- **Otherwise**: hand the files and the comment text to the user. The user drags the files into the PR comment on github.com.
 
-## 2. Record
+## 2. Plan the scenarios
+
+Take one scenario per behavior the PR claims, from its description, test plan, review threads and diff. Write them as a table:
+
+| Scenario | Entry point    | Action                                                | Expected result                             | Media                 |
+| -------- | -------------- | ----------------------------------------------------- | ------------------------------------------- | --------------------- |
+| Discard  | Editor, step 2 | Edit the subject, open step 1, choose Discard changes | Step 1 opens. Step 2 keeps the old subject. | Video + 2 screenshots |
+
+- Cover the empty, error, loading and slow states the PR touches.
+- Cover the regression paths, not only the new feature.
+- For a visual change, add a **before** capture from the base branch. Run it in a second worktree with the same scenario and file names.
+- List each scenario you cannot reach, with the reason.
+
+Show the table to the user and wait for approval before you record.
+
+## 3. Record
+
+Recordings and screenshots are the evidence. Get them right before anything else.
 
 Use your tool's browser if it can record video. Otherwise write a Playwright script.
 
@@ -34,49 +54,94 @@ import { chromium } from '@playwright/test'
 const browser = await chromium.launch()
 const context = await browser.newContext({
   viewport: { width: 1280, height: 800 },
-  deviceScaleFactor: 2,
   recordVideo: { dir: 'tmp/qa/video', size: { width: 1280, height: 800 } },
 })
 const page = await context.newPage()
+const consoleErrors = []
+page.on('console', (message) => {
+  if (message.type() === 'error') consoleErrors.push(message.text())
+})
 // Drive one scenario. Screenshot each action and its result.
 await page.screenshot({ path: 'tmp/qa/2667-discard-1-dialog.png' })
 await context.close() // Playwright writes the video on close.
 await page.video().saveAs('tmp/qa/2667-discard.webm')
 await browser.close()
+console.log({ consoleErrors })
 ```
 
-- Record one video per scenario, so each one shows a single behavior.
-- Take a screenshot of the action and one of the result.
-- Name files `<pr>-<scenario>-<step>.<ext>`, e.g. `2667-discard-1-dialog.png`.
-- For a change that saves data, reload the page and capture the saved value.
-- To show a pending state, delay the request with `page.route`. For example, hold the `UpdateStep` mutation for 4 seconds, then try Esc and an outside click.
-- Check what was saved by reading the local database, e.g. `docker exec backend-postgres-1 psql -U postgres -d plumber_dev`. Put the result in the PR comment.
+### Choose the media
 
-## 3. Keep the files out of git
+- **Video**: for interactive or timing behavior, e.g. a dialog flow, a pending state or a redirect. Record one video per scenario.
+- **Screenshot**: for a static change, e.g. copy, layout or a style. Take one of the action and one of the result.
+- Attach `.webm`, not GIF. GitHub plays `.webm` inline, and reviewers can scrub it.
+
+### Rules for every capture
+
+- Keep the same 1280 × 800 viewport for every capture, including the before capture.
+- Name files `<pr>-<scenario>-<step>.<ext>`, e.g. `2667-discard-1-dialog.png`. A before capture adds `-before`.
+- Start each scenario from a known state. Use a new test user or reset the data it changes.
+- For a change that saves data, reload the page and capture the saved value.
+- Prove the outcome outside the screen too. For example, read the saved row with `docker exec backend-postgres-1 psql -U postgres -d plumber_dev`.
+- To show a pending state, delay the request with `page.route`. For example, hold the `UpdateStep` mutation for 4 seconds, then try Esc and an outside click.
+- Record console errors per scenario. Report any you find.
+
+### Good to have
+
+- Pace actions for a human viewer. Type with `locator.pressSequentially()` and pause about a second between actions.
+- Recent Playwright versions can overlay each action on the video. See `recordVideo` in the Playwright docs.
+- Trim the blank first frame if your tool can.
+
+## 4. Keep the files private and out of git
 
 - Save all media under `tmp/qa/`. Git ignores `tmp/`.
 - Never commit screenshots or videos, and never push them to a branch or a release.
 - Before you commit anything else, run `git status` and confirm it lists no media.
+- This repository is public, so media attached to its PRs is public. Record only test users and made-up data.
+- Never upload a Playwright trace. A trace holds page contents and network bodies. Keep it under `tmp/` for local debugging.
 
-## 4. Share it on the PR
+## 5. Post the comment
 
-Post one PR comment with the following. On a re-run, edit that comment instead of adding a new one.
+Post one comment. Start it with the marker line, so later runs can find it.
 
-- a link to the media, or the files attached to the comment
-- the commit the recordings used
-- one line per scenario saying what it shows
-- every scenario you did not cover, with the reason
+```md
+<!-- pr-evidence -->
 
-How you attach the media depends on your tool:
+**UI evidence** for `<tested commit>` (base `<base commit>`). Local `dev:sample-env`, Chromium, 1280 × 800.
 
-- **Claude Code**: follow the `share-pr-evidence` skill. It publishes a private page with the media and links it from the PR.
-- **Other agents**: GitHub's API cannot upload comment attachments. Give the user the file paths and the comment text. The user drags the files into the PR comment on github.com.
+| Scenario | Expected result                             | Status |
+| -------- | ------------------------------------------- | ------ |
+| Discard  | Step 1 opens. Step 2 keeps the old subject. | Pass   |
 
-Never paste media into a public host. Recordings can show pipe names, emails and form data.
+**Discard.** Choose Discard changes. The edit is dropped, and step 1 opens.
+![Discard dialog](./2667-discard-1-dialog.png)
+
+**Not covered**
+
+- Publish guard. Publish stays disabled, because FormSG cannot connect on placeholders.
+```
+
+- Put one or two sentences under each screenshot or video saying what to look at.
+- Keep media out of `<details>` blocks. Reviewers skip collapsed content.
+- Write the body to `tmp/qa/comment.md`, then post it:
+
+```sh
+gh pr comment <pr> --body-file tmp/qa/comment.md --attach tmp/qa/2667-discard.webm --attach tmp/qa/2667-discard-1-dialog.png
+```
+
+`gh` rewrites each local path in the body to the uploaded URL. Paths are relative to the body file's folder. It appends attached files the body does not reference.
+
+### Keep it current
+
+After a push that changes the recorded behavior, record the changed scenarios again and update the same comment:
+
+- If the evidence comment is still your newest comment on the PR, run the same command with `--edit-last`.
+- Otherwise, post a new comment with the marker. Then delete the old marker comment. Never delete first.
+- Update the tested commit in the header.
 
 ## Gotchas
 
 - Wait for `load`, not `networkidle`. The app keeps polling, so `networkidle` never fires.
+- Toasts close after a few seconds. Read their text in the script and report it. Do not rely on a screenshot catching one.
 - `dev:sample-env` cannot reach FormSG, Postman, M365, Databricks, sgID, SSO or the AI services. Report those scenarios as not covered. Do not fake them.
 - A pipe cannot be published on placeholders, because its FormSG trigger cannot connect. To test a published pipe, set `flows.active` to `true` in the local database. Also set its steps' `status` to `completed`, as a real published pipe has.
 - A fresh user sees an announcement dialog. Close it before the first scenario.
