@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest'
 
 import StepError from '@/errors/step'
 
+import {
+  MAX_CONDITION_GROUPS,
+  MAX_ROWS_PER_CONDITION_GROUP,
+} from '../../common/condition-group-limits'
 import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
 
 function row(overrides: Partial<IConditionRow>): IConditionRow {
@@ -74,6 +78,27 @@ describe('evaluateConditionGroups', () => {
     expect(() =>
       evaluateConditionGroups([failingGroup, malformedGroup]),
     ).toThrow(/condition group 2/)
+  })
+
+  it('evaluates 100 contains rows on adversarial 1 MB operands in bounded time', () => {
+    const field = 'a'.repeat(1_000_000)
+    const text = 'a'.repeat(10) + 'b' + 'a'.repeat(500_000)
+    // Each group's last row fails, so every row of every group runs.
+    const groups = Array.from({ length: MAX_CONDITION_GROUPS }, () =>
+      group(
+        ...Array.from({ length: MAX_ROWS_PER_CONDITION_GROUP - 1 }, () =>
+          row({ field, is: 'not', condition: 'contains', text }),
+        ),
+        row({ field, is: 'is', condition: 'contains', text }),
+      ),
+    )
+
+    const start = performance.now()
+    const result = evaluateConditionGroups(groups)
+    const elapsedMs = performance.now() - start
+
+    expect(result).toBe(false)
+    expect(elapsedMs).toBeLessThan(5_000)
   })
 
   function catchStepError(groups: IMultiRowGroup<IConditionRow>[]): StepError {
