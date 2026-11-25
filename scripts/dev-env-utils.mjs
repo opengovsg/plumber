@@ -53,6 +53,7 @@ const WORKTREE_PORT_SLOTS = 1700
 
 // The OS frees a listening port when its process dies, so a crash can't leave a stale lock.
 const WORKTREE_PORT_LOCK = WORKTREE_PORT_START - 1
+export const DEV_SERVICES_LOCK = WORKTREE_PORT_START - 2
 const WORKTREE_PORT_FILE = 'plumber-port'
 
 // Connects instead of test-listening, because SO_REUSEADDR lets a test listen succeed on a held port.
@@ -105,19 +106,20 @@ function readPortFile(gitDir) {
   }
 }
 
-async function lockPortAllocation() {
-  const deadline = Date.now() + 10_000
+// Holds a machine-wide lock by listening on a loopback port.
+export async function acquireLock(port, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs
   for (;;) {
     const server = createServer()
     try {
       await new Promise((resolve, reject) => {
         server.once('error', reject)
-        server.listen(WORKTREE_PORT_LOCK, '127.0.0.1', resolve)
+        server.listen(port, '127.0.0.1', resolve)
       })
       return server
     } catch (error) {
       if (error.code !== 'EADDRINUSE' || Date.now() > deadline) {
-        fail(`cannot lock port ${WORKTREE_PORT_LOCK}. ${error.message}`)
+        fail(`cannot lock port ${port}. ${error.message}`)
       }
       await sleep(100)
     }
@@ -156,7 +158,7 @@ export async function getWorktreePorts() {
 
   let base = readPortFile(gitDir)
   if (!base) {
-    const lock = await lockPortAllocation()
+    const lock = await acquireLock(WORKTREE_PORT_LOCK)
     try {
       // Another run in this worktree may have allocated while we waited for the lock.
       base = readPortFile(gitDir) ?? (await allocatePorts(gitDir))
