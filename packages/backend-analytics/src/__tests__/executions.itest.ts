@@ -29,6 +29,8 @@ interface RunFixture {
   attempts: [string, 'success' | 'failure' | null, string, number?][]
   // Rows saved before execution_steps had these columns.
   withoutAppKey?: boolean
+  // The kind on each failed attempt. Errors saved before 27 Oct 2026 have none.
+  errorKind?: string
 }
 
 let runNumber = 0
@@ -112,6 +114,7 @@ const RUNS = {
     id: runId(),
     createdAt: '2026-11-10T07:00:00',
     status: 'failure',
+    errorKind: 'config',
     attempts: [
       [STEP_1, 'failure', '2026-11-10T07:00:01'],
       [STEP_1, 'failure', '2026-11-14T07:00:01'],
@@ -137,6 +140,12 @@ const RUNS = {
     createdAt: '2026-09-01T10:00:00',
     status: null,
     attempts: [[STEP_1, 'success', '2026-09-01T10:00:01']],
+  },
+  waitingSinceAugust: {
+    id: runId(),
+    createdAt: '2026-08-01T10:00:00',
+    status: null,
+    attempts: [[STEP_1, 'success', '2026-08-01T10:00:01']],
   },
 } satisfies Record<string, RunFixture>
 
@@ -205,6 +214,13 @@ describe('execution tables against the migrated schema', () => {
           app_key: run.withoutAppKey ? null : 'postman',
           key: run.withoutAppKey ? null : 'sendTransactionalEmail',
           metadata: iteration === undefined ? {} : { iteration },
+          error_details:
+            status === 'failure'
+              ? {
+                  name: 'StepError',
+                  ...(run.errorKind && { kind: run.errorKind }),
+                }
+              : null,
           created_at: sgt(at),
         })),
       ),
@@ -332,9 +348,10 @@ describe('execution tables against the migrated schema', () => {
   it('counts each step attempt on the day it ran, marking retried attempts', async () => {
     const rows = await fetchExecutionStepDaily(db, final(DAY))
     const summary = sorted(
-      rows.map(({ step_id, status, retried, test_run, count }) => ({
+      rows.map(({ step_id, status, error_kind, retried, test_run, count }) => ({
         step_id,
         status,
+        error_kind,
         retried,
         test_run,
         count,
@@ -346,21 +363,33 @@ describe('execution tables against the migrated schema', () => {
         {
           step_id: STEP_1,
           status: 'failure',
+          error_kind: null,
           retried: true,
           test_run: false,
           count: 2,
         },
-        // The run retried after as_of, and the one that failed twice.
+        // The run retried after as_of, whose error has no kind.
         {
           step_id: STEP_1,
           status: 'failure',
+          error_kind: null,
           retried: false,
           test_run: false,
-          count: 2,
+          count: 1,
+        },
+        // The run that failed twice on a configuration error.
+        {
+          step_id: STEP_1,
+          status: 'failure',
+          error_kind: 'config',
+          retried: false,
+          test_run: false,
+          count: 1,
         },
         {
           step_id: STEP_1,
           status: 'success',
+          error_kind: null,
           retried: false,
           test_run: false,
           count: 5,
@@ -368,6 +397,7 @@ describe('execution tables against the migrated schema', () => {
         {
           step_id: STEP_1,
           status: 'success',
+          error_kind: null,
           retried: false,
           test_run: true,
           count: 2,
@@ -376,6 +406,7 @@ describe('execution tables against the migrated schema', () => {
         {
           step_id: STEP_2,
           status: 'failure',
+          error_kind: null,
           retried: false,
           test_run: false,
           count: 1,
@@ -385,6 +416,7 @@ describe('execution tables against the migrated schema', () => {
         {
           step_id: STEP_2,
           status: 'success',
+          error_kind: null,
           retried: false,
           test_run: false,
           count: 3,
@@ -416,6 +448,7 @@ describe('execution tables against the migrated schema', () => {
       sorted([
         { ...openRun, age_bucket: '1d-7d' },
         { ...openRun, age_bucket: '30d-90d' },
+        { ...openRun, age_bucket: '>90d' },
       ]),
     )
   })

@@ -113,13 +113,13 @@ The mutation log run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`
 
 ## Execution tables
 
-The nightly run does not write these tables yet. The execution tables count runs and step attempts. They hold no `data_in`, `data_out` or `error_details`. Each row lands on the Singapore day its event happened, because a run can wait for days or months on a Delay or a FormSG MRF step. Each step is saved when it runs, so its row carries that day.
+The nightly run does not write these tables yet. The execution tables count runs and step attempts. They hold no `data_in` or `data_out`. From `error_details` they keep only the error kind. Each row lands on the Singapore day its event happened, because a run can wait for days or months on a Delay or a FormSG MRF step. Each step is saved when it runs, so its row carries that day.
 
-| Table                  | Columns                                                                                                         |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `execution_daily`      | `day`, `start_day`, `event`, `flow_id`, `owner_user_id`, `test_run`, `duration_bucket`, `count`                 |
-| `execution_step_daily` | `day`, `flow_id`, `step_id`, `owner_user_id`, `app_key`, `action_key`, `test_run`, `status`, `retried`, `count` |
-| `execution_inflight`   | `day`, `flow_id`, `owner_user_id`, `last_app_key`, `last_action_key`, `last_step_status`, `age_bucket`, `count` |
+| Table                  | Columns                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `execution_daily`      | `day`, `start_day`, `event`, `flow_id`, `owner_user_id`, `test_run`, `duration_bucket`, `count`                               |
+| `execution_step_daily` | `day`, `flow_id`, `step_id`, `owner_user_id`, `app_key`, `action_key`, `test_run`, `status`, `error_kind`, `retried`, `count` |
+| `execution_inflight`   | `day`, `flow_id`, `owner_user_id`, `last_app_key`, `last_action_key`, `last_step_status`, `age_bucket`, `count`               |
 
 `execution_daily` events:
 
@@ -129,7 +129,7 @@ The nightly run does not write these tables yet. The execution tables count runs
 - A run has failed while some failure attempt has no later attempt of the same step and for-each iteration. Other iterations keep saving rows after one fails, so the run's last row alone does not tell.
 - Runs still open for a `start_day` are its `started` count minus its finished rows. Archival deletes open runs only for deleted pipes and old test runs, so count open runs on pipes whose `flow_stage.deleted_at` is null.
 
-`execution_step_daily` counts every attempt, including each automatic retry. `retried` is true when another attempt of the same step, in the same for-each iteration, followed before the file was written. Rows saved before `execution_steps` had `app_key` (March 2023) or `key` (June 2025) take the step's current app-action.
+`execution_step_daily` counts every attempt, including each automatic retry. `retried` is true when another attempt of the same step, in the same for-each iteration, followed before the file was written. `error_kind` is a failed attempt's `config`, `third-party` or `internal`. It is empty for errors saved before 27 Oct 2026, which have no kind. Rows saved before `execution_steps` had `app_key` (March 2023) or `key` (June 2025) take the step's current app-action.
 
 `execution_inflight` snapshots the open real runs at export time, about 01:00, grouped by the last step that ran and by age. Its `day` is the day before. Open runs can only be read as they are now, so a missed night stays missing. Its coverage log reports only last night, so one missed night does not alert for 30 days.
 

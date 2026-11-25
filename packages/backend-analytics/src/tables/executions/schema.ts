@@ -31,6 +31,7 @@ export const executionStepDailyRowSchema = z.object({
   action_key: z.string().nullable(),
   test_run: z.boolean(),
   status: z.string().nullable(),
+  error_kind: z.string().nullable(),
   retried: z.boolean(),
   count: countSchema,
 })
@@ -68,6 +69,7 @@ export const EXECUTION_STEP_DAILY_COLUMNS: ParquetColumns<ExecutionStepDailyRow>
     action_key: 'STRING',
     test_run: 'BOOLEAN',
     status: 'STRING',
+    error_kind: 'STRING',
     retried: 'BOOLEAN',
     count: 'INT64',
   }

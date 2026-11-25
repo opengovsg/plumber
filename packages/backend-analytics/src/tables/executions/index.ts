@@ -54,7 +54,8 @@ const DAY_RUNS_CTE = `day_runs AS (
 // A per-run lookup keeps each read on the execution_id index, however many runs the day has.
 const runAttemptsSql = (from: string) => `day_runs d
   CROSS JOIN LATERAL (
-    SELECT es.id, es.step_id, es.metadata ->> 'iteration' AS iteration, es.status, es.created_at, es.app_key, es.key
+    SELECT es.id, es.step_id, es.metadata ->> 'iteration' AS iteration, es.status, es.created_at, es.app_key, es.key,
+      es.error_details ->> 'kind' AS error_kind
     FROM execution_steps es
     WHERE es.execution_id = d.execution_id AND es.created_at >= ${from} AND es.created_at < :as_of
   ) a`
@@ -154,6 +155,7 @@ attempts AS (
     a.app_key,
     a.key,
     a.status,
+    a.error_kind,
     a.created_at,
     lead(a.created_at) OVER (PARTITION BY d.execution_id, a.step_id, a.iteration ORDER BY a.created_at, a.id) AS next_attempt_at
   FROM ${runAttemptsSql(':start')}
@@ -166,6 +168,8 @@ SELECT
   coalesce(a.key, s.key) AS action_key,
   e.test_run,
   a.status,
+  -- Errors saved before 27 Oct 2026 have no kind.
+  CASE WHEN a.status = 'failure' THEN a.error_kind END AS error_kind,
   a.next_attempt_at IS NOT NULL AS retried,
   count(*) AS count
 FROM attempts a
@@ -173,7 +177,7 @@ JOIN executions e ON e.id = a.execution_id
 LEFT JOIN flows f ON f.id = e.flow_id
 LEFT JOIN steps s ON s.id = a.step_id
 WHERE a.created_at < :end
-GROUP BY 1, 2, 3, 4, 5, 6, 7, 8`
+GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9`
 
 // IMPORTANT: executions has no index on status, so this scans the table once a night on the reader.
 // Test runs never get a status, so they would pile up here as open forever.
