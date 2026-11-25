@@ -244,7 +244,7 @@ OUT="$(mktemp -d)"
 pnpm --filter backend-archive run analytics:mutation-log-local --from 2026-11-05 --out "$OUT"
 ```
 
-Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB.
+Logs Insights bills about $0.0076 per GB scanned. One day of the server log is about 0.4 GB. Each day logs `analytics.mutation_log.day.scanned` as soon as its queries return, before any lookup or upload. It carries `bytesScanned`, summed over every query that day ran, split windows included, and `queries`, the number of those queries. `bytesScanned` is null when any query returned no statistics. A query still running when its poll times out or is aborted is stopped with `StopQuery`.
 
 ## Counting archived steps by app and action
 

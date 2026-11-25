@@ -2,6 +2,10 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import {
+  GetQueryResultsCommand,
+  StartQueryCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
 import type { S3Client } from '@aws-sdk/client-s3'
 import { parquetMetadata, parquetReadObjects } from 'hyparquet'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -9,14 +13,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { localDirCompletionStore } from '../../completion-stores'
 import { loadJobState, readJobState } from '../../day-completion'
 import { localDirSink } from '../../export-silver-tables'
+import logger from '../../logger'
 import {
   exportMutationLog,
   exportMutationLogToDir,
+  logsInsightsFetcher,
   MUTATION_LOG_ROW_GROUP_SIZE,
   MUTATION_LOG_TABLE,
   sortForFlowSearch,
   writeMutationLogDays,
 } from '../export-mutation-log'
+import { MUTATION_LOG_QUERY } from '../fetch-mutation-lines'
 import type { MutationLogRow } from '../parse-mutation-line'
 
 vi.mock('../../logger')
@@ -55,6 +62,8 @@ describe('writeMutationLogDays', () => {
           },
         ],
         mcpToolLines: [],
+        queries: 0,
+        bytesScanned: 0,
       }),
       resolveUserIds: noUsers,
       resolveFlowIds,
@@ -98,6 +107,8 @@ describe('writeMutationLogDays', () => {
       fetchDayLines: async () => ({
         mutationLines: [],
         mcpToolLines: [{ timestamp: '2026-11-04 16:00:02.000', event }],
+        queries: 0,
+        bytesScanned: 0,
       }),
       resolveUserIds,
       state,
@@ -141,6 +152,8 @@ describe('writeMutationLogDays', () => {
         },
       ],
       mcpToolLines: [],
+      queries: 0,
+      bytesScanned: 0,
     }))
 
     await writeMutationLogDays({
@@ -201,11 +214,111 @@ describe('writeMutationLogDays', () => {
     ])
   })
 
+  function statsClient(mcpStatistics: { bytesScanned?: number }) {
+    return {
+      send: vi.fn(async (command: unknown) => {
+        if (command instanceof StartQueryCommand) {
+          return {
+            queryId:
+              command.input.queryString === MUTATION_LOG_QUERY
+                ? 'mutations'
+                : 'mcp',
+          }
+        }
+        if (command instanceof GetQueryResultsCommand) {
+          return {
+            status: 'Complete',
+            results: [],
+            statistics:
+              command.input.queryId === 'mutations'
+                ? { bytesScanned: 300 }
+                : mcpStatistics,
+          }
+        }
+        throw new Error('unexpected command')
+      }),
+    }
+  }
+
+  it("logs the bytes scanned and query count of both of the day's queries", async () => {
+    await writeMutationLogDays({
+      fetchDayLines: logsInsightsFetcher(
+        statsClient({ bytesScanned: 200 }) as never,
+        'server',
+      ),
+      resolveUserIds: noUsers,
+      resolveFlowIds: noFlows,
+      sink: async () => {},
+      days: ['2026-11-05'],
+      state,
+    })
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.mutation_log.day.scanned',
+        day: '2026-11-05',
+        queries: 2,
+        bytesScanned: 500,
+      }),
+    )
+  })
+
+  it('logs unknown bytes scanned when one query returns no statistics', async () => {
+    await writeMutationLogDays({
+      fetchDayLines: logsInsightsFetcher(statsClient({}) as never, 'server'),
+      resolveUserIds: noUsers,
+      resolveFlowIds: noFlows,
+      sink: async () => {},
+      days: ['2026-11-05'],
+      state,
+    })
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.mutation_log.day.scanned',
+        queries: 2,
+        bytesScanned: null,
+      }),
+    )
+  })
+
+  it('logs the scan even when the day fails to upload', async () => {
+    await expect(
+      writeMutationLogDays({
+        fetchDayLines: logsInsightsFetcher(
+          statsClient({ bytesScanned: 200 }) as never,
+          'server',
+        ),
+        resolveUserIds: noUsers,
+        resolveFlowIds: noFlows,
+        sink: async () => {
+          throw new Error('S3 unavailable')
+        },
+        days: ['2026-11-05'],
+        state,
+      }),
+    ).rejects.toThrow('1 day(s) failed')
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.mutation_log.day.scanned',
+        day: '2026-11-05',
+        queries: 2,
+        bytesScanned: 500,
+      }),
+    )
+  })
+
   it('marks a day done only after both files are written', async () => {
     const written: string[] = []
     const write = (failOn: string | null) =>
       writeMutationLogDays({
-        fetchDayLines: async () => ({ mutationLines: [], mcpToolLines: [] }),
+        fetchDayLines: async () => ({
+          mutationLines: [],
+          mcpToolLines: [],
+          queries: 0,
+          bytesScanned: 0,
+        }),
         resolveFlowIds: noFlows,
         resolveUserIds: noUsers,
         sink: async (key) => {
@@ -288,7 +401,12 @@ describe('the mutation log file layout', () => {
     }))
 
     await writeMutationLogDays({
-      fetchDayLines: async () => ({ mutationLines: lines, mcpToolLines: [] }),
+      fetchDayLines: async () => ({
+        mutationLines: lines,
+        mcpToolLines: [],
+        queries: 0,
+        bytesScanned: 0,
+      }),
       resolveUserIds: noUsers,
       resolveFlowIds: noFlows,
       sink: localDirSink(dir),
@@ -363,7 +481,12 @@ describe('exportMutationLogToDir', () => {
 
     await exportMutationLogToDir({
       dir,
-      fetchDayLines: async () => ({ mutationLines: [], mcpToolLines: [] }),
+      fetchDayLines: async () => ({
+        mutationLines: [],
+        mcpToolLines: [],
+        queries: 0,
+        bytesScanned: 0,
+      }),
       resolveFlowIds: noFlows,
       resolveUserIds: noUsers,
       days: ['2026-11-04', '2026-11-05'],

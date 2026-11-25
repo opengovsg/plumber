@@ -35,7 +35,12 @@ import {
   readActionCatalog,
   resourceParameters,
 } from '../tables/action-catalog'
-import { fetchMcpToolLines, fetchMutationLines } from './fetch-mutation-lines'
+import {
+  addScans,
+  fetchMcpToolLines,
+  fetchMutationLines,
+  type ScanStats,
+} from './fetch-mutation-lines'
 import {
   FLOW_EDIT_DAILY_COLUMNS,
   FLOW_EDIT_DAILY_TABLE,
@@ -93,7 +98,7 @@ export function sortForFlowSearch(rows: MutationLogRow[]): MutationLogRow[] {
 // 2 adds flow_edit_daily. 3 adds AI builder tool calls.
 export const MUTATION_LOG_VERSION = 3
 
-export interface DayLines {
+export interface DayLines extends ScanStats {
   mutationLines: MutationLogLine[]
   mcpToolLines: McpToolLine[]
 }
@@ -108,20 +113,25 @@ export function logsInsightsFetcher(
   logGroup: string,
   signal?: AbortSignal,
 ): FetchDayLines {
-  return async (window) => ({
-    mutationLines: await fetchMutationLines({
+  return async (window) => {
+    const mutations = await fetchMutationLines({
       client,
       logGroup,
       signal,
       ...window,
-    }),
-    mcpToolLines: await fetchMcpToolLines({
+    })
+    const mcpTools = await fetchMcpToolLines({
       client,
       logGroup,
       signal,
       ...window,
-    }),
-  })
+    })
+    return {
+      mutationLines: mutations.lines,
+      mcpToolLines: mcpTools.lines,
+      ...addScans(mutations, mcpTools),
+    }
+  }
 }
 
 // Maps lowercase emails to user ids. The AI builder's usage log names users by email.
@@ -217,9 +227,21 @@ export async function writeMutationLogDays({
     dayOf: (day) => day,
     write: async (day) => {
       const { start, end } = sgtDayWindow(day)
-      const { mutationLines: lines, mcpToolLines } = await fetchDayLines({
+      const {
+        mutationLines: lines,
+        mcpToolLines,
+        queries,
+        bytesScanned,
+      } = await fetchDayLines({
         startMs: start.getTime(),
         endMs: end.getTime(),
+      })
+      // Logged before any lookup or upload, since a later failure does not refund the scan.
+      logger.info({
+        event: 'analytics.mutation_log.day.scanned',
+        day,
+        queries,
+        bytesScanned,
       })
       const mcpToolCalls = mcpToolLines
         .map(parseMcpToolLine)
