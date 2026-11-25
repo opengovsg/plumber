@@ -86,6 +86,7 @@ type Mutation {
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
+  renameStep(input: RenameStepInput!): Step
   updateStepPositions(input: UpdateStepPositionsInput): Flow
   deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
@@ -741,6 +742,13 @@ input StepConfigInput {
   # (if-then V2 today, possibly for-each later). Only the if-then initializer
   # writes it, via updateStep.
   endStepId: String
+}
+
+# Renames work on published pipes, unlike updateStep.
+input RenameStepInput {
+  id: String!
+  flow: StepFlowInput!
+  stepName: String!
 }
 
 input UpdateStepInput {
