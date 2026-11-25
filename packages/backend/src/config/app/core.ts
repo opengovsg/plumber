@@ -1,10 +1,10 @@
 import '@/config/datetime'
-import './load-app-env'
 import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { posthogHost, posthogProjectToken } from '@plumber/shared'
 
+import appEnvConfig from './load-app-env'
 import { requireEnv } from './require-env'
 
 // Set from the latest release tag at image build. package.json versions are not bumped.
@@ -41,6 +41,7 @@ export type CoreConfig = {
     privateKey: string
   }
   launchDarklySdkKey: string
+  launchDarklyOffline: boolean
   maxJobAttempts: number
   onboardingEmailWebhookUrl: string
   tilesPostgres: {
@@ -156,6 +157,10 @@ const coreConfig: CoreConfig = {
     'LAUNCH_DARKLY_SDK_KEY',
     process.env.LAUNCH_DARKLY_SDK_KEY,
   ),
+  // The .env-example SDK key fails LD auth, which blocks every flag read, including login.
+  // IMPORTANT: deployed environments must never skip LD, so only development honours it.
+  launchDarklyOffline:
+    appEnvConfig.isDev && process.env.LAUNCH_DARKLY_OFFLINE === 'true',
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
   tilesPostgres: {

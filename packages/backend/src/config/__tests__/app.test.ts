@@ -82,3 +82,28 @@ describe('appConfig.ses', () => {
     })
   })
 })
+
+describe('appConfig.launchDarklyOffline', () => {
+  async function loadOffline(appEnv: string, offline: string | undefined) {
+    vi.stubEnv('APP_ENV', appEnv)
+    vi.stubEnv('LAUNCH_DARKLY_OFFLINE', offline)
+    vi.resetModules()
+    const { default: appConfig } = await import('@/config/app')
+    return appConfig.launchDarklyOffline
+  }
+
+  it('is on in development when the flag is true', async () => {
+    expect(await loadOffline('development', 'true')).toBe(true)
+  })
+
+  it('is off in development without the flag', async () => {
+    expect(await loadOffline('development', undefined)).toBe(false)
+  })
+
+  it.each(['prod', 'staging', 'uat', 'test'])(
+    'is off in %s even when the flag is true',
+    async (appEnv) => {
+      expect(await loadOffline(appEnv, 'true')).toBe(false)
+    },
+  )
+})
