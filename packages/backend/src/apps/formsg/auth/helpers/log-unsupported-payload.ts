@@ -4,6 +4,7 @@ export type UnsupportedPayloadReason =
   | 'unknown_answer_shape'
   | 'unparsable_date'
   | 'unknown_verified_key'
+  | 'later_step_verified_key'
 
 /**
  * Flags a FormSG payload shape Plumber cannot map, usually after an upstream
