@@ -1,2 +1,4 @@
 # Clone of the private plumber-prompts repo. See PROMPTS.md.
 prompts/
+# Exported sessions contain user data.
+data/
