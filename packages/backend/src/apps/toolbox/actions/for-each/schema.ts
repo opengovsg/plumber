@@ -5,6 +5,7 @@ import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 
 import {
   FOR_EACH_INPUT_SOURCE,
+  FOR_EACH_MAX_COLUMNS,
   FOR_EACH_MAX_ITERATIONS,
   FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
@@ -29,6 +30,15 @@ const tableSchema = z.object({
   columns: tableColumnsSchema,
   inputSource: z.enum(FOR_EACH_TABLE_SOURCES),
 })
+
+// Older FormSG table fields were stringified without inputSource.
+const stringifiedTableSchema = tableSchema.extend({
+  inputSource: tableSchema.shape.inputSource.default(
+    FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+  ),
+})
+
+export const TOO_MANY_COLUMNS_ISSUE = 'too-many-columns'
 
 const baseDataOutSchema = z.object({
   iterations: z.number(),
@@ -72,20 +82,12 @@ export const inputSchema = z
         iterations: items.length,
       }
     } else {
+      let table: z.infer<typeof tableSchema>
       try {
-        const items = typeof data === 'string' ? JSON.parse(data) : data
-        const rows = items.rows.slice(0, FOR_EACH_MAX_ITERATIONS)
-        return {
-          inputSource:
-            typeof data === 'string'
-              ? FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
-              : items.inputSource,
-          items: {
-            ...items,
-            rows,
-          },
-          iterations: rows.length,
-        }
+        table =
+          typeof data === 'string'
+            ? stringifiedTableSchema.parse(JSON.parse(data))
+            : data
       } catch {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -93,6 +95,30 @@ export const inputSchema = z
         })
         return z.NEVER
       }
+
+      if (table.columns.length > FOR_EACH_MAX_COLUMNS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Table cannot have more than ${FOR_EACH_MAX_COLUMNS} columns`,
+          params: { reason: TOO_MANY_COLUMNS_ISSUE },
+        })
+        return z.NEVER
+      }
+
+      const rows = table.rows.slice(0, FOR_EACH_MAX_ITERATIONS)
+      // Callers narrow items by inputSource at runtime.
+      const output: { inputSource: any; items: any; iterations: number } = {
+        inputSource:
+          typeof data === 'string'
+            ? FOR_EACH_INPUT_SOURCE.FORMSG_TABLE
+            : table.inputSource,
+        items: {
+          ...table,
+          rows,
+        },
+        iterations: rows.length,
+      }
+      return output
     }
   })
 

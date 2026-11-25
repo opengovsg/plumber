@@ -14,10 +14,11 @@ import Step from '@/models/step'
 import {
   FOR_EACH_INPUT_SOURCE,
   FOR_EACH_ITERATION_KEY,
+  FOR_EACH_MAX_COLUMNS,
   FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
 import getDataOutMetadata from './get-data-out-metadata'
-import { inputSchema, parameterSchema } from './schema'
+import { inputSchema, parameterSchema, TOO_MANY_COLUMNS_ISSUE } from './schema'
 
 const action: IRawAction = {
   name: 'Repeat for each item',
@@ -58,6 +59,18 @@ const action: IRawAction = {
     const parsedResult = inputSchema.safeParse({ data: rawItems, testRun })
 
     if (parsedResult.success === false) {
+      const hasTooManyColumns = parsedResult.error.issues.some(
+        (issue) =>
+          issue.code === 'custom' &&
+          issue.params?.reason === TOO_MANY_COLUMNS_ISSUE,
+      )
+      if (hasTooManyColumns) {
+        throw new StepError({
+          name: `Your table has more than ${FOR_EACH_MAX_COLUMNS} columns`,
+          solution: `Reduce the number of columns in your table to ${FOR_EACH_MAX_COLUMNS} or fewer.`,
+          kind: 'config',
+        })
+      }
       throw new StepError({
         name: 'Invalid input list',
         solution: 'Select a valid input list',

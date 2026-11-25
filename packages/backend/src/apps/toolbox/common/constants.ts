@@ -10,6 +10,8 @@ export enum FOR_EACH_INPUT_SOURCE {
 
 export const FOR_EACH_ITERATION_DELAY = 2000 // in ms
 export const FOR_EACH_MAX_ITERATIONS = 500
+// Bounds dataOut size, since each column writes up to two entries.
+export const FOR_EACH_MAX_COLUMNS = 500
 export const TOOLBOX_APP_KEY = 'toolbox'
 export enum TOOLBOX_ACTIONS {
   FOR_EACH = 'forEach',

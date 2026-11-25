@@ -13,6 +13,7 @@ import action from '../../../actions/for-each'
 import {
   FOR_EACH_INPUT_SOURCE,
   FOR_EACH_ITERATION_KEY,
+  FOR_EACH_MAX_COLUMNS,
 } from '../../../common/constants'
 
 const mocks = vi.hoisted(() => ({
@@ -361,7 +362,10 @@ describe('For each action', () => {
       mockedProcessItems.mockReturnValue(processedResult)
       const result = await action.run!($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
+      expect(mockedProcessItems).toHaveBeenCalledWith({
+        ...mockTableFieldData,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+      })
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
@@ -588,7 +592,10 @@ describe('For each action', () => {
       mockedProcessItems.mockReturnValue(processedResult)
       const result = await action.run!($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
+      expect(mockedProcessItems).toHaveBeenCalledWith({
+        ...mockTableFieldData,
+        inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+      })
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
@@ -632,6 +639,49 @@ describe('For each action', () => {
         await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
       },
     )
+
+    const tooManyColumns = Array.from(
+      { length: FOR_EACH_MAX_COLUMNS + 1 },
+      (_, i) => ({ id: `col${i}`, name: `Column ${i}`, value: `col${i}` }),
+    )
+
+    it.each([
+      {
+        description: 'table',
+        items: { ...VALID_TABLE_DATA, columns: tooManyColumns },
+      },
+      {
+        description: 'FormSG Table field',
+        items: JSON.stringify({ rows: [], columns: tooManyColumns }),
+      },
+    ])(
+      'should throw a config StepError without saving output for a $description with too many columns',
+      async ({ items }) => {
+        $.step.parameters.items = items
+
+        await expect(action.run!($)).rejects.toMatchObject({
+          message: expect.stringContaining(
+            `more than ${FOR_EACH_MAX_COLUMNS} columns`,
+          ),
+          kind: 'config',
+        })
+        expect(mockedProcessItems).not.toHaveBeenCalled()
+        expect(mocks.setActionItem).not.toHaveBeenCalled()
+      },
+    )
+
+    it('should throw a config StepError for a FormSG Table field failing the table schema', async () => {
+      $.step.parameters.items = JSON.stringify({
+        rows: [],
+        columns: [{ id: 'col1', name: 'Column 1' }],
+      })
+
+      await expect(action.run!($)).rejects.toMatchObject({
+        message: expect.stringContaining('Invalid input list'),
+        kind: 'config',
+      })
+      expect(mocks.setActionItem).not.toHaveBeenCalled()
+    })
 
     it('should throw a config StepError for an empty list in a test run', async () => {
       $.execution.testRun = true
