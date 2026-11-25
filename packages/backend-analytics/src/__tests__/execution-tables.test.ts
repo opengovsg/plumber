@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { localDirCompletionStore } from '../completion-stores'
 import { type CompletionSource, readJobState } from '../day-completion'
 import {
+  backfillExecutionDays,
   EXECUTION_HISTORY_START,
   executionArchivalFloor,
   type ExecutionDayTable,
@@ -270,5 +271,66 @@ describe('executionArchivalFloor', () => {
     expect(await executionArchivalFloor(bucket.store, NOW, tables)).toEqual(
       sgtDayWindow('2026-11-10').start,
     )
+  })
+})
+
+describe('backfillExecutionDays', () => {
+  const table = (): ExecutionDayTable<{ id: string }> => ({
+    name: 'execution_daily',
+    version: 1,
+    columns: { id: 'STRING' },
+    fetchDay: vi.fn(async () => [{ id: 'row' }]),
+  })
+
+  async function backfill(
+    days: string[],
+    dayTable: ExecutionDayTable<{ id: string }>,
+  ) {
+    dir ??= await mkdtemp(path.join(tmpdir(), 'executions-'))
+    await backfillExecutionDays({
+      db,
+      sink: localDirSink(dir),
+      store: localDirCompletionStore(dir),
+      days,
+      now: NOW,
+      dayTables: [dayTable],
+    })
+  }
+
+  it('writes each past day as final, and skips days already final on a rerun', async () => {
+    const dayTable = table()
+
+    await backfill(['2026-11-01', '2026-11-02'], dayTable)
+    await backfill(['2026-11-01', '2026-11-02', '2026-11-03'], dayTable)
+
+    expect(
+      vi.mocked(dayTable.fetchDay).mock.calls.map(([, query]) => query),
+    ).toEqual(
+      ['2026-11-01', '2026-11-02', '2026-11-03'].map((day) => ({
+        window: sgtDayWindow(day),
+        asOf: finalAsOf(day),
+      })),
+    )
+    expect(
+      (
+        await readdir(path.join(dir!, 'bronze/_completion/execution_daily'))
+      ).sort(),
+    ).toEqual([
+      'day=2026-11-01.v1.json',
+      'day=2026-11-02.v1.json',
+      'day=2026-11-03.v1.json',
+      'start=2026-11-01.json',
+    ])
+  })
+
+  it('refuses a day that is not final yet', async () => {
+    const dayTable = table()
+
+    await expect(
+      backfill(['2026-11-09', '2026-11-10'], dayTable),
+    ).rejects.toThrow(
+      'A backfill writes final days only. 2026-11-10 is after 2026-11-09.',
+    )
+    expect(dayTable.fetchDay).not.toHaveBeenCalled()
   })
 })

@@ -241,6 +241,27 @@ Delete the folder after the upload:
 rm -rf "$OUT"
 ```
 
+## Writing execution history
+
+The nightly export writes execution days from its first night on. `analytics:execution-history` writes earlier days as final files, with completion files. [`backend-analytics`](../backend-analytics/README.md#execution-tables) describes the tables.
+
+| Flag           | Meaning                                                                              |
+| -------------- | ------------------------------------------------------------------------------------ |
+| `--from`       | First Singapore day to write.                                                        |
+| `--to`         | Last Singapore day, inclusive. Default: `--from`. At most the day before yesterday.  |
+| `--tables a,b` | `execution_daily`, `execution_step_daily` or both. Default: both.                    |
+| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`. |
+| `--s3`         | Write to `ANALYTICS_BUCKET`. Runs only when `APP_ENV` is `prod` or `staging`.        |
+
+- Days already final are skipped, so a rerun resumes where a stopped run left off.
+- It needs the same indexes as the nightly export, and reads through the reader endpoint one day at a time.
+- Archival holds every run whose day is not final yet, from April 2023 on. It logs the floor as `archival.analytics_floor` and counts held runs in `executions_held_for_analytics`. So until this backfill finishes, archival deletes nothing in prod and staging.
+- Attach the tables to PostHog after it finishes, inside a new source's first 7 days, when synced rows are free.
+
+```bash
+pnpm --filter backend-archive run analytics:execution-history --from 2023-05-01 --to 2026-11-23 --s3
+```
+
 ## Extracting the mutation log
 
 The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It queries `ANALYTICS_REQUEST_LOG_GROUP` with CloudWatch Logs Insights. [`backend-analytics`](../backend-analytics/README.md#mutation_log) describes the rows it writes. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`.

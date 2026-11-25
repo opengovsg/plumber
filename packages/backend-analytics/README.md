@@ -148,7 +148,7 @@ The execution tables count runs and step attempts. They hold no `data_in` or `da
 
 - A run can fail without saving a step row, for example when the step it waited for was deleted during a Delay. Its last row then sits on a day it did not end, so it gets no finished row and counts as open.
 - The final file reads `executions.status` as it is when written, unless the run has rows after `as_of`. A status change after `as_of` with no new row, such as the moment a manual retry starts, can reach a final file.
-- Runs created before `executions.status` existed (October 2023) may have no status. History is not written yet. Its backfill must handle them.
+- A run whose status is never set gets no finished row, so it counts as open. `analytics:execution-history` writes the days before the first night, in [`backend-archive`](../backend-archive/README.md#writing-execution-history).
 
 Each execution query runs with a 10-minute `statement_timeout`, since archival waits for the export.
 

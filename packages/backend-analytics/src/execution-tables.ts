@@ -162,6 +162,11 @@ interface WriteExecutionTablesParams {
   source?: CompletionSource
 }
 
+interface DayItem {
+  day: string
+  final: boolean
+}
+
 async function writeExecutionDayTable(
   {
     db,
@@ -170,36 +175,26 @@ async function writeExecutionDayTable(
     yesterday,
     now,
     source = 'nightly',
-  }: WriteExecutionTablesParams,
+    firstDay,
+  }: WriteExecutionTablesParams & { firstDay?: string },
   table: ExecutionDayTable<SilverRow>,
+  plan: (state: JobState) => DayItem[],
 ): Promise<void> {
   await runWithCoverage(
     {
       job: table.name,
       yesterday: lastFinalDay(yesterday),
+      firstDay,
       version: table.version,
       store,
       sink,
     },
     async (state) => {
-      const { final, provisional } = planExecutionDays(
-        state,
-        yesterday,
-        table.version,
-      )
-      const items = [
-        ...final.map((day) => ({ day, final: true })),
-        // IMPORTANT: a final file shares its provisional file's key. A manual run's provisional upload could land after it.
-        ...(source === 'nightly' ? provisional : []).map((day) => ({
-          day,
-          final: false,
-        })),
-      ]
       await writeEachDay({
         job: table.name,
         state,
         version: table.version,
-        items,
+        items: plan(state),
         dayOf: (item) => item.day,
         write: async ({ day, final: isFinal }) => {
           const asOf = isFinal ? finalAsOf(day) : now
@@ -232,6 +227,24 @@ async function writeExecutionDayTable(
       })
     },
   )
+}
+
+function nightlyPlan(
+  yesterday: string,
+  version: number,
+  source: CompletionSource,
+) {
+  return (state: JobState): DayItem[] => {
+    const { final, provisional } = planExecutionDays(state, yesterday, version)
+    return [
+      ...final.map((day) => ({ day, final: true })),
+      // IMPORTANT: a final file shares its provisional file's key. A manual run's provisional upload could land after it.
+      ...(source === 'nightly' ? provisional : []).map((day) => ({
+        day,
+        final: false,
+      })),
+    ]
+  }
 }
 
 // A snapshot cannot be caught up, so coverage reports only last night.
@@ -301,7 +314,11 @@ export async function writeExecutionTables(
   }
   const errors: Error[] = []
   await writeEachTable(dayTables, (table) =>
-    writeExecutionDayTable(params, table),
+    writeExecutionDayTable(
+      params,
+      table,
+      nightlyPlan(params.yesterday, table.version, source),
+    ),
   ).catch((err: Error) => {
     errors.push(err)
   })
@@ -313,6 +330,55 @@ export async function writeExecutionTables(
   if (errors.length > 0) {
     throw new Error(errors.map((err) => err.message).join('. '))
   }
+}
+
+export interface BackfillExecutionDaysParams {
+  db: Knex
+  sink: SilverSink
+  store: CompletionStore
+  days: string[]
+  now?: Date
+  dayTables?: ExecutionDayTable<SilverRow>[]
+}
+
+/**
+ * Writes past days as final files, for history before the first night.
+ *
+ * Days already final at any version are skipped, so a rerun resumes where a stopped one left off.
+ * Archival holds every run whose day is not final, so it deletes nothing until this covers the history.
+ */
+export async function backfillExecutionDays({
+  db,
+  sink,
+  store,
+  days,
+  now = new Date(),
+  dayTables = EXECUTION_DAY_TABLES,
+}: BackfillExecutionDaysParams): Promise<void> {
+  const yesterday = previousSgtDay(now)
+  const lastFinal = lastFinalDay(yesterday)
+  const late = days.filter((day) => day > lastFinal)
+  if (late.length > 0) {
+    throw new Error(
+      `A backfill writes final days only. ${late[0]} is after ${lastFinal}.`,
+    )
+  }
+  const params = {
+    db,
+    sink,
+    store,
+    yesterday,
+    now,
+    source: 'backfill' as const,
+    firstDay: days[0],
+  }
+  await writeEachTable(dayTables, (table) =>
+    writeExecutionDayTable(params, table, (state) =>
+      days
+        .filter((day) => !state.newestVersion.has(day))
+        .map((day) => ({ day, final: true })),
+    ),
+  )
 }
 
 // Plumber's first executions date from April 2023.

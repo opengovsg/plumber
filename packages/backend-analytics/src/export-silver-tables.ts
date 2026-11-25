@@ -8,6 +8,8 @@ import type { Knex } from 'knex'
 import { s3CompletionStore } from './completion-stores'
 import type { CompletionSource, CompletionStore } from './day-completion'
 import {
+  backfillExecutionDays,
+  type BackfillExecutionDaysParams,
   EXECUTION_DAY_TABLES,
   EXECUTION_SNAPSHOT_TABLES,
   executionArchivalFloor,
@@ -219,6 +221,37 @@ export async function exportSilverTables({
     throw new Error(`ANALYTICS_BUCKET must be set in ${appEnv}`)
   }
   await writeAllSilverTables({
+    ...params,
+    sink: s3Sink(s3Client, bucket),
+    store: s3CompletionStore(s3Client, bucket),
+  })
+}
+
+interface ExportExecutionHistoryParams extends Omit<
+  BackfillExecutionDaysParams,
+  'sink' | 'store'
+> {
+  s3Client: S3Client
+  appEnv: string
+  bucket: string | undefined
+}
+
+// Unlike the nightly export, this throws outside prod and staging, so a backfill never exits 0 having written nothing.
+export async function exportExecutionHistory({
+  s3Client,
+  appEnv,
+  bucket,
+  ...params
+}: ExportExecutionHistoryParams): Promise<void> {
+  if (!EXPORT_APP_ENVS.has(appEnv)) {
+    throw new Error(
+      `The execution history goes to S3 only when APP_ENV is prod or staging, not ${appEnv}.`,
+    )
+  }
+  if (!bucket) {
+    throw new Error(`ANALYTICS_BUCKET must be set in ${appEnv}`)
+  }
+  await backfillExecutionDays({
     ...params,
     sink: s3Sink(s3Client, bucket),
     store: s3CompletionStore(s3Client, bucket),

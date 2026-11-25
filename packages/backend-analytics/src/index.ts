@@ -1,5 +1,6 @@
 export {
   EXPORT_APP_ENVS,
+  exportExecutionHistory,
   exportSilverTables,
   loadExecutionArchivalFloor,
   localDirSink,
@@ -11,6 +12,7 @@ export {
   writeSilverTables,
 } from './export-silver-tables'
 export {
+  backfillExecutionDays,
   EXECUTION_DAY_TABLES,
   EXECUTION_SNAPSHOT_TABLES,
 } from './execution-tables'
