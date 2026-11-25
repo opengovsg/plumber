@@ -3,6 +3,7 @@ import { Router } from 'express'
 import { pick } from 'lodash'
 
 import { ACTION_APPS_RANKING, TRIGGER_APPS_RANKING } from '@/apps/app-rankings'
+import { forwardAsyncErrors } from '@/helpers/forward-async-errors'
 import App from '@/models/app'
 
 // Fields returned to the frontend — update this to add/remove fields
@@ -59,9 +60,12 @@ async function getAppsResponse(): Promise<AppResponse[]> {
  * Returns list of available apps with their triggers and actions.
  * This endpoint is cached in-memory since apps data is static at runtime.
  */
-router.get('/', async (_req, res) => {
-  const data = await getAppsResponse()
-  res.json({ data })
-})
+router.get(
+  '/',
+  forwardAsyncErrors(async (_req, res) => {
+    const data = await getAppsResponse()
+    res.json({ data })
+  }),
+)
 
 export default router

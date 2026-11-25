@@ -2,7 +2,8 @@ import { createHash } from 'crypto'
 
 import axios from 'axios'
 import { Request, Response } from 'express'
-import jwt, { JsonWebTokenError } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
+import { z } from 'zod'
 
 import appConfig from '@/config/app'
 import { BLOCK_NEW_LOGINS_FLAG } from '@/config/flags'
@@ -50,6 +51,10 @@ interface AuthCookiePayload {
   isSso?: boolean
 }
 
+// Other tokens (e.g. SSO transactions, tile view tokens) share the session
+// key, so a valid signature alone does not make a session token.
+const sessionTokenUserIdSchema = z.object({ userId: z.uuid() })
+
 export function setAuthCookie(res: Response, payload: AuthCookiePayload): void {
   // create jwt
   const token = jwt.sign(payload, appConfig.sessionSecretKey, {
@@ -88,10 +93,12 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
 
   let userId: string
   try {
-    const payload = jwt.verify(token, appConfig.sessionSecretKey) as {
-      userId: string
+    const payload = jwt.verify(token, appConfig.sessionSecretKey)
+    const parsedPayload = sessionTokenUserIdSchema.safeParse(payload)
+    if (!parsedPayload.success) {
+      return null
     }
-    userId = payload.userId
+    userId = parsedPayload.data.userId
     if (await isAuthCookieRevoked(token)) {
       return null
     }
@@ -269,11 +276,9 @@ export function parseAdminToken(token: string): AdminToken | null {
     return jwt.verify(token, appConfig.adminJwtSecretKey, {
       maxAge: ADMIN_TOKEN_MAX_AGE_SEC,
     }) as AdminToken
-  } catch (err) {
-    if (!(err instanceof JsonWebTokenError)) {
-      throw err
-    }
-
+  } catch {
+    // The header is attacker-controlled, and parsing can throw non-JWT errors
+    // (e.g. a SyntaxError for a non-JSON payload).
     return null
   }
 }

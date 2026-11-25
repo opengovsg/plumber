@@ -7,11 +7,14 @@ import type { Server } from 'http'
 import app from '@/app'
 import appConfig from '@/config/app'
 import { registerGracefulShutdown } from '@/helpers/graceful-shutdown'
+import { logUnhandledRejection } from '@/helpers/log-unhandled-rejection'
 import logger from '@/helpers/logger'
 
 const port = appConfig.port
 
 const ALB_IDLE_TIMEOUT_SECONDS = 60
+
+process.on('unhandledRejection', logUnhandledRejection)
 
 const server: Server = app.listen(port, () => {
   logger.info(`Server is listening on ${port}`)
