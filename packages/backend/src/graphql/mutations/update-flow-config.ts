@@ -1,6 +1,7 @@
 import type { IFlowConfig } from '@plumber/types'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import Flow from '@/models/flow'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -31,9 +32,8 @@ const updateFlowConfig: NonNullable<
     })
     .throwIfNotFound({ message: 'Not authorised!' })
 
-  const newConfig: IFlowConfig = {
-    ...flow.config,
-  }
+  const changes: Partial<IFlowConfig> = {}
+  let removeAttachments = false
 
   if (
     input.notificationFrequency !== undefined ||
@@ -42,37 +42,44 @@ const updateFlowConfig: NonNullable<
     // A flow without an errorConfig needs both fields, since GraphQL returns them as non-null.
     const notificationFrequency =
       input.notificationFrequency ??
-      newConfig.errorConfig?.notificationFrequency
+      flow.config?.errorConfig?.notificationFrequency
     const notificationRecipients = input.notificationRecipients
       ? requireNonNullItems(
           input.notificationRecipients,
           'notificationRecipients',
         )
-      : newConfig.errorConfig?.notificationRecipients
+      : flow.config?.errorConfig?.notificationRecipients
     if (!notificationFrequency || !notificationRecipients) {
       throw new BadUserInputError(
         'Missing notificationFrequency or notificationRecipients',
       )
     }
-    newConfig.errorConfig = {
-      ...newConfig.errorConfig,
+    changes.errorConfig = {
+      ...flow.config?.errorConfig,
       notificationFrequency,
       notificationRecipients,
     }
   }
 
   // Adds uploaded attachments to flow config
-  if (input.attachments !== undefined) {
-    newConfig.attachments = input.attachments
-      ? requireNonNullItems(input.attachments, 'attachments')
-      : undefined
+  if (input.attachments) {
+    changes.attachments = requireNonNullItems(input.attachments, 'attachments')
+  } else if (input.attachments === null) {
+    removeAttachments = true
   }
 
-  return await flow.$query().patchAndFetch({
-    config: newConfig,
+  // A raw merge skips the model's JSON schema, so validate the changed keys first.
+  Flow.fromJson({ config: changes }, { patch: true })
+  // One statement, so a config write made since the read above is kept, such as an MRF pipe's suggestion step ids.
+  const current = removeAttachments
+    ? `COALESCE(config, '{}'::jsonb) - 'attachments'`
+    : `COALESCE(config, '{}'::jsonb)`
+  await flow.$query().patch({
+    config: Flow.raw(`${current} || ?::jsonb`, [JSON.stringify(changes)]),
     updatedAt: new Date().toISOString(),
     updatedBy: context.currentUser.id,
   })
+  return await flow.$query()
 }
 
 export default updateFlowConfig
