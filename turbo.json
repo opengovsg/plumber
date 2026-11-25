@@ -30,7 +30,8 @@
         "POSTHOG_API_KEY",
         "POSTHOG_PROJECT_ID",
         "POSTHOG_HOST",
-        "RELEASE_VERSION"
+        "RELEASE_VERSION",
+        "APP_VERSION"
       ],
       "passThroughEnv": [
         "GITHUB_ACTIONS",

@@ -63,6 +63,27 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+          # git describe needs the history back to the latest release tag.
+          fetch-depth: 0
+
+      - name: Resolve app version
+        id: app-version
+        shell: bash
+        env:
+          # Empty outside release events.
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          # Release tags are the version source of truth. package.json versions are not bumped.
+          if [ -n "${RELEASE_TAG}" ]; then
+            # A commit can carry several release tags, so git describe may not pick the one being deployed.
+            version="${RELEASE_TAG}"
+          else
+            # Branch deploys (staging, uat) resolve to e.g. 1.107.0-12-gc3a6733.
+            version="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*')"
+          fi
+          echo "version=${version#v}" >> "${GITHUB_OUTPUT}"
+          echo "App version: ${version#v}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2.2.0
@@ -95,11 +116,13 @@ jobs:
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           INPUTS_ENVIRONMENT: ${{ inputs.environment }}
           INPUTS_RELEASE_VERSION: ${{ inputs.release-version }}
+          APP_VERSION: ${{ steps.app-version.outputs.version }}
           IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
         run: |
           docker build . -t "${IMAGE}" \
             --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" \
             --build-arg RELEASE_VERSION="${INPUTS_RELEASE_VERSION}" \
+            --build-arg APP_VERSION \
             --build-arg POSTHOG_PROJECT_ID \
             --build-arg POSTHOG_HOST \
             --build-arg GITHUB_ACTIONS=true \
