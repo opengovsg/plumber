@@ -156,10 +156,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          # force=false: fails (rather than overwrites) if staging-v2 has
-          # commits that are not on develop-v2.
+          # force=true: staging-v2 always mirrors the drafted release commit,
+          # overwriting any commits on it that are not on develop-v2.
           gh api --method PATCH "repos/${GH_REPO}/git/refs/heads/${STAGING_BRANCH}" \
-            -f sha="${SHA}" -F force=false
+            -f sha="${SHA}" -F force=true
 
           gh workflow run deploy-staging.yml --ref "${STAGING_BRANCH}"
           echo "Pushed ${SHA} to ${STAGING_BRANCH} and dispatched the staging deploy." >> "${GITHUB_STEP_SUMMARY}"
