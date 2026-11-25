@@ -17,6 +17,7 @@ import {
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
 import { ITableMetadata } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { useCallback, useState } from 'react'
 import { BiSpreadsheet, BiTable } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
@@ -27,7 +28,6 @@ import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { ImportCsvModalContent } from '@/pages/Tile/components/TableBanner/ImportCsvButton'
 import { TableContextProvider } from '@/pages/Tile/contexts/TableContext'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 type TILE_CREATE_MODE = 'import' | 'new'
 
@@ -93,6 +93,7 @@ const CreateTileForm = ({
 }
 
 const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
+  const posthog = usePostHog()
   const navigate = useNavigate()
   const [tableName, setTableName] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
@@ -116,14 +117,12 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
         return
       }
       setTableData(data.createTable)
-      if (isPostHogConfigured) {
-        posthog.capture('tile_created', {
-          creation_mode: isBlank ? 'import' : 'new',
-        })
-      }
+      posthog.capture('tile_created', {
+        creation_mode: isBlank ? 'import' : 'new',
+      })
       return data.createTable
     },
-    [createTableMutation, tableName],
+    [createTableMutation, posthog, tableName],
   )
 
   const navigateToTile = useCallback(

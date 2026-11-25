@@ -2,6 +2,7 @@ import '@fontsource/space-grotesk'
 import '@opengovsg/confetti/confetti.css'
 import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
+import { PostHogProvider } from 'posthog-js/react'
 import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
@@ -49,30 +50,32 @@ if (['prod', 'staging'].includes(appConfig.env)) {
   })
 }
 root.render(
-  <ErrorBoundary
-    fallback={
-      <div role="alert">Something went wrong. Please refresh the page.</div>
-    }
-    onError={(error) => {
-      if (isPostHogConfigured) {
-        posthog.captureException(error)
+  <PostHogProvider client={posthog}>
+    <ErrorBoundary
+      fallback={
+        <div role="alert">Something went wrong. Please refresh the page.</div>
       }
-    }}
-  >
-    <ThemeProvider>
-      <MotionConfig reducedMotion="always">
-        <ApolloProvider>
-          <AuthenticationProvider>
-            <TimezoneProvider>
-              <LaunchDarklyProvider>
-                <SurveyProvider>
-                  <RouterProvider router={router} />
-                </SurveyProvider>
-              </LaunchDarklyProvider>
-            </TimezoneProvider>
-          </AuthenticationProvider>
-        </ApolloProvider>
-      </MotionConfig>
-    </ThemeProvider>
-  </ErrorBoundary>,
+      onError={(error) => {
+        if (isPostHogConfigured) {
+          posthog.captureException(error)
+        }
+      }}
+    >
+      <ThemeProvider>
+        <MotionConfig reducedMotion="always">
+          <ApolloProvider>
+            <AuthenticationProvider>
+              <TimezoneProvider>
+                <LaunchDarklyProvider>
+                  <SurveyProvider>
+                    <RouterProvider router={router} />
+                  </SurveyProvider>
+                </LaunchDarklyProvider>
+              </TimezoneProvider>
+            </AuthenticationProvider>
+          </ApolloProvider>
+        </MotionConfig>
+      </ThemeProvider>
+    </ErrorBoundary>
+  </PostHogProvider>,
 )

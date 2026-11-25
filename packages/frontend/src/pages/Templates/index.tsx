@@ -1,7 +1,7 @@
 import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
 import { Badge, Link } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
-import { useContext } from 'react'
+import { useFeatureFlagEnabled, usePostHog } from 'posthog-js/react'
 import { BiGroup } from 'react-icons/bi'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -10,7 +10,6 @@ import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { useApps } from '@/hooks/useApps'
 
 import TemplateModal from '../Template'
@@ -27,6 +26,7 @@ const TEMPLATES_COUNT = 9
 const COMMUNITY_SKELETON_COUNT = 3
 // Matches the left padding of PageTitle so content lines up with the heading.
 const GUTTER = { base: 2, md: 8 }
+const COMMUNITY_TEMPLATES_FLAG = 'templates_early_access'
 
 type ListedTemplate = ITemplate & { isBuiltIn?: boolean }
 
@@ -44,8 +44,11 @@ export default function Templates(): JSX.Element {
   } = useTemplateBrowser()
   const { data: apps, loading: appsLoading } = useApps()
 
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const isEarlyAccessEnabled = getFlagValue('templates_early_access') as boolean
+  const posthog = usePostHog()
+  const earlyAccessFlag = useFeatureFlagEnabled(COMMUNITY_TEMPLATES_FLAG)
+  const isEarlyAccessEnabled = earlyAccessFlag === true
+  const enrolInEarlyAccess = () =>
+    posthog.updateEarlyAccessFeatureEnrollment(COMMUNITY_TEMPLATES_FLAG, true)
 
   const { templateId } = useParams()
   const template = templates.find((template) => template.id === templateId)
@@ -60,6 +63,7 @@ export default function Templates(): JSX.Element {
   )
   const showCommunity =
     isEarlyAccessEnabled && (isLoading || communityTemplates.length > 0)
+  const showCommunitySkeleton = earlyAccessFlag === false
   const onSelectTemplate = (template: ITemplate) =>
     navigate(URLS.TEMPLATE(template.id))
 
@@ -145,7 +149,9 @@ export default function Templates(): JSX.Element {
                   />
                 </TemplateSection>
               ) : (
-                <CommunityTemplatesSkeleton onTurnOn={console.log} />
+                showCommunitySkeleton && (
+                  <CommunityTemplatesSkeleton onTurnOn={enrolInEarlyAccess} />
+                )
               )}
             </>
           )}
@@ -169,8 +175,8 @@ export default function Templates(): JSX.Element {
       </Container>
 
       {template && <TemplateModal template={template} apps={apps} />}
-      <OptInDialog onOptIn={console.log} />
-      <EarlyAccessModal onTurnOn={console.log} />
+      <OptInDialog onOptIn={enrolInEarlyAccess} />
+      <EarlyAccessModal onTurnOn={enrolInEarlyAccess} />
     </>
   )
 }

@@ -1,10 +1,10 @@
 import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
+import { usePostHog } from 'posthog-js/react'
 import { useEffect, useRef, useState } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 
 import { AI_BUILDER_INLINE_CONNECT_APP_KEYS } from '@/pages/AiBuilder/constants'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 interface DynamicPickerOption {
   name: string
@@ -66,6 +66,7 @@ export default function DynamicPicker({
   knownFormUrl,
   cancelStream,
 }: DynamicPickerProps) {
+  const posthog = usePostHog()
   const [options, setOptions] = useState<DynamicPickerOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
@@ -171,9 +172,6 @@ export default function DynamicPicker({
   const hasOptions = !isLoading && options.length > 0
 
   const capture = (action: string, extra?: Record<string, unknown>) => {
-    if (!isPostHogConfigured) {
-      return
-    }
     posthog.capture(`ai_builder:dynamic_picker_${action}`, {
       app_key: appKey,
       dynamic_key: dynamicKey,
