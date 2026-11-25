@@ -1,13 +1,13 @@
 import { randomUUID } from 'crypto'
 
 import { PresignedPost } from '@aws-sdk/s3-presigned-post'
+import { SES_BLOCKED_EXTENSIONS } from '@plumber/shared'
 
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import {
   COMMON_S3_BUCKET,
   getPresignedPost,
   MAX_FILE_SIZE,
-  SES_BLOCKED_EXTENSIONS,
   validateObjectKey,
 } from '@/helpers/s3'
 

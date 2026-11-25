@@ -1,3 +1,4 @@
+import { MAX_TOTAL_ATTACHMENT_SIZE } from '@plumber/shared'
 import { IExecutionStep, IGlobalVariable, IJSONObject } from '@plumber/types'
 import { uniq } from 'lodash'
 
@@ -8,10 +9,7 @@ import {
 } from '@/helpers/s3'
 import Flow from '@/models/flow'
 
-import {
-  AttachmentSizeExceededError,
-  MAX_TOTAL_ATTACHMENT_SIZE,
-} from './attachment-size'
+import { AttachmentSizeExceededError } from './attachment-size'
 
 export type AttachmentExtensionPolicy =
   | { mode: 'allow'; extensions: readonly string[] }

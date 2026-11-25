@@ -1,3 +1,11 @@
+import {
+  MAX_ATTACHMENT_COUNT,
+  MAX_ATTACHMENT_FILE_SIZE,
+  MAX_ATTACHMENT_FILE_SIZE_MB,
+  MAX_TOTAL_ATTACHMENT_SIZE,
+  MAX_TOTAL_ATTACHMENT_SIZE_MB,
+  SES_BLOCKED_EXTENSIONS,
+} from '@plumber/shared'
 import { IFlow, TDataOutMetadatumType } from '@plumber/types'
 import { FieldValues } from 'react-hook-form'
 
@@ -5,108 +13,6 @@ import { type CheckboxVariable } from './components/Checkbox'
 
 const KB = 1024
 const MB = KB * KB
-export const MAX_NUM_FILES = 10
-const MAX_FILE_SIZE = 20 * MB // 20MB
-const MAX_TOTAL_FILE_SIZE = 20 * MB // 20MB
-
-/**
- * Mirrors SES_BLOCKED_EXTENSIONS in packages/backend/src/helpers/s3.ts — keep
- * in sync if that list changes. Duplicated here (rather than fetched) so the
- * file picker can reject a blocked file immediately, before it's uploaded to
- * S3 and generatePresignedPost rejects it server-side.
- */
-const SES_BLOCKED_EXTENSIONS = new Set([
-  'ade',
-  'adp',
-  'app',
-  'asp',
-  'bas',
-  'bat',
-  'cer',
-  'chm',
-  'cmd',
-  'com',
-  'cpl',
-  'crt',
-  'csh',
-  'der',
-  'exe',
-  'fxp',
-  'gadget',
-  'hlp',
-  'hta',
-  'inf',
-  'ins',
-  'isp',
-  'its',
-  'js',
-  'jse',
-  'ksh',
-  'lib',
-  'lnk',
-  'mad',
-  'maf',
-  'mag',
-  'mam',
-  'maq',
-  'mar',
-  'mas',
-  'mat',
-  'mau',
-  'mav',
-  'maw',
-  'mda',
-  'mdb',
-  'mde',
-  'mdt',
-  'mdw',
-  'mdz',
-  'msc',
-  'msh',
-  'msh1',
-  'msh2',
-  'mshxml',
-  'msh1xml',
-  'msh2xml',
-  'msi',
-  'msp',
-  'mst',
-  'ops',
-  'pcd',
-  'pif',
-  'plg',
-  'prf',
-  'prg',
-  'reg',
-  'scf',
-  'scr',
-  'sct',
-  'shb',
-  'shs',
-  'sys',
-  'ps1',
-  'ps1xml',
-  'ps2',
-  'ps2xml',
-  'psc1',
-  'psc2',
-  'tmp',
-  'url',
-  'vb',
-  'vbe',
-  'vbs',
-  'vps',
-  'vsmacros',
-  'vss',
-  'vst',
-  'vsw',
-  'vxd',
-  'ws',
-  'wsc',
-  'wsf',
-  'wsh',
-  'xnk',
-])
 
 export interface AttachmentConfigInput {
   name: string
@@ -236,7 +142,7 @@ export function validateFiles(
   file: File | CheckboxVariable,
   options: CheckboxVariable[],
   currentSelection: string[],
-  maxFiles: number = MAX_NUM_FILES,
+  maxFiles: number = MAX_ATTACHMENT_COUNT,
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
   const selectedOptions = options.filter((o) =>
@@ -262,10 +168,10 @@ export function validateFiles(
     return { isValid: false, error: fileSizeError }
   }
 
-  if (totalSize > MAX_TOTAL_FILE_SIZE) {
+  if (totalSize > MAX_TOTAL_ATTACHMENT_SIZE) {
     return {
       isValid: false,
-      error: 'Total size of attachments exceeds 20MB',
+      error: `Total size of attachments exceeds ${MAX_TOTAL_ATTACHMENT_SIZE_MB}MB`,
     }
   }
   return { isValid: true }
@@ -275,8 +181,11 @@ export function validateFileSize(
   file: File | CheckboxVariable,
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
-  if (fileSize > MAX_FILE_SIZE) {
-    return { isValid: false, error: 'Size of attachment exceeds 20MB' }
+  if (fileSize > MAX_ATTACHMENT_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `Size of attachment exceeds ${MAX_ATTACHMENT_FILE_SIZE_MB}MB`,
+    }
   }
   return { isValid: true }
 }
@@ -284,7 +193,7 @@ export function validateFileSize(
 export function validateFileExtension(file: File): FileSizeValidationResult {
   const parts = file.name.split('.')
   const extension = parts.length > 1 ? parts.pop()?.toLowerCase() : undefined
-  if (extension && SES_BLOCKED_EXTENSIONS.has(extension)) {
+  if (extension && SES_BLOCKED_EXTENSIONS.includes(extension)) {
     return {
       isValid: false,
       error: `Files with a .${extension} extension are not supported`,

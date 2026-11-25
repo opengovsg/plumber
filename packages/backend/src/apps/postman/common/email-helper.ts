@@ -1,4 +1,5 @@
 import { SendEmailCommand } from '@aws-sdk/client-sesv2'
+import { MAX_TOTAL_ATTACHMENT_SIZE } from '@plumber/shared'
 import { IHttpClient } from '@plumber/types'
 import FormData from 'form-data'
 import { sortBy } from 'lodash'
@@ -17,10 +18,7 @@ import {
 } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
-import {
-  AttachmentSizeExceededError,
-  MAX_TOTAL_ATTACHMENT_SIZE,
-} from './attachment-size'
+import { AttachmentSizeExceededError } from './attachment-size'
 import { buildRawEmail, withRecipient } from './build-raw-mime'
 import {
   PostmanEmailDataOut,

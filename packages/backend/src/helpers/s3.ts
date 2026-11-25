@@ -13,6 +13,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3'
 import { createPresignedPost, PresignedPost } from '@aws-sdk/s3-presigned-post'
+import { MAX_ATTACHMENT_FILE_SIZE } from '@plumber/shared'
 
 import appConfig from '@/config/app'
 import StepError from '@/errors/step'
@@ -55,107 +56,8 @@ export const MALWARE_SCAN_FAILURE = [
   MALWARE_SCAN_STATUS.FAILED,
 ]
 
-/**
- * File extensions blocked from being uploaded/attached (executables/scripts).
- * This mirrors the set SES refuses, so it is a block-list, not an allow-list:
- * anything not listed here is accepted (subject to the malware scan). It is the
- * single source of truth for both the upload gate (generatePresignedPost) and
- * the SES send-time attachment filter (postman filterAttachments). Keep in sync
- * with AWS's list: https://docs.aws.amazon.com/ses/latest/dg/attachments.html
- */
-export const SES_BLOCKED_EXTENSIONS = [
-  'ade',
-  'adp',
-  'app',
-  'asp',
-  'bas',
-  'bat',
-  'cer',
-  'chm',
-  'cmd',
-  'com',
-  'cpl',
-  'crt',
-  'csh',
-  'der',
-  'exe',
-  'fxp',
-  'gadget',
-  'hlp',
-  'hta',
-  'inf',
-  'ins',
-  'isp',
-  'its',
-  'js',
-  'jse',
-  'ksh',
-  'lib',
-  'lnk',
-  'mad',
-  'maf',
-  'mag',
-  'mam',
-  'maq',
-  'mar',
-  'mas',
-  'mat',
-  'mau',
-  'mav',
-  'maw',
-  'mda',
-  'mdb',
-  'mde',
-  'mdt',
-  'mdw',
-  'mdz',
-  'msc',
-  'msh',
-  'msh1',
-  'msh2',
-  'mshxml',
-  'msh1xml',
-  'msh2xml',
-  'msi',
-  'msp',
-  'mst',
-  'ops',
-  'pcd',
-  'pif',
-  'plg',
-  'prf',
-  'prg',
-  'reg',
-  'scf',
-  'scr',
-  'sct',
-  'shb',
-  'shs',
-  'sys',
-  'ps1',
-  'ps1xml',
-  'ps2',
-  'ps2xml',
-  'psc1',
-  'psc2',
-  'tmp',
-  'url',
-  'vb',
-  'vbe',
-  'vbs',
-  'vps',
-  'vsmacros',
-  'vss',
-  'vst',
-  'vsw',
-  'vxd',
-  'ws',
-  'wsc',
-  'wsf',
-  'wsh',
-  'xnk',
-]
-export const MAX_FILE_SIZE = 1024 * 1024 * 20 // 20MB
+// Kept as its own export so GatherSG tests can mock a smaller limit.
+export const MAX_FILE_SIZE = MAX_ATTACHMENT_FILE_SIZE
 
 function throwAttachmentError(
   errorType: string | undefined,

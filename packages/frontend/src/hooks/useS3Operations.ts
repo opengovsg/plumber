@@ -4,6 +4,7 @@ import {
   useMutation,
 } from '@apollo/client'
 import { useToast } from '@opengovsg/design-system-react'
+import { MAX_ATTACHMENT_COUNT } from '@plumber/shared'
 import { useContext, useState } from 'react'
 import { FieldValues, UseFormGetValues } from 'react-hook-form'
 
@@ -11,7 +12,6 @@ import { type CheckboxVariable } from '@/components/AttachmentSuggestions/compon
 import {
   AttachmentConfigInput,
   createUpdateStep,
-  MAX_NUM_FILES,
   reformatToAttachmentConfig,
 } from '@/components/AttachmentSuggestions/utils'
 import { EditorContext } from '@/contexts/Editor'
@@ -176,7 +176,7 @@ export const useS3Operations = (
          * else, we add the new attachment to the existing attachments
          */
         const updatedAttachments = []
-        if (currentAttachments.length >= MAX_NUM_FILES) {
+        if (currentAttachments.length >= MAX_ATTACHMENT_COUNT) {
           updatedAttachments.push(...currentAttachments)
         } else {
           updatedAttachments.push(...currentAttachments, s3Id)
