@@ -295,6 +295,16 @@ describe('postman transactional email attachments limit', () => {
     expect(result.success).toBe(true)
   })
 
+  it('removes repeated attachments and empty values at runtime', () => {
+    const result = transactionalEmailSchema.shape.attachments.safeParse([
+      s3Id,
+      '',
+      s3Id,
+    ])
+    assert(result.success === true)
+    expect(result.data).toEqual([s3Id])
+  })
+
   it('rejects more than the maximum number of attachments at runtime', () => {
     const result = transactionalEmailSchema.shape.attachments.safeParse(
       Array(MAX_ATTACHMENTS + 1).fill(s3Id),

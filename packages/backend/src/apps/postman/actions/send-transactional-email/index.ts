@@ -14,6 +14,10 @@ import logger from '@/helpers/logger'
 import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
 import Step from '@/models/step'
 
+import {
+  AttachmentSizeExceededError,
+  MAX_TOTAL_ATTACHMENT_SIZE_MB,
+} from '../../common/attachment-size'
 import { POSTMAN_ACCEPTED_EXTENSIONS } from '../../common/constants'
 import { dataOutSchema } from '../../common/data-out-validator'
 import {
@@ -105,6 +109,24 @@ const action: IRawAction = {
   async testRun($, testRunMetadata) {
     return sendEmail($, testRunMetadata)
   },
+}
+
+async function filterAttachmentsOrThrow(
+  params: Parameters<typeof filterAttachments>[0],
+): ReturnType<typeof filterAttachments> {
+  try {
+    return await filterAttachments(params)
+  } catch (error) {
+    if (error instanceof AttachmentSizeExceededError) {
+      throw new StepError({
+        name: 'Total attachment size exceeded',
+        solution: `Check that the attachments do not exceed ${MAX_TOTAL_ATTACHMENT_SIZE_MB}MB in total.`,
+        kind: 'config',
+        cause: error,
+      })
+    }
+    throw error
+  }
 }
 
 function getSendEmailParams(
@@ -264,7 +286,7 @@ async function sendEmail(
     invalidAttachments,
     submissionId,
     isRetryWithoutAttachments,
-  } = await filterAttachments({
+  } = await filterAttachmentsOrThrow({
     $,
     attachmentsList: result.data.attachments,
     isPartialRetry,

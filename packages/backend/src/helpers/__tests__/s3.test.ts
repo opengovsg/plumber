@@ -10,6 +10,7 @@ import {
   deleteObjects,
   getObjectFromS3Id,
   getPresignedPost,
+  openObjectFromS3Id,
   MALWARE_SCAN_STATUS,
   parseS3Id,
   putObject,
@@ -150,6 +151,50 @@ describe('s3', () => {
         name: 'my file.txt',
         data: 'file data bytes',
       })
+    })
+  })
+
+  describe('openObjectFromS3Id', () => {
+    const body = {
+      transformToByteArray: vi.fn(() => 'file data bytes'),
+      destroy: vi.fn(),
+    }
+
+    beforeEach(() => {
+      body.transformToByteArray.mockClear()
+      body.destroy.mockClear()
+      mocks.s3Client.send.mockResolvedValueOnce({
+        Body: body,
+        ContentLength: 123,
+        Metadata: { flowid: 'flow-id' },
+      })
+    })
+
+    it('returns the size without reading the body', async () => {
+      const obj = await openObjectFromS3Id(
+        `s3:${COMMON_S3_BUCKET}:abcd/my file.txt`,
+        { flowId: 'flow-id' },
+      )
+      expect(obj.name).toBe('my file.txt')
+      expect(obj.sizeInBytes).toBe(123)
+      expect(body.transformToByteArray).not.toHaveBeenCalled()
+    })
+
+    it('destroys the body when discarded', async () => {
+      const obj = await openObjectFromS3Id(
+        `s3:${COMMON_S3_BUCKET}:abcd/my file.txt`,
+      )
+      obj.discard()
+      expect(body.destroy).toHaveBeenCalledOnce()
+    })
+
+    it('destroys the body when the metadata does not match', async () => {
+      await expect(
+        openObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
+          flowId: 'wrong',
+        }),
+      ).rejects.toThrow('S3 metadata mismatch')
+      expect(body.destroy).toHaveBeenCalledOnce()
     })
   })
 

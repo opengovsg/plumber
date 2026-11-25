@@ -203,7 +203,8 @@ export const transactionalEmailSchema = z.object({
         }
         result.push(value)
       }
-      return result
+      // Repeats add nothing to the email but would each be downloaded.
+      return uniq(result)
     }),
 })
 

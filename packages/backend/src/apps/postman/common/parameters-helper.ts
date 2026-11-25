@@ -1,7 +1,17 @@
 import { IExecutionStep, IGlobalVariable, IJSONObject } from '@plumber/types'
+import { uniq } from 'lodash'
 
-import { COMMON_S3_BUCKET, getObjectFromS3Id } from '@/helpers/s3'
+import {
+  COMMON_S3_BUCKET,
+  OpenedS3Object,
+  openObjectFromS3Id,
+} from '@/helpers/s3'
 import Flow from '@/models/flow'
+
+import {
+  AttachmentSizeExceededError,
+  MAX_TOTAL_ATTACHMENT_SIZE,
+} from './attachment-size'
 
 export type AttachmentExtensionPolicy =
   | { mode: 'allow'; extensions: readonly string[] }
@@ -87,33 +97,67 @@ export async function filterAttachments({
         partialRetryButtonMessage ===
           'Resend to blacklisted recipients without attachments'))
 
-  await Promise.all(
-    attachmentsList?.map(async (attachment) => {
-      // We verify the flowId here to ensure that the attachment is from the same flow and not
-      // maliciously/ manually injected by another user who does not have access to this attachment
-      const obj = await getObjectFromS3Id(attachment, { flowId: $.flow.id })
-      const fileName = obj.name
-      const fileType = obj.name.split('.').pop()?.toLowerCase()
+  // We verify the flowId here to ensure that the attachment is from the same flow and not
+  // maliciously/ manually injected by another user who does not have access to this attachment
+  const openResults = await Promise.allSettled(
+    uniq(attachmentsList ?? []).map(async (attachment) => ({
+      attachment,
+      obj: await openObjectFromS3Id(attachment, { flowId: $.flow.id }),
+    })),
+  )
+  const opened = openResults
+    .filter((r) => r.status === 'fulfilled')
+    .map((r) => r.value)
+  const openFailure = openResults.find((r) => r.status === 'rejected')
+  if (openFailure) {
+    opened.forEach(({ obj }) => obj.discard())
+    throw openFailure.reason
+  }
 
-      if (isRetryWithoutAttachments) {
-        invalidAttachments.push(fileName)
-        return
+  const toRead: OpenedS3Object[] = []
+  for (const { attachment, obj } of opened) {
+    const fileName = obj.name
+    const fileType = obj.name.split('.').pop()?.toLowerCase()
+
+    if (isRetryWithoutAttachments) {
+      invalidAttachments.push(fileName)
+      obj.discard()
+      continue
+    }
+
+    if (!isExtensionAllowed(fileType, extensionPolicy)) {
+      invalidAttachments.push(fileName)
+      obj.discard()
+
+      if (submissionId === null) {
+        submissionId = attachment.slice(
+          `s3:${COMMON_S3_BUCKET}:`.length,
+          attachment.indexOf('/', `s3:${COMMON_S3_BUCKET}:`.length),
+        )
       }
+    } else {
+      toRead.push(obj)
+    }
+  }
 
-      if (!isExtensionAllowed(fileType, extensionPolicy)) {
-        invalidAttachments.push(fileName)
+  // Checked before reading any body, so oversized attachments never reach
+  // memory. An unknown size counts as too large.
+  const totalSizeInBytes = toRead.reduce(
+    (sum, obj) => sum + (obj.sizeInBytes ?? Infinity),
+    0,
+  )
+  if (totalSizeInBytes > MAX_TOTAL_ATTACHMENT_SIZE) {
+    toRead.forEach((obj) => obj.discard())
+    throw new AttachmentSizeExceededError()
+  }
 
-        if (submissionId === null) {
-          submissionId = attachment.slice(
-            `s3:${COMMON_S3_BUCKET}:`.length,
-            attachment.indexOf('/', `s3:${COMMON_S3_BUCKET}:`.length),
-          )
-        }
-      } else {
-        attachmentFiles.push({ fileName, data: obj.data })
-      }
-      return
-    }),
+  attachmentFiles.push(
+    ...(await Promise.all(
+      toRead.map(async (obj) => ({
+        fileName: obj.name,
+        data: await obj.read(),
+      })),
+    )),
   )
 
   if (isRetryWithoutAttachments) {

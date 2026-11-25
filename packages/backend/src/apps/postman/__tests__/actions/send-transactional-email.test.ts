@@ -5,9 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendTransactionalEmail from '../../actions/send-transactional-email'
+import { AttachmentSizeExceededError } from '../../common/attachment-size'
 
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
@@ -1008,6 +1010,19 @@ describe('send transactional email', () => {
         'Total attachment size exceeded',
       )
       // The size guard runs before the SES API call.
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+    })
+
+    it('fails as a config error when filterAttachments finds the total size too large', async () => {
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      mocks.filterAttachments.mockRejectedValueOnce(
+        new AttachmentSizeExceededError(),
+      )
+
+      const error = await sendTransactionalEmail.run!($).catch((e) => e)
+      expect(error).toBeInstanceOf(StepError)
+      expect(error.message).toContain('Total attachment size exceeded')
+      expect(error.kind).toBe('config')
       expect(mocks.sesSend).not.toHaveBeenCalled()
     })
 
