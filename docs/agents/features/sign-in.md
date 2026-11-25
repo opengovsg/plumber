@@ -17,7 +17,7 @@ Sign in lets a new user request an OTP for a `.gov.sg` email and land on an empt
 
 Preconditions:
 
-- The email is new for this run. See [Drive the Plumber UI](../drive-ui.md#3-log-in).
+- The email is new for this run. See [Drive the Plumber UI](../drive-ui.md#2-log-in).
 
 - **Open the form.** Go to `/login`. The button `Get OTP` is visible.
 - **Request an OTP.** Fill the field with placeholder `e.g. user@agency.gov.sg` and choose `Get OTP`. The label `Enter OTP sent to <email>` is visible.

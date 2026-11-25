@@ -10,28 +10,19 @@ The app runs on `.env-example` placeholders. Calls to FormSG, M365, Postman, Dat
 - All worktrees share one Postgres and one Redis.
   - Other worktrees see the data you create.
   - Your worker may run another worktree's queued jobs.
-  - If another branch added a migration your branch lacks, setup fails on that migration. Ask the user before you go on.
+  - If another branch added a migration your branch lacks, `start` fails on that migration. Ask the user before you go on.
 - Your shell must be able to write this worktree's git metadata, under the main checkout's `.git/worktrees/`. The first server start records this worktree's ports there.
 - Run every command from the worktree root. Each one works from a fresh shell.
+- Do not run `pnpm run setup` or `pnpm run dev`. Both need 1Password.
 - Node comes from nvm. If `node -v` does not match `.nvmrc`, prefix each command with `. "${NVM_DIR:-$HOME/.nvm}/nvm.sh" && nvm use >/dev/null &&`.
 
-## 1. Set up the worktree
-
-Run the setup script once per worktree. It may already have run if the user set it as their worktree setup command.
-
-```sh
-bash scripts/worktree-setup.sh
-```
-
-It installs dependencies, starts the shared Docker services and migrates the shared database. If it says Docker is not running, ask the user to start Docker. Then run it again.
-
-Do not run `pnpm run setup` or `pnpm run dev`. Both need 1Password.
-
-## 2. Start the dev server
+## 1. Start the dev server
 
 ```sh
 node scripts/sample-dev-server.mjs start
 ```
+
+It first starts the shared Docker services and migrates the shared database. If it says Docker is not running, ask the user to start Docker. If it says dependencies are missing, run `pnpm install`.
 
 It prints the backend and frontend URLs once both are ready. If this worktree's server already runs, it waits for it to be ready, then prints `already running` and the same URLs. `status` prints `running`, `not ready` or `not running`. `not ready` means the server is booting or a service crashed. Check `tmp/plumber-dev.log`.
 
@@ -39,7 +30,7 @@ It refuses to start when another process holds this worktree's ports. Ask the us
 
 The log is in `tmp/plumber-dev.log`, which git ignores. The backend rebuilds on change, and the frontend hot-reloads. If the page goes blank after a rebuild, load the URL again.
 
-## 3. Log in
+## 2. Log in
 
 Use a fresh browser context, such as a new incognito context or a new Playwright context. The session cookie works across every `localhost` port. A shared profile would replace the user's own Plumber session.
 
@@ -59,7 +50,7 @@ Use a fresh browser context, such as a new incognito context or a new Playwright
 4. Fill the field labelled `Enter OTP sent to <email>` and choose `Verify OTP`.
 5. Wait for the URL to leave `/login`. A new user lands on `/flows`. An announcement dialog may appear. Close it if it does.
 
-## 4. Drive the UI
+## 3. Drive the UI
 
 Use your tool's browser, e.g. Orca's built-in browser, chrome-devtools MCP or Playwright MCP. Without one, write a Playwright script with `packages/e2e`'s `@playwright/test`.
 
@@ -67,13 +58,13 @@ Use your tool's browser, e.g. Orca's built-in browser, chrome-devtools MCP or Pl
 - Keep the window at least 1280 px wide. Narrower windows hide the sidebar labels.
 - Follow the matching page in [features/](./features/README.md) for screens, expected results and traps.
 
-## 5. Prove the result
+## 4. Prove the result
 
 - Capture the action and the resulting state, not only the final screen.
 - For UI, save an accessibility snapshot and a screenshot.
 - For a change that saves data, reload the page and show the saved value.
 
-## 6. Clean up
+## 5. Clean up
 
 Stop the server you started. Leave the Docker containers running.
 
