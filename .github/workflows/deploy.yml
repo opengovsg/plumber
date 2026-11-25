@@ -141,6 +141,7 @@ jobs:
           artifact_path: './'
           critical_threshold: 5
           high_threshold: 10
+          fail_on_malicious_packages: true
 
       - name: Check Inspector malware findings
         id: malware
