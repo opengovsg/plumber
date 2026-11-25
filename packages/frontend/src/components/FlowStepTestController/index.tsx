@@ -31,7 +31,9 @@ import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
 import { TOP_NAV_HEIGHT_NUM } from '@/config/layout'
 import { EditorContext } from '@/contexts/Editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
+import { usePostHogFeatureFlag } from '@/hooks/usePostHogFeatureFlag'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
@@ -45,6 +47,8 @@ import {
   isSameAppAndAppKey,
   matchParamsToDataIn,
 } from './utils'
+
+const FIX_WITH_AI_FLAG = 'fix-with-ai-check-step-error'
 
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
@@ -240,6 +244,32 @@ export default function FlowStepTestController(
   const checkStepError = lastErrorDetails
     ? readCheckStepError(lastErrorDetails)
     : null
+  const aiFixTarget =
+    checkStepError && step.appKey && step.key && !readOnly
+      ? { ...checkStepError, appKey: step.appKey, stepKey: step.key }
+      : null
+  const aiFixVariant = usePostHogFeatureFlag(
+    FIX_WITH_AI_FLAG,
+    aiFixTarget !== null,
+  )
+  const isAiFixEnabled = aiFixVariant === 'test'
+
+  const hasShownErrorRef = useRef(false)
+  useEffect(() => {
+    if (lastErrorDetails) {
+      hasShownErrorRef.current = true
+      return
+    }
+    if (isLastTestExecutionSuccessful && hasShownErrorRef.current) {
+      hasShownErrorRef.current = false
+      if (isPostHogConfigured) {
+        posthog.capture('check_step:passed', {
+          appKey: step.appKey,
+          stepKey: step.key,
+        })
+      }
+    }
+  }, [isLastTestExecutionSuccessful, lastErrorDetails, step.appKey, step.key])
 
   useEffect(() => {
     if (isTestExecuting) {
@@ -438,19 +468,19 @@ export default function FlowStepTestController(
           <VStack w="100%" gap={2}>
             {lastErrorDetails && (
               <Box w="100%">
-                {checkStepError && step.appKey && step.key && !readOnly ? (
+                {isAiFixEnabled && aiFixTarget ? (
                   <AiErrorFix.Provider
-                    key={`${step.id}:${checkStepError.errorName}`}
+                    key={`${step.id}:${aiFixTarget.errorName}`}
                     stepId={step.id}
-                    appKey={step.appKey}
+                    appKey={aiFixTarget.appKey}
                     appName={
                       allApps.find((app) => app.key === step.appKey)?.name ??
-                      step.appKey
+                      aiFixTarget.appKey
                     }
-                    stepKey={step.key}
-                    stepName={stepName || step.key}
-                    errorName={checkStepError.errorName}
-                    errorSolution={checkStepError.errorSolution}
+                    stepKey={aiFixTarget.stepKey}
+                    stepName={stepName || aiFixTarget.stepKey}
+                    errorName={aiFixTarget.errorName}
+                    errorSolution={aiFixTarget.errorSolution}
                   >
                     <ErrorResult
                       errorDetails={lastErrorDetails}
