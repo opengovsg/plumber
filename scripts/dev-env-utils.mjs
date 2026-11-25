@@ -53,11 +53,12 @@ const WORKTREE_PORT_SLOTS = 1700
 
 // The OS frees a listening port when its process dies, so a crash can't leave a stale lock.
 const WORKTREE_PORT_LOCK = WORKTREE_PORT_START - 1
-export const DEV_SERVICES_LOCK = WORKTREE_PORT_START - 2
 const WORKTREE_PORT_FILE = 'plumber-port'
+// IMPORTANT: fixed, not derived from PLUMBER_WORKTREE_PORT_BASE, because every shell migrates the same database.
+export const DEV_SERVICES_LOCK = 12998
 
 // Connects instead of test-listening, because SO_REUSEADDR lets a test listen succeed on a held port.
-function isPortInUse(port, host) {
+export function isPortInUse(port, host) {
   return new Promise((resolve) => {
     const socket = connect({ port, host })
     socket.setTimeout(1000)

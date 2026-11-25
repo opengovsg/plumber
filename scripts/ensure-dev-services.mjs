@@ -7,11 +7,13 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 import {
   acquireLock,
   DEV_SERVICES_LOCK,
   fail,
+  isPortInUse,
   readShellEnv,
 } from './dev-env-utils.mjs'
 
@@ -55,7 +57,8 @@ if (context.error) {
   fail(`cannot run docker. ${context.error.message}`)
 }
 const dockerHost = process.env.DOCKER_HOST || context.stdout.trim()
-if (!/^(unix|npipe):\/\//.test(dockerHost)) {
+// A named pipe on another machine looks like //host/pipe, so only the local //./pipe form counts.
+if (!/^(unix:\/\/|npipe:\/\/\/\/\.\/pipe\/)/.test(dockerHost)) {
   fail(
     `Docker points at ${dockerHost || 'an unknown host'}, not a local socket. Ask the user.`,
   )
@@ -98,6 +101,15 @@ if (
   })
 ) {
   fail('migrations failed.')
+}
+
+// DynamoDB Local can take longer than Postgres to accept requests after a cold start.
+const dynamodbDeadline = Date.now() + 60_000
+while (!(await isPortInUse(8000, '127.0.0.1'))) {
+  if (Date.now() > dynamodbDeadline) {
+    fail('DynamoDB Local did not start on port 8000.')
+  }
+  await sleep(1000)
 }
 
 // `pnpm run setup` creates the Tiles table in postsetup. The script skips an existing table.
