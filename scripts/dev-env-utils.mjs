@@ -11,6 +11,40 @@ export function fail(message) {
   process.exit(1)
 }
 
+// IMPORTANT: anything else from the shell, e.g. an exported RDS_PROXY_HOST, would override the .env-example placeholders.
+const PASSTHROUGH_VARS = [
+  'PATH',
+  'HOME',
+  'USER',
+  'LOGNAME',
+  'SHELL',
+  'TERM',
+  'COLORTERM',
+  'LANG',
+  'LC_ALL',
+  'TMPDIR',
+  'NVM_DIR',
+  'NVM_BIN',
+  'NVM_INC',
+  // Windows needs these to spawn processes and find the user's folders.
+  'SYSTEMROOT',
+  'COMSPEC',
+  'PATHEXT',
+  'USERPROFILE',
+  'APPDATA',
+  'LOCALAPPDATA',
+  'TEMP',
+  'TMP',
+]
+
+export function readShellEnv() {
+  return Object.fromEntries(
+    PASSTHROUGH_VARS.filter((name) => process.env[name] !== undefined).map(
+      (name) => [name, process.env[name]],
+    ),
+  )
+}
+
 const WORKTREE_PORT_START =
   Number(process.env.PLUMBER_WORKTREE_PORT_BASE) || 13000
 const WORKTREE_PORT_STRIDE = 10
