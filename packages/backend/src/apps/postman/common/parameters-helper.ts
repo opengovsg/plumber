@@ -9,7 +9,6 @@ import {
 } from '@/helpers/s3'
 import Flow from '@/models/flow'
 
-
 export type AttachmentExtensionPolicy =
   | { mode: 'allow'; extensions: readonly string[] }
   | { mode: 'block'; extensions: readonly string[] }
