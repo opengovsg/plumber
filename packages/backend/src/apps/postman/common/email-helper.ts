@@ -105,9 +105,15 @@ async function sendViaPostman(
   }
 
   for (const attachment of email.attachments ?? []) {
+    // IMPORTANT: wrap without copying. Recipients send in parallel, so a copy
+    // per recipient multiplies attachment memory by the recipient count.
     requestData.append(
       'attachments',
-      Buffer.from(attachment.data),
+      Buffer.from(
+        attachment.data.buffer,
+        attachment.data.byteOffset,
+        attachment.data.byteLength,
+      ),
       attachment.fileName,
     )
   }

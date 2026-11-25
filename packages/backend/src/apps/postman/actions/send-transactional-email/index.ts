@@ -23,6 +23,7 @@ import {
 import {
   transactionalEmailFields,
   transactionalEmailSchema,
+  validateTransactionalEmailStepParameters,
 } from '../../common/parameters'
 import {
   AttachmentExtensionPolicy,
@@ -54,6 +55,7 @@ const action: IRawAction = {
   key: 'sendTransactionalEmail',
   description: 'Sends an email using Postman',
   arguments: transactionalEmailFields,
+  validateStepParameters: validateTransactionalEmailStepParameters,
 
   preprocessVariable(key: string, value: unknown) {
     // Handle table variable markers - convert to HTML table
