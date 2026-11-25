@@ -4,6 +4,7 @@ import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import globalVariable from '@/helpers/global-variable'
+import { isConnectionFieldSharedWithFlow } from '@/helpers/shared-connection-field'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -69,6 +70,20 @@ const getDynamicData: NonNullable<QueryResolvers['getDynamicData']> = async (
   for (const parameterKey in parameters) {
     const parameterValue = parameters[parameterKey]
     $.step.parameters[parameterKey] = parameterValue
+  }
+
+  // The listing key is exempt because its results are filtered below.
+  if (
+    step.flow.role !== 'owner' &&
+    APP_CONNECTION_FIELDS[appKey]?.dynamicDataKey !== dynamicDataKey &&
+    !(await isConnectionFieldSharedWithFlow({
+      flowId: step.flowId,
+      appKey,
+      connectionId: step.connectionId,
+      parameters: $.step.parameters,
+    }))
+  ) {
+    throw new BadUserInputError('Selected file is not shared with this pipe')
   }
 
   const fetchedData = await command.run($)

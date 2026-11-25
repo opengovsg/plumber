@@ -6,7 +6,9 @@ import {
   sanitizeServerSideConfig,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { addFlowConnection } from '@/helpers/add-flow-connection'
 import { getStepVersion } from '@/helpers/get-step-version'
+import { isConnectionFieldSharedWithFlow } from '@/helpers/shared-connection-field'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
 
@@ -80,6 +82,21 @@ const duplicateBranch: NonNullable<
         }
       }
 
+      if (
+        flow.role !== 'owner' &&
+        !(await isConnectionFieldSharedWithFlow({
+          flowId: flow.id,
+          appKey,
+          connectionId: connection?.id,
+          parameters,
+          trx,
+        }))
+      ) {
+        throw new BadUserInputError(
+          'Selected file is not shared with this pipe',
+        )
+      }
+
       const previousStep = await flow
         .$relatedQuery('steps', trx)
         .findOne({
@@ -113,10 +130,14 @@ const duplicateBranch: NonNullable<
       newSteps.push(step)
       previousStepId = step.id
 
-      // NOTE: slight difference from createStep where createStep
-      // may need to add to flow_connections, but duplicateBranch does not
-      // as the connection would have already been added when the step
-      // was created in the original branch
+      // The owner may paste parameters that no existing step uses.
+      if (flow.role === 'owner' && step.connectionId) {
+        await addFlowConnection({
+          step,
+          addedBy: context.currentUser.id,
+          trx,
+        })
+      }
     }
 
     // Remaps intra-selection endStepId markers onto the copies (DB-derived).

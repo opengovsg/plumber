@@ -12,6 +12,7 @@ import logger from '@/helpers/logger'
 
 import { extractAuthDataWithPlumberFolder } from '../auth-data'
 import { validateCanAccessFile } from '../file-privacy'
+import { validateFileSharedWithFlow } from '../flow-shared-files'
 import {
   rethrowHttpErrorAsStepError,
   toStepError,
@@ -94,6 +95,8 @@ export default class WorkbookSession {
     }
 
     const authData = extractAuthDataWithPlumberFolder($)
+
+    await validateFileSharedWithFlow($, fileId)
 
     // We _always_ check against the server in case file sensitivity has changed
     // or it has been moved. This guards against things likes delayed actions

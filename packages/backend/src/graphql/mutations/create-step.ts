@@ -6,9 +6,10 @@ import {
   upgradeIfThenV1Blocks,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { addFlowConnection } from '@/helpers/add-flow-connection'
 import logger from '@/helpers/logger'
+import { isConnectionFieldSharedWithFlow } from '@/helpers/shared-connection-field'
 import App from '@/models/app'
-import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
 import {
@@ -92,6 +93,19 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
       })
     }
 
+    if (
+      flow.role !== 'owner' &&
+      !(await isConnectionFieldSharedWithFlow({
+        flowId: flow.id,
+        appKey: input.appKey,
+        connectionId: input.connection?.id,
+        parameters: input.parameters,
+        trx,
+      }))
+    ) {
+      throw new BadUserInputError('Selected file is not shared with this pipe')
+    }
+
     const previousStep = await flow
       .$relatedQuery('steps', trx)
       .findOne({
@@ -156,13 +170,9 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
     // only add by default if the user is the owner of the flow
     // TODO (kevinkim-ogp): enhance this to allow editors to add connections
     if (input.connection?.id && flow.userId === context.currentUser.id) {
-      await FlowConnections.addFlowConnection({
-        flowId: flow.id,
-        connectionId: input.connection.id,
+      await addFlowConnection({
+        step,
         addedBy: context.currentUser.id,
-        // it is always connection when creating a step since table is selected
-        // only after the step is created
-        connectionType: 'connection',
         trx,
       })
     }

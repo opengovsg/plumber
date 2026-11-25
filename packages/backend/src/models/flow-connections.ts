@@ -1,4 +1,5 @@
 import { Transaction } from 'objection'
+import z from 'zod'
 
 import Base from './base'
 import Connection from './connection'
@@ -6,6 +7,8 @@ import Flow from './flow'
 import FlowCollaborator from './flow-collaborators'
 import TableMetadata from './table-metadata'
 import User from './user'
+
+const sharedParameterValuesSchema = z.array(z.string())
 
 class FlowConnections extends Base {
   flowId!: string
@@ -163,25 +166,35 @@ class FlowConnections extends Base {
      * EDGE CASE
      * handle edge case where if we delete the M365-Excel connection and add it back via an update step, we need to ensure that the connection exists first.
      * new M365-Excel connection will have a new connection id, so it will not exist for patching.
-     * we need to insert it instead.
+     * we need to insert it before patching.
      */
     const exists = await this.query(trx).findOne({
       flow_id: flowId,
       connection_id: connectionId,
     })
 
-    if (exists) {
-      return await this.query(trx)
-        .where({
-          flow_id: flowId,
-          connection_id: connectionId,
-        })
-        .patch({
-          // ensure distinct metadata values, we do it in the query to avoid
-          // having additional queries to get the array, de-duplicate and then
-          // update the DB
-          metadata: FlowConnections.raw(
-            `
+    if (!exists) {
+      await this.addFlowConnection({
+        flowId,
+        connectionId,
+        addedBy,
+        connectionType: 'connection',
+        trx,
+      })
+    }
+
+    // IMPORTANT: steps on a shared pipe can only open files in this list.
+    return await this.query(trx)
+      .where({
+        flow_id: flowId,
+        connection_id: connectionId,
+      })
+      .patch({
+        // ensure distinct metadata values, we do it in the query to avoid
+        // having additional queries to get the array, de-duplicate and then
+        // update the DB
+        metadata: FlowConnections.raw(
+          `
             jsonb_set(
               metadata,
               ?::text[],
@@ -194,18 +207,37 @@ class FlowConnections extends Base {
               true
             )
             `,
-            [`{${parameterKey}}`, parameterKey, parameterValue],
-          ),
-        })
+          [`{${parameterKey}}`, parameterKey, parameterValue],
+        ),
+      })
+  }
+
+  /**
+   * Returns null when the connection is not shared with the flow.
+   */
+  static getSharedParameterValues = async ({
+    flowId,
+    connectionId,
+    parameterKey,
+    trx,
+  }: {
+    flowId: string
+    connectionId: string
+    parameterKey: string
+    trx?: Transaction
+  }): Promise<string[] | null> => {
+    const flowConnection = await this.query(trx).findOne({
+      flow_id: flowId,
+      connection_id: connectionId,
+    })
+    if (!flowConnection) {
+      return null
     }
 
-    return await this.addFlowConnection({
-      flowId,
-      connectionId,
-      addedBy,
-      connectionType: 'connection',
-      trx,
-    })
+    const parsed = sharedParameterValuesSchema.safeParse(
+      flowConnection.metadata?.[parameterKey],
+    )
+    return parsed.success === true ? parsed.data : []
   }
 
   /**
