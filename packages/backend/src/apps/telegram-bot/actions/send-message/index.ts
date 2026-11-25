@@ -7,6 +7,10 @@ import logger from '@/helpers/logger'
 import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
 import { throwSendMessageError } from '../../common/throw-errors'
 
+// Telegram counts characters after parsing markdown.
+// Parsing never yields more characters than the step's text has.
+const MAX_MESSAGE_LENGTH = 4096
+
 const action: IRawAction = {
   name: 'Send message',
   key: 'sendMessage',
@@ -74,6 +78,14 @@ const action: IRawAction = {
         name: 'Empty message text',
         solution:
           'Check that the message text is not empty, especially if variables are used.',
+        kind: 'config',
+      })
+    }
+    if (messageText.length > MAX_MESSAGE_LENGTH) {
+      throw new StepError({
+        name: 'Message too long',
+        solution:
+          'Shorten the message text to 4096 characters or fewer, especially if variables are used.',
         kind: 'config',
       })
     }
