@@ -108,6 +108,50 @@ function compareDates(
   }
 }
 
+/**
+ * Knuth-Morris-Pratt substring search, linear in both lengths.
+ *
+ * IMPORTANT: V8's `String.prototype.includes` takes haystack × needle time on
+ * repetitive input, and both operands can be user-supplied 1 MB strings.
+ */
+export function includesInLinearTime(
+  haystack: string,
+  needle: string,
+): boolean {
+  if (needle.length === 0) {
+    return true
+  }
+  if (needle.length > haystack.length) {
+    return false
+  }
+
+  const failure = new Int32Array(needle.length)
+  for (let i = 1, matched = 0; i < needle.length; i++) {
+    const char = needle.charCodeAt(i)
+    while (matched > 0 && char !== needle.charCodeAt(matched)) {
+      matched = failure[matched - 1]
+    }
+    if (char === needle.charCodeAt(matched)) {
+      matched++
+    }
+    failure[i] = matched
+  }
+
+  for (let i = 0, matched = 0; i < haystack.length; i++) {
+    const char = haystack.charCodeAt(i)
+    while (matched > 0 && char !== needle.charCodeAt(matched)) {
+      matched = failure[matched - 1]
+    }
+    if (char === needle.charCodeAt(matched)) {
+      matched++
+    }
+    if (matched === needle.length) {
+      return true
+    }
+  }
+  return false
+}
+
 export default function conditionIsTrue(
   conditionArgs: IJSONObject,
   groupNumber: number,
@@ -138,7 +182,7 @@ export default function conditionIsTrue(
           'config',
         )
       }
-      result = field.toString().includes(value.toString())
+      result = includesInLinearTime(field.toString(), value.toString())
       break
     case 'begins':
       if (field === null || value === null) {

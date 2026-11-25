@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import StepError from '@/errors/step'
 
-import conditionIsTrue from '../../common/condition-is-true'
+import conditionIsTrue, {
+  includesInLinearTime,
+} from '../../common/condition-is-true'
 
 describe('Condition is true', () => {
   it.each([
@@ -113,6 +115,23 @@ describe('Condition is true', () => {
     )
 
     expect(result).toEqual(expectedResult)
+  })
+
+  it('evaluates contains on adversarial 1 MB operands in milliseconds', () => {
+    // Repetitive haystack and long repetitive needle with an early
+    // distinguishing character. Native `includes` takes tens of seconds here.
+    const field = 'a'.repeat(1_000_000)
+    const text = 'a'.repeat(10) + 'b' + 'a'.repeat(500_000)
+
+    const start = performance.now()
+    const result = conditionIsTrue(
+      { field, is: 'not', condition: 'contains', text },
+      1,
+    )
+    const elapsedMs = performance.now() - start
+
+    expect(result).toBe(true)
+    expect(elapsedMs).toBeLessThan(250)
   })
 
   it.each([
@@ -316,6 +335,51 @@ describe('Condition is true', () => {
       expect(result).toEqual(expectedResult)
     },
   )
+
+  describe('includesInLinearTime', () => {
+    it.each([
+      { haystack: '', needle: '' },
+      { haystack: 'abc', needle: '' },
+      { haystack: '', needle: 'a' },
+      { haystack: 'ab', needle: 'abc' },
+      { haystack: 'aabaabaaa', needle: 'aabaaa' },
+      { haystack: 'aabaabaab', needle: 'aabaaa' },
+      { haystack: 'abababca', needle: 'ababca' },
+      { haystack: 'xyzabc', needle: 'abc' },
+      { haystack: 'Hello', needle: 'hello' },
+      { haystack: 'a\u{1F600}b', needle: '\u{1F600}' },
+      { haystack: 'a\u{1F600}b', needle: '\uDE00b' },
+    ])(
+      'matches includes for "$haystack" and "$needle"',
+      ({ haystack, needle }) => {
+        expect(includesInLinearTime(haystack, needle)).toBe(
+          haystack.includes(needle),
+        )
+      },
+    )
+
+    it('matches includes on every short string over a 2-letter alphabet', () => {
+      const strings = ['']
+      for (let length = 1; length <= 6; length++) {
+        for (let bits = 0; bits < 2 ** length; bits++) {
+          strings.push(
+            bits
+              .toString(2)
+              .padStart(length, '0')
+              .replace(/0/g, 'a')
+              .replace(/1/g, 'b'),
+          )
+        }
+      }
+      for (const haystack of strings) {
+        for (const needle of strings) {
+          expect(includesInLinearTime(haystack, needle)).toBe(
+            haystack.includes(needle),
+          )
+        }
+      }
+    })
+  })
 
   describe('errors', () => {
     function catchStepError(fn: () => unknown): StepError {
