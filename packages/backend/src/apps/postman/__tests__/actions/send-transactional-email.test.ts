@@ -9,7 +9,6 @@ import StepError from '@/errors/step'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendTransactionalEmail from '../../actions/send-transactional-email'
-import { AttachmentSizeExceededError } from '../../common/attachment-size'
 
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
@@ -19,6 +18,7 @@ const mocks = vi.hoisted(() => ({
       attachmentFiles: { fileName: string; data: Uint8Array }[]
       invalidAttachments: string[]
       submissionId: string | null
+      totalSizeExceeded?: boolean
     } => {
       return {
         attachmentFiles: [],
@@ -652,7 +652,6 @@ describe('send transactional email', () => {
       executionId: $.execution.id,
       submissionId: 'abc',
       invalidAttachments: ['file-2.svg'],
-      hasInvalidAttachments: true,
     })
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -874,7 +873,6 @@ describe('send transactional email', () => {
       executionId: $.execution.id,
       submissionId: 'abc',
       invalidAttachments: ['file-2.svg'],
-      hasInvalidAttachments: true,
     })
   })
 
@@ -1022,17 +1020,27 @@ describe('send transactional email', () => {
       expect(mocks.sesSend).not.toHaveBeenCalled()
     })
 
-    it('fails as a config error when filterAttachments finds the total size too large', async () => {
+    it('fails as a config error and still reports invalid attachments when the total size is too large', async () => {
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
-      mocks.filterAttachments.mockRejectedValueOnce(
-        new AttachmentSizeExceededError(),
-      )
+      mocks.filterAttachments.mockResolvedValueOnce({
+        attachmentFiles: [],
+        invalidAttachments: ['virus.exe'],
+        submissionId: 'abc',
+        totalSizeExceeded: true,
+      })
 
       const error = await sendTransactionalEmail.run!($).catch((e) => e)
       expect(error).toBeInstanceOf(StepError)
       expect(error.message).toContain('Total attachment size exceeded')
       expect(error.kind).toBe('config')
+      expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          submissionId: 'abc',
+          invalidAttachments: ['virus.exe'],
+        }),
+      )
       expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.http.post).not.toHaveBeenCalled()
     })
 
     it('uses Postman when ses_enabled is false (default kill switch)', async () => {

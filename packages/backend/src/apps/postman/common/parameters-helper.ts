@@ -9,7 +9,6 @@ import {
 } from '@/helpers/s3'
 import Flow from '@/models/flow'
 
-import { AttachmentSizeExceededError } from './attachment-size'
 
 export type AttachmentExtensionPolicy =
   | { mode: 'allow'; extensions: readonly string[] }
@@ -134,8 +133,16 @@ export async function filterAttachments({
     (sum, obj) => sum + (obj.sizeInBytes ?? Infinity),
     0,
   )
+  // Returned rather than thrown, so the caller can still report the invalid
+  // attachments found above.
   if (totalSizeInBytes > MAX_TOTAL_ATTACHMENT_SIZE) {
-    throw new AttachmentSizeExceededError()
+    return {
+      attachmentFiles: [],
+      invalidAttachments,
+      submissionId,
+      isRetryWithoutAttachments,
+      totalSizeExceeded: true,
+    }
   }
 
   attachmentFiles.push(
@@ -153,6 +160,7 @@ export async function filterAttachments({
       invalidAttachments,
       submissionId,
       isRetryWithoutAttachments,
+      totalSizeExceeded: false,
     }
   }
 
@@ -161,5 +169,6 @@ export async function filterAttachments({
     invalidAttachments,
     submissionId,
     isRetryWithoutAttachments,
+    totalSizeExceeded: false,
   }
 }
