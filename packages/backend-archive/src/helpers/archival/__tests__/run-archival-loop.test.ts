@@ -239,12 +239,26 @@ describe('runArchivalLoop', () => {
     expect(vi.mocked(archiveExecution).mock.calls.map(([e]) => e.id)).toEqual([
       'old',
     ])
+    // started-late is held before its steps are read.
+    expect(
+      vi
+        .mocked(archivalDbReader)
+        .mock.calls.filter(([table]) => table === 'execution_steps'),
+    ).toHaveLength(2)
     expect(logger.info).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'archival.run.complete',
         executions_held_for_analytics: 2,
+        executions_skipped: 0,
       }),
     )
+    const metaCall = vi
+      .mocked(putArchiveObject)
+      .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))
+    expect(JSON.parse(metaCall![0].body as string)).toMatchObject({
+      executionsHeldForAnalytics: 2,
+      executionsSkipped: 0,
+    })
   })
 
   it('does not start a new batch after signal is aborted', async () => {

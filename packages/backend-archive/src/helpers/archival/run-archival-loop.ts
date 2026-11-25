@@ -11,16 +11,9 @@ import type { ExecutionRow, ExecutionStepRow } from './types'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// A run whose creation or any step falls on or after keepFrom still counts in an execution day not yet final.
-function heldForAnalytics(
-  execution: ExecutionRow,
-  steps: ExecutionStepRow[],
-  keepFrom: Date,
-): boolean {
-  return [execution.createdAt, ...steps.map((step) => step.createdAt)].some(
-    (at) => new Date(at) >= keepFrom,
-  )
-}
+// A run created, or with a step, on or after keepFrom still counts in an execution day not yet final.
+const atOrAfter = (at: string | Date, keepFrom: Date) =>
+  new Date(at) >= keepFrom
 
 export async function runArchivalLoop(
   signal: AbortSignal,
@@ -199,6 +192,7 @@ export async function runArchivalLoop(
 
     let batchArchived = 0
     let batchSkipped = 0
+    let batchHeld = 0
 
     const limit = pLimit(archiveIntraBatchConcurrency)
 
@@ -209,6 +203,15 @@ export async function runArchivalLoop(
             return {
               execution,
               outcome: 'skipped' as const,
+              steps: [] as ExecutionStepRow[],
+            }
+          }
+
+          // Decided before the step read, which loads every payload.
+          if (keepFrom && atOrAfter(execution.createdAt, keepFrom)) {
+            return {
+              execution,
+              outcome: 'held' as const,
               steps: [] as ExecutionStepRow[],
             }
           }
@@ -243,11 +246,13 @@ export async function runArchivalLoop(
               .where('execution_steps.execution_id', execution.id)
               .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
 
-            if (keepFrom && heldForAnalytics(execution, steps, keepFrom)) {
-              totalHeld++
+            if (
+              keepFrom &&
+              steps.some((step) => atOrAfter(step.createdAt, keepFrom))
+            ) {
               return {
                 execution,
-                outcome: 'skipped' as const,
+                outcome: 'held' as const,
                 steps: [] as ExecutionStepRow[],
               }
             }
@@ -317,6 +322,8 @@ export async function runArchivalLoop(
             }
           }
         }
+      } else if (outcome === 'held') {
+        batchHeld++
       } else {
         batchSkipped++
       }
@@ -324,11 +331,13 @@ export async function runArchivalLoop(
 
     totalArchived += batchArchived
     totalSkipped += batchSkipped
+    totalHeld += batchHeld
 
     logger.info({
       event: 'archival.batch.complete',
       batchArchived,
       batchSkipped,
+      batchHeld,
       cursor,
       durationMs: Date.now() - startedAt,
     })
@@ -383,6 +392,7 @@ export async function runArchivalLoop(
         realExecutionsArchived: totalArchived - totalTestArchived,
         testExecutionsArchived: totalTestArchived,
         executionsSkipped: totalSkipped,
+        executionsHeldForAnalytics: totalHeld,
         flowsAffected: archivedByFlow.size,
         stepCounts: stepCountsObj,
         nullStepCount,

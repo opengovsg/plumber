@@ -35,6 +35,17 @@ The order has two exceptions:
 
 The `cursor` field of `archival.batch.complete` is the `createdAt` and `id` of the batch's last row. `createdAt` is Postgres text, so it keeps microseconds.
 
+### Holding runs for analytics
+
+The analytics execution tables read runs from Postgres. Archival must not delete a run before the execution days it counts in are final.
+
+- In prod and staging, each run starts by reading the analytics bucket's completion files. The earliest day since 1 April 2023 that either execution day table has not finalised is the floor. It is logged as `archival.analytics_floor`.
+- Every run created, or with a step, on or after the floor is held: left in Postgres and retried the next night. A run created after the floor is held before its steps are read.
+- Held runs are counted in `executions_held_for_analytics` and `executionsHeldForAnalytics` in `_meta/runs`, not in the skipped counts.
+- Until the analytics history is written, the floor is 1 April 2023, so every run is held.
+- A bucket that cannot be read stops the run with `archival.run.error`. Nothing is archived.
+- UAT and local runs export nothing, so they hold nothing.
+
 Rehydration (`rehydrate-execution`) runs on demand (not scheduled). It reads archived objects from S3 and writes execution + step rows back into Postgres, setting an `archiveDisabled` guard on the flow to prevent the archival task from immediately re-archiving them.
 
 ---
@@ -85,7 +96,8 @@ The script logs structured JSON to stdout. Key events to look for:
 | Event                              | Meaning                                                                                                                                                                           |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `archival.run.start`               | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                                                                   |
-| `archival.batch.complete`          | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.                                                                                                            |
+| `archival.analytics_floor`         | The day archival holds runs from, as `keepFrom`. Null outside prod and staging. See [Holding runs for analytics](#holding-runs-for-analytics).                                    |
+| `archival.batch.complete`          | One batch processed — shows `batchArchived`, `batchSkipped`, `batchHeld`, `cursor`.                                                                                               |
 | `archival.flow.archived`           | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.                                                |
 | `archival.run.complete`            | Final summary — `executions_archived` (real + test), `real_executions_archived`, `test_executions_archived`, `executions_skipped`, `executions_held_for_analytics`, `durationMs`. |
 | `archival.run.meta_write_failed`   | The `_meta/runs` write failed after archiving. Carries the same counts as `run.complete`.                                                                                         |
