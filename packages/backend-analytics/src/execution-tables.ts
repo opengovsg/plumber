@@ -373,11 +373,17 @@ export async function backfillExecutionDays({
     firstDay: days[0],
   }
   await writeEachTable(dayTables, (table) =>
-    writeExecutionDayTable(params, table, (state) =>
-      days
-        .filter((day) => !state.newestVersion.has(day))
-        .map((day) => ({ day, final: true })),
-    ),
+    writeExecutionDayTable(params, table, (state) => {
+      const toWrite = days.filter((day) => !state.newestVersion.has(day))
+      logger.info({
+        event: 'analytics.execution_history.planned',
+        table: table.name,
+        requestedDays: days.length,
+        skippedDays: days.length - toWrite.length,
+        firstDay: toWrite[0] ?? null,
+      })
+      return toWrite.map((day) => ({ day, final: true }))
+    }),
   )
 }
 

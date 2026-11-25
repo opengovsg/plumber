@@ -17,7 +17,7 @@ import logger from '@/helpers/archival/logger'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
 
 const USAGE = `Usage: analytics:execution-history --from YYYY-MM-DD [--to YYYY-MM-DD] [--tables a,b] (--out <dir> | --s3)
-  --from    First Singapore day to write.
+  --from    First Singapore day to write. Start at 2023-04-01 to release archival's hold.
   --to      Last Singapore day, inclusive. Default: --from. At most the day before yesterday, the last final day.
   --tables  execution_daily, execution_step_daily or both. Default: both.
   --out     Write the files under this local folder. Runs in any APP_ENV.

@@ -303,6 +303,20 @@ describe('backfillExecutionDays', () => {
     await backfill(['2026-11-01', '2026-11-02'], dayTable)
     await backfill(['2026-11-01', '2026-11-02', '2026-11-03'], dayTable)
 
+    expect(logger.info).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        event: 'analytics.export.coverage',
+        job: 'execution_daily',
+      }),
+    )
+    expect(logger.info).toHaveBeenCalledWith({
+      event: 'analytics.execution_history.planned',
+      table: 'execution_daily',
+      requestedDays: 3,
+      skippedDays: 2,
+      firstDay: '2026-11-03',
+    })
+
     expect(
       vi.mocked(dayTable.fetchDay).mock.calls.map(([, query]) => query),
     ).toEqual(

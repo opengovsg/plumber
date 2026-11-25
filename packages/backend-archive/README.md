@@ -253,13 +253,14 @@ The nightly export writes execution days from its first night on. `analytics:exe
 | `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`. |
 | `--s3`         | Write to `ANALYTICS_BUCKET`. Runs only when `APP_ENV` is `prod` or `staging`.        |
 
-- Days already final are skipped, so a rerun resumes where a stopped run left off.
+- Days already final are skipped, so a rerun resumes where a stopped run left off. Each run logs `analytics.execution_history.planned` per table, with `requestedDays`, `skippedDays` and the first day it writes. Run one backfill at a time.
 - It needs the same indexes as the nightly export, and reads through the reader endpoint one day at a time.
 - Archival holds every run whose day is not final yet, from April 2023 on. It logs the floor as `archival.analytics_floor` and counts held runs in `executions_held_for_analytics`. So until this backfill finishes, archival deletes nothing in prod and staging.
+- IMPORTANT: start `--from` at `2023-04-01`, the floor's first day (`EXECUTION_HISTORY_START`). A later start leaves days unwritten, so archival keeps holding every run. Days with no runs cost one empty query each.
 - Attach the tables to PostHog after it finishes, inside a new source's first 7 days, when synced rows are free.
 
 ```bash
-pnpm --filter backend-archive run analytics:execution-history --from 2023-05-01 --to 2026-11-23 --s3
+pnpm --filter backend-archive run analytics:execution-history --from 2023-04-01 --to 2026-11-23 --s3
 ```
 
 ## Extracting the mutation log
