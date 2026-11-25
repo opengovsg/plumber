@@ -163,6 +163,8 @@ interface WriteExecutionTablesParams {
   source?: CompletionSource
   historyBudgetMs?: number
   clock?: () => number
+  // Stops the history between days, so a deploy's SIGTERM ends the run cleanly.
+  signal?: AbortSignal
 }
 
 interface DayItem {
@@ -354,6 +356,9 @@ export async function writeExecutionTables(
 // Keeps the history's reader load inside the quiet hours after the 01:00 run, and each night's run shorter than a day.
 export const EXECUTION_HISTORY_BUDGET_MS = 3 * 60 * 60 * 1_000
 
+// A few failures can be one bad day each. More in one night points at the reader, so the rest waits.
+export const EXECUTION_HISTORY_MAX_FAILURES = 3
+
 /**
  * Writes missing final days since EXECUTION_HISTORY_START until the night's time budget runs out.
  *
@@ -370,6 +375,7 @@ export async function writeExecutionHistory({
   dayTables = EXECUTION_DAY_TABLES,
   historyBudgetMs = EXECUTION_HISTORY_BUDGET_MS,
   clock = Date.now,
+  signal,
 }: WriteExecutionTablesParams): Promise<void> {
   const deadline = clock() + historyBudgetMs
   const lastFinal = lastFinalDay(yesterday)
@@ -389,12 +395,17 @@ export async function writeExecutionHistory({
     }),
   )
   const written = dayTables.map(() => 0)
+  const failed: string[] = []
   try {
     for (const day of order) {
       if (!missing.some((days) => days.has(day))) {
         continue
       }
-      if (clock() >= deadline) {
+      if (
+        clock() >= deadline ||
+        signal?.aborted ||
+        failed.length >= EXECUTION_HISTORY_MAX_FAILURES
+      ) {
         break
       }
       for (const [i, table] of dayTables.entries()) {
@@ -411,18 +422,18 @@ export async function writeExecutionHistory({
             now,
             source: 'backfill',
           })
+          missing[i].delete(day)
+          written[i]++
         } catch (err) {
-          // A failing day would fail again tonight, so the rest waits for the next night.
+          // The day stays missing and is retried next night. Later days still get written.
           logger.error({
             event: 'analytics.export.day.error',
             job: table.name,
             day,
             err,
           })
-          throw new Error(`${table.name}: history day ${day} failed`)
+          failed.push(`${table.name} ${day}`)
         }
-        missing[i].delete(day)
-        written[i]++
       }
     }
   } finally {
@@ -435,6 +446,9 @@ export async function writeExecutionHistory({
         firstMissing: [...missing[i]].sort()[0] ?? null,
       })
     })
+  }
+  if (failed.length > 0) {
+    throw new Error(`Execution history failed: ${failed.join(', ')}`)
   }
 }
 

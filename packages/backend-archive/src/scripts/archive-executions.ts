@@ -33,6 +33,7 @@ async function runAnalyticsExport(): Promise<boolean> {
       appEnv: archivalConfig.appEnv,
       bucket: archivalConfig.analyticsBucket,
       historyBudgetMs: EXECUTION_HISTORY_BUDGET_MS,
+      signal: controller.signal,
     })
     // No deadline yet. Alert on durationMs if exports grow slow enough to delay archival.
     logger.info({

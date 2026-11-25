@@ -13,6 +13,7 @@ import {
   readJobState,
 } from '../day-completion'
 import {
+  EXECUTION_HISTORY_MAX_FAILURES,
   EXECUTION_HISTORY_START,
   writeExecutionHistory,
   executionArchivalFloor,
@@ -414,7 +415,7 @@ describe('writeExecutionHistory', () => {
     })
   })
 
-  it('stops for the night at a failing day, keeping the days before it', async () => {
+  it('skips a failing day, writes the later ones, and fails the run', async () => {
     const table = day('execution_daily')
     await seed(
       'execution_daily',
@@ -423,16 +424,56 @@ describe('writeExecutionHistory', () => {
     vi.mocked(table.fetchDay)
       .mockResolvedValueOnce([])
       .mockRejectedValueOnce(new Error('statement timeout'))
+      .mockResolvedValueOnce([])
 
     await expect(history([table])).rejects.toThrow(
-      'execution_daily: history day 2026-11-08 failed',
+      'Execution history failed: execution_daily 2026-11-08',
     )
 
-    expect(table.fetchDay).toHaveBeenCalledTimes(2)
     expect(
       (
         await readdir(path.join(dir!, 'bronze/_completion/execution_daily'))
       ).filter((key) => key >= 'day=2026-11-07'),
-    ).toEqual(['day=2026-11-07.v1.json'])
+    ).toEqual(['day=2026-11-07.v1.json', 'day=2026-11-09.v1.json'])
+  })
+
+  it('stops for the night after repeated failures', async () => {
+    const table = day('execution_daily')
+    await seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'),
+    )
+    vi.mocked(table.fetchDay).mockRejectedValue(new Error('reader down'))
+
+    await expect(history([table])).rejects.toThrow('Execution history failed')
+
+    expect(table.fetchDay).toHaveBeenCalledTimes(EXECUTION_HISTORY_MAX_FAILURES)
+  })
+
+  it('stops between days once the task is asked to stop', async () => {
+    const table = day('execution_daily')
+    await seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'),
+    )
+    const controller = new AbortController()
+    vi.mocked(table.fetchDay).mockImplementation(async () => {
+      controller.abort()
+      return []
+    })
+    dir ??= await mkdtemp(path.join(tmpdir(), 'executions-'))
+
+    await writeExecutionHistory({
+      db,
+      sink: localDirSink(dir),
+      store: localDirCompletionStore(dir),
+      yesterday: YESTERDAY,
+      now: NOW,
+      dayTables: [table],
+      historyBudgetMs: 60_000,
+      signal: controller.signal,
+    })
+
+    expect(table.fetchDay).toHaveBeenCalledTimes(1)
   })
 })

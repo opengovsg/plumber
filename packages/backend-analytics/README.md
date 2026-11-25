@@ -151,7 +151,9 @@ Each night, after yesterday's files and the open-run snapshot, the export writes
 - It writes any missing day in the last 30 first, then the rest oldest first. One history day moves `analytics.export.coverage`'s expected start back to 2023, so the 30 days it checks must already be there, or the missing-days monitor fires every night.
 
 - It stops starting new days after 3 hours (`EXECUTION_HISTORY_BUDGET_MS`), so its reader load stays in the quiet hours. The next night continues.
-- A day already final at any version is skipped. A failing day stops the history for that night and logs `analytics.export.day.error`, so it does not retry all night.
+- A day already final at any version is skipped. A failing day logs `analytics.export.day.error`, stays missing and is retried the next night, while later days still get written. After 3 failures in one night the history stops, since that points at the reader. The run then fails, so the export error monitor fires.
+- A day that keeps failing holds archival's floor at that day. Check its error: a day over the 10-minute statement timeout needs a longer timeout.
+- It stops between days on the task's SIGTERM, so a deploy ends the run cleanly.
 - Each night logs `analytics.execution_history.progress` per table: `writtenDays`, `remainingDays` and `firstMissing`.
 - It runs only when the indexes are usable, like the day tables.
 

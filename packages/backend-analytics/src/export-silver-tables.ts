@@ -142,6 +142,7 @@ export async function writeSilverTables({
 interface WriteAllSilverTablesParams extends WriteSilverTablesParams {
   // Only the nightly task writes execution history, so a manual export never runs for hours.
   historyBudgetMs?: number
+  signal?: AbortSignal
   store: CompletionStore
   changeTables?: SilverChangeTable<SilverRow>[]
   executionDayTables?: ExecutionDayTable<SilverRow>[]
@@ -164,6 +165,7 @@ export async function writeAllSilverTables({
   source = 'nightly',
   now = new Date(),
   historyBudgetMs = 0,
+  signal,
 }: WriteAllSilverTablesParams): Promise<void> {
   // A failed snapshot table must not hold back the change tables, whose catch-up window is short.
   const errors: Error[] = []
@@ -192,6 +194,7 @@ export async function writeAllSilverTables({
     snapshotTables: executionSnapshotTables,
     source,
     historyBudgetMs,
+    signal,
   }).catch((err: Error) => {
     errors.push(err)
   })
