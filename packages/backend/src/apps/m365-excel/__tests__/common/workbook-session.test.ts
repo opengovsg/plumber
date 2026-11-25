@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   setSessionIdInRedis: vi.fn(),
   clearSessionIdFromRedis: vi.fn(),
   validateCanAccessFile: vi.fn(),
+  validateFileSharedWithFlow: vi.fn(),
 }))
 
 vi.mock('../../common/workbook-session/redis', () => ({
@@ -22,6 +23,10 @@ vi.mock('../../common/workbook-session/redis', () => ({
 
 vi.mock('../../common/file-privacy', () => ({
   validateCanAccessFile: mocks.validateCanAccessFile,
+}))
+
+vi.mock('../../common/flow-shared-files', () => ({
+  validateFileSharedWithFlow: mocks.validateFileSharedWithFlow,
 }))
 
 vi.mock('../../common/auth-data', () => ({
@@ -58,6 +63,27 @@ describe('WorkbookSession', () => {
   })
 
   describe('acquire', () => {
+    it('rejects a file not shared with the pipe before any Graph call', async () => {
+      const notShared = new StepError({
+        name: 'This file is not shared with this pipe.',
+        solution:
+          'Ask the pipe owner to select this file in this step, then try again.',
+        kind: 'config',
+      })
+      mocks.validateFileSharedWithFlow.mockRejectedValue(notShared)
+
+      await expect(WorkbookSession.acquire($, 'file-id')).rejects.toBe(
+        notShared,
+      )
+      expect(mocks.validateFileSharedWithFlow).toHaveBeenCalledWith(
+        $,
+        'file-id',
+      )
+      expect(mocks.validateCanAccessFile).not.toHaveBeenCalled()
+      expect($.http.post).not.toHaveBeenCalled()
+      expect(mocks.getSessionIdFromRedis).not.toHaveBeenCalled()
+    })
+
     it('converts a createSession HttpError to a StepError with its cause', async () => {
       mocks.getSessionIdFromRedis.mockResolvedValue(null)
       const httpError = makeHttpError({

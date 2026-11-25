@@ -13,6 +13,7 @@ import {
   TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import { validateCanAccessFile } from '../../common/file-privacy'
+import { validateFileSharedWithFlow } from '../../common/flow-shared-files'
 import { toInternalStepError } from '../../common/internal-step-error'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
@@ -168,6 +169,31 @@ async function runBatch(
     }
   }
 
+  // Jobs from different pipes can share a batch, and each pipe has its own
+  // shared-file list.
+  const sharedFileChecks = new Map<string | undefined, Promise<void>>()
+  const authorized: ParsedJob[] = []
+  for (const job of parsed) {
+    const flowId = job.$.flow?.id
+    if (!sharedFileChecks.has(flowId)) {
+      sharedFileChecks.set(flowId, validateFileSharedWithFlow(job.$, fileId))
+    }
+    try {
+      await sharedFileChecks.get(flowId)
+      authorized.push(job)
+    } catch (error) {
+      if (!(error instanceof StepError)) {
+        throw error
+      }
+      results[job.index] = { status: 'failed', error }
+    }
+  }
+
+  if (authorized.length === 0) {
+    return results
+  }
+  const { $: sessionJob } = authorized[0]
+
   // ONE file-access check for the whole batch. validateCanAccessFile's verdict
   // depends only on the access identity asserted above + fileId (never on row
   // data), so a single Graph permission query authorizes the entire batch
@@ -183,38 +209,39 @@ async function runBatch(
   //   non-retriable error): isolate EVERY job (reported `failed`, never retried)
   //   since retrying cannot help.
   try {
-    const ownerEmail = firstJob.user?.email
+    const ownerEmail = sessionJob.user?.email
     if (!ownerEmail) {
       throw new Error('createTableRow batch has no pipe owner')
     }
     await validateCanAccessFile(
       ownerEmail,
-      getAuthDataOrThrow(firstJob),
+      getAuthDataOrThrow(sessionJob),
       fileId,
-      firstJob.http,
+      sessionJob.http,
     )
   } catch (error) {
     if (error instanceof RetriableError) {
       throw error
     }
-    const stepError = wrapUnexpectedJobError(firstJob, error)
-    for (const { index } of parsed) {
+    const stepError = wrapUnexpectedJobError(sessionJob, error)
+    for (const { index } of authorized) {
       results[index] = { status: 'failed', error: stepError }
     }
     return results
   }
 
-  // All parsed jobs are authorized: they are the candidate set, in batch order.
-  // Each still has to build its row (a per-job step that can fail on a column
-  // name that doesn't exist in the table), so we don't mark `success` until the
-  // row is built AND committed below.
+  // All remaining jobs are authorized: they are the candidate set, in batch
+  // order. Each still has to build its row (a per-job step that can fail on a
+  // column name that doesn't exist in the table), so we don't mark `success`
+  // until the row is built AND committed below.
   //
-  // The whole batch is written through ONE session (the first job's). Every job
-  // shares that job's connection (asserted above) and the single check
-  // authorized it, so this session's authorization is correct for every row.
+  // The whole batch is written through ONE session (the first authorized
+  // job's). Every job shares that job's connection (asserted above) and the
+  // single check authorized it, so this session's authorization is correct for
+  // every row.
   // acquire re-checks access as defensive depth (and it is the sole check on the
   // single-job `run` path).
-  const session = await WorkbookSession.acquire(firstJob, fileId as string)
+  const session = await WorkbookSession.acquire(sessionJob, fileId as string)
 
   const tableHeaderInfoResponse = await session.request<{
     rowIndex: number
@@ -254,7 +281,7 @@ async function runBatch(
   const values: Array<
     ReturnType<typeof constructMsGraphValuesArrayForRowWrite>
   > = []
-  parsed.forEach(({ index, $, params }) => {
+  authorized.forEach(({ index, $, params }) => {
     try {
       values.push(
         constructMsGraphValuesArrayForRowWrite(

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   // runBatch authorizes file access ONCE per batch (every job in a batch shares
   // one connection). Default: access granted; the denial test overrides it.
   validateCanAccessFile: vi.fn(),
+  validateFileSharedWithFlow: vi.fn(),
   parseAuthData: vi.fn(),
   constructRow: vi.fn(),
   loggerError: vi.fn(),
@@ -33,6 +34,10 @@ vi.mock('../../common/workbook-session', () => ({
 
 vi.mock('../../common/file-privacy', () => ({
   validateCanAccessFile: mocks.validateCanAccessFile,
+}))
+
+vi.mock('../../common/flow-shared-files', () => ({
+  validateFileSharedWithFlow: mocks.validateFileSharedWithFlow,
 }))
 
 // runBatch passes auth data (via parseAuthData) to validateCanAccessFile.
@@ -74,6 +79,7 @@ function makeGlobalVariable(
     connectionId?: string
     tenantKey?: string
     folderId?: string
+    flowId?: string
   } = {},
 ): IGlobalVariable {
   return {
@@ -85,7 +91,7 @@ function makeGlobalVariable(
         folderId: identity.folderId ?? 'FOLDER',
       },
     },
-    flow: { id: 'flow-id' },
+    flow: { id: identity.flowId ?? 'flow-id' },
     step: {
       id: 'step-id',
       appKey: 'm365-excel',
@@ -138,6 +144,7 @@ describe('createTableRow runBatch', () => {
     vi.resetAllMocks()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
+    mocks.validateFileSharedWithFlow.mockResolvedValue(undefined)
     mocks.parseAuthData.mockReturnValue({
       status: 'ok',
       data: { tenantKey: 'tenant', folderId: 'FOLDER' },
@@ -376,6 +383,85 @@ describe('createTableRow runBatch', () => {
     jobs.forEach((job) => expect(job.$.setActionItem).not.toHaveBeenCalled())
   })
 
+  describe('shared-file check', () => {
+    const notShared = new StepError({
+      name: 'This file is not shared with this pipe.',
+      solution:
+        'Ask the pipe owner to select this file in this step, then try again.',
+      kind: 'config',
+    })
+
+    it('fails every job and never touches Graph when the file is not shared with the pipe', async () => {
+      mocks.validateFileSharedWithFlow.mockRejectedValue(notShared)
+      const jobs = [
+        { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+        { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+      ]
+
+      const results = await createTableRowAction.runBatch!(jobs)
+
+      results.forEach((r) => {
+        expect(r).toEqual({ status: 'failed', error: notShared })
+      })
+      expect(mocks.validateCanAccessFile).not.toHaveBeenCalled()
+      expect(mocks.acquire).not.toHaveBeenCalled()
+      expect(mocks.request).not.toHaveBeenCalled()
+      jobs.forEach((job) => expect(job.$.setActionItem).not.toHaveBeenCalled())
+    })
+
+    it('checks each pipe once and writes only the rows of pipes that share the file', async () => {
+      mocks.validateFileSharedWithFlow.mockImplementation(
+        async ($: IGlobalVariable) => {
+          if ($.flow.id === 'unshared-flow') {
+            throw notShared
+          }
+        },
+      )
+      const jobs = [
+        {
+          $: makeGlobalVariable(rowParameters('Alice', '30'), {
+            flowId: 'unshared-flow',
+          }),
+        },
+        { $: makeGlobalVariable(rowParameters('Bob', '40')) },
+        {
+          $: makeGlobalVariable(rowParameters('Carol', '50'), {
+            flowId: 'unshared-flow',
+          }),
+        },
+        { $: makeGlobalVariable(rowParameters('Dave', '60')) },
+      ]
+
+      const results = await createTableRowAction.runBatch!(jobs)
+
+      expect(results.map((r) => r.status)).toEqual([
+        'failed',
+        'success',
+        'failed',
+        'success',
+      ])
+      expect(mocks.validateFileSharedWithFlow).toHaveBeenCalledTimes(2)
+      expect(postCalls()).toHaveLength(1)
+      expect(postCalls()[0][2].data.values).toEqual([
+        ['Bob', '40'],
+        ['Dave', '60'],
+      ])
+      // The session must come from a job whose pipe shares the file.
+      expect(mocks.acquire).toHaveBeenCalledWith(jobs[1].$, 'file-1')
+      expect(jobs[0].$.setActionItem).not.toHaveBeenCalled()
+      expect(jobs[2].$.setActionItem).not.toHaveBeenCalled()
+    })
+
+    it('rethrows a non-StepError so the whole batch retries', async () => {
+      const dbError = new Error('connection terminated')
+      mocks.validateFileSharedWithFlow.mockRejectedValue(dbError)
+      const jobs = [{ $: makeGlobalVariable(rowParameters('Alice', '30')) }]
+
+      await expect(createTableRowAction.runBatch!(jobs)).rejects.toBe(dbError)
+      expect(mocks.request).not.toHaveBeenCalled()
+    })
+  })
+
   it.each([
     [
       'a plain Error from the access check',
@@ -608,6 +694,7 @@ describe('createTableRow run (single-row delegation)', () => {
     vi.resetAllMocks()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.validateCanAccessFile.mockResolvedValue(undefined)
+    mocks.validateFileSharedWithFlow.mockResolvedValue(undefined)
     mocks.parseAuthData.mockReturnValue({
       status: 'ok',
       data: { tenantKey: 'tenant', folderId: 'FOLDER' },
@@ -628,5 +715,20 @@ describe('createTableRow run (single-row delegation)', () => {
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: { sheetRowNumber: 11, success: true },
     })
+  })
+
+  it('throws a config StepError and writes nothing when the file is not shared with the pipe', async () => {
+    const notShared = new StepError({
+      name: 'This file is not shared with this pipe.',
+      solution:
+        'Ask the pipe owner to select this file in this step, then try again.',
+      kind: 'config',
+    })
+    mocks.validateFileSharedWithFlow.mockRejectedValue(notShared)
+    const $ = makeGlobalVariable(rowParameters('Solo', '99'))
+
+    await expect(createTableRowAction.run!($)).rejects.toBe(notShared)
+    expect(mocks.request).not.toHaveBeenCalled()
+    expect($.setActionItem).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import Context from '@/types/express/context'
@@ -25,6 +25,10 @@ describe('FlowConnections model', () => {
       userId: context.currentUser.id,
       active: false,
     })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('addFlowConnection', () => {
@@ -70,6 +74,92 @@ describe('FlowConnections model', () => {
 
       expect(flowConnections).toHaveLength(1)
       expect(flowConnections[0].connectionId).toBe(mockConnectionId)
+    })
+  })
+
+  describe('patchFlowConnectionMetadata', () => {
+    it('records the value when it first shares the connection', async () => {
+      vi.spyOn(Flow, 'hasCollaborators').mockResolvedValue(true)
+      const connectionId = randomUUID()
+
+      await FlowConnections.patchFlowConnectionMetadata({
+        flowId: mockFlowId,
+        connectionId,
+        parameterKey: 'fileId',
+        parameterValue: 'file-1',
+        addedBy: context.currentUser.id,
+      })
+
+      await expect(
+        FlowConnections.getSharedParameterValues({
+          flowId: mockFlowId,
+          connectionId,
+          parameterKey: 'fileId',
+        }),
+      ).resolves.toEqual(['file-1'])
+    })
+
+    it('appends distinct values to an existing connection', async () => {
+      vi.spyOn(Flow, 'hasCollaborators').mockResolvedValue(true)
+      const connectionId = randomUUID()
+      for (const fileId of ['file-1', 'file-2', 'file-1']) {
+        await FlowConnections.patchFlowConnectionMetadata({
+          flowId: mockFlowId,
+          connectionId,
+          parameterKey: 'fileId',
+          parameterValue: fileId,
+          addedBy: context.currentUser.id,
+        })
+      }
+
+      const sharedValues = await FlowConnections.getSharedParameterValues({
+        flowId: mockFlowId,
+        connectionId,
+        parameterKey: 'fileId',
+      })
+      expect(sharedValues?.sort()).toEqual(['file-1', 'file-2'])
+    })
+
+    it('does not share the connection when the flow has no collaborators', async () => {
+      vi.spyOn(Flow, 'hasCollaborators').mockResolvedValue(false)
+      const connectionId = randomUUID()
+
+      await FlowConnections.patchFlowConnectionMetadata({
+        flowId: mockFlowId,
+        connectionId,
+        parameterKey: 'fileId',
+        parameterValue: 'file-1',
+        addedBy: context.currentUser.id,
+      })
+
+      await expect(
+        FlowConnections.getSharedParameterValues({
+          flowId: mockFlowId,
+          connectionId,
+          parameterKey: 'fileId',
+        }),
+      ).resolves.toBeNull()
+    })
+  })
+
+  describe('getSharedParameterValues', () => {
+    it('returns an empty list when the metadata has no values for the key', async () => {
+      const connectionId = randomUUID()
+      await FlowConnections.query().insert({
+        flowId: mockFlowId,
+        connectionId,
+        addedBy: context.currentUser.id,
+        connectionType: 'connection',
+        metadata: { fileId: 'not-an-array' },
+      })
+
+      await expect(
+        FlowConnections.getSharedParameterValues({
+          flowId: mockFlowId,
+          connectionId,
+          parameterKey: 'fileId',
+        }),
+      ).resolves.toEqual([])
     })
   })
 })

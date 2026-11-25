@@ -92,6 +92,11 @@ vi.mock('@/apps/m365-excel/common/file-privacy', () => ({
   validateCanAccessFile: mocks.validateCanAccessFile,
 }))
 
+// The test flows have no m365 connection to look up a shared-file list for.
+vi.mock('@/apps/m365-excel/common/flow-shared-files', () => ({
+  validateFileSharedWithFlow: async () => undefined,
+}))
+
 // createTableRow's runBatch derives auth data (to pass to validateCanAccessFile)
 // from `$`. The test flows have no real m365 connection, so the real
 // parseAuthData would report it missing; stub it to a dummy

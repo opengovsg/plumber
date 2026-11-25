@@ -7,6 +7,7 @@ import {
   addFlowTableConnection,
 } from '@/helpers/add-flow-connection'
 import logger from '@/helpers/logger'
+import { isConnectionFieldSharedWithFlow } from '@/helpers/shared-connection-field'
 import App from '@/models/app'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -128,6 +129,19 @@ const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
         version,
       )
       version = transformer.getLatestStepVersion(key)
+    }
+
+    if (
+      step.flow.role !== 'owner' &&
+      !(await isConnectionFieldSharedWithFlow({
+        flowId,
+        appKey,
+        connectionId: inputConnection.id,
+        parameters,
+        trx,
+      }))
+    ) {
+      throw new BadUserInputError('Selected file is not shared with this pipe')
     }
 
     const updatedStep = await Step.query(trx)

@@ -4,7 +4,10 @@ import apps from '@/apps'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
+import { UserFacingError } from '@/errors/user-facing-error'
+import { addFlowConnection } from '@/helpers/add-flow-connection'
 import globalVariable from '@/helpers/global-variable'
+import { isConnectionFieldSharedWithFlow } from '@/helpers/shared-connection-field'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
@@ -82,7 +85,7 @@ export async function updateStepParametersService({
   connectionId,
   traceId,
 }: UpdateStepParametersInput): Promise<McpUpdateStepParametersResult> {
-  const { step, rawApp } = await Step.transaction(async (trx) => {
+  const { step, rawApp, role } = await Step.transaction(async (trx) => {
     const accessible = await user
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .findOne({
@@ -177,6 +180,19 @@ export async function updateStepParametersService({
       }
     }
 
+    if (
+      accessible.flow.role !== 'owner' &&
+      !(await isConnectionFieldSharedWithFlow({
+        flowId: pipeId,
+        appKey: step.appKey,
+        connectionId: connectionId ?? step.connectionId,
+        parameters: mergedParameters,
+        trx,
+      }))
+    ) {
+      throw new UserFacingError('Selected file is not shared with this pipe')
+    }
+
     // Write parameters without connectionId; connectionId is set only after registration succeeds
     const updatedStep = await Step.query(trx).patchAndFetchById(stepId, {
       parameters: mergedParameters,
@@ -191,7 +207,7 @@ export async function updateStepParametersService({
       }),
     })
 
-    return { step: updatedStep, rawApp }
+    return { step: updatedStep, rawApp, role: accessible.flow.role }
   })
 
   const result: McpUpdateStepParametersResult = { step }
@@ -279,6 +295,11 @@ export async function updateStepParametersService({
         .throwIfNotFound()
       result.step.connectionId = connectionId
     }
+  }
+
+  // Mirrors updateStep, so the owner's file choices stay usable on a shared pipe.
+  if (role === 'owner' && result.step.connectionId) {
+    await addFlowConnection({ step: result.step, addedBy: user.id })
   }
 
   return result
