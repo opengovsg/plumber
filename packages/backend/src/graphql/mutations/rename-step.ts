@@ -27,6 +27,9 @@ export const renameStepSchema = z.object({
     }),
 })
 
+const STEP_UNAVAILABLE_MESSAGE =
+  'This step no longer exists or you can no longer edit it. Refresh the page.'
+
 const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
   _parent,
   params,
@@ -49,30 +52,35 @@ const renameStep: NonNullable<MutationResolvers['renameStep']> = async (
   } = parsed.data
 
   return await Step.transaction(async (trx) => {
-    const step = await context.currentUser
+    const accessibleStep = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .findOne({
         'steps.id': id,
         'steps.flow_id': flowId,
       })
-
-    if (!step) {
-      throw new BadUserInputError(
-        'This step no longer exists or you can no longer edit it. Refresh the page.',
-      )
+    if (!accessibleStep) {
+      throw new BadUserInputError(STEP_UNAVAILABLE_MESSAGE)
     }
 
-    // IMPORTANT: lock the step, then the pipe, before checking the version.
-    // updateStep takes the same order, so the two cannot deadlock. Without the
-    // pipe lock, two concurrent renames both pass the check.
-    await Step.query(trx).forUpdate().findById(id)
+    // IMPORTANT: lock the step, then the pipe, in updateStep's order so the two
+    // cannot deadlock. NO KEY UPDATE lets inserts that reference these rows
+    // (e.g. executions on a live pipe) proceed. The pipe lock stops two
+    // concurrent renames from both passing the version check.
+    const step = await Step.query(trx)
+      .forNoKeyUpdate()
+      .findOne({ id, flow_id: flowId })
+    if (!step) {
+      throw new BadUserInputError(STEP_UNAVAILABLE_MESSAGE)
+    }
     const flow = await Flow.query(trx)
-      .forUpdate()
+      .forNoKeyUpdate()
       .findById(flowId)
       .throwIfNotFound()
     flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
-    // FormSG workflow steps take their names from the form.
+    // Checked on the locked row, since a FormSG sync can claim the step while
+    // this rename waits for the lock. FormSG workflow steps take their names
+    // from the form.
     const isSystemStep =
       step.appKey && step.key
         ? lookupStepDefinition(step.appKey, step.key, step.type).kind ===

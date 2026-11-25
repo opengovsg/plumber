@@ -240,4 +240,59 @@ describe('renameStep mutation', () => {
       expect(errors).toEqual([])
     }
   })
+  it('does not wait on the key-share locks that execution inserts take', async () => {
+    // An execution insert on a live pipe holds these locks through its foreign keys.
+    const trx = await Flow.knex().transaction()
+    try {
+      await trx.raw('select id from flows where id = ? for key share', [
+        flow.id,
+      ])
+      await trx.raw('select id from steps where id = ? for key share', [
+        step.id,
+      ])
+
+      const result = await Promise.race([
+        renameStep(
+          {},
+          {
+            input: { id: step.id, flow: await flowInput(), stepName: 'Live' },
+          },
+          context,
+        ),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('rename waited on the lock')),
+            5000,
+          ),
+        ),
+      ])
+      expect((result as Step).config.stepName).toBe('Live')
+    } finally {
+      await trx.commit()
+    }
+  })
+
+  it('rejects the rename if FormSG claims the step while the rename waits', async () => {
+    const version = await flowInput()
+    const trx = await Flow.knex().transaction()
+    let rename: Promise<unknown>
+    try {
+      // Holds the step's row lock until commit, like a FormSG workflow sync.
+      await trx('steps')
+        .where({ id: step.id })
+        .update({ app_key: 'formsg', parameters: { mrf: { stepNumber: 2 } } })
+      rename = Promise.resolve(
+        renameStep(
+          {},
+          { input: { id: step.id, flow: version, stepName: 'New name' } },
+          context,
+        ),
+      )
+      // Lets the rename pass its unlocked access check and wait on the lock.
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    } finally {
+      await trx.commit()
+    }
+    await expect(rename).rejects.toThrow('This step name cannot be changed')
+  })
 })

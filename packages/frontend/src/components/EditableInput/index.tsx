@@ -1,6 +1,6 @@
 import { Flex, Text } from '@chakra-ui/react'
 import { IconButton, Input, useIsMobile } from '@opengovsg/design-system-react'
-import { KeyboardEvent, useState } from 'react'
+import { KeyboardEvent, useRef, useState } from 'react'
 import { FaCheck, FaTimes } from 'react-icons/fa'
 import { MdModeEdit } from 'react-icons/md'
 
@@ -37,6 +37,8 @@ export default function EditableInput({
 
   const [isEditing, setIsEditing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  // A ref, because two quick Enter presses can both run before isUpdating re-renders.
+  const isSavingRef = useRef(false)
   const [isHovered, setIsHovered] = useState(false)
   const [inputValue, setInputValue] = useState(initialValue)
 
@@ -54,6 +56,9 @@ export default function EditableInput({
   }
 
   const handleSave = async () => {
+    if (isSavingRef.current) {
+      return
+    }
     const trimmedValue = inputValue.trim()
     if (
       !allowEmpty &&
@@ -61,6 +66,7 @@ export default function EditableInput({
     ) {
       resetField()
     } else {
+      isSavingRef.current = true
       setIsUpdating(true)
       try {
         await onSave(trimmedValue)
@@ -68,12 +74,16 @@ export default function EditableInput({
       } catch {
         // Stay in edit mode so the user can retry with the typed value.
       } finally {
+        isSavingRef.current = false
         setIsUpdating(false)
       }
     }
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (isSavingRef.current) {
+      return
+    }
     if (e.key === 'Enter') {
       handleSave()
     }
