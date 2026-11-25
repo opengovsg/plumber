@@ -17,6 +17,17 @@ export const worker = new WorkerPro(
 
     const flow = await Flow.query().findById(flowId).throwIfNotFound()
 
+    // Logged after the lookup so the lateness metric can drop inactive flows left by failed unpublish cleanup.
+    if (job.opts.prevMillis !== undefined) {
+      logger.info('Scheduled run started', {
+        event: 'schedule-run-started',
+        flowId,
+        jobId: job.id,
+        flowActive: flow.active,
+        latenessMs: Date.now() - job.opts.prevMillis,
+      })
+    }
+
     // safe guard to prevent processing unpublished flows with scheduler
     if (!flow.active) {
       logger.warn({
