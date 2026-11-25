@@ -168,8 +168,10 @@ SELECT
   coalesce(a.key, s.key) AS action_key,
   e.test_run,
   a.status,
-  -- Errors saved before 27 Oct 2026 have no kind.
-  CASE WHEN a.status = 'failure' THEN a.error_kind END AS error_kind,
+  -- Only a StepError saves a kind, since 27 Oct 2026. A JSON error body can carry its own kind key, so only known kinds pass.
+  CASE
+    WHEN a.status = 'failure' AND a.error_kind IN ('config', 'third-party', 'internal') THEN a.error_kind
+  END AS error_kind,
   a.next_attempt_at IS NOT NULL AS retried,
   count(*) AS count
 FROM attempts a

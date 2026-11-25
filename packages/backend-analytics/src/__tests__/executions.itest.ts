@@ -29,7 +29,7 @@ interface RunFixture {
   attempts: [string, 'success' | 'failure' | null, string, number?][]
   // Rows saved before execution_steps had these columns.
   withoutAppKey?: boolean
-  // The kind on each failed attempt. Errors saved before 27 Oct 2026 have none.
+  // The kind a StepError saves on each failed attempt. A plain Error saves none.
   errorKind?: string
 }
 
@@ -68,8 +68,10 @@ const RUNS = {
       [STEP_2, 'success', '2026-11-13T02:00:01'],
     ],
   },
+  // A third-party error body with its own kind key, which is not a Plumber kind.
   retriedAfterFinal: {
     id: runId(),
+    errorKind: 'rate_limit',
     createdAt: '2026-11-10T03:00:00',
     status: 'success',
     attempts: [
@@ -216,10 +218,9 @@ describe('execution tables against the migrated schema', () => {
           metadata: iteration === undefined ? {} : { iteration },
           error_details:
             status === 'failure'
-              ? {
-                  name: 'StepError',
-                  ...(run.errorKind && { kind: run.errorKind }),
-                }
+              ? run.errorKind
+                ? { name: 'StepError', kind: run.errorKind }
+                : { error: 'plain error' }
               : null,
           created_at: sgt(at),
         })),
@@ -368,7 +369,7 @@ describe('execution tables against the migrated schema', () => {
           test_run: false,
           count: 2,
         },
-        // The run retried after as_of, whose error has no kind.
+        // The run retried after as_of, whose error body carries an unknown kind.
         {
           step_id: STEP_1,
           status: 'failure',
