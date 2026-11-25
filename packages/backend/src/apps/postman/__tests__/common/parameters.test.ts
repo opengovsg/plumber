@@ -323,8 +323,8 @@ describe('postman transactional email attachments limit', () => {
     { attachments: [{ id: s3Id }] },
     { attachments: ['a'.repeat(2049)] },
   ])('rejects saving invalid attachments', (parameters) => {
-    expect(() =>
-      validateTransactionalEmailStepParameters(parameters),
-    ).toThrow(BadUserInputError)
+    expect(() => validateTransactionalEmailStepParameters(parameters)).toThrow(
+      BadUserInputError,
+    )
   })
 })

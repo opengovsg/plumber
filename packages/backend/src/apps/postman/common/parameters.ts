@@ -188,23 +188,23 @@ export const transactionalEmailSchema = z.object({
     .array(z.string())
     .max(MAX_ATTACHMENTS, ATTACHMENTS_LIMIT_MESSAGE)
     .transform((array, context) => {
-    const result: string[] = []
-    for (const value of array) {
-      // Account for optional attachment fields with no response.
-      if (!value) {
-        continue
+      const result: string[] = []
+      for (const value of array) {
+        // Account for optional attachment fields with no response.
+        if (!value) {
+          continue
+        }
+        if (!parseS3Id(value)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${value} is not a S3 ID.`,
+          })
+          return z.NEVER
+        }
+        result.push(value)
       }
-      if (!parseS3Id(value)) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `${value} is not a S3 ID.`,
-        })
-        return z.NEVER
-      }
-      result.push(value)
-    }
-    return result
-  }),
+      return result
+    }),
 })
 
 const transactionalEmailStepParametersSchema = z
