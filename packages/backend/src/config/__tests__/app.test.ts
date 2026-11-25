@@ -89,7 +89,8 @@ describe('appConfig.launchDarklyOffline', () => {
     vi.stubEnv('APP_ENV', appEnv)
     vi.stubEnv('LAUNCH_DARKLY_OFFLINE', offline)
     vi.resetModules()
-    const { default: appConfig } = await import('@/config/app')
+    const { default: appConfig } =
+      (await import('@/config/app/index.js')) as unknown as typeof import('@/config/app/index.js')
     return appConfig.launchDarklyOffline
   }
 

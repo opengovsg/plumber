@@ -6,13 +6,13 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "login": "ts-node scripts/login.ts",
-    "login:local": "ts-node scripts/localhost-login.ts",
-    "check-email": "ts-node scripts/check-email.ts",
+    "login": "tsx scripts/login.ts",
+    "login:local": "tsx scripts/localhost-login.ts",
+    "check-email": "tsx scripts/check-email.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "typecheck": "tsc --noEmit",
-    "test:config": "ts-node environments.test.ts",
+    "test:config": "tsx environments.test.ts",
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write ."
   },
@@ -23,7 +23,7 @@
     "dayjs": "1.11.10",
     "dotenv": "catalog:",
     "gmail-tester": "1.3.8",
-    "ts-node": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "zod": "catalog:"
   },

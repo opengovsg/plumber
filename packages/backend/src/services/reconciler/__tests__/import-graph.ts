@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import ts from 'typescript'
+import { parseSync } from 'oxc-parser'
 
 export const SRC_DIR = path.resolve(__dirname, '../../..')
 
@@ -15,6 +15,8 @@ function resolveImport(fromFile: string, specifier: string): string | null {
     return null
   }
 
+  // NodeNext specifiers name the emitted `.js` file; the source is `.ts`.
+  basePath = basePath.replace(/\.js$/, '')
   const candidates = [
     basePath,
     `${basePath}.ts`,
@@ -37,13 +39,23 @@ export function collectReachableFiles(entryFile: string): Set<string> {
 
   while (queue.length > 0) {
     const file = queue.pop() as string
-    const { importedFiles } = ts.preProcessFile(
-      fs.readFileSync(file, 'utf8'),
-      true,
-      true,
-    )
+    const source = fs.readFileSync(file, 'utf8')
+    const { module } = parseSync(file, source)
+    const specifiers = [
+      ...module.staticImports.map((entry) => entry.moduleRequest.value),
+      ...module.staticExports.flatMap((entry) =>
+        entry.entries.flatMap((exported) =>
+          exported.moduleRequest ? [exported.moduleRequest.value] : [],
+        ),
+      ),
+      // Only string-literal dynamic imports name a file statically.
+      ...module.dynamicImports.flatMap(({ moduleRequest }) => {
+        const literal = source.slice(moduleRequest.start, moduleRequest.end)
+        return /^(['"]).*\1$/.test(literal) ? [literal.slice(1, -1)] : []
+      }),
+    ]
 
-    for (const { fileName } of importedFiles) {
+    for (const fileName of specifiers) {
       const resolved = resolveImport(file, fileName)
       if (resolved && !reached.has(resolved)) {
         reached.add(resolved)

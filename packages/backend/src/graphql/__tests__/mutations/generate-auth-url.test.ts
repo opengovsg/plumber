@@ -61,7 +61,7 @@ describe('generateAuthUrl', () => {
     mocks.findOneByKey.mockResolvedValueOnce(app)
     mocks.globalVariable.mockResolvedValueOnce($)
 
-    const result = await generateAuthUrl(null, PARAMS, STUB_CONTEXT, null)
+    const result = await generateAuthUrl({}, PARAMS, STUB_CONTEXT)
 
     expect(mocks.findOneByKey).toHaveBeenCalledWith('slack')
     expect(app.auth.generateAuthUrl).toHaveBeenCalledWith($)
@@ -82,7 +82,7 @@ describe('generateAuthUrl', () => {
     mocks.globalVariable.mockResolvedValueOnce({})
 
     await expect(
-      generateAuthUrl(null, PARAMS, STUB_CONTEXT, null),
+      generateAuthUrl({}, PARAMS, STUB_CONTEXT),
     ).rejects.toBeInstanceOf(GenerateAuthUrlError)
   })
 })

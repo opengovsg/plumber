@@ -29,10 +29,9 @@ describe.each(ENTRY_POINTS)('%s', (entry) => {
     const { stdout } = await promisify(execFile)(
       process.execPath,
       [
-        '-r',
-        'ts-node/register',
-        '-r',
-        'tsconfig-paths/register',
+        // Same loader as the `dev` script's `tsx src/server.ts`.
+        '--import',
+        'tsx',
         'src/__tests__/fixtures/log-in-span.ts',
         ...preamble,
       ],
@@ -47,8 +46,6 @@ describe.each(ENTRY_POINTS)('%s', (entry) => {
             ),
           ),
           APP_ENV: 'staging',
-          TS_NODE_TRANSPILE_ONLY: 'true',
-          TS_NODE_TRANSPILER: 'ts-node/transpilers/swc',
           // Keeps dd-trace from sending traces, telemetry or remote config requests.
           DD_TRACE_AGENT_URL: 'http://127.0.0.1:1',
           DD_INSTRUMENTATION_TELEMETRY_ENABLED: 'false',

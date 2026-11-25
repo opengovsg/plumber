@@ -39,7 +39,7 @@
     "@types/pg": "^8.6.1",
     "nodemon": "^3.1.14",
     "rimraf": "^4.4.1",
-    "tsx": "^4.23.12",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "^4.1.11"
   }

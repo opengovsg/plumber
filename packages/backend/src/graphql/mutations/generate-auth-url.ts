@@ -51,6 +51,9 @@ const generateAuthUrl: NonNullable<
 
   const $ = await globalVariable({ connection, app, user: context.currentUser })
   try {
+    if (!app.auth?.generateAuthUrl) {
+      throw new Error(`${connection.key} does not support auth URL generation`)
+    }
     await app.auth.generateAuthUrl($)
     await axios.get(connection.formattedData.url as string)
   } catch (error) {

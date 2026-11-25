@@ -68,7 +68,7 @@ describe('flow worker', () => {
   let processor: Processor
 
   beforeAll(async () => {
-    await import('@/workers/flow')
+    await import('@/workers/flow.js')
     const calls = mocks.workerConstructor.mock.calls as unknown as unknown[][]
     processor = calls[0][1] as Processor
   })

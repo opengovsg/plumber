@@ -32,7 +32,7 @@ vi.mock('@/config/app', () => ({ default: mocks.appConfig }))
 async function loadProviderSettings(isDev: boolean): Promise<unknown> {
   mocks.appConfig.isDev = isDev
   vi.resetModules()
-  await import('../pair')
+  await import('../pair.js')
   return mocks.createBedrockAnthropic.mock.calls[0][0]
 }
 

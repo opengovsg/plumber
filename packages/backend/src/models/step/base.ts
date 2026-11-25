@@ -1,4 +1,5 @@
 import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
+import type { RelationMappings } from 'objection'
 
 import Base from '../base'
 import BaseFlow from '../flow/base'
@@ -43,7 +44,7 @@ class BaseStep extends Base {
     },
   }
 
-  static relationMappings = () => ({
+  static relationMappings = (): RelationMappings => ({
     flow: {
       relation: Base.BelongsToOneRelation,
       modelClass: BaseFlow,

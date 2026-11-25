@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 async function loadGraceSeconds(value: string | undefined) {
   vi.stubEnv('DELAY_STEP_GRACE_SECONDS', value)
   vi.resetModules()
-  const { DELAY_STEP_GRACE_SECONDS } = await import('@/config/workers')
+  const { DELAY_STEP_GRACE_SECONDS } = await import('@/config/workers.js')
   return DELAY_STEP_GRACE_SECONDS
 }
 
