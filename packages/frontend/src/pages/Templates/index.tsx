@@ -1,20 +1,34 @@
-import { Box, Flex, Text } from '@chakra-ui/react'
-import { Link } from '@opengovsg/design-system-react'
+import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
+import { Badge, Link } from '@opengovsg/design-system-react'
+import type { ITemplate } from '@plumber/types'
+import { useContext } from 'react'
+import { BiGroup } from 'react-icons/bi'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import mainLogo from '@/assets/logo.svg'
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { useApps } from '@/hooks/useApps'
 
 import TemplateModal from '../Template'
+import CommunityTemplatesSkeleton from './components/CommunityTemplatesSkeleton'
+import EarlyAccessBanner from './components/EarlyAccessBanner'
+import EarlyAccessModal from './components/EarlyAccessModal'
+import OptInDialog from './components/OptInDialog'
 import TemplateResults from './components/TemplateResults'
+import TemplateSection from './components/TemplateSection'
 import { useTemplateBrowser } from './hooks/useTemplateBrowser'
 
 const TEMPLATES_TITLE = 'Templates'
+const TEMPLATES_COUNT = 9
+const COMMUNITY_SKELETON_COUNT = 3
 // Matches the left padding of PageTitle so content lines up with the heading.
 const GUTTER = { base: 2, md: 8 }
+
+type ListedTemplate = ITemplate & { isBuiltIn?: boolean }
 
 export default function Templates(): JSX.Element {
   const navigate = useNavigate()
@@ -30,40 +44,111 @@ export default function Templates(): JSX.Element {
   } = useTemplateBrowser()
   const { data: apps, loading: appsLoading } = useApps()
 
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const isEarlyAccessEnabled = getFlagValue('templates_early_access') as boolean
+
   const { templateId } = useParams()
   const template = templates.find((template) => template.id === templateId)
+
+  const isLoading = templatesLoading || appsLoading
+  const listedTemplates: ListedTemplate[] = templates
+  const builtInTemplates = listedTemplates.filter(
+    (template) => template.isBuiltIn,
+  )
+  const communityTemplates = listedTemplates.filter(
+    (template) => !template.isBuiltIn,
+  )
+  const showCommunity =
+    isEarlyAccessEnabled && (isLoading || communityTemplates.length > 0)
+  const onSelectTemplate = (template: ITemplate) =>
+    navigate(URLS.TEMPLATE(template.id))
 
   return (
     <>
       <Container py={9}>
         <Flex flexDir="column" mb={8} rowGap={2}>
-          <PageTitle title={TEMPLATES_TITLE} />
+          <PageTitle
+            title={TEMPLATES_TITLE}
+            searchComponent={
+              <DebouncedSearchInput
+                searchValue={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search templates"
+              />
+            }
+          />
           <Text textStyle="body-1" pl={GUTTER} mt={{ base: -10, md: -6 }}>
-            Pre-built pipes that you can use as is or customise further for your
-            own use case
+            Start from a ready-made pipe, then customise it for your use case
           </Text>
         </Flex>
 
-        <Box px={GUTTER} mb={6}>
-          <DebouncedSearchInput
-            searchValue={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Describe your workflow"
-          />
-        </Box>
-
         <Box px={GUTTER} mb={8}>
-          <TemplateResults
-            templates={visibleTemplates}
-            isLoading={templatesLoading || appsLoading}
-            skeletonCount={skeletonCount}
-            isSearching={isSearching}
-            searchError={searchError}
-            onSelectTemplate={(template) =>
-              navigate(URLS.TEMPLATE(template.id))
-            }
-            gap={6}
-          />
+          {isSearching ? (
+            <TemplateResults
+              templates={visibleTemplates}
+              isLoading={isLoading}
+              skeletonCount={skeletonCount}
+              isSearching
+              searchError={searchError}
+              onSelectTemplate={onSelectTemplate}
+              gap={6}
+            />
+          ) : (
+            <>
+              <TemplateSection
+                icon={<Image src={mainLogo} alt="" boxSize={5} />}
+                title="Made by Plumber"
+                count={isLoading ? undefined : builtInTemplates.length}
+              >
+                <TemplateResults
+                  templates={builtInTemplates}
+                  isLoading={isLoading}
+                  skeletonCount={TEMPLATES_COUNT}
+                  isSearching={false}
+                  searchError={null}
+                  onSelectTemplate={onSelectTemplate}
+                  gap={6}
+                />
+              </TemplateSection>
+
+              {showCommunity ? (
+                <TemplateSection
+                  icon={
+                    <Icon
+                      as={BiGroup}
+                      boxSize={5}
+                      color="base.content.medium"
+                    />
+                  }
+                  title="From the community"
+                  badge={
+                    <Badge
+                      bg="primary.100"
+                      color="primary.600"
+                      textTransform="uppercase"
+                    >
+                      Early access
+                    </Badge>
+                  }
+                  count={isLoading ? undefined : communityTemplates.length}
+                  description="Templates from other public officers. Review each step before you use it."
+                >
+                  <EarlyAccessBanner />
+                  <TemplateResults
+                    templates={communityTemplates}
+                    isLoading={isLoading}
+                    skeletonCount={COMMUNITY_SKELETON_COUNT}
+                    isSearching={false}
+                    searchError={null}
+                    onSelectTemplate={onSelectTemplate}
+                    gap={6}
+                  />
+                </TemplateSection>
+              ) : (
+                <CommunityTemplatesSkeleton onTurnOn={console.log} />
+              )}
+            </>
+          )}
         </Box>
 
         <Flex
@@ -84,6 +169,8 @@ export default function Templates(): JSX.Element {
       </Container>
 
       {template && <TemplateModal template={template} apps={apps} />}
+      <OptInDialog onOptIn={console.log} />
+      <EarlyAccessModal onTurnOn={console.log} />
     </>
   )
 }
