@@ -59,6 +59,7 @@ export function sanitizeMarkdown(text: string): string {
             toEscapeOrUnescape.push({ char, index: i, toEscape: false })
           } else {
             // If the current character is not escaped, we set it as the current modifier
+            undoUnescapesSinceCurrentModifier(currentModifier)
             toEscapeOrUnescape.push({ ...currentModifier, toEscape: true })
             currentModifier = {
               char,
@@ -77,17 +78,19 @@ export function sanitizeMarkdown(text: string): string {
     undoUnescapesSinceCurrentModifier(currentModifier)
     toEscapeOrUnescape.push({ ...currentModifier, toEscape: true })
   }
-  toEscapeOrUnescape.reverse()
+
+  // Rebuild the text once, because rebuilding it per modifier is quadratic.
+  // IMPORTANT: this needs entries sorted by index. Undoing unescapes before each escape keeps them sorted.
+  const parts: string[] = []
+  let start = 0
   for (const modifier of toEscapeOrUnescape) {
     if (modifier.toEscape) {
-      text =
-        text.substring(0, modifier.index) +
-        '\\' +
-        text.substring(modifier.index)
+      parts.push(text.substring(start, modifier.index), '\\')
     } else {
-      text =
-        text.substring(0, modifier.index - 1) + text.substring(modifier.index)
+      parts.push(text.substring(start, modifier.index - 1))
     }
+    start = modifier.index
   }
-  return text
+  parts.push(text.substring(start))
+  return parts.join('')
 }

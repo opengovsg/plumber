@@ -7,12 +7,19 @@ import StepError from '@/errors/step'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendMessageAction from '../../actions/send-message'
+import { sanitizeMarkdown } from '../../common/markdown-v1'
 
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(),
   setActionItem: vi.fn(),
   updateStepParams: vi.fn(),
 }))
+
+vi.mock('../../common/markdown-v1', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../common/markdown-v1')>()
+  return { ...actual, sanitizeMarkdown: vi.fn(actual.sanitizeMarkdown) }
+})
 
 vi.mock('@/models/step', () => ({
   default: {
@@ -97,6 +104,49 @@ describe('send message', () => {
       'Empty message text',
     )
   })
+
+  it('sends a message of exactly 4096 characters', async () => {
+    $.step.parameters.text = 'a'.repeat(4096)
+    $.step.parameters.chatId = '123'
+    $.step.parameters.disableNotification = null
+
+    mocks.httpPost.mockResolvedValueOnce({ data: { ok: true } })
+    await sendMessageAction.run!($)
+    expect(mocks.httpPost).toHaveBeenCalledWith(
+      '/sendMessage',
+      expect.objectContaining({ text: 'a'.repeat(4096) }),
+    )
+  })
+
+  it.each([
+    { pattern: 'plain text', text: 'a'.repeat(4097) },
+    {
+      pattern: 'alternating unescaped modifiers',
+      text: '_*'.repeat(250_000),
+    },
+    {
+      pattern: 'escaped modifiers inside an open modifier',
+      text: '*' + '\\_'.repeat(250_000) + '*',
+    },
+  ])(
+    'should throw config step error before sanitizing a message longer than 4096 characters of $pattern',
+    async ({ text }) => {
+      $.step.parameters.text = text
+      $.step.parameters.chatId = '123'
+      $.step.parameters.disableNotification = null
+
+      const start = performance.now()
+      const error = await sendMessageAction.run!($).catch((e) => e)
+      expect(performance.now() - start).toBeLessThan(500)
+      expect(error).toBeInstanceOf(StepError)
+      expect(error).toMatchObject({
+        message: expect.stringContaining('Message too long'),
+        kind: 'config',
+      })
+      expect(sanitizeMarkdown).not.toHaveBeenCalled()
+      expect(mocks.httpPost).not.toHaveBeenCalled()
+    },
+  )
 
   it.each([
     { errorDescription: 'read ECONNRESET' },

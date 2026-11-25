@@ -65,5 +65,39 @@ describe('telegram markdown handler', () => {
         '\\*hel\\_lo\\*world\\*',
       )
     })
+
+    it('should escape a modifier replaced by a different modifier without dropping characters', () => {
+      expect(sanitizeMarkdown('*hello\\_world_ok')).toEqual(
+        '\\*hello\\_world\\_ok',
+      )
+      expect(sanitizeMarkdown('*a\\_b_c_')).toEqual('\\*a\\_b_c_')
+    })
+
+    // Guards against the quadratic rebuild that blocked the event loop.
+    it.each([
+      {
+        pattern: 'alternating unescaped modifiers',
+        text: '_*'.repeat(250_000),
+        expected: '\\_\\*'.repeat(250_000),
+      },
+      {
+        pattern: 'escaped modifiers inside an open modifier',
+        text: '*' + '\\_'.repeat(250_000) + '*',
+        expected: '*' + '_'.repeat(250_000) + '*',
+      },
+      {
+        pattern: 'escaped modifiers inside an unclosed modifier',
+        text: '*' + '\\_'.repeat(250_000),
+        expected: '\\*' + '\\_'.repeat(250_000),
+      },
+    ])(
+      'should sanitize 500k characters of $pattern quickly',
+      ({ text, expected }) => {
+        const start = performance.now()
+        const sanitized = sanitizeMarkdown(text)
+        expect(performance.now() - start).toBeLessThan(500)
+        expect(sanitized).toEqual(expected)
+      },
+    )
   })
 })
