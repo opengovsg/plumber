@@ -140,8 +140,10 @@ function getSendEmailParams(
     destinationEmailCc,
     senderName,
     replyTo,
-    attachments = [],
+    attachments: savedAttachments,
   } = $.step.parameters
+  // A cleared attachment field can be saved as null.
+  const attachments = savedAttachments ?? []
 
   // Production runs must always use the configured recipients. `useConfiguredEmails`
   // is only consulted on test runs, where the default is to redirect to the test

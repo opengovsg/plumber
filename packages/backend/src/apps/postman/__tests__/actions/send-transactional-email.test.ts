@@ -620,6 +620,15 @@ describe('send transactional email', () => {
     })
   })
 
+  it('treats null attachments as no attachments', async () => {
+    $.step.parameters.attachments = null
+
+    await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
+    expect(mocks.filterAttachments).toHaveBeenCalledWith(
+      expect.objectContaining({ attachmentsList: [] }),
+    )
+  })
+
   it('should filter out invalid attachments and send notification email', async () => {
     const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
     $.step.parameters.destinationEmail = recipients.join(',')

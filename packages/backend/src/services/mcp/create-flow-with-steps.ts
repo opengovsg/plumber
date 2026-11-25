@@ -215,11 +215,18 @@ export async function createFlowWithStepsService({
 
   // Keyless placeholders skip schema validation, so hidden actions need a separate guard.
   for (const step of requestedSteps) {
-    if (
-      step.key &&
-      lookupStepDefinition(step.appKey, step.key, step.type).kind === 'hidden'
-    ) {
+    if (!step.key) {
+      continue
+    }
+    const lookup = lookupStepDefinition(step.appKey, step.key, step.type)
+    if (lookup.kind === 'hidden') {
       throw new Error('Action can only be created by system')
+    }
+    // Same check as updateStep, so create_pipe cannot save parameters it rejects.
+    if (lookup.kind === 'permitted' && lookup.type === 'action') {
+      lookup.definition.validateStepParameters?.(
+        (step.parameters ?? {}) as IJSONObject,
+      )
     }
   }
 

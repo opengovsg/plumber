@@ -580,6 +580,33 @@ describe('createFlowWithStepsService', () => {
     expect(await Flow.query().where('user_id', user.id)).toEqual([])
   })
 
+  it('rejects action parameters that the action validator rejects', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-invalid-params-${randomUUID()}@example.com`,
+    })
+
+    await expect(
+      createFlowWithStepsService({
+        user,
+        name: 'Too many attachments',
+        steps: [
+          formsgTrigger,
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 2,
+            parameters: { attachments: Array(11).fill('s3:b:1/a.pdf') },
+          },
+        ],
+        traceId: 'trace-invalid-params',
+      }),
+    ).rejects.toThrow('You can attach at most 10 files.')
+
+    expect(await Flow.query().where('user_id', user.id)).toEqual([])
+  })
+
   it('rejects a hidden action nested inside an If block', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
