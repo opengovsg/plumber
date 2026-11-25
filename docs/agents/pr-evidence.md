@@ -8,7 +8,7 @@ Any agent can follow these steps. Start the app and log in with [Drive the Plumb
 
 - Record evidence when the PR changes a page, dialog, form or other UI a user reaches.
 - Skip it for backend-only, docs-only and test-only PRs. Name the tests in the PR instead.
-- Record again after a push that changes the recorded behavior. Name the commit each recording used.
+- Record again after a push that changes the recorded behavior. Update the existing comment and page in place, and name the latest tested commit.
 
 ## 1. Plan the scenarios
 
@@ -22,7 +22,11 @@ Include the regression paths the PR touches, not only the new feature. List each
 
 ## 2. Record
 
-Use your tool's browser if it can record video. Otherwise write a Playwright script with `packages/e2e`'s `@playwright/test`. Keep the script outside the repo, or under `tmp/`.
+Use your tool's browser if it can record video. Otherwise write a Playwright script.
+
+- Save it as `packages/e2e/tmp/<name>.mjs`. Only `packages/e2e` can import `@playwright/test`, and git ignores `tmp/`.
+- Run it from the repo root with `node packages/e2e/tmp/<name>.mjs`, so its `tmp/qa/` paths land in the root `tmp/`.
+- If Chromium is missing, run `pnpm --filter e2e exec playwright install chromium`.
 
 ```js
 import { chromium } from '@playwright/test'
@@ -37,6 +41,7 @@ const page = await context.newPage()
 // Drive one scenario. Screenshot each action and its result.
 await page.screenshot({ path: 'tmp/qa/2667-discard-1-dialog.png' })
 await context.close() // Playwright writes the video on close.
+await page.video().saveAs('tmp/qa/2667-discard.webm')
 await browser.close()
 ```
 
@@ -55,7 +60,7 @@ await browser.close()
 
 ## 4. Share it on the PR
 
-Post one PR comment with:
+Post one PR comment with the following. On a re-run, edit that comment instead of adding a new one.
 
 - a link to the media, or the files attached to the comment
 - the commit the recordings used
