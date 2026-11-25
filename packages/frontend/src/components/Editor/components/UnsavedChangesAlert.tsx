@@ -1,7 +1,6 @@
 import {
   AlertDialog,
   AlertDialogBody,
-  AlertDialogCloseButton,
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -80,8 +79,6 @@ export default function UnsavedChangesAlert({
         <AlertDialogContent>
           <AlertDialogHeader>Save before you leave?</AlertDialogHeader>
 
-          <AlertDialogCloseButton isDisabled={isSaving} />
-
           <AlertDialogBody>
             You haven&apos;t saved this step yet. Save before you leave, or keep
             editing.
@@ -90,9 +87,12 @@ export default function UnsavedChangesAlert({
           <AlertDialogFooter gap={3}>
             <Button
               mr="auto"
-              variant="clear"
-              colorScheme="secondary"
-              _hover={{ bg: 'interaction.muted.neutral.active' }}
+              variant="link"
+              color="base.content.medium"
+              _hover={{
+                color: 'base.content.default',
+                textDecoration: 'underline',
+              }}
               onClick={() => handleLeave()}
               isDisabled={isSaving}
             >
