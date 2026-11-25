@@ -12,6 +12,7 @@ import type {
   ExecutionSnapshotTable,
 } from '../execution-tables'
 import {
+  exportExecutionHistory,
   exportSilverTables,
   loadExecutionArchivalFloor,
   localDirSink,
@@ -43,6 +44,53 @@ const db = {} as Knex
 
 afterEach(() => {
   vi.clearAllMocks()
+})
+
+describe('exportExecutionHistory', () => {
+  const dayTable = {
+    name: 'execution_daily',
+    version: 1,
+    columns: {},
+    fetchDay: vi.fn(async () => []),
+  }
+
+  it.each(['development', 'uat'])(
+    'refuses to run when APP_ENV is %s, so a backfill never exits 0 having written nothing',
+    async (appEnv) => {
+      const s3 = makeS3()
+
+      await expect(
+        exportExecutionHistory({
+          db,
+          s3Client: s3 as unknown as S3Client,
+          appEnv,
+          bucket: 'analytics-bucket',
+          days: ['2026-11-01'],
+          dayTables: [dayTable],
+          checkIndexes: async () => {},
+        }),
+      ).rejects.toThrow(`not ${appEnv}`)
+      expect(s3.send).not.toHaveBeenCalled()
+      expect(dayTable.fetchDay).not.toHaveBeenCalled()
+    },
+  )
+
+  it('fails in prod when the bucket is not configured', async () => {
+    const s3 = makeS3()
+
+    await expect(
+      exportExecutionHistory({
+        db,
+        s3Client: s3 as unknown as S3Client,
+        appEnv: 'prod',
+        bucket: undefined,
+        days: ['2026-11-01'],
+        dayTables: [dayTable],
+        checkIndexes: async () => {},
+      }),
+    ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
+    expect(dayTable.fetchDay).not.toHaveBeenCalled()
+  })
 })
 
 describe('exportSilverTables', () => {
