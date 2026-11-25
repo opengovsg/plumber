@@ -11,7 +11,21 @@ import type { ExecutionRow, ExecutionStepRow } from './types'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
+// A run whose creation or any step falls on or after keepFrom still counts in an execution day not yet final.
+function heldForAnalytics(
+  execution: ExecutionRow,
+  steps: ExecutionStepRow[],
+  keepFrom: Date,
+): boolean {
+  return [execution.createdAt, ...steps.map((step) => step.createdAt)].some(
+    (at) => new Date(at) >= keepFrom,
+  )
+}
+
+export async function runArchivalLoop(
+  signal: AbortSignal,
+  { keepFrom = null }: { keepFrom?: Date | null } = {},
+): Promise<void> {
   const {
     archiveDryRun: dryRun,
     archiveRetentionDays: retentionDays,
@@ -33,6 +47,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   let totalArchived = 0
   let totalTestArchived = 0
   let totalSkipped = 0
+  let totalHeld = 0
   // IMPORTANT: store counts, not IDs. A flow can own 100k+ executions, and logging every ID
   // produced multi-MB lines that stdout could not flush before the process exited.
   const archivedByFlow = new Map<
@@ -228,6 +243,15 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
               .where('execution_steps.execution_id', execution.id)
               .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
 
+            if (keepFrom && heldForAnalytics(execution, steps, keepFrom)) {
+              totalHeld++
+              return {
+                execution,
+                outcome: 'skipped' as const,
+                steps: [] as ExecutionStepRow[],
+              }
+            }
+
             const outcome = await archiveExecution(execution, steps, {
               dryRun,
               bucket: archiveBucket,
@@ -341,6 +365,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     real_executions_archived: totalArchived - totalTestArchived,
     test_executions_archived: totalTestArchived,
     executions_skipped: totalSkipped,
+    executions_held_for_analytics: totalHeld,
     durationMs,
   }
 

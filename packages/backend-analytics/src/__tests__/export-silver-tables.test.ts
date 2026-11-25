@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { localDirCompletionStore } from '../completion-stores'
 import {
   exportSilverTables,
+  loadExecutionArchivalFloor,
   localDirSink,
   selectSilverTables,
   writeAllSilverTables,
@@ -53,6 +54,8 @@ describe('exportSilverTables', () => {
         bucket: 'analytics-bucket',
         tables: [testTable],
         changeTables: [],
+        executionDayTables: [],
+        executionSnapshotTables: [],
       })
 
       expect(testTable.fetchRows).not.toHaveBeenCalled()
@@ -72,6 +75,8 @@ describe('exportSilverTables', () => {
         bucket: 'analytics-bucket',
         tables: [testTable],
         changeTables: [],
+        executionDayTables: [],
+        executionSnapshotTables: [],
       })
 
       expect(s3.send).toHaveBeenCalledTimes(1)
@@ -96,6 +101,8 @@ describe('exportSilverTables', () => {
         bucket: undefined,
         tables: [testTable],
         changeTables: [],
+        executionDayTables: [],
+        executionSnapshotTables: [],
       }),
     ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
     expect(s3.send).not.toHaveBeenCalled()
@@ -171,6 +178,8 @@ describe('writeAllSilverTables', () => {
           store: localDirCompletionStore(dir),
           tables: [failing, testTable],
           changeTables: [changeTable],
+          executionDayTables: [],
+          executionSnapshotTables: [],
         }),
       ).rejects.toThrow('Analytics tables failed: dim_user')
 
@@ -218,20 +227,84 @@ describe('localDirSink', () => {
 })
 
 describe('selectSilverTables', () => {
-  it('splits the named tables into rebuilt and change tables', () => {
-    const { tables, changeTables } = selectSilverTables([
+  it('splits the named tables by how each is written', () => {
+    const selected = selectSilverTables([
       'flow_step',
       'dim_user',
+      'execution_inflight',
       'flow_transfer',
+      'execution_step_daily',
     ])
 
-    expect(tables.map((t) => t.name)).toEqual(['flow_transfer', 'dim_user'])
-    expect(changeTables.map((t) => t.name)).toEqual(['flow_step'])
+    expect(
+      Object.fromEntries(
+        Object.entries(selected).map(([kind, tables]) => [
+          kind,
+          (tables as { name: string }[]).map((t) => t.name),
+        ]),
+      ),
+    ).toEqual({
+      tables: ['flow_transfer', 'dim_user'],
+      changeTables: ['flow_step'],
+      executionDayTables: ['execution_step_daily'],
+      executionSnapshotTables: ['execution_inflight'],
+    })
   })
 
   it('rejects an unknown table name', () => {
     expect(() => selectSilverTables(['dim_users'])).toThrow(
       'Unknown silver tables: dim_users',
     )
+  })
+})
+
+describe('loadExecutionArchivalFloor', () => {
+  it.each(['development', 'uat'])(
+    'sets no floor when APP_ENV is %s',
+    async (appEnv) => {
+      const s3 = makeS3()
+
+      expect(
+        await loadExecutionArchivalFloor({
+          s3Client: s3 as unknown as S3Client,
+          appEnv,
+          bucket: undefined,
+        }),
+      ).toBeNull()
+      expect(s3.send).not.toHaveBeenCalled()
+    },
+  )
+
+  it('fails without a bucket in prod, so archival stops', async () => {
+    await expect(
+      loadExecutionArchivalFloor({
+        s3Client: makeS3() as unknown as S3Client,
+        appEnv: 'prod',
+        bucket: undefined,
+      }),
+    ).rejects.toThrow('ANALYTICS_BUCKET must be set in prod')
+  })
+
+  it("reads both day tables' completion files, and holds every run before the history", async () => {
+    const s3 = makeS3()
+
+    expect(
+      await loadExecutionArchivalFloor({
+        s3Client: s3 as unknown as S3Client,
+        appEnv: 'prod',
+        bucket: 'analytics-bucket',
+        now: new Date('2026-11-10T17:00:00.000Z'),
+      }),
+    ).toEqual(new Date('2023-03-31T16:00:00.000Z'))
+    expect(s3.send.mock.calls.map(([command]) => command.input)).toEqual([
+      expect.objectContaining({
+        Bucket: 'analytics-bucket',
+        Prefix: 'bronze/_completion/execution_daily/',
+      }),
+      expect.objectContaining({
+        Bucket: 'analytics-bucket',
+        Prefix: 'bronze/_completion/execution_step_daily/',
+      }),
+    ])
   })
 })

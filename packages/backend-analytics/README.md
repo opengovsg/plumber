@@ -10,18 +10,21 @@ It has no entry point of its own. The archival task in [`backend-archive`](../ba
 
 ## What the export writes
 
-Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run, except `flow_step` and `flow_edit_daily` (below).
+Each table becomes one Parquet file at `silver/<table>/current.parquet`, replaced on every run, except `flow_step`, `flow_edit_daily` and the execution tables (below).
 
-| Table                | One row per                                                                                |
-| -------------------- | ------------------------------------------------------------------------------------------ |
-| `flow_transfer`      | Pipe ownership transfer.                                                                   |
-| `dim_user`           | User, including soft-deleted users. Holds emails.                                          |
-| `flow_stage`         | Pipe, with its creator, owner and creation path.                                           |
-| `flow_access`        | User with access to a pipe: owner, editor or viewer.                                       |
-| `flow_ai_suggestion` | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position.      |
-| `action_catalog`     | Trigger or action in the app registry, removed ones included.                              |
-| `flow_step`          | Step that changed on a Singapore day. See [flow_step](#flow_step).                         |
-| `flow_edit_daily`    | Pipe, user and edit operation on a Singapore day. See [flow_edit_daily](#flow_edit_daily). |
+| Table                  | One row per                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `flow_transfer`        | Pipe ownership transfer.                                                                   |
+| `dim_user`             | User, including soft-deleted users. Holds emails.                                          |
+| `flow_stage`           | Pipe, with its creator, owner and creation path.                                           |
+| `flow_access`          | User with access to a pipe: owner, editor or viewer.                                       |
+| `flow_ai_suggestion`   | Step the AI Builder proposed for a pipe. Join `flow_step` on `step_id`, not position.      |
+| `action_catalog`       | Trigger or action in the app registry, removed ones included.                              |
+| `flow_step`            | Step that changed on a Singapore day. See [flow_step](#flow_step).                         |
+| `flow_edit_daily`      | Pipe, user and edit operation on a Singapore day. See [flow_edit_daily](#flow_edit_daily). |
+| `execution_daily`      | Pipe and run event on a Singapore day. See [Execution tables](#execution-tables).          |
+| `execution_step_daily` | Step attempt outcome on a Singapore day. See [Execution tables](#execution-tables).        |
+| `execution_inflight`   | Group of open runs on a snapshot night. See [Execution tables](#execution-tables).         |
 
 The export writes only when `APP_ENV` is `prod` or `staging`. Each environment has its own bucket. PostHog reads a bucket only if someone attaches it.
 
@@ -113,7 +116,7 @@ The mutation log run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`
 
 ## Execution tables
 
-The nightly run does not write these tables yet. The execution tables count runs and step attempts. They hold no `data_in` or `data_out`. From `error_details` they keep only the error kind. Each row lands on the Singapore day its event happened, because a run can wait for days or months on a Delay or a FormSG MRF step. Each step is saved when it runs, so its row carries that day.
+The execution tables count runs and step attempts. They hold no `data_in` or `data_out`. From `error_details` they keep only the error kind. Each row lands on the Singapore day its event happened, because a run can wait for days or months on a Delay or a FormSG MRF step. Each step is saved when it runs, so its row carries that day.
 
 | Table                  | Columns                                                                                                                       |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -139,6 +142,7 @@ The nightly run does not write these tables yet. The execution tables count runs
 - Both writes use the same key, so PostHog may keep both copies. Views keep each file's newest copy, by the latest `_file_modified_at` per `_file_name`.
 - `analytics.export.coverage` for these jobs reports through the last final day. Missed final days in the last 7 are caught up.
 - Bump a table's `version` when its columns or query change. Only days not yet final take the new version. Final days keep the old one, because archival may have deleted their runs since.
+- Archival keeps each run until the days it writes to are final. In prod and staging it reads the completion files and skips every run that started, or ran a step, on or after the earliest day since April 2023 that either day table has not finalised. Before the history backfill, that holds every run. A bucket it cannot read stops archival.
 
 ### Known gaps
 

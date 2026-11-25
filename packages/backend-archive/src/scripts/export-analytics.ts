@@ -3,6 +3,8 @@ import { parseArgs } from 'node:util'
 
 import {
   claimLocalExportDir,
+  EXECUTION_DAY_TABLES,
+  EXECUTION_SNAPSHOT_TABLES,
   exportSilverTables,
   localDirCompletionStore,
   localDirSink,
@@ -36,9 +38,14 @@ async function main(): Promise<void> {
     throw new Error(USAGE)
   }
 
-  const { tables, changeTables } = values.tables
+  const selected = values.tables
     ? selectSilverTables(values.tables.split(',').map((name) => name.trim()))
-    : { tables: SILVER_TABLES, changeTables: SILVER_CHANGE_TABLES }
+    : {
+        tables: SILVER_TABLES,
+        changeTables: SILVER_CHANGE_TABLES,
+        executionDayTables: EXECUTION_DAY_TABLES,
+        executionSnapshotTables: EXECUTION_SNAPSHOT_TABLES,
+      }
 
   if (values.out) {
     const dir = path.resolve(values.out)
@@ -49,8 +56,7 @@ async function main(): Promise<void> {
     })
     await writeAllSilverTables({
       db: archivalDbReader,
-      tables,
-      changeTables,
+      ...selected,
       full: values.full,
       source: 'backfill',
       sink: localDirSink(dir),
@@ -65,8 +71,7 @@ async function main(): Promise<void> {
     s3Client: archiveS3Client,
     appEnv: archivalConfig.appEnv,
     bucket: archivalConfig.analyticsBucket,
-    tables,
-    changeTables,
+    ...selected,
     full: values.full,
     source: 'backfill',
   })
