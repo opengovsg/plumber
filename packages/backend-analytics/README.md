@@ -142,13 +142,22 @@ The execution tables count runs and step attempts. They hold no `data_in` or `da
 - Both writes use the same key, so PostHog may keep both copies. Views keep each file's newest copy, by the latest `_file_modified_at` per `_file_name`.
 - `analytics.export.coverage` for these jobs reports through the last final day. Missed final days in the last 7 are caught up.
 - Bump a table's `version` when its columns or query change. Only days not yet final take the new version. Final days keep the old one, because archival may have deleted their runs since.
-- Archival keeps each run until the days it writes to are final. In prod and staging it reads the completion files and skips every run that started, or ran a step, on or after the earliest day since April 2023 that either day table has not finalised. Before the history backfill, that holds every run. A bucket it cannot read stops archival.
+- Archival keeps each run until the days it writes to are final. In prod and staging it reads the completion files and skips every run that started, or ran a step, on or after the earliest day since April 2023 that either day table has not finalised. Until the history is written, that holds every run. A bucket it cannot read stops archival.
+
+### History
+
+Each night, after yesterday's files and the open-run snapshot, the export writes missing final days from 1 April 2023 (`EXECUTION_HISTORY_START`). It goes oldest first, writing every table for a day before the next, since archival's floor is the earliest day either table lacks.
+
+- It stops starting new days after 3 hours (`EXECUTION_HISTORY_BUDGET_MS`), so its reader load stays in the quiet hours. The next night continues.
+- A day already final at any version is skipped. A failing day stops the history for that night and logs `analytics.export.day.error`, so it does not retry all night.
+- Each night logs `analytics.execution_history.progress` per table: `writtenDays`, `remainingDays` and `firstMissing`.
+- It runs only when the indexes are usable, like the day tables.
 
 ### Known gaps
 
 - A run can fail without saving a step row, for example when the step it waited for was deleted during a Delay. Its last row then sits on a day it did not end, so it gets no finished row and counts as open.
 - The final file reads `executions.status` as it is when written, unless the run has rows after `as_of`. A status change after `as_of` with no new row, such as the moment a manual retry starts, can reach a final file.
-- A run whose status is never set gets no finished row, so it counts as open. `analytics:execution-history` writes the days before the first night, in [`backend-archive`](../backend-archive/README.md#writing-execution-history).
+- A run whose status is never set gets no finished row, so it counts as open.
 
 Each execution query runs with a 10-minute `statement_timeout`, since archival waits for the export.
 

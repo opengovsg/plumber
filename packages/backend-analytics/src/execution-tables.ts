@@ -160,11 +160,49 @@ interface WriteExecutionTablesParams {
   dayTables?: ExecutionDayTable<SilverRow>[]
   snapshotTables?: ExecutionSnapshotTable<SilverRow>[]
   source?: CompletionSource
+  historyBudgetMs?: number
+  clock?: () => number
 }
 
 interface DayItem {
   day: string
   final: boolean
+}
+
+async function writeExecutionDay({
+  db,
+  sink,
+  table,
+  day,
+  final,
+  now,
+  source,
+}: {
+  db: Knex
+  sink: SilverSink
+  table: ExecutionDayTable<SilverRow>
+  day: string
+  final: boolean
+  now: Date
+  source: CompletionSource
+}): Promise<void> {
+  const asOf = final ? finalAsOf(day) : now
+  if (asOf > now) {
+    throw new Error(
+      `${table.name} ${day} is not final until ${asOf.toISOString()}`,
+    )
+  }
+  const rows = await table.fetchDay(db, { window: sgtDayWindow(day), asOf })
+  const key = await writeDayFile({ sink, table, day, rows, final })
+  if (final) {
+    await markDayComplete({
+      sink,
+      job: table.name,
+      completion: { day, version: table.version, full: false },
+      source,
+      outputs: [key],
+    })
+  }
 }
 
 async function writeExecutionDayTable(
@@ -175,8 +213,7 @@ async function writeExecutionDayTable(
     yesterday,
     now,
     source = 'nightly',
-    firstDay,
-  }: WriteExecutionTablesParams & { firstDay?: string },
+  }: WriteExecutionTablesParams,
   table: ExecutionDayTable<SilverRow>,
   plan: (state: JobState) => DayItem[],
 ): Promise<void> {
@@ -184,7 +221,6 @@ async function writeExecutionDayTable(
     {
       job: table.name,
       yesterday: lastFinalDay(yesterday),
-      firstDay,
       version: table.version,
       store,
       sink,
@@ -196,34 +232,8 @@ async function writeExecutionDayTable(
         version: table.version,
         items: plan(state),
         dayOf: (item) => item.day,
-        write: async ({ day, final: isFinal }) => {
-          const asOf = isFinal ? finalAsOf(day) : now
-          if (asOf > now) {
-            throw new Error(
-              `${table.name} ${day} is not final until ${asOf.toISOString()}`,
-            )
-          }
-          const rows = await table.fetchDay(db, {
-            window: sgtDayWindow(day),
-            asOf,
-          })
-          const key = await writeDayFile({
-            sink,
-            table,
-            day,
-            rows,
-            final: isFinal,
-          })
-          if (isFinal) {
-            await markDayComplete({
-              sink,
-              job: table.name,
-              completion: { day, version: table.version, full: false },
-              source,
-              outputs: [key],
-            })
-          }
-        },
+        write: ({ day, final }) =>
+          writeExecutionDay({ db, sink, table, day, final, now, source }),
       })
     },
   )
@@ -327,64 +337,97 @@ export async function writeExecutionTables(
   ).catch((err: Error) => {
     errors.push(err)
   })
+  // Last, so a slow history night cannot delay yesterday's files.
+  if (dayTables.length > 0) {
+    await writeExecutionHistory({ ...params, dayTables }).catch(
+      (err: Error) => {
+        errors.push(err)
+      },
+    )
+  }
   if (errors.length > 0) {
     throw new Error(errors.map((err) => err.message).join('. '))
   }
 }
 
-export interface BackfillExecutionDaysParams {
-  db: Knex
-  sink: SilverSink
-  store: CompletionStore
-  days: string[]
-  now?: Date
-  dayTables?: ExecutionDayTable<SilverRow>[]
-}
+// Keeps the history's reader load inside the quiet hours after the 01:00 run, and each night's run shorter than a day.
+export const EXECUTION_HISTORY_BUDGET_MS = 3 * 60 * 60 * 1_000
 
 /**
- * Writes past days as final files, for history before the first night.
+ * Writes missing final days since EXECUTION_HISTORY_START, oldest first, until the night's time budget runs out.
  *
- * Days already final at any version are skipped, so a rerun resumes where a stopped one left off.
- * Archival holds every run whose day is not final, so it deletes nothing until this covers the history.
+ * Each day is written for every table before the next, since archival's floor is the earliest day either lacks.
  */
-export async function backfillExecutionDays({
+export async function writeExecutionHistory({
   db,
   sink,
   store,
-  days,
-  now = new Date(),
+  yesterday,
+  now,
   dayTables = EXECUTION_DAY_TABLES,
-}: BackfillExecutionDaysParams): Promise<void> {
-  const yesterday = previousSgtDay(now)
-  const lastFinal = lastFinalDay(yesterday)
-  const late = days.filter((day) => day > lastFinal)
-  if (late.length > 0) {
-    throw new Error(
-      `A backfill writes final days only. ${late[0]} is after ${lastFinal}.`,
-    )
-  }
-  const params = {
-    db,
-    sink,
-    store,
-    yesterday,
-    now,
-    source: 'backfill' as const,
-    firstDay: days[0],
-  }
-  await writeEachTable(dayTables, (table) =>
-    writeExecutionDayTable(params, table, (state) => {
-      const toWrite = days.filter((day) => !state.newestVersion.has(day))
-      logger.info({
-        event: 'analytics.execution_history.planned',
-        table: table.name,
-        requestedDays: days.length,
-        skippedDays: days.length - toWrite.length,
-        firstDay: toWrite[0] ?? null,
-      })
-      return toWrite.map((day) => ({ day, final: true }))
+  historyBudgetMs = EXECUTION_HISTORY_BUDGET_MS,
+  clock = Date.now,
+}: WriteExecutionTablesParams): Promise<void> {
+  const deadline = clock() + historyBudgetMs
+  const history = sgtDaysBetween(
+    EXECUTION_HISTORY_START,
+    lastFinalDay(yesterday),
+  )
+  const missing = await Promise.all(
+    dayTables.map(async (table) => {
+      const objects = await store.list(completionPrefix(table.name))
+      const { newestVersion } = readJobState(objects.map((o) => o.key))
+      return new Set(history.filter((day) => !newestVersion.has(day)))
     }),
   )
+  const written = dayTables.map(() => 0)
+  try {
+    for (const day of history) {
+      if (!missing.some((days) => days.has(day))) {
+        continue
+      }
+      if (clock() >= deadline) {
+        break
+      }
+      for (const [i, table] of dayTables.entries()) {
+        if (!missing[i].has(day)) {
+          continue
+        }
+        try {
+          await writeExecutionDay({
+            db,
+            sink,
+            table,
+            day,
+            final: true,
+            now,
+            source: 'backfill',
+          })
+        } catch (err) {
+          // A failing day would fail again tonight, so the rest waits for the next night.
+          logger.error({
+            event: 'analytics.export.day.error',
+            job: table.name,
+            day,
+            err,
+          })
+          throw new Error(`${table.name}: history day ${day} failed`)
+        }
+        missing[i].delete(day)
+        written[i]++
+      }
+    }
+  } finally {
+    dayTables.forEach((table, i) => {
+      logger.info({
+        event: 'analytics.execution_history.progress',
+        table: table.name,
+        writtenDays: written[i],
+        remainingDays: missing[i].size,
+        firstMissing: [...missing[i]].sort()[0] ?? null,
+      })
+    })
+  }
 }
 
 // Plumber's first executions date from April 2023.

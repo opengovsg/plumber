@@ -241,27 +241,14 @@ Delete the folder after the upload:
 rm -rf "$OUT"
 ```
 
-## Writing execution history
+## Execution history
 
-The nightly export writes execution days from its first night on. `analytics:execution-history` writes earlier days as final files, with completion files. [`backend-analytics`](../backend-analytics/README.md#execution-tables) describes the tables.
+The nightly export also writes the execution days before its first night, back to 1 April 2023. There is no manual command. [`backend-analytics`](../backend-analytics/README.md#history) describes how.
 
-| Flag           | Meaning                                                                              |
-| -------------- | ------------------------------------------------------------------------------------ |
-| `--from`       | First Singapore day to write.                                                        |
-| `--to`         | Last Singapore day, inclusive. Default: `--from`. At most the day before yesterday.  |
-| `--tables a,b` | `execution_daily`, `execution_step_daily` or both. Default: both.                    |
-| `--out <dir>`  | Write the files under a local folder, at the same keys as S3. Runs in any `APP_ENV`. |
-| `--s3`         | Write to `ANALYTICS_BUCKET`. Runs only when `APP_ENV` is `prod` or `staging`.        |
-
-- Days already final are skipped, so a rerun resumes where a stopped run left off. Each run logs `analytics.execution_history.planned` per table, with `requestedDays`, `skippedDays` and the first day it writes. Run one backfill at a time.
-- It needs the same indexes as the nightly export, and reads through the reader endpoint one day at a time.
-- Archival holds every run whose day is not final yet, from April 2023 on. It logs the floor as `archival.analytics_floor` and counts held runs in `executions_held_for_analytics`. So until this backfill finishes, archival deletes nothing in prod and staging.
-- IMPORTANT: start `--from` at `2023-04-01`, the floor's first day (`EXECUTION_HISTORY_START`). A later start leaves days unwritten, so archival keeps holding every run. Days with no runs cost one empty query each.
-- Attach the tables to PostHog after it finishes, inside a new source's first 7 days, when synced rows are free.
-
-```bash
-pnpm --filter backend-archive run analytics:execution-history --from 2023-04-01 --to 2026-11-23 --s3
-```
+- Each night, after yesterday's files and the open-run snapshot, it writes missing final days oldest first, for up to 3 hours.
+- Each night logs `analytics.execution_history.progress` per table, with `writtenDays`, `remainingDays` and `firstMissing`. When `remainingDays` reaches 0 in both tables, the history is complete.
+- Archival holds every run whose day is not final yet, from April 2023 on. It logs the floor as `archival.analytics_floor` and counts held runs in `executions_held_for_analytics`. The floor moves forward as the history fills in.
+- Attach the execution tables to PostHog after the history is complete, inside a new source's first 7 days, when synced rows are free.
 
 ## Extracting the mutation log
 

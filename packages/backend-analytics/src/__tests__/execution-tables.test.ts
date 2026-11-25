@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { localDirCompletionStore } from '../completion-stores'
 import { type CompletionSource, readJobState } from '../day-completion'
 import {
-  backfillExecutionDays,
   EXECUTION_HISTORY_START,
+  writeExecutionHistory,
   executionArchivalFloor,
   type ExecutionDayTable,
   type ExecutionSnapshotTable,
@@ -113,6 +113,8 @@ describe('writeExecutionTables', () => {
       dayTables,
       snapshotTables,
       source,
+      // The history is covered by its own tests below.
+      historyBudgetMs: 0,
     })
   }
 
@@ -153,6 +155,7 @@ describe('writeExecutionTables', () => {
       now: new Date('2026-11-11T17:00:00.000Z'),
       dayTables: [table],
       snapshotTables: [],
+      historyBudgetMs: 0,
     })
 
     expect(
@@ -178,6 +181,19 @@ describe('writeExecutionTables', () => {
     )
 
     expect(snapshot.fetchSnapshot).not.toHaveBeenCalled()
+  })
+
+  it('fills the history after the nightly days', async () => {
+    await write([dayTable()], [])
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.execution_history.progress',
+        table: 'execution_daily',
+        writtenDays: 0,
+        firstMissing: EXECUTION_HISTORY_START,
+      }),
+    )
   })
 
   it('still writes the snapshot when a day table fails', async () => {
@@ -274,77 +290,116 @@ describe('executionArchivalFloor', () => {
   })
 })
 
-describe('backfillExecutionDays', () => {
-  const table = (): ExecutionDayTable<{ id: string }> => ({
-    name: 'execution_daily',
+describe('writeExecutionHistory', () => {
+  const day = (id: string): ExecutionDayTable<{ id: string }> => ({
+    name: id,
     version: 1,
     columns: { id: 'STRING' },
     fetchDay: vi.fn(async () => [{ id: 'row' }]),
   })
-
-  async function backfill(
-    days: string[],
-    dayTable: ExecutionDayTable<{ id: string }>,
+  async function history(
+    tables: ExecutionDayTable<{ id: string }>[],
+    {
+      budgetMs = 60_000,
+      clock = (): number => 0,
+    }: { budgetMs?: number; clock?: () => number } = {},
   ) {
     dir ??= await mkdtemp(path.join(tmpdir(), 'executions-'))
-    await backfillExecutionDays({
+    await writeExecutionHistory({
       db,
       sink: localDirSink(dir),
       store: localDirCompletionStore(dir),
-      days,
+      yesterday: YESTERDAY,
       now: NOW,
-      dayTables: [dayTable],
+      dayTables: tables,
+      historyBudgetMs: budgetMs,
+      clock,
     })
   }
 
-  it('writes each past day as final, and skips days already final on a rerun', async () => {
-    const dayTable = table()
+  async function seed(job: string, days: string[]) {
+    dir ??= await mkdtemp(path.join(tmpdir(), 'executions-'))
+    const sink = localDirSink(dir)
+    for (const d of days) {
+      await sink(
+        `bronze/_completion/${job}/day=${d}.v1.json`,
+        Buffer.from('{"outputs":[]}'),
+      )
+    }
+  }
 
-    await backfill(['2026-11-01', '2026-11-02'], dayTable)
-    await backfill(['2026-11-01', '2026-11-02', '2026-11-03'], dayTable)
+  it('writes missing days oldest first, every table for a day before the next', async () => {
+    const order: string[] = []
+    const tables = ['execution_daily', 'execution_step_daily'].map((name) => {
+      const table = day(name)
+      vi.mocked(table.fetchDay).mockImplementation(async (_db, query) => {
+        order.push(`${name} ${query.window.start.toISOString()}`)
+        return []
+      })
+      return table
+    })
+    const done = sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-06')
+    await seed('execution_daily', done)
+    await seed('execution_step_daily', [...done, '2026-11-07'])
 
-    expect(logger.info).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        event: 'analytics.export.coverage',
-        job: 'execution_daily',
-      }),
+    await history(tables)
+
+    expect(order).toEqual([
+      `execution_daily ${sgtDayWindow('2026-11-07').start.toISOString()}`,
+      `execution_daily ${sgtDayWindow('2026-11-08').start.toISOString()}`,
+      `execution_step_daily ${sgtDayWindow('2026-11-08').start.toISOString()}`,
+      `execution_daily ${sgtDayWindow('2026-11-09').start.toISOString()}`,
+      `execution_step_daily ${sgtDayWindow('2026-11-09').start.toISOString()}`,
+    ])
+    expect(tables[0].fetchDay).toHaveBeenCalledWith(db, {
+      window: sgtDayWindow('2026-11-07'),
+      asOf: finalAsOf('2026-11-07'),
+    })
+  })
+
+  it('stops at the time budget and reports what is left', async () => {
+    const table = day('execution_daily')
+    await seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'),
     )
-    expect(logger.info).toHaveBeenCalledWith({
-      event: 'analytics.execution_history.planned',
-      table: 'execution_daily',
-      requestedDays: 3,
-      skippedDays: 2,
-      firstDay: '2026-11-03',
+    let now = 0
+    vi.mocked(table.fetchDay).mockImplementation(async () => {
+      now += 10
+      return []
     })
 
-    expect(
-      vi.mocked(dayTable.fetchDay).mock.calls.map(([, query]) => query),
-    ).toEqual(
-      ['2026-11-01', '2026-11-02', '2026-11-03'].map((day) => ({
-        window: sgtDayWindow(day),
-        asOf: finalAsOf(day),
-      })),
+    await history([table], { budgetMs: 25, clock: () => now })
+
+    expect(table.fetchDay).toHaveBeenCalledTimes(3)
+    expect(logger.info).toHaveBeenCalledWith({
+      event: 'analytics.execution_history.progress',
+      table: 'execution_daily',
+      writtenDays: 3,
+      remainingDays: 5,
+      firstMissing: '2026-11-05',
+    })
+  })
+
+  it('stops for the night at a failing day, keeping the days before it', async () => {
+    const table = day('execution_daily')
+    await seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-06'),
     )
+    vi.mocked(table.fetchDay)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('statement timeout'))
+
+    await expect(history([table])).rejects.toThrow(
+      'execution_daily: history day 2026-11-08 failed',
+    )
+
+    expect(table.fetchDay).toHaveBeenCalledTimes(2)
     expect(
       (
         await readdir(path.join(dir!, 'bronze/_completion/execution_daily'))
-      ).sort(),
-    ).toEqual([
-      'day=2026-11-01.v1.json',
-      'day=2026-11-02.v1.json',
-      'day=2026-11-03.v1.json',
-      'start=2026-11-01.json',
-    ])
-  })
-
-  it('refuses a day that is not final yet', async () => {
-    const dayTable = table()
-
-    await expect(
-      backfill(['2026-11-09', '2026-11-10'], dayTable),
-    ).rejects.toThrow(
-      'A backfill writes final days only. 2026-11-10 is after 2026-11-09.',
-    )
-    expect(dayTable.fetchDay).not.toHaveBeenCalled()
+      ).filter((key) => key >= 'day=2026-11-07'),
+    ).toEqual(['day=2026-11-07.v1.json'])
   })
 })
