@@ -62,14 +62,16 @@ Known gaps, accepted because each is rare:
 
 ## Logs
 
-The analytics and archival loggers share `redactLogFields` in `src/log-format.ts`. It writes each error under `err` with these fields only:
+The analytics and archival loggers share `redactLogFields` in `src/log-format.ts`. It wraps `redactLogRecord` from `@plumber/shared`, the same redaction the backend logger uses, with `errorFields: 'safe'`. It writes each error under `err` with these fields only:
 
 - `name`, `message` and `stack`.
 - `code`, when it is a string.
 - `$metadata.httpStatusCode` and `$metadata.requestId`, from an AWS SDK error.
 - `cause`, and an `AggregateError`'s `errors`, with the same fields.
 
-It drops every other error field. An AWS SDK error holds the raw HTTP response in `$response` and copies its error body onto itself. Like the backend logger, it masks any key that looks like a secret as `[REDACTED]`. Both read the key list `SECRET_KEY_REGEXP` from `@plumber/shared`. Any class instance other than an error, a `Date` or a `Buffer` is written as `[ClassName]`.
+It drops every other error field. An AWS SDK error holds the raw HTTP response in `$response` and copies its error body onto itself. Like the backend logger, it masks any key that looks like a secret as `[REDACTED]`, using `SECRET_KEY_REGEXP`. Any class instance other than an error, a `Date` or a `Buffer` is written as `[ClassName]`.
+
+The backend logger keeps every enumerable error field (`errorFields: 'all'`) and cuts lists at 100 items. Analytics keeps lists whole, since `analytics.agency.unclassified` lists every unmatched domain.
 
 ---
 
