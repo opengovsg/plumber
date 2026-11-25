@@ -7,6 +7,10 @@ import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { localDirCompletionStore } from '../completion-stores'
+import type {
+  ExecutionDayTable,
+  ExecutionSnapshotTable,
+} from '../execution-tables'
 import {
   exportSilverTables,
   loadExecutionArchivalFloor,
@@ -153,7 +157,7 @@ describe('writeSilverTables to a local folder', () => {
 })
 
 describe('writeAllSilverTables', () => {
-  it('writes every other table after one fails, then fails the run', async () => {
+  it('writes every other table, execution tables included, after one fails, then fails the run', async () => {
     const dir = await mkdtemp(path.join(tmpdir(), 'silver-'))
     const failing: SilverTable<TestRow> = {
       ...testTable,
@@ -170,6 +174,20 @@ describe('writeAllSilverTables', () => {
         yield [{ id: 'step-1' }]
       },
     }
+    const failingDay: ExecutionDayTable<{ id: string }> = {
+      name: 'execution_daily',
+      version: 1,
+      columns: { id: 'STRING' },
+      fetchDay: vi.fn(async () => {
+        throw new Error('statement timeout')
+      }),
+    }
+    const snapshot: ExecutionSnapshotTable<{ id: string }> = {
+      name: 'execution_inflight',
+      version: 1,
+      columns: { id: 'STRING' },
+      fetchSnapshot: vi.fn(async () => [{ id: 'open' }]),
+    }
     try {
       await expect(
         writeAllSilverTables({
@@ -178,12 +196,17 @@ describe('writeAllSilverTables', () => {
           store: localDirCompletionStore(dir),
           tables: [failing, testTable],
           changeTables: [changeTable],
-          executionDayTables: [],
-          executionSnapshotTables: [],
+          executionDayTables: [failingDay],
+          executionSnapshotTables: [snapshot],
+          now: new Date('2026-11-10T17:00:00.000Z'),
         }),
-      ).rejects.toThrow('Analytics tables failed: dim_user')
+      ).rejects.toThrow(
+        'Analytics tables failed: dim_user. Analytics tables failed: execution_daily',
+      )
 
+      expect(failingDay.fetchDay).toHaveBeenCalled()
       expect((await readdir(path.join(dir, 'silver'))).sort()).toEqual([
+        'execution_inflight',
         'flow_step',
         'test_table',
       ])
