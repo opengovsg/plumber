@@ -77,7 +77,10 @@ function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
  * Template positions become the inserted step positions, so this matches a
  * check on the created flow.
  */
-function validateTemplateTopology(steps: ITemplateStep[], templateId: string) {
+export function validateTemplateTopology(
+  steps: ITemplateStep[],
+  templateId: string,
+) {
   const placeholderIdMap = Object.fromEntries(
     steps.map(({ position }) => [
       STEP_ID_PLACEHOLDER(position),
