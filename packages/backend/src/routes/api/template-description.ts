@@ -6,6 +6,7 @@ import { z, ZodError } from 'zod'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { generateTemplateDescription } from '@/helpers/generate-template-description'
 import logger from '@/helpers/logger'
+import { isPlumPro } from '@/helpers/plumpro'
 
 import { getAuthenticatedContext } from './middleware/authentication'
 
@@ -20,6 +21,7 @@ const limiter = new RateLimiterRedis({
 })
 
 type FailureCategory =
+  | 'access-check-failed'
   | 'rate-limiter-unavailable'
   | 'pipe-lookup-failed'
   | 'provider-error'
@@ -71,6 +73,21 @@ router.post('/', async (req, res) => {
   }
   const user = getAuthenticatedContext(req).currentUser
   const ids = { flowId: parsed.data.flowId, userId: user.id }
+
+  let isUserPlumPro
+  try {
+    isUserPlumPro = await isPlumPro(user.email)
+  } catch (error) {
+    logFailure('access-check-failed', error, ids)
+    res.status(503).json(UNAVAILABLE)
+    return
+  }
+  if (!isUserPlumPro) {
+    res
+      .status(403)
+      .json({ error: 'Only PlumPros can convert pipes to templates' })
+    return
+  }
 
   try {
     await limiter.consume(user.id)

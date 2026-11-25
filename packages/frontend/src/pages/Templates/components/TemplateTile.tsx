@@ -2,10 +2,10 @@ import { Box, Flex, Text } from '@chakra-ui/react'
 import { Badge, Tile } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
 
-import { TemplateIcon } from '@/helpers/flow-templates'
+import { getTemplateIconName, TemplateIcon } from '@/helpers/flow-templates'
 
 interface TemplateTileProps {
-  template: ITemplate
+  template: ITemplate & { isBuiltIn?: boolean }
   onSelect: () => void
 }
 
@@ -13,7 +13,7 @@ export default function TemplateTile({
   template,
   onSelect,
 }: TemplateTileProps) {
-  const { name, description, iconName, tags } = template
+  const { id, name, description, iconName, tags, isBuiltIn } = template
 
   const isDemoTemplate = tags?.some((tag) => tag === 'demo')
   const isNewTemplate = tags?.some((tag) => tag === 'new')
@@ -22,7 +22,10 @@ export default function TemplateTile({
     <Tile
       icon={() => (
         <Box py={2}>
-          <TemplateIcon iconName={iconName} fontSize="2rem" />
+          <TemplateIcon
+            iconName={getTemplateIconName({ id, iconName, isBuiltIn })}
+            fontSize="2rem"
+          />
         </Box>
       )}
       badge={
