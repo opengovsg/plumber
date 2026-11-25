@@ -27,7 +27,6 @@ A run archives the oldest executions first, so a run that stops at `ARCHIVE_MAX_
 - Each run starts at the oldest execution. It stops after a batch shorter than `ARCHIVE_BATCH_SIZE`, or at the runtime limit.
 - `created_at` and `id` never change. A row archived in one batch cannot match a later batch, even on a lagging reader.
 - The anti-join on `flows.test_execution_id` needs `flows_test_execution_id_index`. Without it, Postgres hash-joins, loses the index order and sorts every row past the cursor in each batch.
-- At startup, the run checks the reader for both indexes. It fails if either is missing, invalid or not ready.
 
 The order has two exceptions:
 

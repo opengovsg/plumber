@@ -87,7 +87,6 @@ let capturedTestExecAntiJoin: {
 let capturedDeletedFlowsWhereIn: any = null
 // Bindings of each batch query's keyset condition
 let capturedKeysets: string[][] = []
-let unusableIndex: string | null = null
 
 // Rows without a cursorCreatedAt get their createdAt in Postgres text form.
 function setupDb(
@@ -181,16 +180,7 @@ function setupDb(
   ;(archivalDbReader as any).mockImplementation(tableRouter)
   ;(archivalDbReader as any).raw = vi
     .fn()
-    .mockImplementation((expr: string, bindings?: string[][]) =>
-      expr.includes('pg_index')
-        ? Promise.resolve({
-            rows: bindings![0].map((name) => ({
-              name,
-              usable: name !== unusableIndex,
-            })),
-          })
-        : expr,
-    )
+    .mockImplementation((expr: string) => expr)
   ;(archivalDb as any).mockImplementation(tableRouter)
 }
 
@@ -211,7 +201,6 @@ describe('runArchivalLoop', () => {
     ;(archivalConfig as any).archiveDeletedFlowsOnly = false
     ;(archivalConfig as any).archiveTestRuns = false
     ;(archivalConfig as any).archiveBatchSize = 500
-    unusableIndex = null
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -285,16 +274,6 @@ describe('runArchivalLoop', () => {
       err: dbError,
     })
     expect(archiveExecution).toHaveBeenCalledTimes(1)
-  })
-
-  it('fails before the first batch when a required index is not usable', async () => {
-    unusableIndex = 'flows_test_execution_id_index'
-    setupDb([[makeExecution('e1')]])
-
-    await expect(runArchivalLoop(new AbortController().signal)).rejects.toThrow(
-      'flows_test_execution_id_index',
-    )
-    expect(archivalDbReader).not.toHaveBeenCalledWith('executions')
   })
 
   describe('keyset cursor', () => {
