@@ -2,6 +2,7 @@ import type { Knex } from 'knex'
 
 import {
   completionPrefix,
+  COVERAGE_DAYS,
   type CompletionSource,
   type CompletionStore,
   type JobState,
@@ -354,7 +355,9 @@ export async function writeExecutionTables(
 export const EXECUTION_HISTORY_BUDGET_MS = 3 * 60 * 60 * 1_000
 
 /**
- * Writes missing final days since EXECUTION_HISTORY_START, oldest first, until the night's time budget runs out.
+ * Writes missing final days since EXECUTION_HISTORY_START until the night's time budget runs out.
+ *
+ * The last COVERAGE_DAYS go first, then the rest oldest first.
  *
  * Each day is written for every table before the next, since archival's floor is the earliest day either lacks.
  */
@@ -369,10 +372,15 @@ export async function writeExecutionHistory({
   clock = Date.now,
 }: WriteExecutionTablesParams): Promise<void> {
   const deadline = clock() + historyBudgetMs
-  const history = sgtDaysBetween(
-    EXECUTION_HISTORY_START,
-    lastFinalDay(yesterday),
-  )
+  const lastFinal = lastFinalDay(yesterday)
+  const history = sgtDaysBetween(EXECUTION_HISTORY_START, lastFinal)
+  // IMPORTANT: one history day moves coverage's expected start back to 2023, so the days it checks go first.
+  // Oldest first would leave them missing, and the missing-days monitor would fire every night.
+  const recentFrom = addSgtDays(lastFinal, -(COVERAGE_DAYS - 1))
+  const order = [
+    ...history.filter((day) => day >= recentFrom),
+    ...history.filter((day) => day < recentFrom),
+  ]
   const missing = await Promise.all(
     dayTables.map(async (table) => {
       const objects = await store.list(completionPrefix(table.name))
@@ -382,7 +390,7 @@ export async function writeExecutionHistory({
   )
   const written = dayTables.map(() => 0)
   try {
-    for (const day of history) {
+    for (const day of order) {
       if (!missing.some((days) => days.has(day))) {
         continue
       }

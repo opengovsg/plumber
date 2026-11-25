@@ -245,7 +245,7 @@ rm -rf "$OUT"
 
 The nightly export also writes the execution days before its first night, back to 1 April 2023. There is no manual command. [`backend-analytics`](../backend-analytics/README.md#history) describes how.
 
-- Each night, after yesterday's files and the open-run snapshot, it writes missing final days oldest first, for up to 3 hours.
+- Each night, after yesterday's files and the open-run snapshot, it writes missing final days, for up to 3 hours: the last 30 days first, so coverage stays complete, then the rest oldest first.
 - Each night logs `analytics.execution_history.progress` per table, with `writtenDays`, `remainingDays` and `firstMissing`. When `remainingDays` reaches 0 in both tables, the history is complete.
 - Archival holds every run whose day is not final yet, from April 2023 on. It logs the floor as `archival.analytics_floor` and counts held runs in `executions_held_for_analytics`. The floor moves forward as the history fills in.
 - Attach the execution tables to PostHog after the history is complete, inside a new source's first 7 days, when synced rows are free.

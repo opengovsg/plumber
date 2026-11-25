@@ -146,7 +146,9 @@ The execution tables count runs and step attempts. They hold no `data_in` or `da
 
 ### History
 
-Each night, after yesterday's files and the open-run snapshot, the export writes missing final days from 1 April 2023 (`EXECUTION_HISTORY_START`). It goes oldest first, writing every table for a day before the next, since archival's floor is the earliest day either table lacks.
+Each night, after yesterday's files and the open-run snapshot, the export writes missing final days from 1 April 2023 (`EXECUTION_HISTORY_START`). It writes every table for a day before the next, since archival's floor is the earliest day either table lacks.
+
+- It writes any missing day in the last 30 first, then the rest oldest first. One history day moves `analytics.export.coverage`'s expected start back to 2023, so the 30 days it checks must already be there, or the missing-days monitor fires every night.
 
 - It stops starting new days after 3 hours (`EXECUTION_HISTORY_BUDGET_MS`), so its reader load stays in the quiet hours. The next night continues.
 - A day already final at any version is skipped. A failing day stops the history for that night and logs `analytics.export.day.error`, so it does not retry all night.

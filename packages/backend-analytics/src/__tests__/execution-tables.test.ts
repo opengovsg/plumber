@@ -6,7 +6,12 @@ import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { localDirCompletionStore } from '../completion-stores'
-import { type CompletionSource, readJobState } from '../day-completion'
+import {
+  checkCoverage,
+  type CompletionSource,
+  loadJobState,
+  readJobState,
+} from '../day-completion'
 import {
   EXECUTION_HISTORY_START,
   writeExecutionHistory,
@@ -355,6 +360,34 @@ describe('writeExecutionHistory', () => {
       window: sgtDayWindow('2026-11-07'),
       asOf: finalAsOf('2026-11-07'),
     })
+  })
+
+  it('writes the days coverage checks first, so the missing-days monitor stays quiet', async () => {
+    const table = day('execution_daily')
+    dir ??= await mkdtemp(path.join(tmpdir(), 'executions-'))
+    // The first night wrote its start marker and its one final day.
+    await localDirSink(dir)(
+      'bronze/_completion/execution_daily/start=2026-11-09.json',
+      Buffer.from('{}'),
+    )
+    await seed('execution_daily', ['2026-11-09'])
+    let now = 0
+    vi.mocked(table.fetchDay).mockImplementation(async () => {
+      now += 10
+      return []
+    })
+
+    await history([table], { budgetMs: 400, clock: () => now })
+
+    const state = await loadJobState(
+      localDirCompletionStore(dir),
+      'execution_daily',
+      '2026-11-09',
+    )
+    expect(checkCoverage(state, '2026-11-09', 1).missing).toEqual([])
+    expect(vi.mocked(table.fetchDay).mock.calls.at(-1)?.[1].window).toEqual(
+      sgtDayWindow('2023-04-11'),
+    )
   })
 
   it('stops at the time budget and reports what is left', async () => {
