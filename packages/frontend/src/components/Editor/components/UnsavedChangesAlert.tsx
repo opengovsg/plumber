@@ -90,10 +90,9 @@ export default function UnsavedChangesAlert({
           <AlertDialogFooter gap={3}>
             <Button
               mr="auto"
-              px={0}
               variant="clear"
               colorScheme="secondary"
-              _hover={{ bg: 'transparent', textDecoration: 'underline' }}
+              _hover={{ bg: 'interaction.muted.neutral.active' }}
               onClick={() => handleLeave()}
               isDisabled={isSaving}
             >
