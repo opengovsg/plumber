@@ -169,7 +169,7 @@ function getSendEmailParams(
     replyTo,
     attachments: savedAttachments,
   } = $.step.parameters
-  // A cleared attachment field can be saved as null.
+  // The editor saves [], but the API and MCP tools can save null.
   const attachments = savedAttachments ?? []
 
   // Production runs must always use the configured recipients. `useConfiguredEmails`
