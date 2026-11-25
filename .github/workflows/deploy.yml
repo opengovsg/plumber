@@ -134,13 +134,14 @@ jobs:
             --secret id=POSTHOG_API_KEY
 
       - name: Scan repository with Inspector
-        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@c87d8a405e237cfdf16e5dd3808d28d088d7cb6f # v1.6.1
+        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@6b57bbc6000f30afb3cfc2d00b9c442ddc4f1fc9 # v1.7.0
         id: inspector
         with:
           artifact_type: 'repository'
           artifact_path: './'
           critical_threshold: 5
           high_threshold: 10
+          fail_on_malicious_packages: true
 
       - name: Check Inspector malware findings
         id: malware
