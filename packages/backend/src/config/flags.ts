@@ -17,13 +17,6 @@ export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
 export const PLUMPRO_FEATURE_FLAG = 'plumpro'
 
 /**
- * PostHog early access flag. Must match the key in the frontend's
- * `useEarlyAccess` hook.
- */
-export const COMMUNITY_TEMPLATES_EARLY_ACCESS_FLAG =
-  'COMMUNITY_TEMPLATES_EARLY_ACCESS'
-
-/**
  * App flags regex
  */
 export const APP_FLAG_REGEX = /^app_.*$/

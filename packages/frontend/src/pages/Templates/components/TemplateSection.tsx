@@ -5,7 +5,6 @@ interface TemplateSectionProps {
   icon: ReactNode
   title: string
   count?: number
-  badge?: ReactNode
   description?: string
   children: ReactNode
 }
@@ -14,7 +13,6 @@ export default function TemplateSection({
   icon,
   title,
   count,
-  badge,
   description,
   children,
 }: TemplateSectionProps): JSX.Element {
@@ -26,7 +24,6 @@ export default function TemplateSection({
           <Text textStyle="subhead-1" color="base.content.strong">
             {title}
           </Text>
-          {badge}
           {count !== undefined && (
             <Text textStyle="caption-1" color="base.content.medium">
               {count}

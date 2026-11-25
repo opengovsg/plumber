@@ -8,6 +8,7 @@ import logger from '@/helpers/logger'
 import { omitCopiedStepConfig } from '@/helpers/omit-copied-step-config'
 import { isPlumPro } from '@/helpers/plumpro'
 import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
+import { stripStepVariables } from '@/helpers/strip-step-variables'
 import { templateSchema } from '@/helpers/template-schema'
 import {
   type SourceTile,
@@ -64,20 +65,22 @@ const createTemplateFromFlow: NonNullable<
     .findOne({ 'flows.id': params.input.flowId })
     .throwIfNotFound()
 
-  // Editors and Viewers must not keep the owner's files, tables or secrets.
-  const isOwner = flow.role === 'owner'
+  // Every user can see a community template, so no role keeps files,
+  // tables, secrets or step variables.
   const sourceTiles = await fetchSourceTiles(context.currentUser, flow.steps)
   const sourceSteps = templatizeTilesSteps(flow.steps, sourceTiles).map(
     (step) => ({
       ...step,
       config: step.config && omitCopiedStepConfig(step.config),
-      parameters:
-        isOwner || step.appKey === 'tiles'
+      parameters: stripStepVariables(
+        // Tiles IDs are already template placeholders.
+        step.appKey === 'tiles'
           ? step.parameters
           : sanitizeCollaboratorDuplicatedParameters(
               step.appKey,
               step.parameters,
             ),
+      ),
     }),
   )
 

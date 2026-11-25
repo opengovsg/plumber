@@ -2,15 +2,16 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { TEMPLATES } from '@/db/storage'
 import getTemplates from '@/graphql/queries/get-templates'
-import { getUserVisibleTemplates } from '@/helpers/get-user-visible-templates'
+import { getVisibleTemplates } from '@/helpers/get-visible-templates'
 import Context from '@/types/express/context'
 
-vi.mock('@/helpers/get-user-visible-templates', () => ({
-  getUserVisibleTemplates: vi.fn(),
+vi.mock('@/helpers/get-visible-templates', () => ({
+  getVisibleTemplates: vi.fn(),
 }))
 
 describe('getTemplates', () => {
-  it('returns the built-in templates for an admin request without a user', async () => {
+  it('returns the visible templates for an admin request without a user', async () => {
+    vi.mocked(getVisibleTemplates).mockResolvedValue(TEMPLATES)
     const context = {
       currentUser: null,
       isAdminOperation: true,
@@ -19,6 +20,5 @@ describe('getTemplates', () => {
     const templates = await getTemplates({}, {}, context)
 
     expect(templates).toEqual(TEMPLATES)
-    expect(getUserVisibleTemplates).not.toHaveBeenCalled()
   })
 })

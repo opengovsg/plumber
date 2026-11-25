@@ -19,12 +19,8 @@ import { BiCheck, BiInfoCircle } from 'react-icons/bi'
 
 import { getItem, setItem } from '@/helpers/storage'
 
-const SEEN_STORAGE_KEY = 'community-templates-early-access-modal-seen'
-
-interface EarlyAccessModalProps {
-  isLoading?: boolean
-  onTurnOn: () => void | Promise<void>
-}
+// A new key, so users who dismissed the earlier opt-in modal still see this.
+const SEEN_STORAGE_KEY = 'community-templates-intro-modal-seen'
 
 interface PreviewCardData {
   title: string
@@ -71,17 +67,17 @@ const POINTS: { icon: IconType; color: string; text: string }[] = [
   {
     icon: BiInfoCircle,
     color: '#7A5600',
-    text: 'Community templates are not reviewed by the Plumber team',
+    text: 'The Plumber team does not review community templates. Check each step before you use one.',
   },
   {
     icon: BiCheck,
     color: 'interaction.success.default',
-    text: 'Your pipes stay private unless you choose to share one',
+    text: 'Templates never include another officer’s secrets, files or table data',
   },
   {
     icon: BiCheck,
     color: 'interaction.success.default',
-    text: 'You can turn this off anytime from the Templates page',
+    text: 'Your pipes stay private unless you save one as a template',
   },
 ]
 
@@ -161,34 +157,23 @@ function PreviewCard({ card }: { card: PreviewCardData }): JSX.Element {
   )
 }
 
-export default function EarlyAccessModal({
-  isLoading = false,
-  onTurnOn,
-}: EarlyAccessModalProps): JSX.Element {
+/**
+ * Announces community templates once, on the user's first visit.
+ */
+export default function CommunityTemplatesModal(): JSX.Element {
   const { isOpen, onClose } = useDisclosure({
     defaultIsOpen: getItem(SEEN_STORAGE_KEY) !== 'true',
   })
 
-  // Marking it seen on open keeps a refresh or "Not now" from showing it again.
+  // Marking it seen on open keeps a refresh from showing it again.
   useEffect(() => {
     if (isOpen) {
       setItem(SEEN_STORAGE_KEY, 'true')
     }
   }, [isOpen])
 
-  const handleTurnOn = async () => {
-    await onTurnOn()
-    onClose()
-  }
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      isCentered
-      closeOnOverlayClick={!isLoading}
-      closeOnEsc={!isLoading}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent
         maxW="560px"
@@ -232,7 +217,7 @@ export default function EarlyAccessModal({
                 fontWeight={600}
                 color="#7A5600"
               >
-                BETA
+                NEW
               </Text>
             </Box>
             <Text
@@ -243,7 +228,7 @@ export default function EarlyAccessModal({
               fontWeight={600}
               color="base.content.strong"
             >
-              Try community templates?
+              Introducing community templates
             </Text>
             <Text
               fontSize="15px"
@@ -251,8 +236,8 @@ export default function EarlyAccessModal({
               fontWeight={400}
               color="base.content.default"
             >
-              Browse pipes that other public officers have shared, and share
-              your own. We’re trialling this to learn if it’s useful.
+              Browse pipes that other public officers have shared. Use one as a
+              starting point for your own pipe.
             </Text>
           </Stack>
         </ModalHeader>
@@ -277,12 +262,7 @@ export default function EarlyAccessModal({
         </ModalBody>
 
         <ModalFooter columnGap={3} px={8} pt={7} pb={8}>
-          <Button variant="outline" onClick={onClose} isDisabled={isLoading}>
-            Not now
-          </Button>
-          <Button onClick={handleTurnOn} isLoading={isLoading}>
-            Turn on
-          </Button>
+          <Button onClick={onClose}>Browse templates</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

@@ -124,8 +124,7 @@ describe('template Toolbox topology', () => {
     ).toBe(steps[5].id)
     expect((await block.$query()).config.endStepId).toBe(end.id)
     expect(
-      (await Template.findOneForUser(owner.id, templateId))!.steps[1].config
-        ?.endStepId,
+      (await Template.findOneById(templateId))!.steps[1].config?.endStepId,
     ).toBe('<<step_id_5>>')
   })
 
