@@ -3,8 +3,8 @@ import { uniq } from 'lodash'
 
 import {
   COMMON_S3_BUCKET,
-  OpenedS3Object,
-  openObjectFromS3Id,
+  headObjectFromS3Id,
+  S3ObjectHead,
 } from '@/helpers/s3'
 import Flow from '@/models/flow'
 
@@ -99,35 +99,25 @@ export async function filterAttachments({
 
   // We verify the flowId here to ensure that the attachment is from the same flow and not
   // maliciously/ manually injected by another user who does not have access to this attachment
-  const openResults = await Promise.allSettled(
+  const heads = await Promise.all(
     uniq(attachmentsList ?? []).map(async (attachment) => ({
       attachment,
-      obj: await openObjectFromS3Id(attachment, { flowId: $.flow.id }),
+      obj: await headObjectFromS3Id(attachment, { flowId: $.flow.id }),
     })),
   )
-  const opened = openResults
-    .filter((r) => r.status === 'fulfilled')
-    .map((r) => r.value)
-  const openFailure = openResults.find((r) => r.status === 'rejected')
-  if (openFailure) {
-    opened.forEach(({ obj }) => obj.discard())
-    throw openFailure.reason
-  }
 
-  const toRead: OpenedS3Object[] = []
-  for (const { attachment, obj } of opened) {
+  const toRead: S3ObjectHead[] = []
+  for (const { attachment, obj } of heads) {
     const fileName = obj.name
     const fileType = obj.name.split('.').pop()?.toLowerCase()
 
     if (isRetryWithoutAttachments) {
       invalidAttachments.push(fileName)
-      obj.discard()
       continue
     }
 
     if (!isExtensionAllowed(fileType, extensionPolicy)) {
       invalidAttachments.push(fileName)
-      obj.discard()
 
       if (submissionId === null) {
         submissionId = attachment.slice(
@@ -147,7 +137,6 @@ export async function filterAttachments({
     0,
   )
   if (totalSizeInBytes > MAX_TOTAL_ATTACHMENT_SIZE) {
-    toRead.forEach((obj) => obj.discard())
     throw new AttachmentSizeExceededError()
   }
 

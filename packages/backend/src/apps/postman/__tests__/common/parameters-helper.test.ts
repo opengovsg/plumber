@@ -5,7 +5,7 @@ import { AttachmentSizeExceededError } from '../../common/attachment-size'
 import { filterAttachments } from '../../common/parameters-helper'
 
 const mocks = vi.hoisted(() => ({
-  openObjectFromS3Id: vi.fn(),
+  headObjectFromS3Id: vi.fn(),
 }))
 
 vi.mock('@/helpers/s3', async () => {
@@ -13,7 +13,7 @@ vi.mock('@/helpers/s3', async () => {
     await vi.importActual<typeof import('@/helpers/s3')>('@/helpers/s3')
   return {
     ...actual,
-    openObjectFromS3Id: mocks.openObjectFromS3Id,
+    headObjectFromS3Id: mocks.headObjectFromS3Id,
   }
 })
 
@@ -24,7 +24,6 @@ function makeObject(name: string, sizeInBytes: number | undefined) {
     name,
     sizeInBytes,
     read: vi.fn(async () => new Uint8Array([1])),
-    discard: vi.fn(),
   }
 }
 
@@ -48,8 +47,8 @@ describe('filterAttachments', () => {
 
   beforeEach(() => {
     objects = {}
-    mocks.openObjectFromS3Id.mockReset()
-    mocks.openObjectFromS3Id.mockImplementation(async (id: string) => {
+    mocks.headObjectFromS3Id.mockReset()
+    mocks.headObjectFromS3Id.mockImplementation(async (id: string) => {
       const obj = objects[id]
       if (!obj) {
         throw new Error(`S3 metadata mismatch for ${id}`)
@@ -63,7 +62,7 @@ describe('filterAttachments', () => {
 
     const result = await run(['s3:b:1/a.pdf', 's3:b:1/a.pdf', 's3:b:1/a.pdf'])
 
-    expect(mocks.openObjectFromS3Id).toHaveBeenCalledOnce()
+    expect(mocks.headObjectFromS3Id).toHaveBeenCalledOnce()
     expect(result.attachmentFiles).toHaveLength(1)
   })
 
@@ -88,7 +87,6 @@ describe('filterAttachments', () => {
     )
     for (const obj of Object.values(objects)) {
       expect(obj.read).not.toHaveBeenCalled()
-      expect(obj.discard).toHaveBeenCalledOnce()
     }
   })
 
@@ -110,16 +108,14 @@ describe('filterAttachments', () => {
     expect(result.attachmentFiles.map((f) => f.fileName)).toEqual(['a.pdf'])
     expect(result.invalidAttachments).toEqual(['big.exe'])
     expect(objects['s3:b:1/big.exe'].read).not.toHaveBeenCalled()
-    expect(objects['s3:b:1/big.exe'].discard).toHaveBeenCalledOnce()
   })
 
-  it('discards opened attachments when another attachment fails to open', async () => {
+  it('reads nothing when another attachment fails its metadata check', async () => {
     objects['s3:b:1/a.pdf'] = makeObject('a.pdf', MB)
 
     await expect(run(['s3:b:1/a.pdf', 's3:b:1/missing.pdf'])).rejects.toThrow(
       'S3 metadata mismatch',
     )
     expect(objects['s3:b:1/a.pdf'].read).not.toHaveBeenCalled()
-    expect(objects['s3:b:1/a.pdf'].discard).toHaveBeenCalledOnce()
   })
 })

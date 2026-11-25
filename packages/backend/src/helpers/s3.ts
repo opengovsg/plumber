@@ -8,6 +8,7 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
   GetObjectTaggingCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
@@ -399,84 +400,95 @@ export interface S3Object {
  * If the ID has an invalid format, or we don't receive an object body, this
  * throws an `Error`.
  */
-export interface OpenedS3Object {
-  name: string
-  // From the response headers. Undefined only if S3 omits Content-Length.
-  sizeInBytes: number | undefined
-  read: () => Promise<Uint8Array>
-  // IMPORTANT: call this for every object you do not read. An unread body
-  // holds its HTTP connection open.
-  discard: () => void
-}
+async function assertObjectMetadata(
+  id: string,
+  idData: S3IdData,
+  metadata: Record<string, string> | undefined,
+  metadataToCheck: Record<string, string> | undefined,
+): Promise<void> {
+  // We ignore metadataToCheck for common S3 mock folder
+  if (id.startsWith(COMMON_S3_MOCK_FOLDER_PREFIX) || !metadataToCheck) {
+    return
+  }
+  for (const [key, expectedValue] of Object.entries(metadataToCheck)) {
+    // s3 converts metadata keys to lowercase
+    const storedValue = metadata?.[key.toLocaleLowerCase()]
+    if (storedValue !== expectedValue) {
+      throw new Error(
+        `S3 metadata mismatch for ${idData.objectKey}: expected ${key}=${expectedValue}, got ${storedValue}`,
+      )
+    }
 
-function discardBody(body: unknown): void {
-  const destroy = (body as { destroy?: () => void } | undefined)?.destroy
-  if (typeof destroy === 'function') {
-    destroy.call(body)
+    if (metadata?.manualupload && JSON.parse(metadata?.manualupload)) {
+      const { isValid, scanStatus } = await checkObjectScanStatus(
+        idData.bucket,
+        idData.objectKey,
+      )
+      if (!isValid) {
+        throwAttachmentError(scanStatus, metadata)
+      }
+    }
   }
 }
 
-/**
- * Fetches an object's headers without reading its body.
- *
- * Lets callers check sizes before buffering the bodies in memory.
- */
-export async function openObjectFromS3Id(
-  id: string,
-  metadataToCheck?: Record<string, string>,
-): Promise<OpenedS3Object> {
+function parseS3IdOrThrow(id: string): S3IdData {
   const idData = parseS3Id(id)
   if (!idData) {
     throw new Error(`Invalid S3 ID: ${id}`)
   }
+  return idData
+}
+
+export interface S3ObjectHead {
+  name: string
+  // Undefined only if S3 omits Content-Length.
+  sizeInBytes: number | undefined
+  read: () => Promise<Uint8Array>
+}
+
+/**
+ * Checks an object's metadata and size without downloading it.
+ *
+ * Lets callers enforce a byte budget before buffering. A HEAD holds no
+ * connection afterwards, so many checks cannot exhaust the S3 socket pool.
+ */
+export async function headObjectFromS3Id(
+  id: string,
+  metadataToCheck?: Record<string, string>,
+): Promise<S3ObjectHead> {
+  const idData = parseS3IdOrThrow(id)
 
   const {
-    Body: objectData,
     Metadata: metadata,
     ContentLength: contentLength,
-  } = await s3Client.send<GetObjectCommandInput, GetObjectCommandOutput>(
-    new GetObjectCommand({ Bucket: idData.bucket, Key: idData.objectKey }),
+    ETag: etag,
+  } = await s3Client.send(
+    new HeadObjectCommand({ Bucket: idData.bucket, Key: idData.objectKey }),
   )
 
-  if (!objectData) {
-    throw new Error(`No object body for ${id}`)
-  }
-
-  try {
-    /**
-     * We ignore metadataToCheck for common S3 mock folder
-     */
-    if (!id.startsWith(COMMON_S3_MOCK_FOLDER_PREFIX) && metadataToCheck) {
-      for (const [key, expectedValue] of Object.entries(metadataToCheck)) {
-        // s3 converts metadata keys to lowercase
-        const storedValue = metadata?.[key.toLocaleLowerCase()]
-        if (storedValue !== expectedValue) {
-          throw new Error(
-            `S3 metadata mismatch for ${idData.objectKey}: expected ${key}=${expectedValue}, got ${storedValue}`,
-          )
-        }
-
-        if (metadata?.manualupload && JSON.parse(metadata?.manualupload)) {
-          const { isValid, scanStatus } = await checkObjectScanStatus(
-            idData.bucket,
-            idData.objectKey,
-          )
-          if (!isValid) {
-            throwAttachmentError(scanStatus, metadata)
-          }
-        }
-      }
-    }
-  } catch (e) {
-    discardBody(objectData)
-    throw e
-  }
+  await assertObjectMetadata(id, idData, metadata, metadataToCheck)
 
   return {
     name: idData.objectName,
     sizeInBytes: contentLength,
-    read: () => objectData.transformToByteArray(),
-    discard: () => discardBody(objectData),
+    read: async () => {
+      // IfMatch makes S3 reject the read if the object changed after the
+      // size check.
+      const { Body: objectData } = await s3Client.send<
+        GetObjectCommandInput,
+        GetObjectCommandOutput
+      >(
+        new GetObjectCommand({
+          Bucket: idData.bucket,
+          Key: idData.objectKey,
+          IfMatch: etag,
+        }),
+      )
+      if (!objectData) {
+        throw new Error(`No object body for ${id}`)
+      }
+      return objectData.transformToByteArray()
+    },
   }
 }
 
@@ -484,10 +496,28 @@ export async function getObjectFromS3Id(
   id: string,
   metadataToCheck?: Record<string, string>,
 ): Promise<S3Object> {
-  const obj = await openObjectFromS3Id(id, metadataToCheck)
+  const idData = parseS3IdOrThrow(id)
+
+  const { Body: objectData, Metadata: metadata } = await s3Client.send<
+    GetObjectCommandInput,
+    GetObjectCommandOutput
+  >(new GetObjectCommand({ Bucket: idData.bucket, Key: idData.objectKey }))
+
+  if (!objectData) {
+    throw new Error(`No object body for ${id}`)
+  }
+
+  try {
+    await assertObjectMetadata(id, idData, metadata, metadataToCheck)
+  } catch (e) {
+    // An unread body holds its pooled connection open.
+    ;(objectData as { destroy?: () => void }).destroy?.()
+    throw e
+  }
+
   return {
-    name: obj.name,
-    data: await obj.read(),
+    name: idData.objectName,
+    data: await objectData.transformToByteArray(),
   }
 }
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { ObjectIdentifier } from '@aws-sdk/client-s3'
+import { GetObjectCommand, ObjectIdentifier } from '@aws-sdk/client-s3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -10,7 +10,7 @@ import {
   deleteObjects,
   getObjectFromS3Id,
   getPresignedPost,
-  openObjectFromS3Id,
+  headObjectFromS3Id,
   MALWARE_SCAN_STATUS,
   parseS3Id,
   putObject,
@@ -34,6 +34,7 @@ vi.mock('@aws-sdk/client-s3', () => ({
   },
   PutObjectCommand: mocks.PutObjectCommand,
   GetObjectCommand: vi.fn(),
+  HeadObjectCommand: vi.fn(),
   DeleteObjectCommand: vi.fn(),
   DeleteObjectsCommand: vi.fn(),
   GetObjectTaggingCommand: mocks.GetObjectTaggingCommand,
@@ -154,47 +155,65 @@ describe('s3', () => {
     })
   })
 
-  describe('openObjectFromS3Id', () => {
-    const body = {
-      transformToByteArray: vi.fn(() => 'file data bytes'),
-      destroy: vi.fn(),
-    }
-
+  describe('headObjectFromS3Id', () => {
     beforeEach(() => {
-      body.transformToByteArray.mockClear()
-      body.destroy.mockClear()
       mocks.s3Client.send.mockResolvedValueOnce({
-        Body: body,
         ContentLength: 123,
+        ETag: '"etag-1"',
         Metadata: { flowid: 'flow-id' },
       })
     })
 
-    it('returns the size without reading the body', async () => {
-      const obj = await openObjectFromS3Id(
+    it('returns the size without downloading the object', async () => {
+      const obj = await headObjectFromS3Id(
         `s3:${COMMON_S3_BUCKET}:abcd/my file.txt`,
         { flowId: 'flow-id' },
       )
       expect(obj.name).toBe('my file.txt')
       expect(obj.sizeInBytes).toBe(123)
-      expect(body.transformToByteArray).not.toHaveBeenCalled()
+      expect(mocks.s3Client.send).toHaveBeenCalledOnce()
     })
 
-    it('destroys the body when discarded', async () => {
-      const obj = await openObjectFromS3Id(
+    it('pins the read to the checked ETag', async () => {
+      const obj = await headObjectFromS3Id(
         `s3:${COMMON_S3_BUCKET}:abcd/my file.txt`,
       )
-      obj.discard()
-      expect(body.destroy).toHaveBeenCalledOnce()
+      mocks.s3Client.send.mockResolvedValueOnce({
+        Body: { transformToByteArray: vi.fn(() => 'file data bytes') },
+      })
+
+      await expect(obj.read()).resolves.toBe('file data bytes')
+      expect(vi.mocked(GetObjectCommand)).toHaveBeenLastCalledWith({
+        Bucket: COMMON_S3_BUCKET,
+        Key: 'abcd/my file.txt',
+        IfMatch: '"etag-1"',
+      })
     })
 
-    it('destroys the body when the metadata does not match', async () => {
+    it('throws when the metadata does not match', async () => {
       await expect(
-        openObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
+        headObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
+          flowId: 'wrong',
+        }),
+      ).rejects.toThrow('S3 metadata mismatch')
+    })
+  })
+
+  describe('getObjectFromS3Id on a metadata mismatch', () => {
+    it('destroys the unread body', async () => {
+      const body = { transformToByteArray: vi.fn(), destroy: vi.fn() }
+      mocks.s3Client.send.mockResolvedValueOnce({
+        Body: body,
+        Metadata: { flowid: 'flow-id' },
+      })
+
+      await expect(
+        getObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
           flowId: 'wrong',
         }),
       ).rejects.toThrow('S3 metadata mismatch')
       expect(body.destroy).toHaveBeenCalledOnce()
+      expect(body.transformToByteArray).not.toHaveBeenCalled()
     })
   })
 
