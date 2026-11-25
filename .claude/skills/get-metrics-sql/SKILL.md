@@ -19,7 +19,7 @@ reference docs below cover what a single model file won't tell you.
 Hard rules (non-negotiable):
 
 - **Write only inside a rolled-back transaction.** Insert test data only into the local Postgres
-  container, via `docker exec`, inside `BEGIN … ROLLBACK` (see step 5). Never `COMMIT`.
+  container, via `psql` on `localhost`, inside `BEGIN … ROLLBACK` (see step 5). Never `COMMIT`.
 - **Never write through any other connection** (e.g. the TablePlus MCP tools). It may point at prod.
 - **Ask, don't guess, on genuine ambiguity** — (not an exhaustive list) e.g. an unclear "active," an
   unspecified Grafana panel design, or a display name that doesn't uniquely resolve to one
@@ -80,19 +80,21 @@ if it's ambiguous; this is a real design decision, not something inferable from 
 ### 5. Validate locally
 
 Validate the query against the Postgres container brought up by `pnpm run setup` (the human
-runs this themselves — don't start it yourself; if it doesn't seem to be running, ask). Run `psql`
-inside that container via `docker exec`, rather than a locally-installed client — find the running
-container's name with `docker ps` (it's derived from the `postgres` service in
-[docker-compose.dev.yml](../../../packages/backend/docker-compose.dev.yml)), and read the database and
-user from the same file.
+runs this themselves — don't start it yourself; if it doesn't seem to be running, ask).
+
+Connect with a local `psql` over TCP. Never use `docker` commands. They fail inside the nono sandbox.
+
+- Read the port, user, password and database from the `postgres` service in
+  [docker-compose.dev.yml](../../../packages/backend/docker-compose.dev.yml).
+- Use `psql` on `PATH`, else `/opt/homebrew/opt/libpq/bin/psql`. Homebrew does not link `libpq` onto
+  `PATH`. If neither exists, ask the human.
 
 #### 5a. Check syntax (always)
 
 Wrap in a read-only transaction:
 
 ```bash
-docker exec <postgres container name> psql -U <user from docker-compose.dev.yml> \
-  -d <database from docker-compose.dev.yml> \
+PGPASSWORD=<password> psql -h localhost -p <port> -U <user> -d <database> -v ON_ERROR_STOP=1 \
   -c "BEGIN; SET TRANSACTION READ ONLY; <query> LIMIT 0; ROLLBACK;"
 ```
 
@@ -112,6 +114,8 @@ still compiles. Insert test rows, run the query and roll back, all in one `psql`
 - Include rows the query must count and rows it must skip.
 - Write the expected result as a SQL comment before running. A query that returns nothing passes
   silently otherwise.
+- The dev database already has rows. Assert on the test rows' IDs, or on the change in a count, so
+  existing rows cannot make a wrong query pass.
 - For a lone predicate (e.g. a regex or JSON path), an inline `VALUES` list is enough. It needs no
   writes.
 
