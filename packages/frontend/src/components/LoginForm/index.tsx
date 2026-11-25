@@ -1,4 +1,4 @@
-import { useMutation } from '@apollo/client'
+import { ApolloError, useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { type FormEvent, useContext, useState } from 'react'
 
@@ -33,24 +33,32 @@ export const LoginForm = (): JSX.Element => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!isOtpSent) {
-      await requestOtp({
-        variables: {
-          input: {
-            email,
+    try {
+      if (!isOtpSent) {
+        await requestOtp({
+          variables: {
+            input: {
+              email,
+            },
           },
-        },
-      })
-      setIsOtpSent(true)
-    } else {
-      await verifyOtp({
-        variables: {
-          input: {
-            email,
-            otp,
+        })
+        setIsOtpSent(true)
+      } else {
+        await verifyOtp({
+          variables: {
+            input: {
+              email,
+              otp,
+            },
           },
-        },
-      })
+        })
+      }
+    } catch (error) {
+      // The Apollo error link already shows a toast. React ignores this
+      // handler's promise, so an uncaught rejection reaches error tracking.
+      if (!(error instanceof ApolloError)) {
+        throw error
+      }
     }
   }
 
