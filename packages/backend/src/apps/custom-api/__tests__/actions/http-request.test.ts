@@ -454,6 +454,104 @@ describe('make http request', () => {
     expect(error).toMatchObject({ kind: 'config', cause: timeoutError })
   })
 
+  describe('request deadline', () => {
+    const testTimeout = 1000
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+      mocks.stepQueryResult.mockResolvedValueOnce({
+        config: { adminOverride: { customApiTimeout: testTimeout } },
+      })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('passes an abort signal to the request', async () => {
+      mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+      await makeRequestAction.run!($)
+
+      expect(mocks.httpRequest).toHaveBeenCalledWith(
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      )
+    })
+
+    it('fails as a config timeout when the request stalls after headers', async () => {
+      let markCalled!: () => void
+      const called = new Promise<void>((resolve) => (markCalled = resolve))
+      mocks.httpRequest.mockImplementationOnce(
+        ({ signal }: { signal: AbortSignal }) =>
+          new Promise((_, reject) => {
+            markCalled()
+            signal.addEventListener('abort', () =>
+              reject(makeHttpError({ message: 'canceled' })),
+            )
+          }),
+      )
+
+      const result = makeRequestAction.run!($).catch((e: unknown) => e)
+      await called
+      await vi.advanceTimersByTimeAsync(testTimeout)
+      const error = (await result) as StepError
+
+      expect(error).toBeInstanceOf(StepError)
+      expect(getName(error)).toBe(
+        `HTTP request exceeded timeout of ${testTimeout / 1000}s`,
+      )
+      expect(error.kind).toBe('config')
+    })
+
+    it('clears the deadline once the request settles', async () => {
+      mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+      await makeRequestAction.run!($)
+
+      expect(vi.getTimerCount()).toBe(0)
+    })
+
+    it('does not arm a deadline when the timeout override is 0', async () => {
+      mocks.stepQueryResult.mockReset()
+      mocks.stepQueryResult.mockResolvedValueOnce({
+        config: { adminOverride: { customApiTimeout: 0 } },
+      })
+      let finishRequest!: () => void
+      mocks.httpRequest.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishRequest = () => resolve({ data: 'response' })
+          }),
+      )
+
+      const result = makeRequestAction.run!($)
+      await vi.advanceTimersByTimeAsync(10)
+      const [[request]] = mocks.httpRequest.mock.calls
+      expect(request.signal.aborted).toBe(false)
+
+      finishRequest()
+      await result
+    })
+
+    it('gives each redirect hop its own deadline', async () => {
+      mocks.httpRequest
+        .mockResolvedValueOnce({
+          status: 302,
+          headers: { location: 'https://redirect.test' },
+        })
+        .mockResolvedValueOnce({ data: 'response' })
+
+      await makeRequestAction.run!($)
+
+      const [[firstHop], [secondHop]] = mocks.httpRequest.mock.calls
+      expect(secondHop.signal).toBeInstanceOf(AbortSignal)
+      expect(secondHop.signal).not.toBe(firstHop.signal)
+      expect(secondHop.timeout).toBe(testTimeout)
+    })
+  })
+
   describe('step error kind', () => {
     it('marks static secrets in Custom Headers as config on check step', async () => {
       $.step.parameters.method = 'GET'
