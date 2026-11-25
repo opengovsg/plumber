@@ -118,6 +118,12 @@ router.post('/', async (req, res) => {
     res.status(404).json({ error: 'Pipe not found' })
     return
   }
+  if (flow.role !== 'owner') {
+    res
+      .status(403)
+      .json({ error: 'Only the pipe owner can convert it to a template' })
+    return
+  }
   if (flow.steps.length === 0 || flow.steps.length > 100) {
     res
       .status(400)

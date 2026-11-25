@@ -65,8 +65,13 @@ const createTemplateFromFlow: NonNullable<
     .findOne({ 'flows.id': params.input.flowId })
     .throwIfNotFound()
 
-  // Every user can see a community template, so no role keeps files,
-  // tables, secrets or step variables.
+  // Templates are shared with every user, so only the owner may publish one.
+  if (flow.role !== 'owner') {
+    throw new ForbiddenError('Only the pipe owner can convert it to a template')
+  }
+
+  // Every user can see a community template, so it keeps no files, tables,
+  // secrets or step variables.
   const sourceTiles = await fetchSourceTiles(context.currentUser, flow.steps)
   const sourceSteps = templatizeTilesSteps(flow.steps, sourceTiles).map(
     (step) => ({

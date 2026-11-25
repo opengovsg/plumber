@@ -67,7 +67,7 @@ describe('template description endpoint', () => {
       withGraphFetched: mocks.withGraphFetched,
     })
     mocks.withGraphFetched.mockReturnValue({ findOne: mocks.findOne })
-    mocks.findOne.mockResolvedValue({ steps: [{ position: 1 }] })
+    mocks.findOne.mockResolvedValue({ role: 'owner', steps: [{ position: 1 }] })
     mocks.generate.mockResolvedValue('Generated description')
   })
 
@@ -89,6 +89,16 @@ describe('template description endpoint', () => {
     expect(res.status).toHaveBeenCalledWith(404)
     expect(mocks.generate).not.toHaveBeenCalled()
   })
+
+  it.each(['editor', 'viewer'])(
+    'does not generate for a pipe where the user is a %s',
+    async (role) => {
+      mocks.findOne.mockResolvedValue({ role, steps: [{ position: 1 }] })
+      const res = await request({ flowId })
+      expect(res.status).toHaveBeenCalledWith(403)
+      expect(mocks.generate).not.toHaveBeenCalled()
+    },
+  )
 
   it('rejects invalid IDs before loading steps', async () => {
     const res = await request({ flowId: 'bad-id' })
@@ -123,7 +133,7 @@ describe('template description endpoint', () => {
     { steps: [] },
     { steps: Array.from({ length: 101 }, () => ({ position: 1 })) },
   ])('rejects unsupported step counts', async ({ steps }) => {
-    mocks.findOne.mockResolvedValue({ steps })
+    mocks.findOne.mockResolvedValue({ role: 'owner', steps })
     const res = await request({ flowId })
     expect(res.status).toHaveBeenCalledWith(400)
     expect(mocks.generate).not.toHaveBeenCalled()

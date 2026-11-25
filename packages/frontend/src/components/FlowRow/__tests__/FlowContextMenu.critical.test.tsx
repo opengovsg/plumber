@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// Business rule: "Convert to template" should only be shown to PlumPros.
+// Business rule: "Convert to template" is shown only to PlumPros who own the
+// pipe.
 import type { IFlow } from '@plumber/types'
 import { flushSync } from 'react-dom'
 import { createRoot, type Root } from 'react-dom/client'
@@ -20,11 +21,11 @@ import ThemeProvider from '@/components/ThemeProvider'
 
 import FlowContextMenu from '../FlowContextMenu'
 
-const flow = { id: 'flow-id', name: 'Pipe', role: 'owner' } as IFlow
 let root: Root | undefined
 const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
 
-async function openMenu(): Promise<string[]> {
+async function openMenu(role: IFlow['role'] = 'owner'): Promise<string[]> {
+  const flow = { id: 'flow-id', name: 'Pipe', role } as IFlow
   const container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -52,11 +53,23 @@ afterEach(() => {
 })
 
 describe('flow context menu', () => {
-  it('shows "Convert to template" to PlumPros', async () => {
+  it('shows "Convert to template" to PlumPros who own the pipe', async () => {
     mocks.isPlumPro = true
 
     expect(await openMenu()).toContain('Convert to template')
   })
+
+  it.each<IFlow['role']>(['editor', 'viewer'])(
+    'hides "Convert to template" from a PlumPro who is a %s',
+    async (role) => {
+      mocks.isPlumPro = true
+
+      const items = await openMenu(role)
+
+      expect(items).toContain('Duplicate')
+      expect(items).not.toContain('Convert to template')
+    },
+  )
 
   it('hides "Convert to template" from users who are not PlumPros', async () => {
     mocks.isPlumPro = false

@@ -181,7 +181,7 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           >
             Duplicate
           </MenuItem>
-          {isPlumPro && (
+          {isPlumPro && isOwner && (
             <MenuItem
               onClick={onConvertToTemplateButtonClick}
               icon={<Icon as={BiExport} boxSize={5} />}
