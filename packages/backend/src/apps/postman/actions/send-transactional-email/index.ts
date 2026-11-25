@@ -14,10 +14,7 @@ import logger from '@/helpers/logger'
 import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
 import Step from '@/models/step'
 
-import {
-  AttachmentSizeExceededError,
-  MAX_TOTAL_ATTACHMENT_SIZE_MB,
-} from '../../common/attachment-size'
+import { MAX_TOTAL_ATTACHMENT_SIZE_MB } from '../../common/attachment-size'
 import { POSTMAN_ACCEPTED_EXTENSIONS } from '../../common/constants'
 import { dataOutSchema } from '../../common/data-out-validator'
 import {
@@ -111,21 +108,51 @@ const action: IRawAction = {
   },
 }
 
-async function filterAttachmentsOrThrow(
-  params: Parameters<typeof filterAttachments>[0],
-): ReturnType<typeof filterAttachments> {
-  try {
-    return await filterAttachments(params)
-  } catch (error) {
-    if (error instanceof AttachmentSizeExceededError) {
-      throw new StepError({
-        name: 'Total attachment size exceeded',
-        solution: `Check that the attachments do not exceed ${MAX_TOTAL_ATTACHMENT_SIZE_MB}MB in total.`,
-        kind: 'config',
-        cause: error,
-      })
-    }
-    throw error
+async function notifyInvalidAttachments({
+  $,
+  defaultSendEmailParams,
+  invalidAttachments,
+  submissionId,
+  isPartialRetry,
+  isRetryWithoutAttachments,
+}: {
+  $: IGlobalVariable
+  defaultSendEmailParams: {
+    flowId: string
+    flowName: string
+    userEmail: string
+    executionId: string
+  }
+  invalidAttachments: string[]
+  submissionId: string | null
+  isPartialRetry: boolean
+  isRetryWithoutAttachments: boolean
+}): Promise<void> {
+  const hasInvalidAttachments = invalidAttachments.length > 0
+  /**
+   * Send invalid attachments notification email
+   * Do not send on partial retry as we would have already sent this once with the blacklist email
+   * Do not send on retry when removing all attachments
+   */
+  if (
+    hasInvalidAttachments &&
+    !isPartialRetry &&
+    !$.execution.testRun &&
+    !isRetryWithoutAttachments &&
+    submissionId
+  ) {
+    await sendInvalidAttachmentsEmail({
+      ...defaultSendEmailParams,
+      invalidAttachments,
+      submissionId,
+    })
+
+    logger.warn({
+      message: 'Invalid attachments',
+      flowId: $.flow.id,
+      executionId: $.execution.id,
+      invalidAttachments: invalidAttachments.join(', '),
+    })
   }
 }
 
@@ -288,13 +315,38 @@ async function sendEmail(
     invalidAttachments,
     submissionId,
     isRetryWithoutAttachments,
-  } = await filterAttachmentsOrThrow({
+    totalSizeExceeded,
+  } = await filterAttachments({
     $,
     attachmentsList: result.data.attachments,
     isPartialRetry,
     lastExecutionStep: lastExecutionStep ?? null,
     extensionPolicy,
   })
+
+  const defaultSendEmailParams = {
+    flowId: $.flow.id,
+    flowName: $.flow.name,
+    userEmail: $.user.email,
+    executionId: $.execution.id,
+  }
+  const notifyInvalidAttachmentsParams = {
+    $,
+    defaultSendEmailParams,
+    invalidAttachments,
+    submissionId,
+    isPartialRetry,
+    isRetryWithoutAttachments,
+  }
+
+  if (totalSizeExceeded === true) {
+    await notifyInvalidAttachments(notifyInvalidAttachmentsParams)
+    throw new StepError({
+      name: 'Total attachment size exceeded',
+      solution: `Check that the attachments do not exceed ${MAX_TOTAL_ATTACHMENT_SIZE_MB}MB in total.`,
+      kind: 'config',
+    })
+  }
 
   const { dataOut, error, errorStatus } = await sendTransactionalEmails(
     $.http,
@@ -349,19 +401,6 @@ async function sendEmail(
     (_, i) => dataOut.status[i] === 'BLACKLISTED',
   )
 
-  const defaultSendEmailParams = {
-    flowId: $.flow.id,
-    flowName: $.flow.name,
-    userEmail: $.user.email,
-    executionId: $.execution.id,
-  }
-  const hasInvalidAttachments = invalidAttachments.length > 0
-  const invalidAttachmentParams = {
-    hasInvalidAttachments,
-    submissionId,
-    invalidAttachments,
-  }
-
   /**
    * Send blacklist notification email if any
    * If there are any invalid attachments, it will be included in this email
@@ -384,31 +423,8 @@ async function sendEmail(
     }
   }
 
-  /**
-   * Send invalid attachments notification email
-   * Do not send on partial retry as we would have already sent this once with the blacklist email
-   * Do not send on retry when removing all attachments
-   */
-  if (
-    hasInvalidAttachments &&
-    !isPartialRetry &&
-    !$.execution.testRun &&
-    !isRetryWithoutAttachments &&
-    submissionId
-  ) {
-    await sendInvalidAttachmentsEmail({
-      ...defaultSendEmailParams,
-      ...invalidAttachmentParams,
-      submissionId,
-    })
+  await notifyInvalidAttachments(notifyInvalidAttachmentsParams)
 
-    logger.warn({
-      message: 'Invalid attachments',
-      flowId: $.flow.id,
-      executionId: $.execution.id,
-      invalidAttachments: invalidAttachments.join(', '),
-    })
-  }
   /**
    * If there's any rate-limit error, we will throw the rate-limit error
    * else we just throw the first error we encounter

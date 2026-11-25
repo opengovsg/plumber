@@ -1,7 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AttachmentSizeExceededError } from '../../common/attachment-size'
 import { filterAttachments } from '../../common/parameters-helper'
 
 const mocks = vi.hoisted(() => ({
@@ -82,9 +81,10 @@ describe('filterAttachments', () => {
     objects['s3:b:1/a.pdf'] = makeObject('a.pdf', 10 * MB)
     objects['s3:b:1/b.pdf'] = makeObject('b.pdf', 10 * MB + 1)
 
-    await expect(run(['s3:b:1/a.pdf', 's3:b:1/b.pdf'])).rejects.toThrow(
-      AttachmentSizeExceededError,
-    )
+    const result = await run(['s3:b:1/a.pdf', 's3:b:1/b.pdf'])
+
+    expect(result.totalSizeExceeded).toBe(true)
+    expect(result.attachmentFiles).toEqual([])
     for (const obj of Object.values(objects)) {
       expect(obj.read).not.toHaveBeenCalled()
     }
@@ -93,10 +93,20 @@ describe('filterAttachments', () => {
   it('treats an attachment with an unknown size as too large', async () => {
     objects['s3:b:1/a.pdf'] = makeObject('a.pdf', undefined)
 
-    await expect(run(['s3:b:1/a.pdf'])).rejects.toThrow(
-      AttachmentSizeExceededError,
-    )
+    const result = await run(['s3:b:1/a.pdf'])
+
+    expect(result.totalSizeExceeded).toBe(true)
     expect(objects['s3:b:1/a.pdf'].read).not.toHaveBeenCalled()
+  })
+
+  it('still reports invalid attachments when the total size is too large', async () => {
+    objects['s3:b:1/big.pdf'] = makeObject('big.pdf', 21 * MB)
+    objects['s3:b:1/virus.exe'] = makeObject('virus.exe', MB)
+
+    const result = await run(['s3:b:1/big.pdf', 's3:b:1/virus.exe'])
+
+    expect(result.totalSizeExceeded).toBe(true)
+    expect(result.invalidAttachments).toEqual(['virus.exe'])
   })
 
   it('excludes unsupported attachments from the size total without reading them', async () => {
