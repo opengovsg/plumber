@@ -10,6 +10,7 @@ import {
   requireAuthentication,
   setCurrentUserContext,
 } from './middleware/authentication'
+import stepErrorFixRouter from './step-error-fix'
 import templatesRouter from './templates'
 
 const router: Router = Router()
@@ -29,6 +30,7 @@ router.use(blockAdminOperations)
 router.use('/chat', chatRouter)
 router.use('/connections', connectionsRouter)
 router.use('/dynamic-data', dynamicDataRouter)
+router.use('/step-error-fix', stepErrorFixRouter)
 router.use('/templates', templatesRouter)
 
 // Future routes can be added here:
