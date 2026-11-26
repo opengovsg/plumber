@@ -2,7 +2,6 @@ import { IRawAction } from '@plumber/types'
 
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
-import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import {
   autoMarshallDataObj,
@@ -12,6 +11,7 @@ import {
 import { getTableOperations } from '@/models/tiles/factory'
 import { PatchRowInput } from '@/models/tiles/types'
 
+import { assertTileAccess } from '../../common/assert-tile-access'
 import { UpdateRowOutput } from '../../types'
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -155,10 +155,7 @@ const action: IRawAction = {
 
     const columnIds = table.columns.map((c) => c.id)
 
-    if (!$.user) {
-      throw new Error('Flow is missing an owner')
-    }
-    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
+    await assertTileAccess($, tableId)
 
     /**
      * Row ID is empty, this could be because the previous get single row action
