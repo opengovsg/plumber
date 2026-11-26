@@ -4,12 +4,12 @@ import apps from '@/apps'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
+import { assertStepTileAccess } from '@/helpers/assert-step-tile-access'
 import globalVariable from '@/helpers/global-variable'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 import type User from '@/models/user'
 import { lookupStepDefinition } from '@/services/step-definition'
 
@@ -153,18 +153,13 @@ export async function updateStepParametersService({
       action.validateStepParameters?.(mergedParameters)
     }
 
-    if (
-      step.appKey === 'tiles' &&
-      mergedParameters.tableId &&
-      mergedParameters.tableId !== step.parameters?.tableId
-    ) {
-      await TableCollaborator.hasAccess(
-        user.id,
-        mergedParameters.tableId as string,
-        'editor',
-        undefined,
+    if (mergedParameters.tableId !== step.parameters?.tableId) {
+      await assertStepTileAccess({
+        userId: user.id,
+        appKey: step.appKey,
+        parameters: mergedParameters,
         trx,
-      )
+      })
     }
 
     if (connectionId !== undefined) {
