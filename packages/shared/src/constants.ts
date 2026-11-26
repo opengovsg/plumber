@@ -9,3 +9,5 @@ export const confettiApiBaseUrl = 'https://confetti-surveys.plumber.gov.sg'
 export const posthogProjectToken =
   'phc_nwcM6rC7WU7CzdW9Z4zvB3dcZWFM9fn2URbqs35FFQQQ'
 export const posthogHost = 'https://a.plumber.gov.sg'
+export const tileViewPasswordMinLength = 8
+export const tileViewPasswordMaxLength = 100

@@ -1,5 +1,7 @@
 import { timingSafeEqual } from 'crypto'
 
+import { tileViewPasswordMaxLength } from '@plumber/shared'
+
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { generateViewToken, verifyTilePassword } from '@/helpers/auth-tiles'
 import { getClientIp } from '@/helpers/get-client-ip'
@@ -26,23 +28,25 @@ const verifyTableViewPassword: NonNullable<
   }
 
   const clientIp = getClientIp(context.req)
-  await consumeTilePasswordAttempt(tableId, clientIp)
 
-  if (
-    // If shareable link view key is not provided
-    !context.tilesViewKey ||
-    // If shareable link view key does not match
-    !timingSafeEqual(
-      Buffer.from(table.viewOnlyKey),
-      Buffer.from(context.tilesViewKey),
-    ) ||
-    // If password is incorrect
-    !verifyTilePassword(
+  const viewOnlyKeyBuffer = Buffer.from(table.viewOnlyKey)
+  const tilesViewKeyBuffer = Buffer.from(context.tilesViewKey ?? '')
+  // Hashed before the attempt is charged, so a full hash queue spends none.
+  // An overlong password or a bad view key still counts as an attempt below.
+  const isCorrect =
+    password.length <= tileViewPasswordMaxLength &&
+    // timingSafeEqual throws on unequal lengths, which would skip the charge.
+    tilesViewKeyBuffer.length === viewOnlyKeyBuffer.length &&
+    timingSafeEqual(viewOnlyKeyBuffer, tilesViewKeyBuffer) &&
+    (await verifyTilePassword(
       password,
       table.viewOnlyPassword.hash,
-      context.tilesViewKey,
-    )
-  ) {
+      table.viewOnlyKey,
+    ))
+  // Charged before the result is used, so concurrent guesses cannot skip it.
+  // A locked-out client is refused here.
+  await consumeTilePasswordAttempt(tableId, clientIp)
+  if (!isCorrect) {
     throw new ForbiddenError('Invalid password')
   }
 
