@@ -3,13 +3,13 @@ import { IGlobalVariable } from '@plumber/types'
 import logger from '@/helpers/logger'
 
 import { createSession } from './create-client'
-import { resolveDatabricksCredentials } from './resolve-credentials'
 
 export async function checkSchemaExists($: IGlobalVariable): Promise<boolean> {
   // Open the session without an initialSchema; getSchemas() would fail against
   // a schema that doesn't exist yet.
-  const credentials = resolveDatabricksCredentials('legacy')
-  const { session, endSession } = await createSession($, { skipSchema: true })
+  const { session, endSession, credentials } = await createSession($, {
+    skipSchema: true,
+  })
 
   try {
     const { screenName } = $.auth.data

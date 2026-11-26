@@ -7,7 +7,6 @@ import {
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
-import { resolveDatabricksCredentials } from '../auth/resolve-credentials'
 import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickTableRes } from '../common/types'
 
@@ -16,8 +15,7 @@ const dynamicData: IDynamicData = {
   key: 'databricks-list-table-names',
 
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
-    const credentials = resolveDatabricksCredentials('legacy')
-    const { session, endSession } = await createSession($)
+    const { session, endSession, credentials } = await createSession($)
     try {
       const operation = await session.getTables({
         catalogName: credentials.catalog,

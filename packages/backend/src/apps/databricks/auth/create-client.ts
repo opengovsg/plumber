@@ -7,7 +7,7 @@ import { IGlobalVariable } from '@plumber/types'
 import logger from '@/helpers/logger'
 
 import { constructSchemaName } from '../common/construct-schema-name'
-import { resolveDatabricksCredentials } from './resolve-credentials'
+import { resolveDatabricksConnection } from './resolve-connection'
 import { getDatabricksToken } from './token-persistence'
 
 interface CreateSessionOptions {
@@ -18,6 +18,9 @@ export const createSession = async (
   $: IGlobalVariable,
   options?: CreateSessionOptions,
 ) => {
+  const connection = resolveDatabricksConnection($)
+  const { credentials } = connection
+
   const client: DBSQLClient = new DBSQLClient({
     logger: {
       log(level: LogLevel, message: string) {
@@ -33,8 +36,7 @@ export const createSession = async (
     },
   })
 
-  const credentials = resolveDatabricksCredentials('legacy')
-  const token = await getDatabricksToken()
+  const token = await getDatabricksToken(connection)
   const connectOptions = {
     authType: 'access-token',
     host: credentials.serverHostname,
@@ -58,7 +60,7 @@ export const createSession = async (
       }
     }
 
-    return { session, endSession }
+    return { session, endSession, credentials }
   } catch (error) {
     // Clean up the connected client if it was created
     if (connectedClient) {

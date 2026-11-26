@@ -3,22 +3,21 @@ import axios from 'axios'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import logger from '@/helpers/logger'
 
-import { resolveDatabricksCredentials } from './resolve-credentials'
+import { type DatabricksConnection } from './resolve-connection'
 
 const redisClient = createRedisClient(REDIS_DB_INDEX.APP_DATA)
 
-const DATABRICKS_AUTH_TOKEN_REDIS_PREFIX = 'databricks:authToken:'
-
-export async function getDatabricksToken(): Promise<string> {
-  const credentials = resolveDatabricksCredentials('legacy')
-  const redisKey =
-    DATABRICKS_AUTH_TOKEN_REDIS_PREFIX + credentials.serverHostname
+export async function getDatabricksToken({
+  generation,
+  credentials,
+  tokenRedisKey,
+}: DatabricksConnection): Promise<string> {
   try {
-    const cachedToken = await redisClient.get(redisKey)
+    const cachedToken = await redisClient.get(tokenRedisKey)
     if (cachedToken) {
       logger.info('Databricks OAuth token read', {
         event: 'databricks-oauth-token-read',
-        redisKey,
+        generation,
       })
       return cachedToken
     }
@@ -43,21 +42,21 @@ export async function getDatabricksToken(): Promise<string> {
     const accessToken = response.data.access_token
     logger.info('Databricks OAuth token response', {
       event: 'databricks-oauth-token-response',
-      redisKey,
+      generation,
       accessToken: accessToken.slice(0, 10) + '...',
     })
 
     // expires_in is in seconds, minus 1 minute of buffer
     const expiresIn = response.data.expires_in - 60
     // Write it into Redis
-    await redisClient.set(redisKey, accessToken, 'EX', expiresIn)
+    await redisClient.set(tokenRedisKey, accessToken, 'EX', expiresIn)
 
     return accessToken
   } catch (e) {
     logger.error('Databricks OAuth token read error', {
       event: 'databricks-oauth-token-read-error',
-      error: e,
-      redisKey,
+      generation,
+      errorMessage: e instanceof Error ? e.message : undefined,
     })
     throw new Error('Failed to get Databricks OAuth token')
   }
