@@ -1,7 +1,11 @@
+import { scryptSync } from 'crypto'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import verifyOtp from '@/graphql/mutations/verify-otp'
 import * as auth from '@/helpers/auth'
+import * as scrypt from '@/helpers/scrypt'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
@@ -29,7 +33,7 @@ describe('verifyOtp', () => {
       email: context.currentUser.email,
     }))!
 
-    validOtpHash = user.hashOtp(TEST_OTP)
+    validOtpHash = await user.hashOtp(TEST_OTP)
   })
 
   afterEach(() => {
@@ -154,6 +158,52 @@ describe('verifyOtp', () => {
 
     expect(sendOnboardingEmail).not.toHaveBeenCalled()
     expect(setAuthCookie).not.toHaveBeenCalled()
+  })
+
+  it('accepts an otp hash stored before hashing became async', async () => {
+    await User.query()
+      .patch({
+        otpHash: scryptSync(TEST_OTP, user.email, 64).toString('base64'),
+        otpSentAt: new Date(),
+      })
+      .where({ email: context.currentUser.email })
+
+    await expect(
+      verifyOtp(
+        {},
+        { input: { otp: TEST_OTP, email: context.currentUser.email } },
+        context,
+      ),
+    ).resolves.toBe(true)
+  })
+
+  it('does not spend an otp attempt when the hash queue is full', async () => {
+    await User.query()
+      .patch({ otpHash: validOtpHash, otpSentAt: new Date() })
+      .where({ email: context.currentUser.email })
+    vi.spyOn(scrypt, 'hashWithScrypt').mockRejectedValueOnce(
+      new RateLimitedError('Too many requests. Please try again shortly.'),
+    )
+
+    await expect(
+      verifyOtp(
+        {},
+        { input: { otp: TEST_OTP, email: context.currentUser.email } },
+        context,
+      ),
+    ).rejects.toBeInstanceOf(RateLimitedError)
+
+    const refreshed = await User.query().findOne({
+      email: context.currentUser.email,
+    })
+    expect(refreshed?.otpAttempts).toBe(0)
+    await expect(
+      verifyOtp(
+        {},
+        { input: { otp: TEST_OTP, email: context.currentUser.email } },
+        context,
+      ),
+    ).resolves.toBe(true)
   })
 
   it('should reset otp attempts, send onboarding email and set auth cookie for valid otp', async () => {

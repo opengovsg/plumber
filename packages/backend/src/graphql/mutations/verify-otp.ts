@@ -9,6 +9,7 @@ import User from '@/models/user'
 import type { MutationResolvers } from '../__generated__/types.generated'
 
 const MAX_OTP_ATTEMPTS = 5
+const MAX_OTP_INPUT_LENGTH = 64
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
@@ -31,6 +32,9 @@ const verifyOtp: NonNullable<MutationResolvers['verifyOtp']> = async (
   if (!otp) {
     throw new BaseError('No OTP provided')
   }
+  if (otp.length > MAX_OTP_INPUT_LENGTH) {
+    throw new BaseError('Invalid OTP')
+  }
   const user = await User.query().findOne({ email: email.trim().toLowerCase() })
   if (!user) {
     throw new BaseError('No such user')
@@ -49,7 +53,9 @@ const verifyOtp: NonNullable<MutationResolvers['verifyOtp']> = async (
     throw new BaseError('OTP attempts exceeded')
   }
 
-  // atomically increment otp retries first to prevent concurrent bruce force attacks
+  // Hashed before the increment, so a full hash queue spends no attempt
+  const inputOtpHash = await user.hashOtp(otp)
+  // atomically increment otp retries before comparing to prevent concurrent brute force attacks
   const { otpAttempts: newOtpAttempts } = await user
     .$query()
     .increment('otp_attempts', 1)
@@ -57,7 +63,6 @@ const verifyOtp: NonNullable<MutationResolvers['verifyOtp']> = async (
   if (newOtpAttempts > MAX_OTP_ATTEMPTS) {
     throw new BaseError('OTP attempts exceeded')
   }
-  const inputOtpHash = user.hashOtp(otp)
   if (
     !crypto.timingSafeEqual(Buffer.from(otpHash), Buffer.from(inputOtpHash))
   ) {
