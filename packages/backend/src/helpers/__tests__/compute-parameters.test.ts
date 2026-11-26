@@ -476,4 +476,31 @@ describe('compute parameters', () => {
       value: 'array value 1, hehe, array value 3',
     })
   })
+
+  it('processes 10k keys without quadratic copying', () => {
+    const params = Object.fromEntries(
+      Array.from({ length: 10_000 }, (_, i) => [`key${i}`, 'value']),
+    )
+    const start = performance.now()
+    const result = computeParameters(params, executionSteps)
+    expect(performance.now() - start).toBeLessThan(500)
+    expect(Object.keys(result)).toHaveLength(10_000)
+  })
+
+  it('keeps unusual keys as own properties in the same order', () => {
+    const params = JSON.parse(
+      '{"b":"x","2":"n","1":"m","__proto__":{"polluted":"y"},"constructor":"c","":"empty"}',
+    )
+    const result = computeParameters(params, executionSteps)
+    expect(Object.keys(result)).toEqual([
+      '1',
+      '2',
+      'b',
+      '__proto__',
+      'constructor',
+      '',
+    ])
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined()
+  })
 })
