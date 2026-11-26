@@ -169,12 +169,12 @@ describe('Tiles step access', () => {
   describe('MCP update_step_parameters', () => {
     let tilesStep: Step
 
-    const setTableId = (tableId: string) =>
+    const updateParameters = (parameters: Record<string, unknown>) =>
       updateStepParametersService({
         user: editor,
         pipeId: flow.id,
         stepId: tilesStep.id,
-        parameters: { tableId },
+        parameters,
       })
 
     beforeEach(async () => {
@@ -186,7 +186,9 @@ describe('Tiles step access', () => {
     })
 
     it('rejects a Tile the editor cannot edit and keeps the old Tile', async () => {
-      await expect(setTableId(ownerOnlyTile.id)).rejects.toThrow(ForbiddenError)
+      await expect(
+        updateParameters({ tableId: ownerOnlyTile.id }),
+      ).rejects.toThrow(ForbiddenError)
 
       expect((await tilesStep.$query()).parameters).toEqual({
         tableId: sharedTile.id,
@@ -198,9 +200,23 @@ describe('Tiles step access', () => {
         .$relatedQuery('tables')
         .insert({ name: 'Editor owned', role: 'owner', db: 'pg' })
 
-      const { step } = await setTableId(editorTile.id)
+      const { step } = await updateParameters({ tableId: editorTile.id })
 
       expect(step.parameters).toEqual({ tableId: editorTile.id })
+    })
+
+    it('rejects editing other fields of a step on a Tile the editor cannot edit', async () => {
+      await tilesStep
+        .$query()
+        .patch({ parameters: { tableId: ownerOnlyTile.id } })
+
+      await expect(
+        updateParameters({ returnLastRowFirst: true }),
+      ).rejects.toThrow(ForbiddenError)
+
+      expect((await tilesStep.$query()).parameters).toEqual({
+        tableId: ownerOnlyTile.id,
+      })
     })
   })
 })

@@ -153,14 +153,12 @@ export async function updateStepParametersService({
       action.validateStepParameters?.(mergedParameters)
     }
 
-    if (mergedParameters.tableId !== step.parameters?.tableId) {
-      await assertStepTileAccess({
-        userId: user.id,
-        appKey: step.appKey,
-        parameters: mergedParameters,
-        trx,
-      })
-    }
+    await assertStepTileAccess({
+      userId: user.id,
+      appKey: step.appKey,
+      parameters: mergedParameters,
+      trx,
+    })
 
     if (connectionId !== undefined) {
       // Scoped to this pipe, not "any connection the user can see": a
