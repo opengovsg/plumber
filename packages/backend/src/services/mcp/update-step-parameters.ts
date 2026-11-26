@@ -9,6 +9,7 @@ import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 import type User from '@/models/user'
 import { lookupStepDefinition } from '@/services/step-definition'
 
@@ -150,6 +151,20 @@ export async function updateStepParametersService({
     if (step.type === 'action') {
       const action = definition as IRawAction
       action.validateStepParameters?.(mergedParameters)
+    }
+
+    if (
+      step.appKey === 'tiles' &&
+      mergedParameters.tableId &&
+      mergedParameters.tableId !== step.parameters?.tableId
+    ) {
+      await TableCollaborator.hasAccess(
+        user.id,
+        mergedParameters.tableId as string,
+        'editor',
+        undefined,
+        trx,
+      )
     }
 
     if (connectionId !== undefined) {
