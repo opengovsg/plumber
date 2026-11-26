@@ -7,6 +7,7 @@ import {
 } from '@/helpers/compute-for-each-parameters'
 import {
   createTableRenderBudget,
+  markTableLimitExceeded,
   type TableRenderBudget,
 } from '@/helpers/format-table-variable'
 import { hexDecode, hexEncode } from '@/helpers/hex-encoding'
@@ -151,9 +152,12 @@ function findAndSubstituteVariables(
           event: 'variable-modifier-too-long',
           length: modifierMatch[1].length,
         })
-        if (modifierMatch[1].startsWith(TABLE_MODIFIER_HEX_PREFIX)) {
-          tableRenderContext.renderBudget.isLimitExceeded = true
-          return ''
+        if (
+          modifierMatch[1]
+            .slice(0, TABLE_MODIFIER_HEX_PREFIX.length)
+            .toLowerCase() === TABLE_MODIFIER_HEX_PREFIX
+        ) {
+          markTableLimitExceeded(tableRenderContext.renderBudget)
         }
         return part
       }

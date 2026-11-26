@@ -159,6 +159,25 @@ describe('send email table variables', () => {
     )
   })
 
+  it('logs and fails the step for an overlong uppercase table modifier', async () => {
+    const hex = hexEncode(`table:${'c0,'.repeat(100_000)}`).toUpperCase()
+    const parameters = render({
+      destinationEmail: 'recipient@open.gov.sg',
+      subject: 'Subject',
+      senderName: 'Sender',
+      body: `Hello {{step.${stepId}.wide|${hex}}}`,
+    })
+    const $ = makeGlobal(parameters, false)
+
+    const error = await sendTransactionalEmail.run!($).catch((e) => e)
+    expect(getStepErrorKind(error)).toBe('config')
+    expect($.http.post).not.toHaveBeenCalled()
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Variable modifier exceeds length limit',
+      expect.objectContaining({ event: 'variable-modifier-too-long' }),
+    )
+  })
+
   it('fails the step when a nested body field goes over the limit', async () => {
     const parameters = render({
       destinationEmail: 'recipient@open.gov.sg',

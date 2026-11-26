@@ -513,17 +513,29 @@ describe('compute parameters', () => {
       expect(new Set(budgets).size).toBe(1)
     })
 
-    it('flags an oversized table modifier as over the limit', () => {
-      const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
-      const variable = tableVariable(`table:${'name,'.repeat(70_000)}`)
-      const result = computeParameters(
-        { body: variable },
-        executionSteps,
-        preprocessVariable,
-      )
-      expect(preprocessVariable).not.toHaveBeenCalled()
-      expect(result).toEqual({ body: '' })
-      expect(isTableLimitExceeded(result)).toBe(true)
-    })
+    it.each([
+      ['lowercase', (hex: string) => hex],
+      ['uppercase', (hex: string) => hex.toUpperCase()],
+    ])(
+      'flags an oversized %s table modifier and skips later tables',
+      (_case, toCase) => {
+        const preprocessVariable = vi.fn(
+          (_key: string, value: unknown) => value,
+        )
+        const hex = toCase(hexEncode(`table:${'name,'.repeat(70_000)}`))
+        const oversized = `{{step.${randomStepID}.tableProp|${hex}}}`
+        const result = computeParameters(
+          { body: `${oversized}${tableVariable('table:name')}` },
+          executionSteps,
+          preprocessVariable,
+        )
+        expect(isTableLimitExceeded(result)).toBe(true)
+        const [[, marker]] = preprocessVariable.mock.calls as [
+          string,
+          { renderBudget: { bytes: number } },
+        ][]
+        expect(marker.renderBudget.bytes).toBe(0)
+      },
+    )
   })
 })

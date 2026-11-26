@@ -240,13 +240,17 @@ function prepareTable(
 }
 
 // The step fails on the first rejected table, so later tables need no work.
-function limitExceeded(
-  budget: TableRenderBudget,
-  result: FormatTableResult,
-): FormatTableResult {
+export function markTableLimitExceeded(budget: TableRenderBudget): void {
   budget.isLimitExceeded = true
   budget.bytes = 0
-  return result
+}
+
+function limitExceeded(
+  budget: TableRenderBudget,
+  message: string,
+): FormatTableResult {
+  markTableLimitExceeded(budget)
+  return { success: false, error: 'limit_exceeded', message }
 }
 
 /**
@@ -261,30 +265,27 @@ export function formatTable(
 
   // IMPORTANT: check before any per-row work, since cost is rows × columns.
   if (selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS) {
-    return limitExceeded(budget, {
-      success: false,
-      error: 'limit_exceeded',
-      message: `Selected ${selectedColumnIds.length} columns, the limit is ${MAX_TABLE_VARIABLE_COLUMNS}`,
-    })
+    return limitExceeded(
+      budget,
+      `Selected ${selectedColumnIds.length} columns, the limit is ${MAX_TABLE_VARIABLE_COLUMNS}`,
+    )
   }
   const sourceRows = (tableData as { rows?: unknown } | null)?.rows
   if (
     Array.isArray(sourceRows) &&
     sourceRows.length > MAX_TABLE_VARIABLE_ROWS
   ) {
-    return limitExceeded(budget, {
-      success: false,
-      error: 'limit_exceeded',
-      message: `Table has ${sourceRows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
-    })
+    return limitExceeded(
+      budget,
+      `Table has ${sourceRows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
+    )
   }
 
   if (budget.bytes <= 0) {
-    return limitExceeded(budget, {
-      success: false,
-      error: 'limit_exceeded',
-      message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
-    })
+    return limitExceeded(
+      budget,
+      `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
+    )
   }
 
   const prepared = prepareTable(tableData, budget.preparedTables)
@@ -337,11 +338,10 @@ export function formatTable(
     }
   }
   if (!output || output.bytes > budget.bytes) {
-    return limitExceeded(budget, {
-      success: false,
-      error: 'limit_exceeded',
-      message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
-    })
+    return limitExceeded(
+      budget,
+      `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
+    )
   }
 
   budget.bytes -= output.bytes
