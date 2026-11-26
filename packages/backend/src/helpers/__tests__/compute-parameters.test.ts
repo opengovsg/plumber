@@ -517,7 +517,7 @@ describe('compute parameters', () => {
       ['lowercase', (hex: string) => hex],
       ['uppercase', (hex: string) => hex.toUpperCase()],
     ])(
-      'flags an oversized %s table modifier and skips later tables',
+      'flags an oversized %s table modifier and empties the step budget',
       (_case, toCase) => {
         const preprocessVariable = vi.fn(
           (_key: string, value: unknown) => value,

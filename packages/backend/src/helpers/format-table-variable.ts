@@ -239,7 +239,8 @@ function prepareTable(
   return preparedTables.get(tableData) ?? null
 }
 
-// The step fails on the first rejected table, so later tables need no work.
+// The step fails on the first rejected table, so later tables skip parsing,
+// preparation and rendering.
 export function markTableLimitExceeded(budget: TableRenderBudget): void {
   budget.isLimitExceeded = true
   budget.bytes = 0
