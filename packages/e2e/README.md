@@ -122,7 +122,7 @@ Keep the original dispatch token access and repository available until validatio
 Use the repository's shared pnpm lockfile, catalog, and overrides. Regenerate dependency resolution from the repository root.
 Do not copy dependency records from a standalone installation.
 
-- `typescript`, `ts-node`, `dotenv`, and `zod` use `catalog:` to follow the main repository's selected versions.
+- `typescript`, `tsx`, `dotenv`, and `zod` use `catalog:` to follow the main repository's selected versions.
 - Oxlint and Oxfmt come from root tooling. E2E does not maintain separate linter or formatter dependencies.
 - The workspace's `@types/node` override controls Node typings across packages.
 - Keep Playwright, Gmail tooling, Cryptr, and Day.js pinned while only E2E needs these versions.
@@ -133,7 +133,7 @@ Run `pnpm install --lockfile-only --ignore-scripts --prefer-frozen-lockfile` fro
 Review the resulting lockfile, then run E2E lint, format, typecheck, configuration tests, and test discovery.
 Playwright upgrades also require browser installation and a live E2E run.
 
-`ts-node` is pinned to `10.9.2` in the shared catalog.
+`tsx` is pinned to `^4.23.12` in the shared catalog.
 E2E, backend, and backend-archive follow that pin. Validate all three consumers when updating it.
 
 E2E retains its separate Node pin for Gmail compatibility. Align it with the root `.nvmrc` only after validating login and live tests.

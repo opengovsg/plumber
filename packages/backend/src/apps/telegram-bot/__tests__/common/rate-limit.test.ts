@@ -1,7 +1,7 @@
 import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '@/../test/utils/make-http-error'
+import { makeHttpError } from '@/test/make-http-error'
 
 import rateLimitHandler from '../../common/interceptor/rate-limit'
 

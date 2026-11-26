@@ -36,13 +36,13 @@ class ExtendedQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<
 
   static forClass: ForClassMethod = buildQueryBuidlerForClass()
 
-  delete() {
+  delete(): this['NumberQueryBuilderType'] {
     return this.patch({
       [DELETED_COLUMN_NAME]: new Date().toISOString(),
     } as unknown as PartialModelObject<M>)
   }
 
-  hardDelete() {
+  hardDelete(): this['NumberQueryBuilderType'] {
     return super.delete()
   }
 
@@ -51,7 +51,7 @@ class ExtendedQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<
     return this
   }
 
-  restore() {
+  restore(): this['NumberQueryBuilderType'] {
     return this.patch({
       [DELETED_COLUMN_NAME]: null,
     } as unknown as PartialModelObject<M>)

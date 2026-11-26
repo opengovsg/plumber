@@ -4,7 +4,7 @@ async function main(): Promise<void> {
     await import(specifier)
   }
   const { default: tracer } = await import('dd-trace')
-  const { default: logger } = await import('@/helpers/logger')
+  const { logger } = await import('@/helpers/logger.js')
   tracer.trace('entry-load-order', () => logger.info('log-in-span'))
   process.exit(0)
 }

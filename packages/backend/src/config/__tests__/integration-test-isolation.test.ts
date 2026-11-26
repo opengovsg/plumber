@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 async function loadIsolation() {
   vi.resetModules()
   const { integrationTestIsolation } =
-    await import('../integration-test-isolation')
+    await import('../integration-test-isolation.js')
   return integrationTestIsolation
 }
 

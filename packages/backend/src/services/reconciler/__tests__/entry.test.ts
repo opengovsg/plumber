@@ -79,7 +79,7 @@ describe('reconciler entry', () => {
   async function startReconciler(): Promise<void> {
     handlers.clear()
     vi.resetModules()
-    await import('@/reconciler')
+    await import('@/reconciler.js')
   }
 
   beforeAll(() => {

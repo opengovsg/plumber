@@ -97,7 +97,7 @@ describe('recordLateScheduledStart', () => {
     vi.stubEnv('DELAY_STEP_GRACE_SECONDS', graceSeconds)
     vi.resetModules()
     const { recordLateScheduledStart } =
-      await import('../helpers/record-late-scheduled-start')
+      await import('../helpers/record-late-scheduled-start.js')
     return recordLateScheduledStart
   }
 

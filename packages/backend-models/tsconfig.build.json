@@ -3,8 +3,8 @@
     "declaration": true,
     "esModuleInterop": true,
     "lib": ["es2021", "ES2022.Error", "ES2022.Object"],
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "noImplicitAny": true,
     "outDir": "dist",
     "rootDir": "../backend/src",
@@ -12,12 +12,11 @@
     "sourceMap": true,
     "target": "es2021",
     "typeRoots": ["../../node_modules/@types", "node_modules/@types"],
-    "baseUrl": ".",
     "paths": {
-      "@plumber/types": ["node_modules/@plumber/types"],
-      "ajv-formats": ["node_modules/ajv-formats"],
-      "knex": ["node_modules/knex"],
-      "objection": ["node_modules/objection"]
+      "@plumber/types": ["./node_modules/@plumber/types"],
+      "ajv-formats": ["./node_modules/ajv-formats"],
+      "knex": ["./node_modules/knex"],
+      "objection": ["./node_modules/objection"]
     }
   },
   "files": ["../backend/src/exports/models.ts"]

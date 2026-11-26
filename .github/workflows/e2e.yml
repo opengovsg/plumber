@@ -52,7 +52,7 @@ jobs:
       - name: Validate and mask private fixtures
         env:
           E2E_FIXTURE_MANIFEST: ${{ secrets.E2E_FIXTURE_MANIFEST }}
-        run: pnpm exec ts-node scripts/mask-fixtures.ts
+        run: pnpm exec tsx scripts/mask-fixtures.ts
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Login

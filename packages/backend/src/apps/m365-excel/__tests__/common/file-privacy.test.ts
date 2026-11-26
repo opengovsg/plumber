@@ -1,8 +1,8 @@
 import type { IHttpClient } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '@/../test/utils/make-http-error'
 import StepError from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
 import {
   getWriteAccessEmailCandidates,

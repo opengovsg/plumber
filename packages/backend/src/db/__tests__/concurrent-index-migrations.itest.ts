@@ -1,7 +1,8 @@
 import knex, { Knex } from 'knex'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import config from '../../../knexfile'
+// knexfile.ts sits outside rootDir. The knex settings now live in knex-config.
+import { config } from '../../config/knex-config.js'
 import * as executionStepsAppKeyKey from '../migrations/20250804015323_add_composite_index_on_execution_steps'
 import * as executionsCreatedAtId from '../migrations/20261122120000_add-executions-created-at-id-index'
 import * as flowsTestExecutionId from '../migrations/20261122120100_add-flows-test-execution-id-index'

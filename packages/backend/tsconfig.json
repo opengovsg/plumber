@@ -3,9 +3,12 @@
     "declaration": true,
     "esModuleInterop": true,
     "lib": ["es2021", "ES2022.Error", "ES2022.Object"],
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noUncheckedSideEffectImports": true,
     "outDir": "dist",
+    "rootDir": "src",
+    "types": [],
     "paths": {
       "@/*": ["./src/*"]
     },
@@ -20,8 +23,5 @@
       "./src/types"
     ]
   },
-  "include": ["src/**/*"],
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  }
+  "include": ["src/**/*"]
 }

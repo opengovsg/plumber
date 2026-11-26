@@ -3,20 +3,12 @@ import { resolve } from 'path'
 // @ts-check
 import react from '@vitejs/plugin-react-swc'
 import { defineConfig } from 'vite'
-import dts from 'vite-plugin-dts'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
 import { failOnLeakedNodeBuiltins } from './vite-config-utils.ts'
 
 export default defineConfig({
-  plugins: [
-    react(),
-    viteTsconfigPaths(),
-    dts({
-      insertTypesEntry: true,
-    }),
-    failOnLeakedNodeBuiltins(),
-  ],
+  plugins: [react(), viteTsconfigPaths(), failOnLeakedNodeBuiltins()],
   build: {
     // disable inline images since we don't allow them in csp
     assetsInlineLimit: 0,

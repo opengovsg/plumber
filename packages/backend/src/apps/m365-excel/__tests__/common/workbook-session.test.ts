@@ -1,9 +1,9 @@
 import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '@/../test/utils/make-http-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
 import WorkbookSession from '../../common/workbook-session'
 

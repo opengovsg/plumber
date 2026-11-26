@@ -1,8 +1,9 @@
 import type { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeHttpError } from '@/test/make-http-error'
+
 import app from '../../..'
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import tagOrUntagCaseAction from '../../actions/tag-or-untag-case'
 
 const MOCK_RESPONSE = {

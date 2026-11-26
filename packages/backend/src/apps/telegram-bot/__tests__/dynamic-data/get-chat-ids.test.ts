@@ -1,7 +1,8 @@
 import { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
+import { makeHttpError } from '@/test/make-http-error'
+
 import getChatIds, {
   UPDATES_CONFLICT_MESSAGE,
 } from '../../dynamic-data/get-chat-ids'

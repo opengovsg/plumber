@@ -75,7 +75,7 @@ beforeEach(() => {
 
 describe('Rome and PostHog instrumentation', () => {
   it('logs rejected exports through the backend logger', async () => {
-    await import('../instrumentation')
+    await import('../instrumentation.js')
 
     diag.error('PostHog export failed', new Error('HTTP 413'))
     diag.warn('PostHog export warning')
@@ -98,7 +98,7 @@ describe('Rome and PostHog instrumentation', () => {
     'keeps both Rome processors when PostHog is incomplete: %j',
     async (config) => {
       mocks.config.posthog = config
-      await import('../instrumentation')
+      await import('../instrumentation.js')
 
       expect(mocks.sdk.mock.calls[0][0].spanProcessors).toHaveLength(2)
       expect(mocks.langfuse).toHaveBeenCalledTimes(2)
@@ -112,7 +112,7 @@ describe('Rome and PostHog instrumentation', () => {
       projectToken: 'phc-test',
       host: 'https://eu.i.posthog.com/',
     }
-    const { shutdownTelemetry } = await import('../instrumentation')
+    const { shutdownTelemetry } = await import('../instrumentation.js')
 
     expect(mocks.sdk.mock.calls[0][0].spanProcessors).toHaveLength(3)
     expect(mocks.langfuse).toHaveBeenNthCalledWith(

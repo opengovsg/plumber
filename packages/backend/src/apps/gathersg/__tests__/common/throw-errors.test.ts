@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import StepError from '@/errors/step'
+import { makeHttpError } from '@/test/make-http-error'
 
-import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import throwGatherSGStepError from '../../common/throw-errors'
 
 function gatherError(
