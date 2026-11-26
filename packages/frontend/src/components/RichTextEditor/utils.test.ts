@@ -326,8 +326,8 @@ describe('substituteForPreview', () => {
       expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual('')
     })
 
-    describe('step cell budget', () => {
-      // Each table costs (400 rows + 1 header) × 100 columns = 40,100 cells.
+    describe('step byte budget', () => {
+      // Each table renders about 3.8 MB of HTML, so two fit in 10 MB.
       const columns = Array.from(
         { length: MAX_TABLE_VARIABLE_COLUMNS },
         (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
@@ -338,7 +338,7 @@ describe('substituteForPreview', () => {
           {
             label: 'My table',
             testRunValue: 'big table',
-            table: { columns, rows: Array.from({ length: 400 }, () => ({})) },
+            table: { columns, rows: Array.from({ length: 300 }, () => ({})) },
           },
         ],
       ])
@@ -359,7 +359,7 @@ describe('substituteForPreview', () => {
         expect(out.match(/<table/g)).toHaveLength(2)
       })
 
-      it('rejects a selection with a missing column without charging it', () => {
+      it('renders nothing for a selection with a missing column', () => {
         const out = substituteForPreview(
           makeInput(
             `table:missing,${columns
@@ -369,7 +369,7 @@ describe('substituteForPreview', () => {
           ) + makeInput(modifier).repeat(2),
           bigInfo,
         )
-        expect(out.startsWith('big table')).toBe(true)
+        expect(out).not.toContain('big table')
         expect(out.match(/<table/g)).toHaveLength(2)
       })
     })

@@ -1,6 +1,6 @@
 import { PlacementWithLogical } from '@chakra-ui/react'
 import {
-  MAX_TABLE_VARIABLE_CELLS_PER_STEP,
+  MAX_TABLE_VARIABLE_BYTES_PER_STEP,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -17,9 +17,11 @@ import { FieldValues, UseFormGetValues } from 'react-hook-form'
 import { hexDecode } from '@/helpers/hex-encoding'
 import type { StepWithVariables, TableVariable } from '@/helpers/variables'
 
-interface TableCellBudget {
-  remaining: number
+interface TableRenderBudget {
+  bytes: number
 }
+
+const utf8 = new TextEncoder()
 
 interface TableVariablePreviewData {
   columns: Array<{ id: string; name: string }>
@@ -76,8 +78,8 @@ export const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 export function simpleSubstitute(
   original: string,
   varInfo: VariableInfoMap,
-  cellBudget: TableCellBudget = {
-    remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP,
+  renderBudget: TableRenderBudget = {
+    bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP,
   },
 ): string {
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
@@ -86,7 +88,7 @@ export function simpleSubstitute(
     // HTML table, mirroring the backend's computeParameters. This keeps the
     // substituted body in sync with the test execution's dataIn so the step's
     // "set up successfully" check (matchParamsToDataIn) matches.
-    const tableHtml = renderTableVariableHtml(id, varInfo, cellBudget)
+    const tableHtml = renderTableVariableHtml(id, varInfo, renderBudget)
     if (tableHtml != null) {
       return tableHtml
     }
@@ -298,7 +300,7 @@ function buildTableHtml(
 function renderTableVariableHtml(
   dataId: string,
   varInfo: VariableInfoMap,
-  cellBudget: TableCellBudget,
+  renderBudget: TableRenderBudget,
 ): string | null {
   const modifierMatch = dataId.match(HEX_MODIFIER_SUFFIX_REGEX)
   if (!modifierMatch) {
@@ -336,20 +338,21 @@ function renderTableVariableHtml(
   const selectedColumns = selectedColumnIds
     .map((id) => columnById.get(id))
     .filter((col): col is { id: string; name: string } => col != null)
-  // The backend rejects the whole selection when any column is missing.
+  // The backend sends nothing when any selected column is missing.
   if (
     selectedColumns.length === 0 ||
     selectedColumns.length !== selectedColumnIds.length
   ) {
-    return null
-  }
-  const cellCount = (tableData.rows.length + 1) * selectedColumns.length
-  if (cellCount > cellBudget.remaining) {
     return ''
   }
-  cellBudget.remaining -= cellCount
 
-  return buildTableHtml(selectedColumns, tableData.rows)
+  const html = buildTableHtml(selectedColumns, tableData.rows)
+  const bytes = utf8.encode(html).length
+  if (bytes > renderBudget.bytes) {
+    return ''
+  }
+  renderBudget.bytes -= bytes
+  return html
 }
 
 /**
@@ -374,7 +377,7 @@ export function substituteForPreview(
   }
 
   const root = parse(html)
-  const cellBudget = { remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP }
+  const renderBudget = { bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP }
 
   function processChildren(parent: NodeHTMLElement): void {
     const newChildren: Node[] = []
@@ -383,7 +386,11 @@ export function substituteForPreview(
         const dataType = child.getAttribute('data-type')
         const dataId = child.getAttribute('data-id')
         if (dataType === 'tableVariable' && dataId != null) {
-          const tableHtml = renderTableVariableHtml(dataId, varInfo, cellBudget)
+          const tableHtml = renderTableVariableHtml(
+            dataId,
+            varInfo,
+            renderBudget,
+          )
           if (tableHtml != null) {
             newChildren.push(...parse(tableHtml).childNodes)
             continue
@@ -405,7 +412,7 @@ export function substituteForPreview(
         newChildren.push(child)
       } else if (child instanceof TextNode) {
         newChildren.push(
-          new TextNode(simpleSubstitute(child.rawText, varInfo, cellBudget)),
+          new TextNode(simpleSubstitute(child.rawText, varInfo, renderBudget)),
         )
       } else {
         newChildren.push(child)

@@ -1,7 +1,7 @@
 /**
  * Business rules:
- * - Table variables are capped at 100 columns and 500 rows, and all tables in
- *   one step share a 100,000-cell budget. Over a cap, the table renders empty
+ * - Table variables are capped at 100 columns and 500 rows. All tables in one
+ *   step share a 10 MB HTML budget. Over a cap, the table renders empty
  *   instead of exhausting memory.
  */
 import { randomUUID } from 'crypto'
@@ -21,9 +21,9 @@ const columns = Array.from({ length: MAX_TABLE_VARIABLE_COLUMNS }, (_, i) => ({
   id: `c${i}`,
   name: `Col ${i}`,
 }))
-// Each table costs (400 rows + 1 header) × 100 columns = 40,100 cells.
+// Each table renders about 3.8 MB of HTML, so two fit in the 10 MB budget.
 const table = {
-  rows: Array.from({ length: 400 }, () => ({ data: {} })),
+  rows: Array.from({ length: 300 }, () => ({ data: {} })),
   columns,
 }
 const executionSteps = [
@@ -35,7 +35,7 @@ const executionSteps = [
         __type: 'table',
         data: table,
         selectedColumnIds: columns.map((c) => c.id),
-        cellBudget: { remaining: Infinity },
+        renderBudget: { bytes: 1e12 },
       },
     },
   } as unknown as ExecutionStep,

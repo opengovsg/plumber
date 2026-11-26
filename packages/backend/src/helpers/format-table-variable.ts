@@ -6,7 +6,7 @@
  */
 
 import {
-  MAX_TABLE_VARIABLE_CELLS_PER_STEP,
+  MAX_TABLE_VARIABLE_BYTES_PER_STEP,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -14,8 +14,8 @@ import {
 import { safeHtml } from './html-utils'
 import logger from './logger'
 
-// Logs instead of failing, because real cell value sizes are unknown.
-const LARGE_OUTPUT_BYTES = 10 * 1024 * 1024
+// Logs well before the byte limit, so near-misses show up first.
+const LARGE_OUTPUT_BYTES = 5 * 1024 * 1024
 
 export interface TableColumn {
   id: string
@@ -34,13 +34,36 @@ export interface TableData {
   inputSource?: string
 }
 
-export interface TableCellBudget {
-  remaining: number
+interface RenderedTable {
+  html: string
+  bytes: number
+}
+
+interface PreparedTable {
+  rows: TableRow[]
+  columnMap: Map<string, TableColumn>
+  outputs: Map<string, RenderedTable>
+}
+
+/** Shared by every table variable in one step. */
+export interface TableRenderBudget {
+  bytes: number
+  hasLoggedLargeOutput: boolean
+  // Reused when one body references the same table many times.
+  preparedTables: Map<object, PreparedTable | null>
+}
+
+export function createTableRenderBudget(): TableRenderBudget {
+  return {
+    bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+    hasLoggedLargeOutput: false,
+    preparedTables: new Map(),
+  }
 }
 
 export interface FormatTableOptions {
   selectedColumnIds: string[]
-  cellBudget?: TableCellBudget
+  renderBudget?: TableRenderBudget
 }
 
 export type FormatTableResult =
@@ -81,35 +104,61 @@ function cellToString(value: unknown): string {
  * If you change the markup/styles here, update that mirror and its
  * markup-pinning test so the preview keeps matching the sent email.
  */
-function formatAsHtml(rows: TableRow[], columns: TableColumn[]): string {
+function formatAsHtml(
+  rows: TableRow[],
+  columns: TableColumn[],
+  maxBytes: number,
+): RenderedTable | null {
   const headerBg = '#F3F4F6' // gray.100
   const rowOddBg = '#FFFFFF' // white
   const rowEvenBg = '#F9FAFB' // gray.50
   const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
 
-  const headerCells = columns
-    .map(
-      (col) =>
+  // IMPORTANT: stops as soon as the output passes maxBytes, so an oversized
+  // table costs at most one cell past the limit.
+  const parts: string[] = []
+  let bytes = 0
+  const append = (html: string): boolean => {
+    bytes += Buffer.byteLength(html)
+    parts.push(html)
+    return bytes <= maxBytes
+  }
+
+  if (!append('<table style="border-collapse: collapse;"><tbody><tr>')) {
+    return null
+  }
+  for (const col of columns) {
+    if (
+      !append(
         safeHtml`<td style="${cell} background-color: ${headerBg}; font-weight: 600;"><p style="margin: 0;">${col.name}</p></td>`,
-    )
-    .join('')
+      )
+    ) {
+      return null
+    }
+  }
+  append('</tr>')
 
-  const dataRows = rows
-    .map((row, i) => {
-      const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
-      const cells = columns
-        .map(
-          (col) =>
-            safeHtml`<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${cellToString(
-              row.data[col.id],
-            )}</p></td>`,
+  for (const [i, row] of rows.entries()) {
+    const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
+    append('<tr>')
+    for (const col of columns) {
+      if (
+        !append(
+          safeHtml`<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${cellToString(
+            row.data[col.id],
+          )}</p></td>`,
         )
-        .join('')
-      return `<tr>${cells}</tr>`
-    })
-    .join('')
+      ) {
+        return null
+      }
+    }
+    append('</tr>')
+  }
 
-  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
+  if (!append('</tbody></table>')) {
+    return null
+  }
+  return { html: parts.join(''), bytes }
 }
 
 /**
@@ -151,16 +200,10 @@ function validateTableData(tableData: unknown): tableData is TableData {
   return true
 }
 
-interface PreparedTable {
-  rows: TableRow[]
-  columnMap: Map<string, TableColumn>
-  outputs: Map<string, string>
-}
-
-// Reused when one body references the same table many times.
-const preparedTables = new WeakMap<object, PreparedTable | null>()
-
-function prepareTable(tableData: unknown): PreparedTable | null {
+function prepareTable(
+  tableData: unknown,
+  preparedTables: TableRenderBudget['preparedTables'],
+): PreparedTable | null {
   if (typeof tableData !== 'object' || tableData === null) {
     return null
   }
@@ -186,6 +229,7 @@ export function formatTable(
   tableData: unknown,
   options: FormatTableOptions,
 ): FormatTableResult {
+  const budget = options.renderBudget ?? createTableRenderBudget()
   const selectedColumnIds = [...new Set(options.selectedColumnIds)]
 
   // IMPORTANT: check before any per-row work, since cost is rows × columns.
@@ -208,7 +252,15 @@ export function formatTable(
     }
   }
 
-  const prepared = prepareTable(tableData)
+  if (budget.bytes <= 0) {
+    return {
+      success: false,
+      error: 'limit_exceeded',
+      message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
+    }
+  }
+
+  const prepared = prepareTable(tableData, budget.preparedTables)
   if (!prepared) {
     return {
       success: false,
@@ -248,39 +300,35 @@ export function formatTable(
     }
   }
 
-  const { cellBudget } = options
-  // The header row renders even when the table has no rows.
-  const cellCount = (rows.length + 1) * columnsToUse.length
-  if (cellBudget) {
-    if (cellCount > cellBudget.remaining) {
-      return {
-        success: false,
-        error: 'limit_exceeded',
-        message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_CELLS_PER_STEP} cells`,
-      }
-    }
-    cellBudget.remaining -= cellCount
-  }
-
   // Repeats reuse one string, so large cell values are not copied per reference.
-  const outputKey = selectedColumnIds.join(',')
+  const outputKey = JSON.stringify(selectedColumnIds)
   let output = outputs.get(outputKey)
   if (output === undefined) {
-    output = formatAsHtml(rows, columnsToUse)
-    outputs.set(outputKey, output)
-    const outputBytes = Buffer.byteLength(output)
-    if (outputBytes > LARGE_OUTPUT_BYTES) {
-      logger.warn('Table variable rendered a large output', {
-        event: 'table-variable-large-output',
-        outputBytes,
-        rowCount: rows.length,
-        columnCount: columnsToUse.length,
-      })
+    output = formatAsHtml(rows, columnsToUse, budget.bytes) ?? undefined
+    if (output) {
+      outputs.set(outputKey, output)
     }
+  }
+  if (!output || output.bytes > budget.bytes) {
+    return {
+      success: false,
+      error: 'limit_exceeded',
+      message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
+    }
+  }
+
+  budget.bytes -= output.bytes
+  const usedBytes = MAX_TABLE_VARIABLE_BYTES_PER_STEP - budget.bytes
+  if (usedBytes > LARGE_OUTPUT_BYTES && !budget.hasLoggedLargeOutput) {
+    budget.hasLoggedLargeOutput = true
+    logger.warn('Table variables rendered a large output', {
+      event: 'table-variable-large-output',
+      outputBytes: usedBytes,
+    })
   }
 
   return {
     success: true,
-    output,
+    output: output.html,
   }
 }

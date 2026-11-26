@@ -57,7 +57,7 @@ const action: IRawAction = {
 
       const result = formatTable(value.data, {
         selectedColumnIds: value.selectedColumnIds,
-        cellBudget: value.cellBudget,
+        renderBudget: value.renderBudget,
       })
 
       if (result.success === false) {

@@ -1,4 +1,3 @@
-import { MAX_TABLE_VARIABLE_CELLS_PER_STEP } from '@plumber/shared'
 import type { IAction } from '@plumber/types'
 import get from 'lodash.get'
 
@@ -6,7 +5,10 @@ import {
   computeForEachParameters,
   ForEachContext,
 } from '@/helpers/compute-for-each-parameters'
-import type { TableCellBudget } from '@/helpers/format-table-variable'
+import {
+  createTableRenderBudget,
+  type TableRenderBudget,
+} from '@/helpers/format-table-variable'
 import { hexDecode } from '@/helpers/hex-encoding'
 import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
@@ -40,7 +42,7 @@ export interface TableVariableMarker {
   [TABLE_VARIABLE_MARKER]: true
   data: unknown
   selectedColumnIds: string[]
-  cellBudget: TableCellBudget
+  renderBudget: TableRenderBudget
 }
 
 export function isTableVariableMarker(
@@ -55,7 +57,7 @@ export function isTableVariableMarker(
 
 // One per computeParameters call, so nested fields and arrays share the limit.
 interface TableRenderContext {
-  cellBudget: TableCellBudget
+  renderBudget: TableRenderBudget
   parsedSources: Map<string, unknown>
 }
 
@@ -178,7 +180,9 @@ function findAndSubstituteVariables(
 
           // Handle FormSG tables where dataValue is a stringified JSON
           let tableData = dataValue
-          if (typeof dataValue === 'string') {
+          const { renderBudget } = tableRenderContext
+          const hasBudget = renderBudget.bytes > 0
+          if (typeof dataValue === 'string' && hasBudget) {
             const { parsedSources } = tableRenderContext
             if (!parsedSources.has(dataValue)) {
               try {
@@ -196,7 +200,7 @@ function findAndSubstituteVariables(
             [TABLE_VARIABLE_MARKER]: true,
             data: tableData,
             selectedColumnIds,
-            cellBudget: tableRenderContext.cellBudget,
+            renderBudget,
           }
 
           if (preprocessVariable) {
@@ -278,7 +282,7 @@ export default function computeParameters(
     parameters,
     executionSteps,
     {
-      cellBudget: { remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP },
+      renderBudget: createTableRenderBudget(),
       parsedSources: new Map(),
     },
     preprocessVariable,

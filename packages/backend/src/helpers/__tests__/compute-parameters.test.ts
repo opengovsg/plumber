@@ -507,7 +507,7 @@ describe('compute parameters', () => {
         preprocessVariable,
       )
       const budgets = preprocessVariable.mock.calls.map(
-        ([, marker]) => (marker as { cellBudget: unknown }).cellBudget,
+        ([, marker]) => (marker as { renderBudget: unknown }).renderBudget,
       )
       expect(budgets).toHaveLength(3)
       expect(new Set(budgets).size).toBe(1)
