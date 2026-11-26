@@ -8,8 +8,9 @@ export const MAX_TABLE_VARIABLE_BYTES_PER_STEP = 10 * 1024 * 1024
 const EMPTY_PARAGRAPH = /<p style="margin: 0;">\s*<\/p>/g
 
 /**
- * Bytes Postman sends for table HTML. Postman turns each newline into <br>
- * (3 more bytes) and fills each empty paragraph with &nbsp; (5 more bytes).
+ * Upper bound on the bytes Postman sends for table HTML. Postman turns each
+ * newline into <br> (3 more bytes) and fills each empty paragraph with &nbsp;
+ * (5 more bytes). Whitespace-only cells are over-counted, never under-counted.
  */
 export function sentTableByteLength(html: string): number {
   let bytes = 0
