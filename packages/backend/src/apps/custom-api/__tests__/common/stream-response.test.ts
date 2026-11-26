@@ -1,8 +1,11 @@
+import http from 'http'
+import { AddressInfo } from 'net'
 import { Readable } from 'stream'
 
-import { AxiosResponse } from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import addInterceptors from '@/apps/custom-api/common/add-interceptors'
 import { streamResponse } from '@/apps/custom-api/common/stream-response'
 import HttpError from '@/errors/http'
 
@@ -201,6 +204,91 @@ describe('streamResponse', () => {
 
       // Restore original method
       Buffer.concat = originalConcat
+    })
+  })
+
+  describe('stalled or broken bodies', () => {
+    it('rejects when the response stream errors mid-body', async () => {
+      const stream = new Readable({
+        read() {
+          this.push('partial')
+          this.destroy(new Error('socket hang up'))
+        },
+      })
+      const response = createMockResponse(stream)
+
+      await expect(streamResponse(response)).rejects.toThrow(HttpError)
+    })
+
+    it('rejects and destroys a stalled body when the request signal aborts', async () => {
+      const stream = new Readable({ read() {} })
+      const deadline = new AbortController()
+      const response = createMockResponse(stream)
+      response.config = { signal: deadline.signal } as any
+
+      const result = streamResponse(response)
+      deadline.abort()
+
+      await expect(result).rejects.toThrow(HttpError)
+      expect(stream.destroyed).toBe(true)
+    })
+
+    it('aborts a real body that stalls after headers', async () => {
+      const server = http.createServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.write('{"partial":')
+      })
+      await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve),
+      )
+      const { port } = server.address() as AddressInfo
+      const client = axios.create()
+      addInterceptors(client)
+      const deadline = new AbortController()
+      const timer = setTimeout(() => deadline.abort(), 100)
+
+      try {
+        await expect(
+          client.request({
+            url: `http://127.0.0.1:${port}`,
+            responseType: 'stream',
+            timeout: 100,
+            signal: deadline.signal,
+          }),
+        ).rejects.toThrow(HttpError)
+      } finally {
+        clearTimeout(timer)
+        server.closeAllConnections()
+        await new Promise((resolve) => server.close(resolve))
+      }
+    })
+  })
+
+  describe('non-2xx body that errors mid-stream', () => {
+    it('rejects with a serialisable HttpError', async () => {
+      const server = http.createServer((_req, res) => {
+        res.writeHead(502, { 'content-length': '100' })
+        res.write('partial')
+        setTimeout(() => res.socket?.destroy(), 20)
+      })
+      await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve),
+      )
+      const { port } = server.address() as AddressInfo
+      const client = axios.create()
+      addInterceptors(client)
+
+      try {
+        const error = await client
+          .request({ url: `http://127.0.0.1:${port}`, responseType: 'stream' })
+          .catch((e: unknown) => e)
+
+        expect(error).toBeInstanceOf(HttpError)
+        expect(() => JSON.stringify(error)).not.toThrow()
+      } finally {
+        server.closeAllConnections()
+        await new Promise((resolve) => server.close(resolve))
+      }
     })
   })
 

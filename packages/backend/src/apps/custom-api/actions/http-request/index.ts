@@ -1,4 +1,5 @@
 import { IGlobalVariable, IRawAction } from '@plumber/types'
+import type { AxiosRequestConfig } from 'axios'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -25,6 +26,31 @@ import { requestSchema } from './schema'
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 const REDIRECT_STATUS_CODES = [301, 302, 307, 308]
+
+const getTimeoutMessage = (timeout: number) =>
+  `timeout of ${timeout}ms exceeded`
+
+// IMPORTANT: axios `timeout` stops once headers arrive. Without this, a stalled body pins the worker.
+async function requestWithDeadline(
+  $: IGlobalVariable,
+  config: AxiosRequestConfig,
+  timeout: number,
+) {
+  const deadline = new AbortController()
+  // axios treats a timeout of 0 as no timeout, so only arm the timer for positive values.
+  const timer =
+    timeout > 0 ? setTimeout(() => deadline.abort(), timeout) : undefined
+  try {
+    return await $.http.request({ ...config, timeout, signal: deadline.signal })
+  } catch (err) {
+    if (deadline.signal.aborted === true) {
+      throw new Error(getTimeoutMessage(timeout))
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 async function throwIfStaticSensitiveHeaders($: IGlobalVariable) {
   // Read stored parameters so we can tell static secrets from step variables.
@@ -64,22 +90,25 @@ async function run($: IGlobalVariable) {
 
     addInterceptors($.http)
 
-    let response = await $.http.request({
-      url,
-      method,
-      data: parsedData,
-      maxRedirects: 0,
-      headers: customHeaders,
-      // Prevent calling of internal IPs, e.g. aws metadata endpoint
-      lookup: safeAxiosLookup,
+    let response = await requestWithDeadline(
+      $,
+      {
+        url,
+        method,
+        data: parsedData,
+        maxRedirects: 0,
+        headers: customHeaders,
+        // Prevent calling of internal IPs, e.g. aws metadata endpoint
+        lookup: safeAxiosLookup,
+        //  overwriting this to allow redirects to resolve
+        validateStatus: (status: number) =>
+          (status >= 200 && status < 300) ||
+          REDIRECT_STATUS_CODES.includes(status),
+        // stream the response for custom api to protect against gzip bombs
+        responseType: 'stream',
+      },
       timeout,
-      //  overwriting this to allow redirects to resolve
-      validateStatus: (status: number) =>
-        (status >= 200 && status < 300) ||
-        REDIRECT_STATUS_CODES.includes(status),
-      // stream the response for custom api to protect against gzip bombs
-      responseType: 'stream',
-    })
+    )
 
     if (!response) {
       throw new Error('No response returned')
@@ -114,19 +143,22 @@ async function run($: IGlobalVariable) {
         delete redirectHeaders['Content-Type']
       }
 
-      response = await $.http.request({
-        url: response.headers.location,
-        method: redirectMethod,
-        // Only include data if the redirect method is not GET
-        ...(redirectMethod !== 'GET' && { data: parsedData }),
-        headers: redirectHeaders,
+      response = await requestWithDeadline(
+        $,
+        {
+          url: response.headers.location,
+          method: redirectMethod,
+          // Only include data if the redirect method is not GET
+          ...(redirectMethod !== 'GET' && { data: parsedData }),
+          headers: redirectHeaders,
+          // Prevent calling of internal IPs, e.g. aws metadata endpoint
+          lookup: safeAxiosLookup,
+          maxRedirects: 0,
+          // stream the response for custom api to protect against gzip bombs
+          responseType: 'stream',
+        },
         timeout,
-        // Prevent calling of internal IPs, e.g. aws metadata endpoint
-        lookup: safeAxiosLookup,
-        maxRedirects: 0,
-        // stream the response for custom api to protect against gzip bombs
-        responseType: 'stream',
-      })
+      )
     }
 
     let responseData = response.data
@@ -178,7 +210,7 @@ async function run($: IGlobalVariable) {
 
     const httpError = err instanceof HttpError ? err : undefined
 
-    if (err.message === `timeout of ${timeout}ms exceeded`) {
+    if (err.message === getTimeoutMessage(timeout)) {
       throw new StepError({
         name: `HTTP request exceeded timeout of ${timeout / 1000}s`,
         solution: 'The request took too long to respond.',

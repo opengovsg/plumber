@@ -22,6 +22,8 @@ const addInterceptors = (httpClient: AxiosInstance): void => {
           await streamResponse(error.response)
         } catch {
           logger.warn('Error processing error response stream:')
+          // IMPORTANT: a destroyed stream is circular, so HttpError would throw on JSON.stringify.
+          error.response.data = undefined
         }
       }
       throw new HttpError(error)
