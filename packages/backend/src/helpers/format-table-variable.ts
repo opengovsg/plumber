@@ -5,7 +5,16 @@
  * for use in transactional emails.
  */
 
+import {
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+} from '@plumber/shared'
+
 import { safeHtml } from './html-utils'
+import logger from './logger'
+
+// Logs instead of failing, because real cell value sizes are unknown.
+const LARGE_OUTPUT_LENGTH = 10 * 1024 * 1024
 
 export interface TableColumn {
   id: string
@@ -35,7 +44,11 @@ export type FormatTableResult =
     }
   | {
       success: false
-      error: 'invalid_columns' | 'no_columns' | 'invalid_structure'
+      error:
+        | 'invalid_columns'
+        | 'no_columns'
+        | 'invalid_structure'
+        | 'limit_exceeded'
       message: string
       invalidColumns?: string[]
     }
@@ -149,7 +162,23 @@ export function formatTable(
   }
 
   const { rows, columns } = tableData
-  const { selectedColumnIds } = options
+  const selectedColumnIds = [...new Set(options.selectedColumnIds)]
+
+  // IMPORTANT: check before any per-row work, since cost is rows × columns.
+  if (selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS) {
+    return {
+      success: false,
+      error: 'limit_exceeded',
+      message: `Selected ${selectedColumnIds.length} columns, the limit is ${MAX_TABLE_VARIABLE_COLUMNS}`,
+    }
+  }
+  if (rows.length > MAX_TABLE_VARIABLE_ROWS) {
+    return {
+      success: false,
+      error: 'limit_exceeded',
+      message: `Table has ${rows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
+    }
+  }
 
   const columnMap = new Map(columns.map((col) => [col.id, col]))
   const columnsToUse: TableColumn[] = []
@@ -181,8 +210,18 @@ export function formatTable(
     }
   }
 
+  const output = formatAsHtml(rows, columnsToUse)
+  if (output.length > LARGE_OUTPUT_LENGTH) {
+    logger.warn('Table variable rendered a large output', {
+      event: 'table-variable-large-output',
+      outputLength: output.length,
+      rowCount: rows.length,
+      columnCount: columnsToUse.length,
+    })
+  }
+
   return {
     success: true,
-    output: formatAsHtml(rows, columnsToUse),
+    output,
   }
 }

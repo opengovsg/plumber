@@ -18,6 +18,7 @@ import {
   Tr,
 } from '@chakra-ui/react'
 import { Button, TouchableTooltip } from '@opengovsg/design-system-react'
+import { MAX_TABLE_VARIABLE_COLUMNS } from '@plumber/shared'
 import { Node } from '@tiptap/pm/model'
 import { NodeViewWrapper } from '@tiptap/react'
 import { useCallback, useContext, useMemo } from 'react'
@@ -45,6 +46,7 @@ type ErrorType =
   | 'missing_variable'
   | 'invalid_format'
   | 'invalid_columns'
+  | 'too_many_columns'
   | null
 
 const ERROR_MESSAGES: Record<Exclude<ErrorType, null>, string> = {
@@ -53,6 +55,7 @@ const ERROR_MESSAGES: Record<Exclude<ErrorType, null>, string> = {
     'This is a missing variable, check your previous steps and reselect a variable',
   invalid_format: 'Invalid table format detected, reselect a table variable',
   invalid_columns: 'Invalid columns detected, reselect a table variable',
+  too_many_columns: `Tables can show up to ${MAX_TABLE_VARIABLE_COLUMNS} columns, reselect a table variable`,
 }
 
 function getBasePath(id: string): string {
@@ -76,7 +79,7 @@ function parseTableModifier(id: string): ParsedModifier {
     if (!hasTablePrefix) {
       return { isValid: false, columnIds: [], hasTablePrefix: false }
     }
-    const columnIds = decoded.slice(6).split(',').filter(Boolean)
+    const columnIds = [...new Set(decoded.slice(6).split(',').filter(Boolean))]
     return { isValid: columnIds.length > 0, columnIds, hasTablePrefix }
   } catch {
     return { isValid: false, columnIds: [], hasTablePrefix: false }
@@ -156,6 +159,9 @@ export function TableVariablePill({
     if (!parsedModifier.hasTablePrefix) {
       return 'invalid_format'
     }
+    if (parsedModifier.columnIds.length > MAX_TABLE_VARIABLE_COLUMNS) {
+      return 'too_many_columns'
+    }
     if (
       validColumns.length === 0 ||
       validColumns.length !== parsedModifier.columnIds.length
@@ -184,6 +190,9 @@ export function TableVariablePill({
         }
         newCols = currentCols.filter((c) => c !== colId)
       } else {
+        if (currentCols.length >= MAX_TABLE_VARIABLE_COLUMNS) {
+          return
+        }
         newCols = tableVar.columns
           .map((c) => c.id)
           .filter((c) => currentCols.includes(c) || c === colId)
@@ -205,6 +214,9 @@ export function TableVariablePill({
     tableVar?.displayedValue ?? `${tableVar?.totalRowCount ?? 0} rows`
   const sampleRows = tableVar?.sampleRows ?? []
   const allColumns = tableVar?.columns ?? []
+  const hasColumnLimit = allColumns.length > MAX_TABLE_VARIABLE_COLUMNS
+  const isAtColumnLimit =
+    parsedModifier.columnIds.length >= MAX_TABLE_VARIABLE_COLUMNS
 
   return (
     <NodeViewWrapper as="span">
@@ -323,6 +335,7 @@ export function TableVariablePill({
           >
             <Text color="gray.600" textStyle="body-2">
               {validColumns.length} column{validColumns.length !== 1 ? 's' : ''}
+              {hasColumnLimit && ` (up to ${MAX_TABLE_VARIABLE_COLUMNS})`}
             </Text>
             <Popover placement="bottom-end" isLazy>
               <PopoverTrigger>
@@ -339,6 +352,17 @@ export function TableVariablePill({
                 <PopoverContent w="280px">
                   <PopoverHeader fontWeight="semibold" fontSize="sm">
                     Select columns
+                    {hasColumnLimit && (
+                      <Text
+                        fontWeight="normal"
+                        color="base.content.medium"
+                        mt={1}
+                      >
+                        {isAtColumnLimit
+                          ? `You've selected the maximum of ${MAX_TABLE_VARIABLE_COLUMNS} columns. Unselect one to add another.`
+                          : `You can select up to ${MAX_TABLE_VARIABLE_COLUMNS} columns.`}
+                      </Text>
+                    )}
                   </PopoverHeader>
                   <PopoverBody maxH="225px" overflowY="auto">
                     {allColumns.map((col) => (
@@ -347,8 +371,9 @@ export function TableVariablePill({
                         isChecked={parsedModifier.columnIds.includes(col.id)}
                         onChange={() => handleToggle(col.id)}
                         isDisabled={
-                          parsedModifier.columnIds.length === 1 &&
                           parsedModifier.columnIds.includes(col.id)
+                            ? parsedModifier.columnIds.length === 1
+                            : isAtColumnLimit
                         }
                         mb={2}
                         size="sm"

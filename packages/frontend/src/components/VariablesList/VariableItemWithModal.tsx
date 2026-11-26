@@ -1,4 +1,5 @@
 import { useDisclosure } from '@chakra-ui/react'
+import { MAX_TABLE_VARIABLE_COLUMNS } from '@plumber/shared'
 import { lazy, Suspense, useCallback, useContext, useTransition } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -63,7 +64,9 @@ export default function VariableItemWithModal(
     if (supportTableDisplay && hasTableMetadata) {
       // Email body field - insert with ALL columns selected by default
       // User can edit columns later via the TableVariablePill settings
-      const allColumnIds = columns.map((c) => c.id)
+      const allColumnIds = columns
+        .map((c) => c.id)
+        .slice(0, MAX_TABLE_VARIABLE_COLUMNS)
       const modifier = `table:${allColumnIds.join(',')}`
       const hexModifier = hexEncode(modifier)
 

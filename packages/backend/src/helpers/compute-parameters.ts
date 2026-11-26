@@ -23,6 +23,10 @@ import Step from '../models/step'
 const variableRegExp =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+(?:\|[a-fA-F0-9]+)?}})/g
 
+// Fits 100 M365 Excel column ids, which hex-encode header names of up to 255
+// characters. Saved modifiers peak at under 5,000 characters.
+const MAX_MODIFIER_HEX_LENGTH = 512 * 1024
+
 /**
  * Marker object returned when a table modifier is detected.
  * This is processed by the action's preprocessVariable function.
@@ -130,13 +134,21 @@ function findAndSubstituteVariables(
 
       // Handle hex-encoded modifier (e.g., table:col1,col2)
       if (modifierMatch) {
+        if (modifierMatch[1].length > MAX_MODIFIER_HEX_LENGTH) {
+          logger.warn('Variable modifier exceeds length limit', {
+            event: 'variable-modifier-too-long',
+            length: modifierMatch[1].length,
+          })
+          return part
+        }
+
         const decodedModifier = hexDecode(modifierMatch[1])
         const [modifierType, ...modifierArgs] = decodedModifier.split(':')
 
         if (modifierType === 'table') {
           // Parse column IDs from modifier args (e.g., "col1,col2,col3")
           const selectedColumnIds = modifierArgs[0]
-            ? modifierArgs[0].split(',').filter(Boolean)
+            ? [...new Set(modifierArgs[0].split(',').filter(Boolean))]
             : []
 
           // Handle FormSG tables where dataValue is a stringified JSON

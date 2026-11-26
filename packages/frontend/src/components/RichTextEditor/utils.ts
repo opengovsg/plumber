@@ -1,4 +1,8 @@
 import { PlacementWithLogical } from '@chakra-ui/react'
+import {
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+} from '@plumber/shared'
 import { Editor } from '@tiptap/react'
 import escapeHtml from 'escape-html'
 import {
@@ -306,10 +310,18 @@ function renderTableVariableHtml(
   if (!decodedModifier.startsWith('table:')) {
     return null
   }
-  const selectedColumnIds = decodedModifier
-    .slice('table:'.length)
-    .split(',')
-    .filter(Boolean)
+  const selectedColumnIds = [
+    ...new Set(
+      decodedModifier.slice('table:'.length).split(',').filter(Boolean),
+    ),
+  ]
+  // Mirrors the backend, which renders nothing past these limits.
+  if (
+    selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS ||
+    tableData.rows.length > MAX_TABLE_VARIABLE_ROWS
+  ) {
+    return null
+  }
 
   const columnById = new Map(tableData.columns.map((col) => [col.id, col]))
   const selectedColumns = selectedColumnIds

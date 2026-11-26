@@ -1,3 +1,7 @@
+import {
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+} from '@plumber/shared'
 import escapeHTML from 'escape-html'
 import { describe, expect, it } from 'vitest'
 
@@ -292,6 +296,56 @@ describe('substituteForPreview', () => {
       ])
       expect(substituteForPreview(makeInput('table:c1'), noTableInfo)).toEqual(
         '2 rows',
+      )
+    })
+
+    it('renders a duplicated column id once', () => {
+      const out = substituteForPreview(
+        makeInput('table:c1,c1,c1'),
+        tableVarInfo,
+      )
+      expect(out.match(/Alice/g)).toHaveLength(1)
+    })
+
+    it('falls back to text value past the column limit', () => {
+      const columns = Array.from(
+        { length: MAX_TABLE_VARIABLE_COLUMNS + 1 },
+        (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
+      )
+      const wideInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: '1 row',
+            table: { columns, rows: [{}] },
+          },
+        ],
+      ])
+      const modifier = `table:${columns.map((c) => c.id).join(',')}`
+      expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual(
+        '1 row',
+      )
+    })
+
+    it('falls back to text value past the row limit', () => {
+      const longInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: 'many rows',
+            table: {
+              columns: [{ id: 'c1', name: 'Name' }],
+              rows: Array.from({ length: MAX_TABLE_VARIABLE_ROWS + 1 }, () => ({
+                c1: 'x',
+              })),
+            },
+          },
+        ],
+      ])
+      expect(substituteForPreview(makeInput('table:c1'), longInfo)).toEqual(
+        'many rows',
       )
     })
 

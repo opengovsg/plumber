@@ -1,11 +1,12 @@
 import { randomUUID } from 'crypto'
 
 import type { IJSONObject } from '@plumber/types'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import ExecutionStep from '@/models/execution-step'
 
 import computeParameters from '../compute-parameters'
+import { hexEncode } from '../hex-encoding'
 
 const randomStepID = randomUUID()
 
@@ -474,6 +475,36 @@ describe('compute parameters', () => {
     const result = computeParameters(params, executionSteps)
     expect(result).toEqual({
       value: 'array value 1, hehe, array value 3',
+    })
+  })
+
+  describe('table modifier', () => {
+    const tableVariable = (modifier: string) =>
+      `{{step.${randomStepID}.tableProp|${hexEncode(modifier)}}}`
+
+    it('dedupes selected column ids', () => {
+      const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
+      computeParameters(
+        { body: tableVariable('table:name,name,name') },
+        executionSteps,
+        preprocessVariable,
+      )
+      expect(preprocessVariable).toHaveBeenCalledWith(
+        'body',
+        expect.objectContaining({ selectedColumnIds: ['name'] }),
+      )
+    })
+
+    it('leaves an oversized modifier unrendered', () => {
+      const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
+      const variable = tableVariable(`table:${'name,'.repeat(70_000)}`)
+      const result = computeParameters(
+        { body: variable },
+        executionSteps,
+        preprocessVariable,
+      )
+      expect(preprocessVariable).not.toHaveBeenCalled()
+      expect(result).toEqual({ body: variable })
     })
   })
 })
