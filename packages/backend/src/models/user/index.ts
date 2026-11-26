@@ -1,5 +1,3 @@
-import crypto from 'crypto'
-
 import { IFlowCollabRole, ITableCollabRole } from '@plumber/types'
 import type { Knex } from 'knex'
 import {
@@ -10,6 +8,7 @@ import {
 } from 'objection'
 
 import { getAllowedCollaboratorRoles } from '@/helpers/check-user-permission'
+import { hashWithScrypt } from '@/helpers/scrypt'
 
 import Base from '../base'
 import Connection from '../connection'
@@ -127,8 +126,8 @@ class User extends BaseUser {
     },
   })
 
-  hashOtp(otp: string) {
-    return crypto.scryptSync(otp, this.email, 64).toString('base64')
+  async hashOtp(otp: string) {
+    return (await hashWithScrypt(otp, this.email, 64)).toString('base64')
   }
 
   async $beforeInsert(queryContext: QueryContext) {

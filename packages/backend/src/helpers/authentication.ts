@@ -119,7 +119,13 @@ const authentication = shield(
       updateFlowStatus: or(isAuthenticated, isAdminOperation),
       createFlowTransfer: or(isAuthenticated, isAdminOperation),
       upsertFlowCollaborator: or(isAuthenticated, isAdminOperation),
-      requestOtp: rateLimitRule({ window: '1s', max: 5 }),
+      // Real peak per shared agency egress IP is about 13 a minute.
+      // uncountRejected keeps a flood from growing the stored timestamps.
+      requestOtp: rateLimitRule({
+        window: '1m',
+        max: 60,
+        uncountRejected: true,
+      }),
       verifyOtp: rateLimitRule({ window: '1s', max: 5 }),
       // Not OTP, but no real reason to be looser than OTP.
       loginWithSgid: rateLimitRule({ window: '1s', max: 5 }),

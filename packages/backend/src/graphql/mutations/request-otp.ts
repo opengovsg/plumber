@@ -47,7 +47,7 @@ const requestOtp: NonNullable<MutationResolvers['requestOtp']> = async (
   }
   const otp = await generateOtpAsync()
   await user.$query().patch({
-    otpHash: user.hashOtp(otp),
+    otpHash: await user.hashOtp(otp),
     otpAttempts: 0,
     otpSentAt: new Date(),
   })
