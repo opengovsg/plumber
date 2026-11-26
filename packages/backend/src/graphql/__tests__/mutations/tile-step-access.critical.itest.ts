@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
+import { UserFacingError } from '@/errors/user-facing-error'
 import createStep from '@/graphql/mutations/create-step'
 import duplicateBranch from '@/graphql/mutations/duplicate-branch'
+import { getAiChatErrorMessage } from '@/helpers/ai/get-ai-chat-error-message'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
@@ -186,9 +188,14 @@ describe('Tiles step access', () => {
     })
 
     it('rejects a Tile the editor cannot edit and keeps the old Tile', async () => {
-      await expect(
-        updateParameters({ tableId: ownerOnlyTile.id }),
-      ).rejects.toThrow(ForbiddenError)
+      const error = await updateParameters({ tableId: ownerOnlyTile.id }).catch(
+        (e: unknown) => e,
+      )
+
+      expect(error).toBeInstanceOf(UserFacingError)
+      expect(getAiChatErrorMessage(error)).toBe(
+        'You do not have permission to use this Tile in the step',
+      )
 
       expect((await tilesStep.$query()).parameters).toEqual({
         tableId: sharedTile.id,
@@ -212,7 +219,7 @@ describe('Tiles step access', () => {
 
       await expect(
         updateParameters({ returnLastRowFirst: true }),
-      ).rejects.toThrow(ForbiddenError)
+      ).rejects.toThrow(UserFacingError)
 
       expect((await tilesStep.$query()).parameters).toEqual({
         tableId: ownerOnlyTile.id,
