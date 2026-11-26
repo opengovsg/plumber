@@ -30,6 +30,7 @@ interface ChatInterfaceProps {
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
+  hasExceededSizeLimit: boolean
   /** Set when the final turn before the message limit was stopped and can be resent. */
   onRetryLastTurn?: () => void
   hasHitStepLimit: boolean
@@ -53,6 +54,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     cancelStream,
     resetChat,
     hasReachedLimit,
+    hasExceededSizeLimit,
     onRetryLastTurn,
     hasHitStepLimit,
     onAddConnection,
@@ -223,13 +225,14 @@ export default function ChatInterface(props: ChatInterfaceProps) {
               flexDirection="column"
             >
               <ScrollButton />
-              {hasHitStepLimit && !hasReachedLimit && (
+              {hasHitStepLimit && !hasReachedLimit && !hasExceededSizeLimit && (
                 <StepLimitBanner
                   onContinue={() => sendMessage(CONTINUE_PROMPT)}
                 />
               )}
-              {hasReachedLimit ? (
+              {hasReachedLimit || hasExceededSizeLimit ? (
                 <MessageLimitBanner
+                  reason={hasExceededSizeLimit ? 'size' : 'messages'}
                   onNewChat={handleNewChat}
                   onRetry={onRetryLastTurn}
                 />

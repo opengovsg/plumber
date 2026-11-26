@@ -1,14 +1,18 @@
 import { Box, Button, Flex, Text } from '@chakra-ui/react'
 
 interface MessageLimitBannerProps {
+  /** `size` means the server rejected the request body, so a retry would fail again. */
+  reason: 'messages' | 'size'
   onNewChat: () => void
   onRetry?: () => void
 }
 
 export default function MessageLimitBanner({
+  reason,
   onNewChat,
-  onRetry,
+  onRetry: onRetryProp,
 }: MessageLimitBannerProps) {
+  const onRetry = reason === 'size' ? undefined : onRetryProp
   return (
     <Box
       bg="utility.feedback.warning-subtle"
@@ -20,9 +24,11 @@ export default function MessageLimitBanner({
     >
       <Flex alignItems="center" justifyContent="space-between" gap={4}>
         <Text textStyle="body-1">
-          {onRetry
-            ? 'Message limit reached. The last response was stopped. Retry it to carry your progress over to a new chat.'
-            : 'Message limit reached. Your progress will carry over when you continue in a new chat.'}
+          {reason === 'size'
+            ? 'This chat is too long to continue. Start a new chat to keep working on your pipe.'
+            : onRetry
+              ? 'Message limit reached. The last response was stopped. Retry it to carry your progress over to a new chat.'
+              : 'Message limit reached. Your progress will carry over when you continue in a new chat.'}
         </Text>
         <Flex gap={2} flexShrink={0}>
           {onRetry && (

@@ -16,7 +16,8 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
   useLocation: () => ({ pathname: '/ai-builder', state: {} }),
 }))
-vi.mock('@opengovsg/design-system-react', () => ({ useToast: () => vi.fn() }))
+const toast = vi.hoisted(() => vi.fn())
+vi.mock('@opengovsg/design-system-react', () => ({ useToast: () => toast }))
 vi.mock('@/hooks/useSessionExpiredToast', () => ({
   useSessionExpiredToast: () => vi.fn(),
 }))
@@ -29,7 +30,7 @@ vi.mock('@/pages/AiBuilder/AiBuilderContext', () => ({
   }),
 }))
 
-describe('useChatStream Retry', () => {
+describe('useChatStream', () => {
   let root: ReturnType<typeof createRoot>
   let container: HTMLDivElement
   let hook: ReturnType<typeof useChatStream>
@@ -146,5 +147,21 @@ describe('useChatStream Retry', () => {
 
     await act(async () => hook.cancelStream())
     await waitForState(() => expect(hook.isStreaming).toBe(false))
+  })
+
+  it('shows the size-limit banner instead of a toast when the request is too large', async () => {
+    function Probe() {
+      hook = useChatStream({})
+      return null
+    }
+    act(() => root.render(<Probe />))
+    fetchMock.mockResolvedValue(new Response('Too large', { status: 413 }))
+
+    act(() => hook.sendMessage('Add a step'))
+    await waitForState(() => expect(hook.hasExceededSizeLimit).toBe(true))
+    expect(toast).not.toHaveBeenCalled()
+
+    act(() => hook.resetChat())
+    await waitForState(() => expect(hook.hasExceededSizeLimit).toBe(false))
   })
 })

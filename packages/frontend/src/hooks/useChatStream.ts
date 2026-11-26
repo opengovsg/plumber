@@ -149,6 +149,9 @@ export type StepUpdatePart = {
   }
 }
 
+// Thrown for a 413 so onError can tell it apart and skip the toast.
+const CHAT_TOO_LONG = 'Chat too long'
+
 export interface UseChatStreamOptions {
   initialMessages?: Message[]
 }
@@ -205,6 +208,9 @@ export function useChatStream(options: UseChatStreamOptions) {
   chatIdRef.current = chatId
 
   const [isLastTurnAborted, setIsLastTurnAborted] = useState(false)
+  // The server caps the request body size, and every turn resends the whole history.
+  // Once a request is too large, every later one is too.
+  const [hasExceededSizeLimit, setHasExceededSizeLimit] = useState(false)
 
   const {
     messages: aiMessages,
@@ -224,6 +230,10 @@ export function useChatStream(options: UseChatStreamOptions) {
         if (response.status === 401) {
           showSessionExpiredToast()
           throw new Error(NOT_AUTHORISED)
+        }
+        if (response.status === 413) {
+          setHasExceededSizeLimit(true)
+          throw new Error(CHAT_TOO_LONG)
         }
         return response
       },
@@ -284,8 +294,8 @@ export function useChatStream(options: UseChatStreamOptions) {
       },
     }),
     onError: (error: Error) => {
-      // The fetch wrapper above already showed the session-expired toast.
-      if (error.message === NOT_AUTHORISED) {
+      // The fetch wrapper already showed the session-expired toast or set the size-limit banner.
+      if (error.message === NOT_AUTHORISED || error.message === CHAT_TOO_LONG) {
         return
       }
       // '' for AbortError (user clicked stop) or an empty transport message.
@@ -601,6 +611,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     setMessages([])
     setIsReady(false)
     setIsLastTurnAborted(false)
+    setHasExceededSizeLimit(false)
   }, [setMessages])
 
   // Wrapper for sendMessage that matches the expected signature
@@ -628,6 +639,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     cancelStream: stop,
     resetChat,
     hasReachedLimit,
+    hasExceededSizeLimit,
     canRetryLastTurn,
     retryLastTurn,
     hasHitStepLimit,
