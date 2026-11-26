@@ -11,7 +11,14 @@ import type { ExecutionRow, ExecutionStepRow } from './types'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
+// A run created, or with a step, on or after keepFrom still counts in an execution day not yet final.
+const atOrAfter = (at: string | Date, keepFrom: Date) =>
+  new Date(at) >= keepFrom
+
+export async function runArchivalLoop(
+  signal: AbortSignal,
+  { keepFrom = null }: { keepFrom?: Date | null } = {},
+): Promise<void> {
   const {
     archiveDryRun: dryRun,
     archiveRetentionDays: retentionDays,
@@ -33,6 +40,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   let totalArchived = 0
   let totalTestArchived = 0
   let totalSkipped = 0
+  let totalHeld = 0
   // IMPORTANT: store counts, not IDs. A flow can own 100k+ executions, and logging every ID
   // produced multi-MB lines that stdout could not flush before the process exited.
   const archivedByFlow = new Map<
@@ -184,6 +192,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
     let batchArchived = 0
     let batchSkipped = 0
+    let batchHeld = 0
 
     const limit = pLimit(archiveIntraBatchConcurrency)
 
@@ -194,6 +203,15 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
             return {
               execution,
               outcome: 'skipped' as const,
+              steps: [] as ExecutionStepRow[],
+            }
+          }
+
+          // Decided before the step read, which loads every payload.
+          if (keepFrom && atOrAfter(execution.createdAt, keepFrom)) {
+            return {
+              execution,
+              outcome: 'held' as const,
               steps: [] as ExecutionStepRow[],
             }
           }
@@ -228,12 +246,24 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
               .where('execution_steps.execution_id', execution.id)
               .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
 
+            if (
+              keepFrom &&
+              steps.some((step) => atOrAfter(step.createdAt, keepFrom))
+            ) {
+              return {
+                execution,
+                outcome: 'held' as const,
+                steps: [] as ExecutionStepRow[],
+              }
+            }
+
             const outcome = await archiveExecution(execution, steps, {
               dryRun,
               bucket: archiveBucket,
               s3Client: archiveS3Client,
               knexClient: archivalDb,
               runAt,
+              keepFrom,
             })
             return { execution, outcome, steps }
           } catch (err) {
@@ -293,6 +323,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
             }
           }
         }
+      } else if (outcome === 'held') {
+        batchHeld++
       } else {
         batchSkipped++
       }
@@ -300,11 +332,13 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
     totalArchived += batchArchived
     totalSkipped += batchSkipped
+    totalHeld += batchHeld
 
     logger.info({
       event: 'archival.batch.complete',
       batchArchived,
       batchSkipped,
+      batchHeld,
       cursor,
       durationMs: Date.now() - startedAt,
     })
@@ -341,6 +375,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     real_executions_archived: totalArchived - totalTestArchived,
     test_executions_archived: totalTestArchived,
     executions_skipped: totalSkipped,
+    executions_held_for_analytics: totalHeld,
     durationMs,
   }
 
@@ -358,6 +393,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         realExecutionsArchived: totalArchived - totalTestArchived,
         testExecutionsArchived: totalTestArchived,
         executionsSkipped: totalSkipped,
+        executionsHeldForAnalytics: totalHeld,
         flowsAffected: archivedByFlow.size,
         stepCounts: stepCountsObj,
         nullStepCount,

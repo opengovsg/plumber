@@ -7,6 +7,14 @@ import type { Knex } from 'knex'
 
 import { s3CompletionStore } from './completion-stores'
 import type { CompletionSource, CompletionStore } from './day-completion'
+import {
+  EXECUTION_DAY_TABLES,
+  EXECUTION_SNAPSHOT_TABLES,
+  executionArchivalFloor,
+  type ExecutionDayTable,
+  type ExecutionSnapshotTable,
+  writeExecutionTables,
+} from './execution-tables'
 import logger from './logger'
 import { previousSgtDay } from './sgt-day'
 import {
@@ -73,13 +81,20 @@ export function localDirSink(dir: string): SilverSink {
   }
 }
 
-export function selectSilverTables(names: string[]): {
+export interface SelectedSilverTables {
   tables: SilverTable<SilverRow>[]
   changeTables: SilverChangeTable<SilverRow>[]
-} {
-  const known = [...SILVER_TABLES, ...SILVER_CHANGE_TABLES].map(
-    (table) => table.name,
-  )
+  executionDayTables: ExecutionDayTable<SilverRow>[]
+  executionSnapshotTables: ExecutionSnapshotTable<SilverRow>[]
+}
+
+export function selectSilverTables(names: string[]): SelectedSilverTables {
+  const known = [
+    ...SILVER_TABLES,
+    ...SILVER_CHANGE_TABLES,
+    ...EXECUTION_DAY_TABLES,
+    ...EXECUTION_SNAPSHOT_TABLES,
+  ].map((table) => table.name)
   const unknown = names.filter((name) => !known.includes(name))
   if (unknown.length > 0) {
     throw new Error(`Unknown silver tables: ${unknown.join(', ')}`)
@@ -87,6 +102,12 @@ export function selectSilverTables(names: string[]): {
   return {
     tables: SILVER_TABLES.filter((table) => names.includes(table.name)),
     changeTables: SILVER_CHANGE_TABLES.filter((table) =>
+      names.includes(table.name),
+    ),
+    executionDayTables: EXECUTION_DAY_TABLES.filter((table) =>
+      names.includes(table.name),
+    ),
+    executionSnapshotTables: EXECUTION_SNAPSHOT_TABLES.filter((table) =>
       names.includes(table.name),
     ),
   }
@@ -121,6 +142,8 @@ export async function writeSilverTables({
 interface WriteAllSilverTablesParams extends WriteSilverTablesParams {
   store: CompletionStore
   changeTables?: SilverChangeTable<SilverRow>[]
+  executionDayTables?: ExecutionDayTable<SilverRow>[]
+  executionSnapshotTables?: ExecutionSnapshotTable<SilverRow>[]
   // Rewrites each change table as a full copy, after a direct database write.
   full?: boolean
   source?: CompletionSource
@@ -133,6 +156,8 @@ export async function writeAllSilverTables({
   store,
   tables = SILVER_TABLES,
   changeTables = SILVER_CHANGE_TABLES,
+  executionDayTables = EXECUTION_DAY_TABLES,
+  executionSnapshotTables = EXECUTION_SNAPSHOT_TABLES,
   full = false,
   source = 'nightly',
   now = new Date(),
@@ -142,13 +167,26 @@ export async function writeAllSilverTables({
   await writeSilverTables({ db, sink, tables }).catch((err: Error) => {
     errors.push(err)
   })
+  const yesterday = previousSgtDay(now)
   await writeSilverChangeTables({
     db,
     sink,
     store,
     tables: changeTables,
-    yesterday: previousSgtDay(now),
+    yesterday,
     full,
+    source,
+  }).catch((err: Error) => {
+    errors.push(err)
+  })
+  await writeExecutionTables({
+    db,
+    sink,
+    store,
+    yesterday,
+    now,
+    dayTables: executionDayTables,
+    snapshotTables: executionSnapshotTables,
     source,
   }).catch((err: Error) => {
     errors.push(err)
@@ -185,4 +223,29 @@ export async function exportSilverTables({
     sink: s3Sink(s3Client, bucket),
     store: s3CompletionStore(s3Client, bucket),
   })
+}
+
+/**
+ * Archival's floor for runs the execution tables still need, or null where they are not exported.
+ *
+ * Throws when the bucket cannot be read, so archival stops instead of deleting runs it cannot check.
+ */
+export async function loadExecutionArchivalFloor({
+  s3Client,
+  appEnv,
+  bucket,
+  now = new Date(),
+}: {
+  s3Client: S3Client
+  appEnv: string
+  bucket: string | undefined
+  now?: Date
+}): Promise<Date | null> {
+  if (!EXPORT_APP_ENVS.has(appEnv)) {
+    return null
+  }
+  if (!bucket) {
+    throw new Error(`ANALYTICS_BUCKET must be set in ${appEnv}`)
+  }
+  return executionArchivalFloor(s3CompletionStore(s3Client, bucket), now)
 }

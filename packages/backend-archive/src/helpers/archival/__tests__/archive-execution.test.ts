@@ -64,7 +64,13 @@ function makeMockS3(contentLength = 42) {
   } as unknown as S3Client
 }
 
-function makeMockKnex() {
+// What the writer holds for the run when the delete transaction rechecks it.
+function makeMockKnex(
+  current: { count: string; latest: Date | null } = {
+    count: String(mockSteps.length),
+    latest: new Date(mockSteps[0].createdAt),
+  },
+) {
   const deleteStepsFn = vi.fn().mockResolvedValue(1)
   const deleteExecFn = vi.fn().mockResolvedValue(1)
   const incrementFlowsFn = vi.fn().mockResolvedValue(1)
@@ -72,6 +78,10 @@ function makeMockKnex() {
   function makeTableProxy(table: string) {
     const proxy: Record<string, unknown> = {
       where: vi.fn(() => proxy),
+      forUpdate: vi.fn(() => proxy),
+      select: vi.fn().mockResolvedValue([{ id: mockExecution.id }]),
+      count: vi.fn(() => proxy),
+      max: vi.fn().mockResolvedValue([current]),
       delete:
         table === 'execution_steps'
           ? deleteStepsFn
@@ -86,7 +96,7 @@ function makeMockKnex() {
 
   const knexClient = {
     transaction: vi.fn(
-      async (cb: (trx: (table: string) => unknown) => Promise<void>) =>
+      async (cb: (trx: (table: string) => unknown) => Promise<unknown>) =>
         cb(makeTableProxy),
     ),
     _deleteStepsFn: deleteStepsFn,
@@ -157,6 +167,39 @@ describe('archiveExecution', () => {
     expect(result).toBe('archived')
     expect((knexClient as any)._deleteStepsFn).toHaveBeenCalledOnce()
     expect((knexClient as any)._deleteExecFn).toHaveBeenCalledOnce()
+  })
+
+  it('keeps a run whose writer has a step on or after the analytics floor', async () => {
+    const knexClient = makeMockKnex({
+      count: '2',
+      latest: new Date('2026-11-20T00:00:00.000Z'),
+    })
+
+    const result = await archiveExecution(mockExecution, mockSteps, {
+      ...baseOpts,
+      s3Client: makeMockS3(),
+      knexClient,
+      keepFrom: new Date('2026-11-20T00:00:00.000Z'),
+    })
+
+    expect(result).toBe('held')
+    expect((knexClient as any)._deleteStepsFn).not.toHaveBeenCalled()
+  })
+
+  it('skips a run that gained a step after its steps were read', async () => {
+    const knexClient = makeMockKnex({
+      count: '2',
+      latest: new Date(mockSteps[0].createdAt),
+    })
+
+    const result = await archiveExecution(mockExecution, mockSteps, {
+      ...baseOpts,
+      s3Client: makeMockS3(),
+      knexClient,
+    })
+
+    expect(result).toBe('skipped')
+    expect((knexClient as any)._deleteStepsFn).not.toHaveBeenCalled()
   })
 
   it('returns archived but skips DB delete when dryRun=true', async () => {

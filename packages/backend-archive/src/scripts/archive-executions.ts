@@ -2,6 +2,7 @@ import {
   createLogsClient,
   exportMutationLog,
   exportSilverTables,
+  loadExecutionArchivalFloor,
   previousSgtDay,
 } from 'backend-analytics'
 
@@ -21,7 +22,7 @@ process.on('SIGTERM', () => {
   controller.abort()
 })
 
-// A failed export does not block archival yet. No exported table reads executions.
+// A failed export does not block archival. Archival keeps each run until its execution days are final instead.
 async function runAnalyticsExport(): Promise<boolean> {
   const startedAt = Date.now()
   try {
@@ -82,7 +83,16 @@ async function main(): Promise<void> {
   })
 
   try {
-    await runArchivalLoop(controller.signal)
+    const keepFrom = await loadExecutionArchivalFloor({
+      s3Client: archiveS3Client,
+      appEnv: archivalConfig.appEnv,
+      bucket: archivalConfig.analyticsBucket,
+    })
+    logger.info({
+      event: 'archival.analytics_floor',
+      keepFrom: keepFrom?.toISOString() ?? null,
+    })
+    await runArchivalLoop(controller.signal, { keepFrom })
   } catch (err) {
     logger.error({ event: 'archival.run.error', err })
     await archivalDb.destroy()

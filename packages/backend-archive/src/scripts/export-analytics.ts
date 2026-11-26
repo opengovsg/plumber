@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util'
 
 import {
   claimLocalExportDir,
+  EXECUTION_DAY_TABLES,
   exportSilverTables,
   localDirCompletionStore,
   localDirSink,
@@ -21,7 +22,8 @@ const USAGE = `Usage: analytics:export [--tables a,b] [--full] (--out <dir> | --
   --tables  Comma-separated silver tables. Default: all.
   --full    Write each change table, such as flow_step, as a full copy. Use after a direct database write.
   --out     Write the files under this local folder. Runs in any APP_ENV.
-  --s3      Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only.`
+  --s3      Write to ANALYTICS_BUCKET, exactly as the nightly job does. Prod and staging only.
+Execution tables get final days only. execution_inflight is written by the nightly job only.`
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -36,9 +38,17 @@ async function main(): Promise<void> {
     throw new Error(USAGE)
   }
 
-  const { tables, changeTables } = values.tables
+  const selected = values.tables
     ? selectSilverTables(values.tables.split(',').map((name) => name.trim()))
-    : { tables: SILVER_TABLES, changeTables: SILVER_CHANGE_TABLES }
+    : {
+        tables: SILVER_TABLES,
+        changeTables: SILVER_CHANGE_TABLES,
+        executionDayTables: EXECUTION_DAY_TABLES,
+        executionSnapshotTables: [],
+      }
+  if (selected.executionSnapshotTables.length > 0) {
+    throw new Error(USAGE)
+  }
 
   if (values.out) {
     const dir = path.resolve(values.out)
@@ -49,8 +59,7 @@ async function main(): Promise<void> {
     })
     await writeAllSilverTables({
       db: archivalDbReader,
-      tables,
-      changeTables,
+      ...selected,
       full: values.full,
       source: 'backfill',
       sink: localDirSink(dir),
@@ -65,8 +74,7 @@ async function main(): Promise<void> {
     s3Client: archiveS3Client,
     appEnv: archivalConfig.appEnv,
     bucket: archivalConfig.analyticsBucket,
-    tables,
-    changeTables,
+    ...selected,
     full: values.full,
     source: 'backfill',
   })
