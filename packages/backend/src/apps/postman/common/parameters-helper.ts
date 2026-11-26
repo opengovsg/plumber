@@ -1,3 +1,4 @@
+import { MAX_TOTAL_ATTACHMENT_SIZE } from '@plumber/shared'
 import { IExecutionStep, IGlobalVariable, IJSONObject } from '@plumber/types'
 import { uniq } from 'lodash'
 
@@ -7,8 +8,6 @@ import {
   S3ObjectHead,
 } from '@/helpers/s3'
 import Flow from '@/models/flow'
-
-import { MAX_TOTAL_ATTACHMENT_SIZE } from './attachment-size'
 
 export type AttachmentExtensionPolicy =
   | { mode: 'allow'; extensions: readonly string[] }

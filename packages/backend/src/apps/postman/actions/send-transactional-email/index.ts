@@ -1,4 +1,8 @@
 import {
+  MAX_TOTAL_ATTACHMENT_SIZE_MB,
+  SES_BLOCKED_EXTENSIONS,
+} from '@plumber/shared'
+import {
   IGlobalVariable,
   IJSONArray,
   IRawAction,
@@ -11,10 +15,8 @@ import StepError from '@/errors/step'
 import { TableVariableMarker } from '@/helpers/compute-parameters'
 import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
-import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
 import Step from '@/models/step'
 
-import { MAX_TOTAL_ATTACHMENT_SIZE_MB } from '../../common/attachment-size'
 import { POSTMAN_ACCEPTED_EXTENSIONS } from '../../common/constants'
 import { dataOutSchema } from '../../common/data-out-validator'
 import {

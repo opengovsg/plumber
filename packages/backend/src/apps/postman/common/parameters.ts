@@ -1,3 +1,7 @@
+import {
+  MAX_ATTACHMENT_COUNT,
+  MAX_TOTAL_ATTACHMENT_SIZE_MB,
+} from '@plumber/shared'
 import { IField } from '@plumber/types'
 import { uniq } from 'lodash'
 import { z } from 'zod'
@@ -12,12 +16,9 @@ import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
 // plus-tagged routing addresses still parse.
 const MAX_MAILBOX_LENGTH = 254
 
-// Matches the editor's file picker cap. Each attachment is buffered in memory
-// at send time, so the backend must enforce it too.
-export const MAX_ATTACHMENTS = 10
 // A variable placeholder or S3 ID. S3 caps object keys at 1024 bytes.
 const MAX_ATTACHMENT_VALUE_LENGTH = 2048
-const ATTACHMENTS_LIMIT_MESSAGE = `You can attach at most ${MAX_ATTACHMENTS} files.`
+const ATTACHMENTS_LIMIT_MESSAGE = `You can attach at most ${MAX_ATTACHMENT_COUNT} files.`
 
 // zod's default email pattern, with the local part widened to the character
 // set email-validator (our previous library) allowed. The other built-in
@@ -117,7 +118,7 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Attachments',
     key: 'attachments',
-    description: `Check supported file types [here](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).\nPlease note that the total size of all attachments cannot exceed 20MB.`, // TODO: update the guide on the supported file types
+    description: `Check supported file types [here](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).\nPlease note that the total size of all attachments cannot exceed ${MAX_TOTAL_ATTACHMENT_SIZE_MB}MB.`, // TODO: update the guide on the supported file types
     type: 'attachment' as const,
     required: false,
     variables: true,
@@ -186,7 +187,7 @@ export const transactionalEmailSchema = z.object({
     ),
   attachments: z
     .array(z.string())
-    .max(MAX_ATTACHMENTS, ATTACHMENTS_LIMIT_MESSAGE)
+    .max(MAX_ATTACHMENT_COUNT, ATTACHMENTS_LIMIT_MESSAGE)
     .transform((array, context) => {
       const result: string[] = []
       for (const value of array) {
@@ -215,7 +216,7 @@ const transactionalEmailStepParametersSchema = z
         z.string().max(MAX_ATTACHMENT_VALUE_LENGTH, 'Invalid attachment.'),
         { error: 'Attachments must be a list.' },
       )
-      .max(MAX_ATTACHMENTS, ATTACHMENTS_LIMIT_MESSAGE)
+      .max(MAX_ATTACHMENT_COUNT, ATTACHMENTS_LIMIT_MESSAGE)
       .nullish(),
   })
   .passthrough()

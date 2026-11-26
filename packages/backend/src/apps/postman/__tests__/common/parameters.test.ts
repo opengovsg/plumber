@@ -1,9 +1,9 @@
+import { MAX_ATTACHMENT_COUNT } from '@plumber/shared'
 import { assert, beforeEach, describe, expect, it } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 
 import {
-  MAX_ATTACHMENTS,
   transactionalEmailSchema,
   validateTransactionalEmailStepParameters,
 } from '../../common/parameters'
@@ -290,7 +290,7 @@ describe('postman transactional email attachments limit', () => {
 
   it('accepts the maximum number of attachments at runtime', () => {
     const result = transactionalEmailSchema.shape.attachments.safeParse(
-      Array(MAX_ATTACHMENTS).fill(s3Id),
+      Array(MAX_ATTACHMENT_COUNT).fill(s3Id),
     )
     expect(result.success).toBe(true)
   })
@@ -307,11 +307,11 @@ describe('postman transactional email attachments limit', () => {
 
   it('rejects more than the maximum number of attachments at runtime', () => {
     const result = transactionalEmailSchema.shape.attachments.safeParse(
-      Array(MAX_ATTACHMENTS + 1).fill(s3Id),
+      Array(MAX_ATTACHMENT_COUNT + 1).fill(s3Id),
     )
     assert(result.success === false)
     expect(result.error.issues[0].message).toEqual(
-      `You can attach at most ${MAX_ATTACHMENTS} files.`,
+      `You can attach at most ${MAX_ATTACHMENT_COUNT} files.`,
     )
   })
 
@@ -319,7 +319,9 @@ describe('postman transactional email attachments limit', () => {
     { attachments: undefined },
     { attachments: null },
     { attachments: [] },
-    { attachments: Array(MAX_ATTACHMENTS).fill('{{step.abc.fields.def}}') },
+    {
+      attachments: Array(MAX_ATTACHMENT_COUNT).fill('{{step.abc.fields.def}}'),
+    },
   ])('allows saving attachments: $attachments', (parameters) => {
     expect(() =>
       validateTransactionalEmailStepParameters({ subject: 'x', ...parameters }),
@@ -327,7 +329,7 @@ describe('postman transactional email attachments limit', () => {
   })
 
   it.each([
-    { attachments: Array(MAX_ATTACHMENTS + 1).fill(s3Id) },
+    { attachments: Array(MAX_ATTACHMENT_COUNT + 1).fill(s3Id) },
     { attachments: Array(100_000).fill(s3Id) },
     { attachments: 's3:my-bucket:abcd/file.pdf' },
     { attachments: [{ id: s3Id }] },
