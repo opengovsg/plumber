@@ -111,6 +111,49 @@ The mutation log run also writes `silver/flow_edit_daily/day=YYYY-MM-DD.parquet`
 - A join with `flow_access` gives each user's current access, not their role at edit time. Its owner row dates the current owner from the pipe's creation, so a former editor's past edits read as owner edits. For the role at edit time, use `flow_transfer` for ownership and the `flow_collaborator_*` PostHog events for collaborator changes, matched on each request's timestamp in the bronze `mutation_log`.
   - IMPORTANT: the `flow_collaborator_*` events start when #2615 releases. A collaborator's role before then is unknown, so count those edits as unknown role, not as the current one. `flow_transfer` holds the full ownership history.
 
+## Execution tables
+
+The nightly run does not write these tables yet. The execution tables count runs and step attempts. They hold no `data_in` or `data_out`. From `error_details` they keep only the error kind. Each row lands on the Singapore day its event happened, because a run can wait for days or months on a Delay or a FormSG MRF step. Each step is saved when it runs, so its row carries that day.
+
+| Table                  | Columns                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `execution_daily`      | `day`, `start_day`, `event`, `flow_id`, `owner_user_id`, `test_run`, `duration_bucket`, `count`                               |
+| `execution_step_daily` | `day`, `flow_id`, `step_id`, `owner_user_id`, `app_key`, `action_key`, `test_run`, `status`, `error_kind`, `retried`, `count` |
+| `execution_inflight`   | `day`, `flow_id`, `owner_user_id`, `last_app_key`, `last_action_key`, `last_step_status`, `age_bucket`, `count`               |
+
+`execution_daily` events:
+
+- `started` lands on the day the run was created.
+- `succeeded` and `failed` land on the day of the run's last step, with the run's `start_day`. `duration_bucket` spans the run's creation to that step. `duration_bucket` and `execution_inflight`'s `age_bucket` share one list: `<1m`, `1m-1h`, `1h-1d`, `1d-7d`, `7d-30d`, `30d-90d` and `>90d`. Real runs only: test runs almost never get a status, so a test run writes `started` alone.
+- `retry_succeeded` lands on the day a retry succeeded, after the run's `failed` row was already final. The retry can be manual, or automatic after a long wait such as a 12-hour `Retry-After`. Sums by `start_day` count it as a success and subtract it from the failures, so a retried run counts once. A retry that fails again adds no row.
+- A run has failed while some failure attempt has no later attempt of the same step and for-each iteration. Other iterations keep saving rows after one fails, so the run's last row alone does not tell.
+- Runs still open for a `start_day` are its `started` count minus its finished rows. Archival deletes open runs only for deleted pipes and old test runs, so count open runs on pipes whose `flow_stage.deleted_at` is null.
+
+`execution_step_daily` counts every attempt, including each automatic retry. `retried` is true when another attempt of the same step, in the same for-each iteration, followed before the file was written. `error_kind` is a failed attempt's `config`, `third-party` or `internal`. It is empty when the error has no classified kind: a plain `Error`, which the backend counts as `internal`, or any error saved before 27 Oct 2026. Treat empty as unknown, not as legacy. Rows saved before `execution_steps` had `app_key` (March 2023) or `key` (June 2025) take the step's current app-action.
+
+`execution_inflight` snapshots the open real runs at export time, about 01:00, grouped by the last step that ran and by age. Its `day` is the day before. Open runs can only be read as they are now, so a missed night stays missing. Its coverage log reports only last night, so one missed night does not alert for 30 days.
+
+### Provisional and final days
+
+- A day is written provisionally the next night, then final at the start of the day after next. The final file reads the database as it stood at that moment, ignoring later rows, and gets the completion file. A final day is never rewritten.
+- Both writes use the same key, so PostHog may keep both copies. Views keep each file's newest copy, by the latest `_file_modified_at` per `_file_name`.
+- `analytics.export.coverage` for these jobs reports through the last final day. Missed final days in the last 7 are caught up.
+- Bump a table's `version` when its columns or query change. Only days not yet final take the new version. Final days keep the old one, because archival may have deleted their runs since.
+
+### Known gaps
+
+- A run can fail without saving a step row, for example when the step it waited for was deleted during a Delay. Its last row then sits on a day it did not end, so it gets no finished row and counts as open.
+- The final file reads `executions.status` as it is when written, unless the run has rows after `as_of`. A status change after `as_of` with no new row, such as the moment a manual retry starts, can reach a final file.
+- Runs created before `executions.status` existed (October 2023) may have no status. History is not written yet. Its backfill must handle them.
+
+Each execution query runs with a 10-minute `statement_timeout`, since archival waits for the export.
+
+### Indexes
+
+`execution_daily` and `execution_step_daily` read by `created_at`, through `executions_created_at_id_index` and `execution_steps_created_at_index`.
+
+IMPORTANT: the run does not check for these indexes. Build both before deploying. Without them, each day query scans its whole table and hits the 10-minute timeout. `execution_inflight` scans `executions` for null statuses, since the table has no status index.
+
 ## Tracking finished days
 
 An export written as one file set per Singapore day marks each finished day with a completion file. The code lives in `src/day-completion.ts`.
