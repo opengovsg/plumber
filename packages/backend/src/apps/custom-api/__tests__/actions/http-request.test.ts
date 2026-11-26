@@ -548,6 +548,51 @@ describe('make http request', () => {
     })
   })
 
+  describe('request that gets no response', () => {
+    function getSolution(error: StepError): string {
+      return JSON.parse(error.message).solution
+    }
+
+    beforeEach(() => {
+      $.step.parameters.method = 'GET'
+      $.step.parameters.url = 'http://test.local/endpoint'
+    })
+
+    it.each([
+      [
+        'a DNS failure',
+        'Unable to resolve IP address for nope.test',
+        undefined,
+      ],
+      ['ECONNREFUSED', 'connect ECONNREFUSED 10.0.0.1:443', 'ECONNREFUSED'],
+      ['an expired certificate', 'certificate has expired', 'CERT_HAS_EXPIRED'],
+    ])('names the cause of %s', async (_, message, code) => {
+      const httpError = makeHttpError({ message, code })
+      mocks.httpRequest.mockRejectedValueOnce(httpError)
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe(`Could not reach the URL: ${message}`)
+      expect(error.message).not.toContain('undefined')
+      expect(getSolution(error)).not.toContain('status code')
+      expect(error).toMatchObject({ kind: 'config', cause: httpError })
+    })
+
+    it('keeps the status code for a request that got a response', async () => {
+      mocks.httpRequest.mockRejectedValueOnce(
+        makeHttpError({ status: 403, statusText: 'Forbidden' }),
+      )
+
+      const error = await runAndCatch()
+
+      expect(getName(error)).toBe('Status code: 403 (Forbidden) ')
+      expect(getSolution(error)).toBe(
+        'Check your custom app based on the status code and retry again.',
+      )
+      expect(error.kind).toBe('config')
+    })
+  })
+
   describe('tests that data is valid JSON', () => {
     // NOTE: caters for existing users that are sending strings in the data field
     it.each(['[1, 2, 3]', 'meep meep'])(

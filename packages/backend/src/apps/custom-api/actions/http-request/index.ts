@@ -46,6 +46,28 @@ async function throwIfStaticSensitiveHeaders($: IGlobalVariable) {
   })
 }
 
+// HttpError always sets `response`, so only a missing status shows the request got no reply.
+function describeRequestFailure(
+  err: Error,
+  httpError: HttpError | undefined,
+): { name: string; solution: string } {
+  if (httpError && httpError.response.status === undefined) {
+    return {
+      name: `Could not reach the URL: ${httpError.message}`,
+      solution:
+        'Check that the URL is spelled correctly, is reachable from the internet and uses a valid HTTPS certificate.',
+    }
+  }
+  return {
+    name: `Status code: ${
+      httpError
+        ? `${httpError.response.status} (${httpError.response.statusText})`
+        : err.message
+    } `,
+    solution: 'Check your custom app based on the status code and retry again.',
+  }
+}
+
 async function run($: IGlobalVariable) {
   const method = $.step.parameters.method as TMethod
   const url = $.step.parameters.url as string
@@ -189,13 +211,7 @@ async function run($: IGlobalVariable) {
 
     // The user owns the endpoint, so every HTTP failure is theirs, even a retriable 429 or 504.
     throw new StepError({
-      name: `Status code: ${
-        httpError?.response
-          ? `${httpError.response.status} (${httpError.response.statusText})`
-          : err.message
-      } `,
-      solution:
-        'Check your custom app based on the status code and retry again.',
+      ...describeRequestFailure(err, httpError),
       kind: httpError ? 'config' : 'internal',
       cause: httpError,
     })
