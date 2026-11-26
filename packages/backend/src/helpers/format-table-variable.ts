@@ -6,7 +6,7 @@
  */
 
 import {
-  MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
+  MAX_TABLE_VARIABLE_CELLS_PER_STEP,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -151,6 +151,34 @@ function validateTableData(tableData: unknown): tableData is TableData {
   return true
 }
 
+interface PreparedTable {
+  rows: TableRow[]
+  columnMap: Map<string, TableColumn>
+  outputs: Map<string, string>
+}
+
+// Reused when one body references the same table many times.
+const preparedTables = new WeakMap<object, PreparedTable | null>()
+
+function prepareTable(tableData: unknown): PreparedTable | null {
+  if (typeof tableData !== 'object' || tableData === null) {
+    return null
+  }
+  if (!preparedTables.has(tableData)) {
+    preparedTables.set(
+      tableData,
+      validateTableData(tableData)
+        ? {
+            rows: tableData.rows,
+            columnMap: new Map(tableData.columns.map((col) => [col.id, col])),
+            outputs: new Map(),
+          }
+        : null,
+    )
+  }
+  return preparedTables.get(tableData) ?? null
+}
+
 /**
  * Main function to format table data into HTML
  */
@@ -180,7 +208,8 @@ export function formatTable(
     }
   }
 
-  if (!validateTableData(tableData)) {
+  const prepared = prepareTable(tableData)
+  if (!prepared) {
     return {
       success: false,
       error: 'invalid_structure',
@@ -189,9 +218,7 @@ export function formatTable(
     }
   }
 
-  const { rows, columns } = tableData
-
-  const columnMap = new Map(columns.map((col) => [col.id, col]))
+  const { rows, columnMap, outputs } = prepared
   const columnsToUse: TableColumn[] = []
   const invalidColumns: string[] = []
 
@@ -222,27 +249,34 @@ export function formatTable(
   }
 
   const { cellBudget } = options
-  const cellCount = rows.length * columnsToUse.length
+  // The header row renders even when the table has no rows.
+  const cellCount = (rows.length + 1) * columnsToUse.length
   if (cellBudget) {
     if (cellCount > cellBudget.remaining) {
       return {
         success: false,
         error: 'limit_exceeded',
-        message: `Tables in this field exceed ${MAX_TABLE_VARIABLE_CELLS_PER_FIELD} cells`,
+        message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_CELLS_PER_STEP} cells`,
       }
     }
     cellBudget.remaining -= cellCount
   }
 
-  const output = formatAsHtml(rows, columnsToUse)
-  const outputBytes = Buffer.byteLength(output)
-  if (outputBytes > LARGE_OUTPUT_BYTES) {
-    logger.warn('Table variable rendered a large output', {
-      event: 'table-variable-large-output',
-      outputBytes,
-      rowCount: rows.length,
-      columnCount: columnsToUse.length,
-    })
+  // Repeats reuse one string, so large cell values are not copied per reference.
+  const outputKey = selectedColumnIds.join(',')
+  let output = outputs.get(outputKey)
+  if (output === undefined) {
+    output = formatAsHtml(rows, columnsToUse)
+    outputs.set(outputKey, output)
+    const outputBytes = Buffer.byteLength(output)
+    if (outputBytes > LARGE_OUTPUT_BYTES) {
+      logger.warn('Table variable rendered a large output', {
+        event: 'table-variable-large-output',
+        outputBytes,
+        rowCount: rows.length,
+        columnCount: columnsToUse.length,
+      })
+    }
   }
 
   return {

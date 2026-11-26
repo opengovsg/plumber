@@ -1,12 +1,12 @@
 /**
  * Business rules:
  * - Table variables are capped at 100 columns and 500 rows, and all tables in
- *   one field share a 100,000-cell budget. Over a cap, the table fails to
+ *   one step share a 100,000-cell budget. Over a cap, the table fails to
  *   render instead of exhausting memory.
  * - Large output: "log first, don't block the execution".
  */
 import {
-  MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
+  MAX_TABLE_VARIABLE_CELLS_PER_STEP,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -36,14 +36,15 @@ describe('formatTable limits', () => {
   it('caps the limits at 100 columns and 500 rows', () => {
     expect(MAX_TABLE_VARIABLE_COLUMNS).toBe(100)
     expect(MAX_TABLE_VARIABLE_ROWS).toBe(500)
-    expect(MAX_TABLE_VARIABLE_CELLS_PER_FIELD).toBe(100_000)
+    expect(MAX_TABLE_VARIABLE_CELLS_PER_STEP).toBe(100_000)
   })
 
-  it('stops rendering tables once the field cell budget runs out', () => {
-    const table = makeTable(MAX_TABLE_VARIABLE_ROWS, MAX_TABLE_VARIABLE_COLUMNS)
+  it('stops rendering tables once the step cell budget runs out', () => {
+    // (400 rows + 1 header) × 100 columns = 40,100 cells per table.
+    const table = makeTable(400, MAX_TABLE_VARIABLE_COLUMNS)
     const options = {
       selectedColumnIds: table.columns.map((c) => c.id),
-      cellBudget: { remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD },
+      cellBudget: { remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP },
     }
     expect(formatTable(table, options).success).toBe(true)
     expect(formatTable(table, options).success).toBe(true)
@@ -51,6 +52,15 @@ describe('formatTable limits', () => {
       success: false,
       error: 'limit_exceeded',
     })
+  })
+
+  it('charges the header row of an empty table', () => {
+    const table = makeTable(0, 1)
+    const cellBudget = { remaining: 1 }
+    expect(
+      formatTable(table, { selectedColumnIds: ['c0'], cellBudget }).success,
+    ).toBe(true)
+    expect(cellBudget.remaining).toBe(0)
   })
 
   it('renders a table at the row and column limits', () => {
@@ -84,6 +94,17 @@ describe('formatTable limits', () => {
         selectedColumnIds: ['c0'],
       }),
     ).toMatchObject({ success: false, error: 'limit_exceeded' })
+  })
+
+  it('renders a repeated large table once', () => {
+    const table = {
+      rows: [{ data: { c0: 'x'.repeat(11 * 1024 * 1024) } }],
+      columns: [{ id: 'c0', name: 'Big' }],
+    }
+    const options = { selectedColumnIds: ['c0'] }
+    expect(formatTable(table, options).success).toBe(true)
+    expect(formatTable(table, options).success).toBe(true)
+    expect(logger.warn).toHaveBeenCalledTimes(1)
   })
 
   it('logs but still renders a large output', () => {

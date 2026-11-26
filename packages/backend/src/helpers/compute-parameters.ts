@@ -1,4 +1,4 @@
-import { MAX_TABLE_VARIABLE_CELLS_PER_FIELD } from '@plumber/shared'
+import { MAX_TABLE_VARIABLE_CELLS_PER_STEP } from '@plumber/shared'
 import type { IAction } from '@plumber/types'
 import get from 'lodash.get'
 
@@ -29,15 +29,34 @@ const variableRegExp =
 // characters. Saved modifiers peak at under 5,000 characters.
 const MAX_MODIFIER_HEX_LENGTH = 512 * 1024
 
+// A symbol, so upstream JSON data cannot pose as a marker.
+export const TABLE_VARIABLE_MARKER = Symbol('table-variable-marker')
+
 /**
  * Marker object returned when a table modifier is detected.
  * This is processed by the action's preprocessVariable function.
  */
 export interface TableVariableMarker {
-  __type: 'table'
+  [TABLE_VARIABLE_MARKER]: true
   data: unknown
   selectedColumnIds: string[]
   cellBudget: TableCellBudget
+}
+
+export function isTableVariableMarker(
+  value: unknown,
+): value is TableVariableMarker {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    TABLE_VARIABLE_MARKER in value
+  )
+}
+
+// One per computeParameters call, so nested fields and arrays share the limit.
+interface TableRenderContext {
+  cellBudget: TableCellBudget
+  parsedSources: Map<string, unknown>
 }
 
 function findAndSubstituteVariables(
@@ -46,6 +65,7 @@ function findAndSubstituteVariables(
   parameterKey: string,
   rawValue: unknown,
   executionSteps: ExecutionStep[],
+  tableRenderContext: TableRenderContext,
   preprocessVariable?: IAction['preprocessVariable'],
   forEachContext?: ForEachContext,
   preserveArrayVariables = false,
@@ -56,6 +76,7 @@ function findAndSubstituteVariables(
         parameterKey,
         element,
         executionSteps,
+        tableRenderContext,
         preprocessVariable,
         forEachContext,
         preserveArrayVariables,
@@ -72,6 +93,7 @@ function findAndSubstituteVariables(
           k,
           v,
           executionSteps,
+          tableRenderContext,
           preprocessVariable,
           forEachContext,
           preserveArrayVariables,
@@ -98,9 +120,6 @@ function findAndSubstituteVariables(
   }
 
   const parts = rawValue.split(variableRegExp)
-  const tableCellBudget: TableCellBudget = {
-    remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
-  }
   const { forEachStepPosition, stepPositions, isForEachStep } =
     forEachContext || {}
 
@@ -160,19 +179,24 @@ function findAndSubstituteVariables(
           // Handle FormSG tables where dataValue is a stringified JSON
           let tableData = dataValue
           if (typeof dataValue === 'string') {
-            try {
-              tableData = JSON.parse(dataValue)
-            } catch {
-              // Not valid JSON, keep as-is (will fail validation in formatTable)
+            const { parsedSources } = tableRenderContext
+            if (!parsedSources.has(dataValue)) {
+              try {
+                parsedSources.set(dataValue, JSON.parse(dataValue))
+              } catch {
+                // Not valid JSON, keep as-is (will fail validation in formatTable)
+                parsedSources.set(dataValue, dataValue)
+              }
             }
+            tableData = parsedSources.get(dataValue)
           }
 
           // Return marker object for preprocessVariable to handle
           const marker: TableVariableMarker = {
-            __type: 'table',
+            [TABLE_VARIABLE_MARKER]: true,
             data: tableData,
             selectedColumnIds,
-            cellBudget: tableCellBudget,
+            cellBudget: tableRenderContext.cellBudget,
           }
 
           if (preprocessVariable) {
@@ -253,6 +277,10 @@ export default function computeParameters(
     '', // Dummy initial value; will never be used.
     parameters,
     executionSteps,
+    {
+      cellBudget: { remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP },
+      parsedSources: new Map(),
+    },
     preprocessVariable,
     forEachContext,
     preserveArrayVariables,

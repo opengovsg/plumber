@@ -1,6 +1,6 @@
 import { PlacementWithLogical } from '@chakra-ui/react'
 import {
-  MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
+  MAX_TABLE_VARIABLE_CELLS_PER_STEP,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -16,6 +16,10 @@ import { FieldValues, UseFormGetValues } from 'react-hook-form'
 
 import { hexDecode } from '@/helpers/hex-encoding'
 import type { StepWithVariables, TableVariable } from '@/helpers/variables'
+
+interface TableCellBudget {
+  remaining: number
+}
 
 interface TableVariablePreviewData {
   columns: Array<{ id: string; name: string }>
@@ -72,8 +76,10 @@ export const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 export function simpleSubstitute(
   original: string,
   varInfo: VariableInfoMap,
+  cellBudget: TableCellBudget = {
+    remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP,
+  },
 ): string {
-  const cellBudget = { remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD }
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
     // Table variables (id ends with a `|hexModifier`) resolve to the rendered
@@ -292,7 +298,7 @@ function buildTableHtml(
 function renderTableVariableHtml(
   dataId: string,
   varInfo: VariableInfoMap,
-  cellBudget: { remaining: number },
+  cellBudget: TableCellBudget,
 ): string | null {
   const modifierMatch = dataId.match(HEX_MODIFIER_SUFFIX_REGEX)
   if (!modifierMatch) {
@@ -318,24 +324,28 @@ function renderTableVariableHtml(
       decodedModifier.slice('table:'.length).split(',').filter(Boolean),
     ),
   ]
-  // Mirrors the backend, which renders nothing past these limits.
+  // Mirrors the backend, which sends an empty table past these limits.
   if (
     selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS ||
     tableData.rows.length > MAX_TABLE_VARIABLE_ROWS
   ) {
-    return null
+    return ''
   }
 
   const columnById = new Map(tableData.columns.map((col) => [col.id, col]))
   const selectedColumns = selectedColumnIds
     .map((id) => columnById.get(id))
     .filter((col): col is { id: string; name: string } => col != null)
-  if (selectedColumns.length === 0) {
+  // The backend rejects the whole selection when any column is missing.
+  if (
+    selectedColumns.length === 0 ||
+    selectedColumns.length !== selectedColumnIds.length
+  ) {
     return null
   }
-  const cellCount = tableData.rows.length * selectedColumns.length
+  const cellCount = (tableData.rows.length + 1) * selectedColumns.length
   if (cellCount > cellBudget.remaining) {
-    return null
+    return ''
   }
   cellBudget.remaining -= cellCount
 
@@ -364,7 +374,7 @@ export function substituteForPreview(
   }
 
   const root = parse(html)
-  const cellBudget = { remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD }
+  const cellBudget = { remaining: MAX_TABLE_VARIABLE_CELLS_PER_STEP }
 
   function processChildren(parent: NodeHTMLElement): void {
     const newChildren: Node[] = []
@@ -394,7 +404,9 @@ export function substituteForPreview(
         processChildren(child)
         newChildren.push(child)
       } else if (child instanceof TextNode) {
-        newChildren.push(new TextNode(simpleSubstitute(child.rawText, varInfo)))
+        newChildren.push(
+          new TextNode(simpleSubstitute(child.rawText, varInfo, cellBudget)),
+        )
       } else {
         newChildren.push(child)
       }

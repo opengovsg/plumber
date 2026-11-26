@@ -307,7 +307,7 @@ describe('substituteForPreview', () => {
       expect(out.match(/Alice/g)).toHaveLength(1)
     })
 
-    it('falls back to text value past the column limit', () => {
+    it('renders an empty table past the column limit', () => {
       const columns = Array.from(
         { length: MAX_TABLE_VARIABLE_COLUMNS + 1 },
         (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
@@ -323,12 +323,11 @@ describe('substituteForPreview', () => {
         ],
       ])
       const modifier = `table:${columns.map((c) => c.id).join(',')}`
-      expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual(
-        '1 row',
-      )
+      expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual('')
     })
 
-    it('stops rendering tables once the field cell budget runs out', () => {
+    describe('step cell budget', () => {
+      // Each table costs (400 rows + 1 header) × 100 columns = 40,100 cells.
       const columns = Array.from(
         { length: MAX_TABLE_VARIABLE_COLUMNS },
         (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
@@ -339,20 +338,43 @@ describe('substituteForPreview', () => {
           {
             label: 'My table',
             testRunValue: 'big table',
-            table: {
-              columns,
-              rows: Array.from({ length: MAX_TABLE_VARIABLE_ROWS }, () => ({})),
-            },
+            table: { columns, rows: Array.from({ length: 400 }, () => ({})) },
           },
         ],
       ])
-      const input = makeInput(`table:${columns.map((c) => c.id).join(',')}`)
-      const out = substituteForPreview(input.repeat(3), bigInfo)
-      expect(out.match(/<table/g)).toHaveLength(2)
-      expect(out.endsWith('big table')).toBe(true)
+      const modifier = `table:${columns.map((c) => c.id).join(',')}`
+
+      it('renders nothing once the budget runs out', () => {
+        const out = substituteForPreview(makeInput(modifier).repeat(3), bigInfo)
+        expect(out.match(/<table/g)).toHaveLength(2)
+        expect(out).not.toContain('big table')
+      })
+
+      it('shares the budget between table pills and legacy tokens', () => {
+        const legacy = `<p>{{${TABLE_BASE_PATH}|${hexEncode(modifier)}}}</p>`
+        const out = substituteForPreview(
+          makeInput(modifier) + legacy + makeInput(modifier),
+          bigInfo,
+        )
+        expect(out.match(/<table/g)).toHaveLength(2)
+      })
+
+      it('rejects a selection with a missing column without charging it', () => {
+        const out = substituteForPreview(
+          makeInput(
+            `table:missing,${columns
+              .map((c) => c.id)
+              .slice(1)
+              .join(',')}`,
+          ) + makeInput(modifier).repeat(2),
+          bigInfo,
+        )
+        expect(out.startsWith('big table')).toBe(true)
+        expect(out.match(/<table/g)).toHaveLength(2)
+      })
     })
 
-    it('falls back to text value past the row limit', () => {
+    it('renders an empty table past the row limit', () => {
       const longInfo: VariableInfoMap = new Map([
         [
           `{{${TABLE_BASE_PATH}}}`,
@@ -368,9 +390,7 @@ describe('substituteForPreview', () => {
           },
         ],
       ])
-      expect(substituteForPreview(makeInput('table:c1'), longInfo)).toEqual(
-        'many rows',
-      )
+      expect(substituteForPreview(makeInput('table:c1'), longInfo)).toEqual('')
     })
 
     // simpleSubstitute powers the "has anything changed since the last test?"

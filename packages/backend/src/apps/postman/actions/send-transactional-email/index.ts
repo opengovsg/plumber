@@ -8,7 +8,7 @@ import { z, ZodSafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
-import { TableVariableMarker } from '@/helpers/compute-parameters'
+import { isTableVariableMarker } from '@/helpers/compute-parameters'
 import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
 import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
@@ -37,18 +37,6 @@ import getDataOutMetadata from './get-data-out-metadata'
 const sendEmailTestRunMetadataSchema = z
   .object({ useConfiguredEmails: z.boolean().optional() })
   .default({ useConfiguredEmails: false })
-/**
- * Type guard to check if a value is a TableVariableMarker
- */
-function isTableMarker(value: unknown): value is TableVariableMarker {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '__type' in value &&
-    (value as TableVariableMarker).__type === 'table'
-  )
-}
-
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
@@ -57,7 +45,7 @@ const action: IRawAction = {
 
   preprocessVariable(key: string, value: unknown) {
     // Handle table variable markers - convert to HTML table
-    if (isTableMarker(value)) {
+    if (isTableVariableMarker(value)) {
       // Only allow table rendering in the body field
       if (key !== 'body') {
         logger.warn('Table variable used in unsupported field', {
