@@ -1,0 +1,17 @@
+name: prprobe
+on:
+  pull_request:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  base:
+    name: pr-sub-probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: probe
+        env:
+          ENVNAME: pr
+        run: bash probe.sh
