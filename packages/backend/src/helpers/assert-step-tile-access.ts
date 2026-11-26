@@ -1,6 +1,8 @@
 import type { IJSONObject } from '@plumber/types'
 import type { Transaction } from 'objection'
+import { z } from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'
 
 export async function assertStepTileAccess({
@@ -17,9 +19,13 @@ export async function assertStepTileAccess({
   if (appKey !== 'tiles' || !parameters?.tableId) {
     return
   }
+  const tableId = z.string().uuid().safeParse(parameters.tableId)
+  if (!tableId.success) {
+    throw new BadUserInputError('Invalid Tile')
+  }
   await TableCollaborator.hasAccess(
     userId,
-    parameters.tableId as string,
+    tableId.data,
     'editor',
     undefined,
     trx,
