@@ -8,7 +8,7 @@ Any agent can follow these steps. Start the app and log in with [Drive the Plumb
 
 - Record evidence when the PR changes a page, dialog, form or other UI a user reaches.
 - Skip it for backend-only, docs-only and test-only PRs. Name the tests in the PR instead.
-- Record again after a push that changes the recorded behavior. See [Keep it current](#5-keep-it-current).
+- Record again after a push that changes the recorded behavior. See [Keep it current](#keep-it-current).
 
 ## 1. Check that you can post
 
@@ -46,7 +46,7 @@ Use your tool's browser if it can record video. Otherwise write a Playwright scr
 
 - Save it as `packages/e2e/tmp/<name>.mjs`. Only `packages/e2e` can import `@playwright/test`, and git ignores `tmp/`.
 - Run it from the repo root with `node packages/e2e/tmp/<name>.mjs`, so its `tmp/qa/` paths land in the root `tmp/`.
-- If Chromium is missing, run `pnpm --filter e2e exec playwright install chromium`.
+- If Chromium is missing, run `pnpm --filter @plumber/e2e exec playwright install chromium`.
 
 ```js
 import { chromium } from '@playwright/test'
