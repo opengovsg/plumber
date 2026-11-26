@@ -47,9 +47,10 @@ vi.mock('@/services/flow', () => ({
 
 type Processor = (job: unknown) => Promise<void>
 
-function makeJob(prevMillis?: number) {
+function makeJob(prevMillis?: number, attemptsStarted = 1) {
   return {
     id: 'job-id',
+    attemptsStarted,
     data: { flowId: 'flow-id' },
     opts: { prevMillis },
   }
@@ -111,6 +112,12 @@ describe('flow worker', () => {
     expect(startedLogs()).toEqual([
       [expect.any(String), expect.objectContaining({ flowActive: false })],
     ])
+  })
+
+  it('skips the log when a stalled job starts again', async () => {
+    await processor(makeJob(NOW - 310_000, 2))
+
+    expect(startedLogs()).toEqual([])
   })
 
   it('skips the log for jobs without a cron time', async () => {
