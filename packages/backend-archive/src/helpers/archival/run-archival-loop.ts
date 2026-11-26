@@ -263,6 +263,7 @@ export async function runArchivalLoop(
               s3Client: archiveS3Client,
               knexClient: archivalDb,
               runAt,
+              keepFrom,
             })
             return { execution, outcome, steps }
           } catch (err) {

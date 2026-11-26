@@ -41,6 +41,7 @@ The analytics execution tables read runs from Postgres. Archival must not delete
 
 - In prod and staging, each run starts by reading the analytics bucket's completion files. The earliest day since 1 April 2023 that either execution day table has not finalised is the floor. It is logged as `archival.analytics_floor`.
 - Every run created, or with a step, on or after the floor is held: left in Postgres and retried the next night. A run created after the floor is held before its steps are read.
+- The steps come from the reader. The delete transaction locks the run on the writer and recounts its steps. A step on or after the floor holds the run. Any other new step skips it with `archival.execution.changed`, and the next night archives it again.
 - Held runs are counted in `executions_held_for_analytics` and `executionsHeldForAnalytics` in `_meta/runs`, not in the skipped counts.
 - Until the analytics history is written, the floor is 1 April 2023, so every run is held.
 - A bucket that cannot be read stops the run with `archival.run.error`. Nothing is archived.
@@ -93,16 +94,17 @@ S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
 
 The script logs structured JSON to stdout. Key events to look for:
 
-| Event                              | Meaning                                                                                                                                                                           |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `archival.run.start`               | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                                                                   |
-| `archival.analytics_floor`         | The day archival holds runs from, as `keepFrom`. Null outside prod and staging. See [Holding runs for analytics](#holding-runs-for-analytics).                                    |
-| `archival.batch.complete`          | One batch processed — shows `batchArchived`, `batchSkipped`, `batchHeld`, `cursor`.                                                                                               |
-| `archival.flow.archived`           | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.                                                |
-| `archival.run.complete`            | Final summary — `executions_archived` (real + test), `real_executions_archived`, `test_executions_archived`, `executions_skipped`, `executions_held_for_analytics`, `durationMs`. |
-| `archival.run.meta_write_failed`   | The `_meta/runs` write failed after archiving. Carries the same counts as `run.complete`.                                                                                         |
-| `archival.execution.error`         | One execution failed to archive. Carries `executionId`. The row stays in Postgres and the next run retries it.                                                                    |
-| `archival.execution.verify_failed` | The S3 check after upload failed. Carries `executionId`, `key` and `reason`. The row stays in Postgres and the next run retries it.                                               |
+| Event                              | Meaning                                                                                                                                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `archival.run.start`               | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                                                                                                                    |
+| `archival.analytics_floor`         | The day archival holds runs from, as `keepFrom`. Null outside prod and staging. See [Holding runs for analytics](#holding-runs-for-analytics).                                     |
+| `archival.batch.complete`          | One batch processed — shows `batchArchived`, `batchSkipped`, `batchHeld`, `cursor`.                                                                                                |
+| `archival.flow.archived`           | All executions for a flow have been processed — shows `executionsCount`, `testExecutionsCount`. Individual IDs are in the S3 keys.                                                 |
+| `archival.run.complete`            | Final summary — `executions_archived` (real + test), `real_executions_archived`, `test_executions_archived`, `executions_skipped`, `executions_held_for_analytics`, `durationMs`.  |
+| `archival.run.meta_write_failed`   | The `_meta/runs` write failed after archiving. Carries the same counts as `run.complete`.                                                                                          |
+| `archival.execution.error`         | One execution failed to archive. Carries `executionId`. The row stays in Postgres and the next run retries it.                                                                     |
+| `archival.execution.changed`       | The writer had more steps than the reader showed, so the run was not deleted. Carries `executionId`, `archivedSteps` and `currentSteps`. The next run overwrites its archive file. |
+| `archival.execution.verify_failed` | The S3 check after upload failed. Carries `executionId`, `key` and `reason`. The row stays in Postgres and the next run retries it.                                                |
 
 ### 4. Verify S3 contents
 
@@ -207,7 +209,7 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 The archival task runs the analytics export each night, before it archives. Archival must not delete executions before the export reads them. [`backend-analytics`](../backend-analytics/README.md) holds the export code and describes what it writes.
 
-`analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`.
+`analytics:export` runs the same code by hand. It reads through the reader endpoint, `ARCHIVE_POSTGRES_READER_HOST`. For the execution tables it writes final days only, and it refuses `execution_inflight`. A provisional file shares its final file's key, and a manual snapshot would file daytime runs under yesterday.
 
 | Flag           | Meaning                                                                                                                                    |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |

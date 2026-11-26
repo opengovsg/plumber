@@ -6,7 +6,7 @@ import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { localDirCompletionStore } from '../completion-stores'
-import { readJobState } from '../day-completion'
+import { type CompletionSource, readJobState } from '../day-completion'
 import {
   EXECUTION_HISTORY_START,
   executionArchivalFloor,
@@ -100,6 +100,7 @@ describe('writeExecutionTables', () => {
   async function write(
     dayTables: ExecutionDayTable<{ id: string }>[],
     snapshotTables: ExecutionSnapshotTable<{ id: string }>[],
+    source: CompletionSource = 'nightly',
   ) {
     dir ??= await mkdtemp(path.join(tmpdir(), 'executions-'))
     await writeExecutionTables({
@@ -110,6 +111,7 @@ describe('writeExecutionTables', () => {
       now: NOW,
       dayTables,
       snapshotTables,
+      source,
     })
   }
 
@@ -155,6 +157,26 @@ describe('writeExecutionTables', () => {
     expect(
       vi.mocked(table.fetchDay).mock.calls.map(([, query]) => query.window),
     ).toEqual([sgtDayWindow('2026-11-10'), sgtDayWindow('2026-11-11')])
+  })
+
+  it('writes only final days outside the nightly run', async () => {
+    const table = dayTable()
+
+    await write([table], [], 'backfill')
+
+    expect(await readdir(path.join(dir!, 'silver/execution_daily'))).toEqual([
+      'day=2026-11-09.parquet',
+    ])
+  })
+
+  it('refuses the snapshot outside the nightly run', async () => {
+    const snapshot = snapshotTable()
+
+    await expect(write([], [snapshot], 'backfill')).rejects.toThrow(
+      'execution_inflight is written by the nightly run only',
+    )
+
+    expect(snapshot.fetchSnapshot).not.toHaveBeenCalled()
   })
 
   it('still writes the snapshot when a day table fails', async () => {

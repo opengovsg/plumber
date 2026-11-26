@@ -18,13 +18,15 @@ type ArchiveOpts = {
   s3Client: S3Client
   knexClient: Knex
   runAt: string
+  // Archival's analytics floor. A run with a step on or after it is kept.
+  keepFrom?: Date | null
 }
 
 export async function archiveExecution(
   execution: ExecutionRow,
   steps: ExecutionStepRow[],
   opts: ArchiveOpts,
-): Promise<'archived' | 'skipped'> {
+): Promise<'archived' | 'skipped' | 'held'> {
   const payload = JSON.stringify({ execution, steps })
   const compressed = await gzipAsync(payload)
 
@@ -73,17 +75,43 @@ export async function archiveExecution(
     return 'skipped'
   }
 
-  if (!opts.dryRun) {
-    await opts.knexClient.transaction(async (trx) => {
-      await trx('execution_steps').where('execution_id', execution.id).delete()
-      await trx('executions').where('id', execution.id).delete()
-      if (!execution.testRun) {
-        await trx('flows')
-          .where('id', execution.flowId)
-          .increment('archived_execution_count', 1)
-      }
-    })
+  if (opts.dryRun) {
+    return 'archived'
   }
 
-  return 'archived'
+  return opts.knexClient.transaction(async (trx) => {
+    // The steps came from the replica, and more can commit during the upload. The lock blocks new step inserts through their foreign key.
+    await trx('executions').where('id', execution.id).forUpdate().select('id')
+    const [current] = (await trx('execution_steps')
+      .where('execution_id', execution.id)
+      .count({ count: '*' })
+      .max({ latest: 'created_at' })) as {
+      count: string
+      latest: Date | null
+    }[]
+    if (
+      opts.keepFrom &&
+      current.latest &&
+      new Date(current.latest) >= opts.keepFrom
+    ) {
+      return 'held'
+    }
+    if (Number(current.count) !== steps.length) {
+      logger.warn({
+        event: 'archival.execution.changed',
+        executionId: execution.id,
+        archivedSteps: steps.length,
+        currentSteps: Number(current.count),
+      })
+      return 'skipped'
+    }
+    await trx('execution_steps').where('execution_id', execution.id).delete()
+    await trx('executions').where('id', execution.id).delete()
+    if (!execution.testRun) {
+      await trx('flows')
+        .where('id', execution.flowId)
+        .increment('archived_execution_count', 1)
+    }
+    return 'archived'
+  })
 }

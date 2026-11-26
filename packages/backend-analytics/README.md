@@ -138,7 +138,7 @@ The execution tables count runs and step attempts. They hold no `data_in` or `da
 
 ### Provisional and final days
 
-- A day is written provisionally the next night, then final at the start of the day after next. The final file reads the database as it stood at that moment, ignoring later rows, and gets the completion file. A final day is never rewritten.
+- A day is written provisionally the next night, then final at the start of the day after next. Only the nightly run writes provisional files and the snapshot. The final file reads the database as it stood at that moment, ignoring later rows, and gets the completion file. A final day is never rewritten.
 - Both writes use the same key, so PostHog may keep both copies. Views keep each file's newest copy, by the latest `_file_modified_at` per `_file_name`.
 - `analytics.export.coverage` for these jobs reports through the last final day. Missed final days in the last 7 are caught up.
 - Bump a table's `version` when its columns or query change. Only days not yet final take the new version. Final days keep the old one, because archival may have deleted their runs since.

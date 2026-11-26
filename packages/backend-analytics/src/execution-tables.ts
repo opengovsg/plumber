@@ -189,7 +189,11 @@ async function writeExecutionDayTable(
       )
       const items = [
         ...final.map((day) => ({ day, final: true })),
-        ...provisional.map((day) => ({ day, final: false })),
+        // IMPORTANT: a final file shares its provisional file's key. A manual run's provisional upload could land after it.
+        ...(source === 'nightly' ? provisional : []).map((day) => ({
+          day,
+          final: false,
+        })),
       ]
       await writeEachDay({
         job: table.name,
@@ -287,7 +291,14 @@ export async function writeExecutionTables(
   const {
     dayTables = EXECUTION_DAY_TABLES,
     snapshotTables = EXECUTION_SNAPSHOT_TABLES,
+    source = 'nightly',
   } = params
+  if (source !== 'nightly' && snapshotTables.length > 0) {
+    // A manual run would file daytime open runs under yesterday, and its completion file would stop the nightly snapshot.
+    throw new Error(
+      `${snapshotTables.map((table) => table.name).join(', ')} is written by the nightly run only`,
+    )
+  }
   const errors: Error[] = []
   await writeEachTable(dayTables, (table) =>
     writeExecutionDayTable(params, table),
