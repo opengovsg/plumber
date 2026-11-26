@@ -911,8 +911,6 @@ export interface IApp {
    */
   requestErrorHandler?: TRequestErrorHandler
 
-  getTransferDetails?($: IGlobalVariable): Promise<ITransferDetails> // TODO (mal): add null if necessary, check with Stacey
-
   /**
    * Apps specify this if they need their own dedicated action queue.
    */
@@ -1077,14 +1075,6 @@ export type ITriggerInstructions = Partial<{
   hideWebhookUrl: boolean
   errorMsg: string
 }>
-
-// TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
-export type ITransferDetails = {
-  position: number
-  appName: string
-  connectionName?: string // could be no connection
-  instructions?: string
-}
 
 export interface IBaseTrigger {
   name: string

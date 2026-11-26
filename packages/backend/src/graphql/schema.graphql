@@ -49,7 +49,6 @@ type Query {
   getPlumberStats: Stats
   # Flow transfers
   getPendingFlowTransfers: [FlowTransfer!]!
-  getFlowTransferDetails(flowId: String!): [StepTransferDetails]!
   # Admin queries
   admin: AdminQuery!
   # Templates (including demo templates)
@@ -935,13 +934,6 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
-}
-
-type StepTransferDetails {
-  position: Int!
-  appName: String!
-  connectionName: String
-  instructions: String
 }
 
 type TriggerSubstep {
