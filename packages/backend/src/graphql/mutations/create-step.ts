@@ -6,11 +6,11 @@ import {
   upgradeIfThenV1Blocks,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { assertStepTileAccess } from '@/helpers/assert-step-tile-access'
 import logger from '@/helpers/logger'
 import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 import { getConnection } from '@/services/connection'
 import {
   createActionStepCore,
@@ -153,15 +153,12 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
       await fixupEndStep()
     }
 
-    if (step.appKey === 'tiles' && step.parameters?.tableId) {
-      await TableCollaborator.hasAccess(
-        context.currentUser.id,
-        step.parameters.tableId as string,
-        'editor',
-        undefined,
-        trx,
-      )
-    }
+    await assertStepTileAccess({
+      userId: context.currentUser.id,
+      appKey: step.appKey,
+      parameters: step.parameters,
+      trx,
+    })
 
     // NOTE: add flow connection to the flow_connections table
     // only add by default if the user is the owner of the flow

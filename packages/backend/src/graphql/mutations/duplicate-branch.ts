@@ -6,9 +6,9 @@ import {
   sanitizeServerSideConfig,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { assertStepTileAccess } from '@/helpers/assert-step-tile-access'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -111,15 +111,12 @@ const duplicateBranch: NonNullable<
         version: getStepVersion(appKey ?? undefined, key ?? undefined),
       })
 
-      if (step.appKey === 'tiles' && step.parameters?.tableId) {
-        await TableCollaborator.hasAccess(
-          context.currentUser.id,
-          step.parameters.tableId as string,
-          'editor',
-          undefined,
-          trx,
-        )
-      }
+      await assertStepTileAccess({
+        userId: context.currentUser.id,
+        appKey: step.appKey,
+        parameters: step.parameters,
+        trx,
+      })
 
       newSteps.push(step)
       previousStepId = step.id
