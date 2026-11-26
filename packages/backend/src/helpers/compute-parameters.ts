@@ -9,7 +9,7 @@ import {
   createTableRenderBudget,
   type TableRenderBudget,
 } from '@/helpers/format-table-variable'
-import { hexDecode } from '@/helpers/hex-encoding'
+import { hexDecode, hexEncode } from '@/helpers/hex-encoding'
 import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
 
@@ -30,6 +30,16 @@ const variableRegExp =
 // Fits 100 M365 Excel column ids, which hex-encode header names of up to 255
 // characters. Saved modifiers peak at under 5,000 characters.
 const MAX_MODIFIER_HEX_LENGTH = 512 * 1024
+const TABLE_MODIFIER_HEX_PREFIX = hexEncode('table:')
+
+// A symbol, so the flag is never saved with the step's data in or sent to the
+// frontend.
+const TABLE_LIMIT_EXCEEDED = Symbol('table-limit-exceeded')
+
+/** Whether any table variable in these computed parameters hit a limit. */
+export function isTableLimitExceeded(parameters: object): boolean {
+  return TABLE_LIMIT_EXCEEDED in parameters
+}
 
 // A symbol, so upstream JSON data cannot pose as a marker.
 export const TABLE_VARIABLE_MARKER = Symbol('table-variable-marker')
@@ -141,6 +151,10 @@ function findAndSubstituteVariables(
           event: 'variable-modifier-too-long',
           length: modifierMatch[1].length,
         })
+        if (modifierMatch[1].startsWith(TABLE_MODIFIER_HEX_PREFIX)) {
+          tableRenderContext.renderBudget.isLimitExceeded = true
+          return ''
+        }
         return part
       }
 
@@ -277,16 +291,18 @@ export default function computeParameters(
   forEachContext?: ForEachContext,
   preserveArrayVariables = false,
 ): Step['parameters'] {
-  return findAndSubstituteVariables(
+  const renderBudget = createTableRenderBudget()
+  const computed = findAndSubstituteVariables(
     '', // Dummy initial value; will never be used.
     parameters,
     executionSteps,
-    {
-      renderBudget: createTableRenderBudget(),
-      parsedSources: new Map(),
-    },
+    { renderBudget, parsedSources: new Map() },
     preprocessVariable,
     forEachContext,
     preserveArrayVariables,
   ) as Step['parameters']
+  if (renderBudget.isLimitExceeded) {
+    Object.defineProperty(computed, TABLE_LIMIT_EXCEEDED, { value: true })
+  }
+  return computed
 }

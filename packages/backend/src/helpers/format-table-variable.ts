@@ -48,6 +48,7 @@ interface PreparedTable {
 /** Shared by every table variable in one step. */
 export interface TableRenderBudget {
   bytes: number
+  isLimitExceeded: boolean
   hasLoggedLargeOutput: boolean
   // Reused when one body references the same table many times.
   preparedTables: Map<object, PreparedTable | null>
@@ -56,6 +57,7 @@ export interface TableRenderBudget {
 export function createTableRenderBudget(): TableRenderBudget {
   return {
     bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+    isLimitExceeded: false,
     hasLoggedLargeOutput: false,
     preparedTables: new Map(),
   }
@@ -95,6 +97,15 @@ function cellToString(value: unknown): string {
   return String(value)
 }
 
+// Postman turns each newline into <br> before sending, adding 3 bytes.
+function sentByteLength(html: string): number {
+  let newlines = 0
+  for (let i = html.indexOf('\n'); i !== -1; i = html.indexOf('\n', i + 1)) {
+    newlines++
+  }
+  return Buffer.byteLength(html) + 3 * newlines
+}
+
 /**
  * Formats table data as an HTML table with inline CSS for email compatibility
  * Simple black borders with background colors matching the preview
@@ -118,10 +129,8 @@ function formatAsHtml(
   // table costs at most one cell past the limit.
   const parts: string[] = []
   let bytes = 0
-  const append = (fragment: string): boolean => {
-    // Postman turns newlines into <br> later, so count them as sent.
-    const html = fragment.replace(/\n/g, '<br>')
-    bytes += Buffer.byteLength(html)
+  const append = (html: string): boolean => {
+    bytes += sentByteLength(html)
     parts.push(html)
     return bytes <= maxBytes
   }
@@ -230,6 +239,16 @@ function prepareTable(
   return preparedTables.get(tableData) ?? null
 }
 
+// The step fails on the first rejected table, so later tables need no work.
+function limitExceeded(
+  budget: TableRenderBudget,
+  result: FormatTableResult,
+): FormatTableResult {
+  budget.isLimitExceeded = true
+  budget.bytes = 0
+  return result
+}
+
 /**
  * Main function to format table data into HTML
  */
@@ -242,30 +261,30 @@ export function formatTable(
 
   // IMPORTANT: check before any per-row work, since cost is rows × columns.
   if (selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS) {
-    return {
+    return limitExceeded(budget, {
       success: false,
       error: 'limit_exceeded',
       message: `Selected ${selectedColumnIds.length} columns, the limit is ${MAX_TABLE_VARIABLE_COLUMNS}`,
-    }
+    })
   }
   const sourceRows = (tableData as { rows?: unknown } | null)?.rows
   if (
     Array.isArray(sourceRows) &&
     sourceRows.length > MAX_TABLE_VARIABLE_ROWS
   ) {
-    return {
+    return limitExceeded(budget, {
       success: false,
       error: 'limit_exceeded',
       message: `Table has ${sourceRows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
-    }
+    })
   }
 
   if (budget.bytes <= 0) {
-    return {
+    return limitExceeded(budget, {
       success: false,
       error: 'limit_exceeded',
       message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
-    }
+    })
   }
 
   const prepared = prepareTable(tableData, budget.preparedTables)
@@ -318,11 +337,11 @@ export function formatTable(
     }
   }
   if (!output || output.bytes > budget.bytes) {
-    return {
+    return limitExceeded(budget, {
       success: false,
       error: 'limit_exceeded',
       message: `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
-    }
+    })
   }
 
   budget.bytes -= output.bytes

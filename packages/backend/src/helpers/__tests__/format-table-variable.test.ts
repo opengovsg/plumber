@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatTable } from '../format-table-variable'
+import { createTableRenderBudget, formatTable } from '../format-table-variable'
 
 const COLS = [
   { id: 'col1', name: 'Name' },
@@ -338,14 +338,19 @@ describe('formatTable', () => {
     }
   })
 
-  it('renders newlines in cells as line breaks', () => {
-    const result = formatTable(
-      { rows: [{ data: { col1: 'line 1\nline 2' } }], columns: COLS },
-      { selectedColumnIds: ['col1'] },
-    )
-    expect(result.success).toBe(true)
-    if (result.success) {
-      expect(result.output).toContain('line 1<br>line 2')
+  it('counts each newline as the <br> Postman sends', () => {
+    const table = {
+      rows: [{ data: { col1: 'line 1\nline 2' } }],
+      columns: COLS,
     }
+    const options = { selectedColumnIds: ['col1'] }
+    const rendered = formatTable(table, options)
+    expect(rendered.success).toBe(true)
+    const rawBytes = rendered.success ? Buffer.byteLength(rendered.output) : 0
+    const renderBudget = { ...createTableRenderBudget(), bytes: rawBytes + 2 }
+    expect(formatTable(table, { ...options, renderBudget })).toMatchObject({
+      success: false,
+      error: 'limit_exceeded',
+    })
   })
 })

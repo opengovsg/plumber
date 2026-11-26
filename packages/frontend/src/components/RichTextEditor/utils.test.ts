@@ -302,25 +302,6 @@ describe('substituteForPreview', () => {
       )
     })
 
-    it('renders newlines in cells as line breaks, like the sent email', () => {
-      const multilineInfo: VariableInfoMap = new Map([
-        [
-          `{{${TABLE_BASE_PATH}}}`,
-          {
-            label: 'My table',
-            testRunValue: '1 row',
-            table: {
-              columns: [{ id: 'c1', name: 'Name' }],
-              rows: [{ c1: 'line 1\nline 2' }],
-            },
-          },
-        ],
-      ])
-      expect(
-        substituteForPreview(makeInput('table:c1'), multilineInfo),
-      ).toContain('line 1<br>line 2')
-    })
-
     it('renders a duplicated column id once', () => {
       const out = substituteForPreview(
         makeInput('table:c1,c1,c1'),

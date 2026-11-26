@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import ExecutionStep from '@/models/execution-step'
 
-import computeParameters from '../compute-parameters'
+import computeParameters, { isTableLimitExceeded } from '../compute-parameters'
 import { hexEncode } from '../hex-encoding'
 
 const randomStepID = randomUUID()
@@ -513,7 +513,7 @@ describe('compute parameters', () => {
       expect(new Set(budgets).size).toBe(1)
     })
 
-    it('leaves an oversized modifier unrendered', () => {
+    it('flags an oversized table modifier as over the limit', () => {
       const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
       const variable = tableVariable(`table:${'name,'.repeat(70_000)}`)
       const result = computeParameters(
@@ -522,7 +522,8 @@ describe('compute parameters', () => {
         preprocessVariable,
       )
       expect(preprocessVariable).not.toHaveBeenCalled()
-      expect(result).toEqual({ body: variable })
+      expect(result).toEqual({ body: '' })
+      expect(isTableLimitExceeded(result)).toBe(true)
     })
   })
 })

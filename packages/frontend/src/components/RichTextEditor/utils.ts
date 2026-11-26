@@ -293,11 +293,7 @@ function buildTableHtml(
     })
     .join('')
 
-  // Postman turns newlines into <br>, and the backend renders them that way.
-  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`.replace(
-    /\n/g,
-    '<br>',
-  )
+  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
 }
 
 /**
@@ -339,6 +335,7 @@ function renderTableVariableHtml(
     tableData.rows.length > MAX_TABLE_VARIABLE_ROWS ||
     renderBudget.bytes <= 0
   ) {
+    renderBudget.bytes = 0
     return TABLE_OVER_LIMIT_NOTICE
   }
 
@@ -355,7 +352,8 @@ function renderTableVariableHtml(
   }
 
   const html = buildTableHtml(selectedColumns, tableData.rows)
-  const bytes = utf8.encode(html).length
+  // Postman turns each newline into <br> before sending, adding 3 bytes.
+  const bytes = utf8.encode(html).length + 3 * (html.split('\n').length - 1)
   if (bytes > renderBudget.bytes) {
     renderBudget.bytes = 0
     return TABLE_OVER_LIMIT_NOTICE
