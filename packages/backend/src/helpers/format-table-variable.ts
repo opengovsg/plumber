@@ -111,7 +111,7 @@ function sentByteLength(html: string): number {
  * Simple black borders with background colors matching the preview
  *
  * NOTE: the frontend email preview mirrors this exact markup in
- * `buildTableHtml` (packages/frontend/src/components/RichTextEditor/utils.ts).
+ * `buildTableHtml` (packages/frontend/src/components/RichTextEditor/tableVariableHtml.ts).
  * If you change the markup/styles here, update that mirror and its
  * markup-pinning test so the preview keeps matching the sent email.
  */
