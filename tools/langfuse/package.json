@@ -7,6 +7,7 @@
   "scripts": {
     "get-prompt": "node ../../scripts/with-human-dev-env.mjs node get-prompt.mjs",
     "export-sessions": "node ../../scripts/with-human-dev-env.mjs node export-sessions.mjs",
+    "tool-output-sizes": "node ../../scripts/with-human-dev-env.mjs node tool-output-sizes.mjs",
     "test": "node --test 'lib/**/*.test.mjs' 'test/**/*.test.mjs'",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
