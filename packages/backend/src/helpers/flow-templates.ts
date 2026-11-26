@@ -20,6 +20,7 @@ import type {
   StepConfig,
 } from '@/graphql/__generated__/types.generated'
 import { getStepVersion } from '@/helpers/get-step-version'
+import { assertStepParametersWithinLimits } from '@/helpers/step-parameter-limits'
 import Flow from '@/models/flow'
 import Template from '@/models/template'
 import User from '@/models/user'
@@ -237,6 +238,11 @@ export async function createFlowFromTemplate(
 
     // Handle all template data before inserting steps, since any step may
     // reference resources created for a later step.
+    // Check before template data handlers create resources outside the transaction.
+    for (const { parameters } of steps) {
+      assertStepParametersWithinLimits(parameters)
+    }
+
     let dataTemplateConfig: Partial<IFlowTemplateConfig> = {}
     for (const { position, appKey, eventKey, templateData } of steps) {
       if (!templateData) {

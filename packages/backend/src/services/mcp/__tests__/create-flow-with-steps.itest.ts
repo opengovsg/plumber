@@ -3,6 +3,8 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BLOCK_END_STEP_ID } from '@/apps/toolbox/common/constants'
+import { BadUserInputError } from '@/errors/graphql-errors'
+import { STEP_PARAMETERS_TOO_LARGE_MESSAGE } from '@/helpers/step-parameter-limits'
 import Flow from '@/models/flow'
 import User from '@/models/user'
 
@@ -810,6 +812,26 @@ describe('createFlowWithStepsService', () => {
 
       expect(error).toBeInstanceOf(MrfStageStepsError)
       expect((error as Error).message).toContain('The pipe was not created')
+      expect(await Flow.query().where('user_id', user.id)).toHaveLength(0)
+    })
+
+    it('keeps the size limit message when a stage step is too large', async () => {
+      mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+      mocks.createMrfSteps.mockRejectedValueOnce(
+        new BadUserInputError(STEP_PARAMETERS_TOO_LARGE_MESSAGE),
+      )
+      const user = await newUser()
+
+      const error = await createFlowWithStepsService({
+        user,
+        name: 'MRF Pipe',
+        steps: [formsgTrigger],
+        traceId: 'trace-stage-too-large',
+        formUrl: FORM_URL,
+      }).catch((e: unknown) => e)
+
+      expect(error).toBeInstanceOf(BadUserInputError)
+      expect((error as Error).message).toBe(STEP_PARAMETERS_TOO_LARGE_MESSAGE)
       expect(await Flow.query().where('user_id', user.id)).toHaveLength(0)
     })
 
