@@ -2,8 +2,8 @@ name: Scheduled release
 
 # Creates a DRAFT release for a human to review and publish, and fast-forwards
 # staging-v2 (the branch deploy-staging.yml deploys) to the develop-v2 commit
-# being released. Nothing is pushed to develop-v2. A draft needs no tag until
-# it is published.
+# being released. Nothing is pushed to develop-v2. The draft's tag is created
+# at that commit up front, so publishing ships exactly what staging tested.
 
 on:
   schedule:
@@ -71,12 +71,9 @@ jobs:
             exit 0
           fi
 
-          # The version in the root package.json is the source of truth, as in
-          # .claude/skills/publish-release.
-          current="$(gh api -H 'Accept: application/vnd.github.raw+json' \
-            "repos/${GH_REPO}/contents/package.json?ref=${RELEASE_BRANCH}" | jq -r .version)"
-          if ! [[ "${current}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            echo "::error::Version '${current}' in package.json is not in X.Y.Z format"
+          # Release tags are the version source of truth. package.json versions are not bumped.
+          if ! [[ "${latest_tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Latest release tag '${latest_tag}' is not in vX.Y.Z format"
             exit 1
           fi
           major="${BASH_REMATCH[1]}"
@@ -92,26 +89,40 @@ jobs:
               ;;
           esac
 
+          # The develop-v2 commit being released (and staged below).
+          sha="$(gh api "repos/${GH_REPO}/commits/${RELEASE_BRANCH}" --jq .sha)"
+
+          # Reserve the tag at the staged commit. GitHub ignores --target when the tag
+          # already exists, so a tag at another commit would ship code staging never tested.
+          if ! gh api "repos/${GH_REPO}/git/refs" -f ref="refs/tags/${next_tag}" -f sha="${sha}" > /dev/null 2>&1; then
+            tag_ref="$(gh api "repos/${GH_REPO}/git/ref/tags/${next_tag}")"
+            tagged_sha="$(jq -r .object.sha <<< "${tag_ref}")"
+            if [ "$(jq -r .object.type <<< "${tag_ref}")" = "tag" ]; then
+              tagged_sha="$(gh api "repos/${GH_REPO}/git/tags/${tagged_sha}" --jq .object.sha)"
+            fi
+            if [ "${tagged_sha}" != "${sha}" ]; then
+              echo "::error::Tag ${next_tag} points to ${tagged_sha}, not ${RELEASE_BRANCH} (${sha}). Publish its release or delete the tag, then rerun."
+              exit 1
+            fi
+          fi
+
           # Build notes in the existing style: "- <PR title> (#<PR number>)".
           # generate-notes returns "* <title> by @<user> in <PR url>" lines.
           gh api "repos/${GH_REPO}/releases/generate-notes" \
             -f tag_name="${next_tag}" \
-            -f target_commitish="${RELEASE_BRANCH}" \
+            -f target_commitish="${sha}" \
             -f previous_tag_name="${latest_tag}" \
             --jq .body > generated-notes.md
           sed -nE 's#^\* (.*) by @[^ ]+ in https://github\.com/[^ ]+/pull/([0-9]+)$#- \1 (\#\2)#p' \
             generated-notes.md > notes.md
           if [ ! -s notes.md ]; then
             # Only direct commits (no PRs) since the last release.
-            echo "- Changes since ${latest_tag}: ${GITHUB_SERVER_URL}/${GH_REPO}/compare/${latest_tag}...${RELEASE_BRANCH}" > notes.md
+            echo "- Changes since ${latest_tag}: ${GITHUB_SERVER_URL}/${GH_REPO}/compare/${latest_tag}...${sha}" > notes.md
           fi
-
-          # The develop-v2 commit being released (and staged below).
-          sha="$(gh api "repos/${GH_REPO}/commits/${RELEASE_BRANCH}" --jq .sha)"
 
           url="$(gh release create "${next_tag}" \
             --draft \
-            --target "${RELEASE_BRANCH}" \
+            --target "${sha}" \
             --title "${next_tag}" \
             --notes-file notes.md)"
 
@@ -145,10 +156,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          # force=false: fails (rather than overwrites) if staging-v2 has
-          # commits that are not on develop-v2.
+          # force=true: staging-v2 always mirrors the drafted release commit,
+          # overwriting any commits on it that are not on develop-v2.
           gh api --method PATCH "repos/${GH_REPO}/git/refs/heads/${STAGING_BRANCH}" \
-            -f sha="${SHA}" -F force=false
+            -f sha="${SHA}" -F force=true
 
           gh workflow run deploy-staging.yml --ref "${STAGING_BRANCH}"
           echo "Pushed ${SHA} to ${STAGING_BRANCH} and dispatched the staging deploy." >> "${GITHUB_STEP_SUMMARY}"

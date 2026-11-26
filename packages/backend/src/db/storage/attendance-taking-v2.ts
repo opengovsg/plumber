@@ -9,6 +9,7 @@ import {
 } from './constants'
 
 const ATTENDANCE_TAKING_ID = '2ba52802-0de0-4dc7-9d2c-b68a21db3492'
+const TILE_STEP_POSITION = 2
 
 export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
   id: ATTENDANCE_TAKING_ID,
@@ -27,22 +28,43 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
-      position: 2,
+      position: TILE_STEP_POSITION,
       appKey: 'tiles',
       eventKey: 'findSingleRow',
+      templateData: {
+        name: 'Event attendance',
+        columns: ['Email', 'Name', 'Attended?', 'Remarks'],
+        rowData: [
+          {
+            Email: 'jane@email.com',
+            Name: 'Jane Doe',
+          },
+          {
+            Email: 'john@email.com',
+            Name: 'John Doe',
+            'Attended?': 'Yes',
+          },
+          {
+            Email: 'jack@email.com',
+            Name: 'Jack Doe',
+            'Attended?': 'Yes',
+            Remarks: 'Walk-in, not from pre-populated list',
+          },
+        ],
+      },
       sampleUrl:
         'https://plumber.gov.sg/tiles/c77bc8fc-e1ca-4300-a50d-7f2933b9e5b4/a4ca3902-f0ef-41e1-9f5d-45c602c04d50',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
       parameters: {
         filters: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Email'),
             value: CREATE_TEMPLATE_STEP_VARIABLE('Replace with email response'),
             operator: 'equals',
           },
         ],
         returnLastRow: true,
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
     {
@@ -73,27 +95,30 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       parameters: {
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Email'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with email response',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Name'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Name'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with name response',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Attended?'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Attended?',
+            ),
             cellValue: 'Yes',
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Remarks'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Remarks'),
             cellValue: 'Walk-in, not from pre-populated list',
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
     {
@@ -125,33 +150,15 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
         rowId: CREATE_TEMPLATE_STEP_VARIABLE('rowId', 2),
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Attended?'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Attended?',
+            ),
             cellValue: 'Yes',
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
   ],
-  tileTemplateData: {
-    name: 'Event attendance',
-    columns: ['Email', 'Name', 'Attended?', 'Remarks'],
-    rowData: [
-      {
-        Email: 'jane@email.com',
-        Name: 'Jane Doe',
-      },
-      {
-        Email: 'john@email.com',
-        Name: 'John Doe',
-        'Attended?': 'Yes',
-      },
-      {
-        Email: 'jack@email.com',
-        Name: 'Jack Doe',
-        'Attended?': 'Yes',
-        Remarks: 'Walk-in, not from pre-populated list',
-      },
-    ],
-  },
 }

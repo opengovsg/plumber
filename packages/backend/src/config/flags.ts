@@ -12,6 +12,11 @@ export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
 
 /**
+ * Marks power users. Must match the frontend's `useIsPlumPro` hook.
+ */
+export const PLUMPRO_FEATURE_FLAG = 'plumpro'
+
+/**
  * App flags regex
  */
 export const APP_FLAG_REGEX = /^app_.*$/

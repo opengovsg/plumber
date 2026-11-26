@@ -186,6 +186,15 @@ async function start() {
   }
 
   const ports = await getLinkedWorktreePorts()
+  // Docker starts here, only when an agent runs the app.
+  const services = spawnSync(
+    process.execPath,
+    ['scripts/ensure-dev-services.mjs'],
+    { cwd: repoRoot, stdio: ['ignore', 2, 2] },
+  )
+  if (services.status !== 0) {
+    process.exit(1)
+  }
   for (const port of [ports.backendPort, ports.frontendPort]) {
     if (await isPortTaken(port)) {
       fail(

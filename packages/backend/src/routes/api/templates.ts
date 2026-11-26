@@ -1,8 +1,9 @@
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
-import { TEMPLATES } from '@/db/storage'
+import { getVisibleTemplates } from '@/helpers/get-visible-templates'
 import logger from '@/helpers/logger'
+import { shortlistTemplates } from '@/helpers/shortlist-templates'
 import {
   searchTemplates,
   TemplateSearchNotConfiguredError,
@@ -26,9 +27,10 @@ router.post('/search', rateLimitApi, async (req, res) => {
   }
 
   try {
+    const { query } = parsed.data
     const templateIds = await searchTemplates({
-      query: parsed.data.query,
-      templates: TEMPLATES,
+      query,
+      templates: shortlistTemplates(query, await getVisibleTemplates()),
     })
     res.json({ data: { templateIds } })
   } catch (error) {

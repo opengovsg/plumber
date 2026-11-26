@@ -374,6 +374,31 @@ describe('mrf-submission action', () => {
       expect(result).toBeUndefined()
     })
 
+    it('should continue when mrf step is a hybrid step', async () => {
+      const $ = createMockGlobalVariable()
+      $.step.parameters.mrf = {
+        ...($.step.parameters.mrf as Record<string, unknown>),
+        type: 'hybrid',
+      }
+      setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          workflowContent: {
+            submittedSteps: [
+              {
+                isApproval: false,
+                submittedAt: '2024-01-01',
+              },
+            ],
+          },
+        },
+      })
+
+      const result = await run($)
+
+      expect(result).toBeUndefined()
+    })
+
     it('should continue when mrf step is approved', async () => {
       const $ = createMockGlobalVariable()
       setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })

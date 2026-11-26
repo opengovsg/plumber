@@ -1,14 +1,16 @@
 import { TEMPLATES } from '@/db/storage'
+import { getVisibleTemplates } from '@/helpers/get-visible-templates'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getTemplates: NonNullable<QueryResolvers['getTemplates']> = (
+const getTemplates: NonNullable<QueryResolvers['getTemplates']> = async (
   _parent,
   params,
 ) => {
   const tag = params?.tag
   if (!tag) {
-    return TEMPLATES // retrieve all templates if tag is not present
+    // Community templates have no tags, so only an untagged query includes them.
+    return getVisibleTemplates()
   }
 
   return TEMPLATES.filter((template) => {

@@ -1,25 +1,14 @@
 import '@/config/datetime'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { posthogHost, posthogProjectToken } from '@plumber/shared'
-import { z } from 'zod'
 
 import appEnvConfig from './load-app-env'
 import { requireEnv } from './require-env'
 
-// IMPORTANT: ECS runs `node` directly, so npm_package_version is unset there.
-const getVersion = (): string =>
-  process.env.npm_package_version ??
-  z
-    .object({ version: z.string() })
-    .parse(
-      JSON.parse(
-        readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8'),
-      ),
-    ).version
+// Set from the latest release tag at image build. package.json versions are not bumped.
+const getVersion = (): string => process.env.APP_VERSION || 'dev'
 
 export type CoreConfig = {
   port: string

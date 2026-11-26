@@ -32,7 +32,7 @@ Run from [packages/backend/](../../packages/backend/) or via `pnpm --filter back
 
 ## App plugin model
 
-Every integration lives under [packages/backend/src/apps/<key>/](../../packages/backend/src/apps/) and default-exports an `IApp` (`@plumber/types`) describing metadata, `triggers`, `actions`, optional `auth`, and optional `queue`. New apps must also be registered in [packages/backend/src/apps/index.ts](../../packages/backend/src/apps/index.ts). Triggers/actions are individual modules combined via an `index.ts` array (see e.g. [packages/backend/src/apps/postman/actions/index.ts](../../packages/backend/src/apps/postman/actions/index.ts)). Static assets in each app's `assets/` are served at `/apps/<key>/assets/...` via [packages/backend/src/helpers/app-assets-handler.ts](../../packages/backend/src/helpers/app-assets-handler.ts).
+Integrations live under [packages/backend/src/apps/](../../packages/backend/src/apps/). [apps.md](apps.md) holds the rules for adding or changing an app, trigger or action, and loads when you edit those files.
 
 ## Flow execution pipeline
 
@@ -78,6 +78,9 @@ The backend has three error families. Do not add a new family.
 ### Which error to throw
 
 - A step failure the user sees: throw `StepError` with a `kind`.
+  - Throw it only from a step's entry point (e.g. an action's `run` or `runBatch`).
+  - A shared helper returns a typed result or throws a non-`StepError` instead. Callers outside a step (e.g. dynamic data) also use it.
+  - For the pattern, see `parseAuthData` and its caller `getAuthDataOrThrow` in `apps/m365-excel/`.
 - A user-visible failure outside a step: throw `UserFacingError`, in GraphQL resolvers and REST endpoints (e.g. AI builder) alike.
 - Exception: a GraphQL resolver that needs a client error code (e.g. `BAD_USER_INPUT`) throws a class from `errors/graphql-errors/`. They extend the library type `GraphQLError` (see "Library error types"), so they are not a new family.
 - Anything else counts as a Plumber bug. This includes a raw `HttpError` that ran out of retries.

@@ -11,7 +11,7 @@
     "setup": "node scripts/with-human-dev-env.mjs --env setup pnpm --filter backend run setup",
     "setup:git": "git config --local core.hooksPath .githooks",
     "dev": "node scripts/with-human-dev-env.mjs turbo watch dev worker --continue",
-    "dev:sample-env": "node scripts/with-sample-env.mjs node node_modules/turbo/bin/turbo watch dev worker --continue",
+    "dev:sample-env": "node scripts/ensure-dev-services.mjs && node scripts/with-sample-env.mjs node node_modules/turbo/bin/turbo watch dev worker --continue",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
     "start": "pnpm --filter backend run start",
@@ -52,5 +52,5 @@
     "vitest": "^4.1.11",
     "wait-on": "^7.2.0"
   },
-  "version": "1.106.0"
+  "version": "1.108.0"
 }

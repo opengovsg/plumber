@@ -1,4 +1,5 @@
 import { useMutation } from '@apollo/client'
+import { usePostHog } from 'posthog-js/react'
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -8,9 +9,9 @@ import {
   FLOW_CREATE_MODE,
   useCreateFlowContext,
 } from '@/pages/Flows/contexts/CreateFlowContext'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 export const useFlowCreation = () => {
+  const posthog = usePostHog()
   const navigate = useNavigate()
   const { createMode } = useCreateFlowContext()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -32,14 +33,14 @@ export const useFlowCreation = () => {
           },
         },
       })
-      if (response.data?.createFlow && isPostHogConfigured) {
+      if (response.data?.createFlow) {
         posthog.capture('flow_created')
       }
       navigate(URLS.FLOW_EDITOR(response.data?.createFlow?.id), {
         replace: true,
       })
     },
-    [createFlow, navigate],
+    [createFlow, navigate, posthog],
   )
 
   const handleModeSubmit = useCallback(

@@ -1,9 +1,10 @@
-import { IFlowConfig } from '@plumber/types'
+import { IFlowConfig, IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 
 import StepError from '@/errors/step'
 
-import { processAction } from '../action'
+import { processAction, setActionOutputError } from '../action'
 
 const mocks = vi.hoisted(() => {
   const executionStep = {
@@ -214,5 +215,67 @@ describe('processAction', () => {
       expect(result.executionError).toBeInstanceOf(StepError)
       expect(result.executionError).toMatchObject({ kind: 'internal' })
     })
+  })
+})
+
+describe('setActionOutputError', () => {
+  function makeGlobalVariable(): IGlobalVariable {
+    return {
+      actionOutput: { data: null, error: null },
+    } as unknown as IGlobalVariable
+  }
+
+  it.each<[string, Error]>([
+    [
+      'an array',
+      z.object({ a: z.string() }).safeParse(undefined).error as z.ZodError,
+    ],
+    ['a number', new Error('404')],
+    ['a string', new Error('"x"')],
+    ['null', new Error('null')],
+  ])('stores the raw message when it parses to %s', (_, error: Error) => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError($, error)
+
+    expect($.actionOutput.error).toEqual({ error: error.message })
+  })
+
+  it('stores the parsed object when the message is a JSON object', () => {
+    const $ = makeGlobalVariable()
+    const error = new StepError({
+      name: 'Bad input',
+      solution: 'Fix it',
+      kind: 'config',
+    })
+
+    setActionOutputError($, error)
+
+    expect($.actionOutput.error).toEqual(JSON.parse(error.message))
+  })
+
+  it.each([
+    ['an object', { a: 1 }],
+    ['an array', [1]],
+  ])('drops a parsed message field that is %s', (_, message: unknown) => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError(
+      $,
+      new Error(JSON.stringify({ message, kind: 'internal' })),
+    )
+
+    expect($.actionOutput.error).toEqual({ kind: 'internal' })
+  })
+
+  it('keeps a parsed message field that is a string', () => {
+    const $ = makeGlobalVariable()
+
+    setActionOutputError(
+      $,
+      new Error(JSON.stringify({ message: 'oops', kind: 'internal' })),
+    )
+
+    expect($.actionOutput.error).toEqual({ message: 'oops', kind: 'internal' })
   })
 })

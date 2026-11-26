@@ -1,0 +1,105 @@
+import { BaseFlow, BaseFlowCollaborator } from '@plumber/backend-models'
+import { z } from 'zod'
+
+import type { SilverTable } from '../silver-table'
+
+const flowAccessRowSchema = z.object({
+  user_id: z.string(),
+  flow_id: z.string(),
+  role: z.string(),
+  created_at: z.date(),
+  deleted_at: z.date().nullable(),
+})
+
+export type FlowAccessRow = z.infer<typeof flowAccessRowSchema>
+
+type CollaboratorOnFlow = BaseFlowCollaborator & {
+  flowDeletedAt: string | null
+}
+
+// An owner row is the current owner dated from the pipe's creation. Join flow_transfer for handovers.
+export function toOwnerAccessRow(flow: BaseFlow): unknown {
+  return {
+    user_id: flow.userId,
+    flow_id: flow.id,
+    role: 'owner',
+    created_at: flow.createdAt,
+    deleted_at: flow.deletedAt,
+  }
+}
+
+function earlierOf(a: string | null, b: string | null): string | null {
+  if (a === null || b === null) {
+    return a ?? b
+  }
+  return new Date(a).getTime() <= new Date(b).getTime() ? a : b
+}
+
+// Removing a collaborator sets deleted_at and keeps the row, so past access stays countable.
+// Deleting a pipe leaves its collaborator rows untouched, so their access ends with the pipe.
+// IMPORTANT: a removal racing the pipe deletion can stamp the collaborator row after the pipe.
+export function toCollaboratorAccessRow(
+  collaborator: CollaboratorOnFlow,
+): unknown {
+  return {
+    user_id: collaborator.userId,
+    flow_id: collaborator.flowId,
+    role: collaborator.role,
+    created_at: collaborator.createdAt,
+    deleted_at: earlierOf(collaborator.deletedAt, collaborator.flowDeletedAt),
+  }
+}
+
+function byFlowThenCreated(a: FlowAccessRow, b: FlowAccessRow): number {
+  if (a.flow_id !== b.flow_id) {
+    return a.flow_id < b.flow_id ? -1 : 1
+  }
+  return a.created_at.getTime() - b.created_at.getTime()
+}
+
+export const flowAccessTable: SilverTable<FlowAccessRow> = {
+  name: 'flow_access',
+  columns: {
+    user_id: 'STRING',
+    flow_id: 'STRING',
+    role: 'STRING',
+    created_at: 'TIMESTAMP',
+    deleted_at: 'TIMESTAMP',
+  },
+  // flow_collaborators holds editors and viewers only. The owner comes from flows.user_id.
+  fetchRows: async (db) => {
+    // One snapshot, so a transfer committing between the two reads cannot show its pipe half-moved.
+    const { flows, collaborators } = await db.transaction(
+      async (trx) => ({
+        flows: await BaseFlow.query(trx)
+          .withSoftDeleted()
+          .whereNotNull('user_id')
+          .select('id', 'user_id', 'created_at', 'deleted_at'),
+        collaborators: await BaseFlowCollaborator.query(trx)
+          .withSoftDeleted()
+          .join('flows', 'flows.id', 'flow_collaborators.flow_id')
+          .select(
+            'flow_collaborators.user_id',
+            'flow_collaborators.flow_id',
+            'flow_collaborators.role',
+            'flow_collaborators.created_at',
+            'flow_collaborators.deleted_at',
+            'flows.deleted_at as flow_deleted_at',
+          )
+          .castTo<CollaboratorOnFlow[]>(),
+      }),
+      { isolationLevel: 'repeatable read' },
+    )
+    // A transfer to a collaborator soft-deletes their collaborator row. The owner row stands for them.
+    const ownerByFlow = new Map(flows.map((flow) => [flow.id, flow.userId]))
+    const rows = z
+      .array(flowAccessRowSchema)
+      .parse([
+        ...flows.map(toOwnerAccessRow),
+        ...collaborators
+          .filter((row) => ownerByFlow.get(row.flowId) !== row.userId)
+          .map(toCollaboratorAccessRow),
+      ])
+    return rows.sort(byFlowThenCreated)
+  },
+}

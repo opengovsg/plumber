@@ -3,20 +3,27 @@ export const TILES_SAMPLE_URL_DESCRIPTION = 'View a sample table'
 
 // placeholder keys to be used for the placeholder replacement map
 export const USER_EMAIL_KEY = 'user_email'
-export const TILE_ID_KEY = 'tile_table_id'
-export const TILE_COL_DATA_KEY = 'tile_col_data'
+// Suffixed with the position of the step whose templateData created the tile.
+export const TILE_ID_KEY = (position: number) => `tile_table_id_${position}`
+export const TILE_COL_DATA_KEY = (position: number) =>
+  `tile_col_data_${position}`
+// Converted flows refer to columns by index, since user column names can break placeholders.
+export const TILE_COL_POS_KEY = (position: number) => `tile_col_pos_${position}`
 export const STEP_ID_KEY = (position: number) => `step_id_${position}`
 
 /**
  * These placeholders are constructed by the respective keys above
  * e.g. user_email becomes <<user_email>>
- * nested placeholders could exist e.g. <<tile_col_data.email>>
+ * nested placeholders could exist e.g. <<tile_col_data_2.email>>
  * Create your own placeholder here if you have additional ones
  */
 export const USER_EMAIL_PLACEHOLDER = `<<${USER_EMAIL_KEY}>>`
-export const TILE_ID_PLACEHOLDER = `<<${TILE_ID_KEY}>>`
-export const TILE_COL_DATA_PLACEHOLDER = (colName: string) =>
-  `<<${TILE_COL_DATA_KEY}.${colName}>>`
+export const TILE_ID_PLACEHOLDER = (position: number) =>
+  `<<${TILE_ID_KEY(position)}>>`
+export const TILE_COL_DATA_PLACEHOLDER = (position: number, colName: string) =>
+  `<<${TILE_COL_DATA_KEY(position)}.${colName}>>`
+export const TILE_COL_POS_PLACEHOLDER = (position: number, index: number) =>
+  `<<${TILE_COL_POS_KEY(position)}.${index}>>`
 export const STEP_ID_PLACEHOLDER = (position: number) =>
   `<<${STEP_ID_KEY(position)}>>`
 

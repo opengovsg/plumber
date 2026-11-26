@@ -27,7 +27,9 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - retentionDays)
 
-  let cursor: string | null = null
+  // Pages oldest first, so a run cut short by the runtime limit leaves only newer rows behind.
+  // createdAt is Postgres text, because a JS Date drops microseconds and would re-select the last row.
+  let cursor: { createdAt: string; id: string } | null = null
   let totalArchived = 0
   let totalTestArchived = 0
   let totalSkipped = 0
@@ -62,8 +64,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     // be filtered down to the same deleted-flows set anyway.
     //
     // Note: this subquery is evaluated live per batch, not snapshotted at run
-    // start. A flow soft-deleted mid-run will have its executions picked up on
-    // the next batch (immediately, with no cutoff check). Retries are therefore
+    // start. A flow soft-deleted mid-run will have its executions ahead of the
+    // cursor picked up by later batches, with no cutoff check. Retries are therefore
     // not fully idempotent with respect to the deleted-flows set — but this is
     // harmless since already-archived rows are removed from source, making
     // double-archiving impossible.
@@ -132,14 +134,24 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     // TODO(perf): the batch query still hits `flows` twice via subqueries
     // (deleted_at, archiveDisabled). If batch times climb, add a partial index
     // on `(id) WHERE config->>'archiveDisabled' = 'true'` for the JSONB filter.
-    const batch = (await eligibilityQuery
+    const rows = (await eligibilityQuery
+      .select(
+        archivalDbReader.raw(
+          'executions.created_at::text as "cursorCreatedAt"',
+        ),
+      )
       // Never archive the designated test execution of any flow (deleted or active).
       // LEFT JOIN anti-join: cheaper than NOT IN (subquery) when the flows table grows.
+      // IMPORTANT: it needs the index on flows.test_execution_id. A hash anti-join loses
+      // the index order, and every batch would then sort all executions past the cursor.
       .leftJoin('flows as f_tex', 'executions.id', 'f_tex.test_execution_id')
       .whereNull('f_tex.test_execution_id')
       .modify((qb) => {
         if (cursor) {
-          qb.whereRaw('executions.id > ?::uuid', [cursor])
+          qb.whereRaw(
+            '(executions.created_at, executions.id) > (?::timestamptz, ?::uuid)',
+            [cursor.createdAt, cursor.id],
+          )
         }
       })
       // Exclude flows with archiveDisabled set in flow config. Applies to all
@@ -151,12 +163,24 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           .select('id')
           .whereRaw(`config->>'archiveDisabled' = 'true'`),
       )
-      .orderBy('executions.id')
-      .limit(batchSize)) as ExecutionRow[]
+      .orderBy([
+        { column: 'executions.created_at' },
+        { column: 'executions.id' },
+      ])
+      .limit(batchSize)) as Array<ExecutionRow & { cursorCreatedAt: string }>
 
-    if (!batch.length) {
+    if (!rows.length) {
       break
     }
+
+    // Cursor advances regardless of outcome. Failed executions stay eligible and are
+    // retried on the next scheduled run.
+    const last = rows[rows.length - 1]
+    cursor = { createdAt: last.cursorCreatedAt, id: last.id }
+
+    const batch: ExecutionRow[] = rows.map(
+      ({ cursorCreatedAt: _cursorCreatedAt, ...execution }) => execution,
+    )
 
     let batchArchived = 0
     let batchSkipped = 0
@@ -274,9 +298,6 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       }
     }
 
-    // Cursor advances to the last execution in the batch regardless of outcome.
-    // Failed executions stay eligible and are retried on the next scheduled run.
-    cursor = batch[batch.length - 1].id
     totalArchived += batchArchived
     totalSkipped += batchSkipped
 
@@ -287,6 +308,11 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       cursor,
       durationMs: Date.now() - startedAt,
     })
+
+    // A short batch already read to the end of the index. Another query would repeat that scan.
+    if (rows.length < batchSize) {
+      break
+    }
 
     if (!signal.aborted && sleepMs > 0) {
       await sleep(sleepMs)

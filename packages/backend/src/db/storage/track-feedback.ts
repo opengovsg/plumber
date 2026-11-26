@@ -9,6 +9,7 @@ import {
 } from './constants'
 
 const TRACK_FEEDBACK_ID = 'b237ff81-dbe9-4513-8135-0b59eec2de97'
+const TILE_STEP_POSITION = 2
 
 export const TRACK_FEEDBACK_TEMPLATE: ITemplate = {
   id: TRACK_FEEDBACK_ID,
@@ -26,47 +27,50 @@ export const TRACK_FEEDBACK_TEMPLATE: ITemplate = {
       sampleUrlDescription: FORMSG_SAMPLE_URL_DESCRIPTION,
     },
     {
-      position: 2,
+      position: TILE_STEP_POSITION,
       appKey: 'tiles',
       eventKey: 'createTileRow',
+      templateData: {
+        name: 'Event feedback',
+        columns: ['Rating', 'Reason for rating', 'Email'],
+        rowData: [
+          {
+            Rating: '4',
+            'Reason for rating':
+              'Plumber is good, please continue to make it better!',
+            Email: 'support@plumber.gov.sg',
+          },
+        ],
+      },
       sampleUrl:
         'https://plumber.gov.sg/tiles/18a72737-4a7e-4f90-8bb5-7d65bdac4136/d6f806c0-eb80-451b-872d-6e9a3d434ab2',
       sampleUrlDescription: TILES_SAMPLE_URL_DESCRIPTION,
       parameters: {
         rowData: [
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Rating'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Rating'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with response 1 rating',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Reason for rating'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(
+              TILE_STEP_POSITION,
+              'Reason for rating',
+            ),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with response 2 reason',
             ),
           },
           {
-            columnId: TILE_COL_DATA_PLACEHOLDER('Email'),
+            columnId: TILE_COL_DATA_PLACEHOLDER(TILE_STEP_POSITION, 'Email'),
             cellValue: CREATE_TEMPLATE_STEP_VARIABLE(
               'Replace with response 3 email',
             ),
           },
         ],
-        tableId: TILE_ID_PLACEHOLDER,
+        tableId: TILE_ID_PLACEHOLDER(TILE_STEP_POSITION),
       },
     },
   ],
-  tileTemplateData: {
-    name: 'Event feedback',
-    columns: ['Rating', 'Reason for rating', 'Email'],
-    rowData: [
-      {
-        Rating: '4',
-        'Reason for rating':
-          'Plumber is good, please continue to make it better!',
-        Email: 'support@plumber.gov.sg',
-      },
-    ],
-  },
 }

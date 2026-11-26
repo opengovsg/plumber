@@ -608,18 +608,27 @@ importers:
 
   packages/backend-analytics:
     dependencies:
+      '@aws-sdk/client-cloudwatch-logs':
+        specifier: 3.1027.0
+        version: 3.1027.0
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
         version: 3.1027.0
       '@plumber/backend-models':
         specifier: workspace:*
         version: link:../backend-models
+      '@plumber/shared':
+        specifier: workspace:*
+        version: link:../shared
       hyparquet-writer:
         specifier: 0.16.12
         version: 0.16.12
       knex:
         specifier: 'catalog:'
         version: 2.4.2(pg@8.16.3)(supports-color@8.1.1)
+      luxon:
+        specifier: 'catalog:'
+        version: 2.5.2
       winston:
         specifier: 'catalog:'
         version: 3.17.0
@@ -630,6 +639,9 @@ importers:
       '@opengovsg/testcontainers':
         specifier: 0.2.0
         version: 0.2.0(testcontainers@11.14.0(supports-color@8.1.1))(vitest@4.1.12)(zod@4.6.6)
+      '@types/luxon':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@types/node':
         specifier: 22.18.0
         version: 22.18.0
@@ -1044,9 +1056,6 @@ importers:
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@22.18.0)(rollup@4.59.0)(supports-color@8.1.1)(typescript@5.9.3)(vite@8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0))
-      vite-plugin-package-version:
-        specifier: 1.1.0
-        version: 1.1.0(vite@8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0))
       vite-tsconfig-paths:
         specifier: ^5.1.4
         version: 5.1.4(supports-color@8.1.1)(typescript@5.9.3)(vite@8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0))
@@ -1433,6 +1442,10 @@ packages:
 
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
+
+  '@aws-sdk/client-cloudwatch-logs@3.1027.0':
+    resolution: {integrity: sha512-rz4SW35VSL3gEHM7NNjL6rYLXvvk7p7BjoGu5wcc0dT37hEmRgNzDUbzFUspGkLqXpzZzfFEKvI6KkXBYB0PIw==}
+    engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-cognito-identity@3.1045.0':
     resolution: {integrity: sha512-3OEn8zvtfJoN0jFfjVJ9jF2GVRDL3IjDfk6CAgVTAqjfCVjajiUD0iFAGQ4cOzdcv1LGsZ0b/snJDWalY3OePQ==}
@@ -10445,11 +10458,6 @@ packages:
       vite:
         optional: true
 
-  vite-plugin-package-version@1.1.0:
-    resolution: {integrity: sha512-TPoFZXNanzcaKCIrC3e2L/TVRkkRLB6l4RPN/S7KbG7rWfyLcCEGsnXvxn6qR7fyZwXalnnSN/I9d6pSFjHpEA==}
-    peerDependencies:
-      vite: 8.2.2
-
   vite-tsconfig-paths@5.1.4:
     resolution: {integrity: sha512-cYj0LRuLV2c2sMqhqhGpaO3LretdtMn/BVX4cPLanIZuwwrkVl+lK84E/miEXkCHWXuq65rhNN4rXsBcOB3S4w==}
     peerDependencies:
@@ -11141,6 +11149,53 @@ snapshots:
       '@aws-sdk/types': 3.973.8
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
+
+  '@aws-sdk/client-cloudwatch-logs@3.1027.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/core': 3.974.8
+      '@aws-sdk/credential-provider-node': 3.972.39
+      '@aws-sdk/middleware-host-header': 3.972.10
+      '@aws-sdk/middleware-logger': 3.972.10
+      '@aws-sdk/middleware-recursion-detection': 3.972.11
+      '@aws-sdk/middleware-user-agent': 3.972.38
+      '@aws-sdk/region-config-resolver': 3.972.13
+      '@aws-sdk/types': 3.973.8
+      '@aws-sdk/util-endpoints': 3.996.8
+      '@aws-sdk/util-user-agent-browser': 3.972.10
+      '@aws-sdk/util-user-agent-node': 3.973.24
+      '@smithy/config-resolver': 4.4.17
+      '@smithy/core': 3.24.1
+      '@smithy/eventstream-serde-browser': 4.2.13
+      '@smithy/eventstream-serde-config-resolver': 4.3.13
+      '@smithy/eventstream-serde-node': 4.2.13
+      '@smithy/fetch-http-handler': 5.3.17
+      '@smithy/hash-node': 4.2.14
+      '@smithy/invalid-dependency': 4.2.14
+      '@smithy/middleware-content-length': 4.2.14
+      '@smithy/middleware-endpoint': 4.4.32
+      '@smithy/middleware-retry': 4.5.7
+      '@smithy/middleware-serde': 4.2.20
+      '@smithy/middleware-stack': 4.2.14
+      '@smithy/node-config-provider': 4.3.14
+      '@smithy/node-http-handler': 4.6.1
+      '@smithy/protocol-http': 5.3.14
+      '@smithy/smithy-client': 4.12.13
+      '@smithy/types': 4.14.3
+      '@smithy/url-parser': 4.2.14
+      '@smithy/util-base64': 4.3.2
+      '@smithy/util-body-length-browser': 4.2.2
+      '@smithy/util-body-length-node': 4.2.3
+      '@smithy/util-defaults-mode-browser': 4.3.49
+      '@smithy/util-defaults-mode-node': 4.2.54
+      '@smithy/util-endpoints': 3.4.2
+      '@smithy/util-middleware': 4.2.14
+      '@smithy/util-retry': 4.3.8
+      '@smithy/util-utf8': 4.5.2
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - aws-crt
 
   '@aws-sdk/client-cognito-identity@3.1045.0':
     dependencies:
@@ -22161,10 +22216,6 @@ snapshots:
       - '@types/node'
       - rollup
       - supports-color
-
-  vite-plugin-package-version@1.1.0(vite@8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0)):
-    dependencies:
-      vite: 8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0)
 
   vite-tsconfig-paths@5.1.4(supports-color@8.1.1)(typescript@5.9.3)(vite@8.2.2(@types/node@22.18.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0)):
     dependencies:
