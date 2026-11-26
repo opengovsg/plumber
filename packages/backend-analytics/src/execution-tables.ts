@@ -396,21 +396,23 @@ export async function writeExecutionHistory({
   )
   const written = dayTables.map(() => 0)
   const failed: string[] = []
+  // Checked before every table write, since each write can take a whole query timeout.
+  const mustStop = () =>
+    signal?.aborted === true || failed.length >= EXECUTION_HISTORY_MAX_FAILURES
   try {
-    for (const day of order) {
+    days: for (const day of order) {
       if (!missing.some((days) => days.has(day))) {
         continue
       }
-      if (
-        clock() >= deadline ||
-        signal?.aborted ||
-        failed.length >= EXECUTION_HISTORY_MAX_FAILURES
-      ) {
+      if (clock() >= deadline || mustStop()) {
         break
       }
       for (const [i, table] of dayTables.entries()) {
         if (!missing[i].has(day)) {
           continue
+        }
+        if (mustStop()) {
+          break days
         }
         try {
           await writeExecutionDay({

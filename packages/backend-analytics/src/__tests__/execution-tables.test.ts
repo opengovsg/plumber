@@ -446,20 +446,26 @@ describe('writeExecutionHistory', () => {
     ).toEqual(['day=2026-11-07.v1.json', 'day=2026-11-09.v1.json'])
   })
 
-  it('stops for the night after repeated failures', async () => {
+  it('stops for the night after repeated failures, even mid-day', async () => {
     const bucket = memoryBucket()
-    const table = day('execution_daily')
-    bucket.seed(
-      'execution_daily',
-      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'),
-    )
-    vi.mocked(table.fetchDay).mockRejectedValue(new Error('reader down'))
+    const tables = ['execution_daily', 'execution_step_daily'].map((name) => {
+      bucket.seed(name, sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'))
+      const table = day(name)
+      vi.mocked(table.fetchDay).mockRejectedValue(new Error('reader down'))
+      return table
+    })
 
-    await expect(history(bucket, [table])).rejects.toThrow(
+    await expect(history(bucket, tables)).rejects.toThrow(
       'Execution history failed',
     )
 
-    expect(table.fetchDay).toHaveBeenCalledTimes(EXECUTION_HISTORY_MAX_FAILURES)
+    // Two tables fail on the first day, so the cap is reached partway through the second.
+    expect(
+      tables.reduce(
+        (calls, table) => calls + vi.mocked(table.fetchDay).mock.calls.length,
+        0,
+      ),
+    ).toBe(EXECUTION_HISTORY_MAX_FAILURES)
   })
 
   it('stops between days once the task is asked to stop', async () => {
