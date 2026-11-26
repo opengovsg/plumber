@@ -1,6 +1,7 @@
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { loadAccessibleStep } from '@/services/access'
 import { deleteStepsInTransaction } from '@/services/delete-steps'
 
 import { PublishedPipeError } from './published-pipe-error'
@@ -21,10 +22,13 @@ export async function deleteStepService({
   return Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
-    const step = await user
-      .withAccessibleSteps({ requiredRole: 'editor', trx })
-      .withGraphFetched('flow')
-      .findOne({ 'steps.id': stepId, 'steps.flow_id': pipeId })
+    const step = await loadAccessibleStep({
+      user,
+      stepId,
+      flowId: pipeId,
+      role: 'editor',
+      trx,
+    })
 
     if (!step) {
       throw new Error('Step not found')
