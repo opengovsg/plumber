@@ -125,7 +125,9 @@ describe('M365 request error handlers', () => {
         expect(error).toBeInstanceOf(RetriableError)
         expect(error.delayType).toEqual('step')
         expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
-        expect(error.message).toEqual('Retrying HTTP 404 from M365 Excel')
+        expect(JSON.parse(error.message).error).toEqual(
+          'Retrying HTTP 404 from M365 Excel',
+        )
         expect(error.kind).toBe('third-party')
       })
     expect(mocks.logError).toHaveBeenCalledWith(
@@ -231,7 +233,9 @@ describe('M365 request error handlers', () => {
       .catch((error): void => {
         expect(error).toBeInstanceOf(RetriableError)
         expect(error.delayType).toEqual('queue')
-        expect(error.message).toEqual('Rate limited by Microsoft Graph.')
+        expect(JSON.parse(error.message).error).toEqual(
+          'Rate limited by Microsoft Graph.',
+        )
         expect(error.kind).toBe('internal')
       })
     expect(mocks.logError).toHaveBeenCalledWith(
@@ -251,7 +255,9 @@ describe('M365 request error handlers', () => {
         expect(error).toBeInstanceOf(RetriableError)
         expect(error.delayInMs).toEqual(123000)
         expect(error.delayType).toEqual('group')
-        expect(error.message).toEqual('Retrying HTTP 429 from Excel endpoint')
+        expect(JSON.parse(error.message).error).toEqual(
+          'Retrying HTTP 429 from Excel endpoint',
+        )
         expect(error.kind).toBe('internal')
       })
   })
@@ -266,7 +272,9 @@ describe('M365 request error handlers', () => {
       .catch((error): void => {
         expect(error).toBeInstanceOf(RetriableError)
         expect(error.delayType).toEqual('queue')
-        expect(error.message).toEqual('Bandwidth limited by Microsoft Graph.')
+        expect(JSON.parse(error.message).error).toEqual(
+          'Bandwidth limited by Microsoft Graph.',
+        )
         expect(error.kind).toBe('internal')
       })
     expect(mocks.logError).toHaveBeenCalledWith(

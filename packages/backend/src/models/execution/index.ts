@@ -1,7 +1,7 @@
 import Base from '../base'
 import ExecutionStep from '../execution-step'
 import Flow from '../flow'
-import BaseExecution, { type ExecutionStatus } from './base'
+import BaseExecution from './base'
 
 class Execution extends BaseExecution {
   flow!: Flow
@@ -26,8 +26,29 @@ class Execution extends BaseExecution {
     },
   })
 
-  static async setStatus(executionId: string, status: ExecutionStatus) {
-    return Execution.query().findById(executionId).patch({ status })
+  /**
+   * Returns the execution only when this call changes it from pending, so the SLI counts each end once.
+   *
+   * IMPORTANT: one execution can reach here more than once (e.g. parallel for-each iterations).
+   */
+  static async setStatus(
+    executionId: string,
+    status: 'success' | 'failure',
+  ): Promise<Pick<Execution, 'id' | 'testRun'> | undefined> {
+    const [execution] = await Execution.query()
+      .patch({ status })
+      .where('id', executionId)
+      .whereNull('status')
+      .returning(['id', 'test_run'])
+
+    // A for-each retry can succeed after another iteration failed the execution, and users must see that success.
+    if (!execution && status === 'success') {
+      await Execution.query()
+        .patch({ status })
+        .where('id', executionId)
+        .where('status', 'failure')
+    }
+    return execution
   }
 }
 

@@ -1,6 +1,11 @@
 import { IJSONObject, IStepError, StepErrorKind } from '@plumber/types'
+import { z } from 'zod'
 
 import RetriableError from './retriable-error'
+
+const savedKindSchema = z.object({
+  kind: z.enum(['config', 'third-party', 'internal']),
+})
 
 //
 // Some generic solutions for common errors
@@ -48,6 +53,14 @@ export function getStepErrorKind(error: unknown): StepErrorKind {
     return error.kind
   }
   return 'internal'
+}
+
+/**
+ * Reads the kind a StepError saved into `errorDetails`, for end points that hold no error object.
+ */
+export function getErrorDetailsKind(errorDetails: unknown): StepErrorKind {
+  const result = savedKindSchema.safeParse(errorDetails)
+  return result.success ? result.data.kind : 'internal'
 }
 
 /**
