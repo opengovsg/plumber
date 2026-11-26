@@ -1,6 +1,10 @@
 import { URL } from 'url'
 
 import {
+  type JSONSchema,
+  type ModelOptions,
+  type Pojo,
+  type QueryContext,
   raw,
   RelatedQueryBuilder,
   type StaticHookArguments,
@@ -10,6 +14,7 @@ import {
 
 import apps from '@/apps'
 import appConfig from '@/config/app'
+import { assertStepParametersWithinLimits } from '@/helpers/step-parameter-limits'
 
 import Base from '../base'
 import Connection from '../connection'
@@ -228,6 +233,31 @@ class Step extends BaseStep {
           })
       }
     }
+  }
+
+  // Runs before Objection's recursive validation and clone of the input.
+  $beforeValidate(
+    jsonSchema: JSONSchema,
+    json: Pojo,
+    opt: ModelOptions,
+  ): JSONSchema {
+    assertStepParametersWithinLimits(json.parameters)
+    return super.$beforeValidate(jsonSchema, json, opt)
+  }
+
+  // IMPORTANT: also check in the write hooks. Model instances skip validation,
+  // and the static beforeUpdate below can be bypassed.
+  async $beforeInsert(queryContext: QueryContext): Promise<void> {
+    assertStepParametersWithinLimits(this.parameters)
+    await super.$beforeInsert(queryContext)
+  }
+
+  async $beforeUpdate(
+    opts: ModelOptions,
+    queryContext: QueryContext,
+  ): Promise<void> {
+    assertStepParametersWithinLimits(this.parameters)
+    await super.$beforeUpdate(opts, queryContext)
   }
 
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {

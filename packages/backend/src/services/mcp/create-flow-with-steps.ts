@@ -12,6 +12,7 @@ import {
   pinEndStep,
   validateEndStepWrite,
 } from '@/apps/toolbox/common/validate-end-step'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { UserFacingError } from '@/errors/user-facing-error'
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
 import {
@@ -381,6 +382,10 @@ export async function createFlowWithStepsService({
           trx,
         )
       } catch (error) {
+        // A retry cannot fix an oversized step, so keep the cap message.
+        if (error instanceof BadUserInputError) {
+          throw error
+        }
         logger.error('create_pipe: could not create the MRF stage steps', {
           error: error instanceof Error ? error.message : String(error),
         })

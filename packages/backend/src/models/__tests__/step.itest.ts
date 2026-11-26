@@ -193,4 +193,96 @@ describe('step model', () => {
       expect(updatedFlow.updatedBy).toBe(updatedBy)
     })
   })
+
+  describe('parameter limits', () => {
+    const tooManyKeys = Object.fromEntries(
+      Array.from({ length: 5_001 }, (_, i) => [`key${i}`, 'v']),
+    )
+    const tooLarge = 'Step configuration is too large.'
+
+    it('rejects an insert over the limits', async () => {
+      await expect(
+        Step.query().insert({
+          flowId,
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
+          type: 'action',
+          position: 2,
+          parameters: tooManyKeys,
+        }),
+      ).rejects.toThrow(tooLarge)
+    })
+
+    it('rolls back a related batch insert when one step is over the limits', async () => {
+      const flow = await Flow.query().findById(flowId).throwIfNotFound()
+      await expect(
+        Step.transaction(async (trx) =>
+          flow.$relatedQuery('steps', trx).insert([
+            { type: 'action', position: 2, parameters: { ok: 'v' } },
+            { type: 'action', position: 3, parameters: tooManyKeys },
+          ]),
+        ),
+      ).rejects.toThrow(tooLarge)
+
+      const steps = await Step.query().where('flow_id', flowId)
+      expect(steps).toHaveLength(1)
+    })
+
+    it('rejects a patch over the limits', async () => {
+      await expect(
+        Step.query().findById(stepId).patch({ parameters: tooManyKeys }),
+      ).rejects.toThrow(tooLarge)
+    })
+
+    it('rejects patchAndFetchById over the limits', async () => {
+      await expect(
+        Step.query().patchAndFetchById(stepId, { parameters: tooManyKeys }),
+      ).rejects.toThrow(tooLarge)
+    })
+
+    it('rejects a patch over the limits that bypasses the published check', async () => {
+      await expect(
+        Step.query()
+          .context({ shouldBypassBeforeUpdateHook: true })
+          .findById(stepId)
+          .patch({ parameters: tooManyKeys }),
+      ).rejects.toThrow(tooLarge)
+    })
+
+    it('rejects nesting deep enough to overflow recursive validation', async () => {
+      let parameters: Record<string, unknown> = { leaf: 'v' }
+      for (let i = 0; i < 100_000; i++) {
+        parameters = { child: parameters }
+      }
+      // Inserts deep-clone input during validation. Patches do not.
+      await expect(
+        Step.query().insertAndFetch({
+          flowId,
+          type: 'action',
+          position: 2,
+          parameters,
+        }),
+      ).rejects.toThrow(tooLarge)
+    })
+
+    it('still updates other columns of a legacy row over the limits', async () => {
+      await Step.knex()
+        .table('steps')
+        .where('id', stepId)
+        .update({ parameters: JSON.stringify(tooManyKeys) })
+
+      await Step.query().findById(stepId).patch({ status: 'completed' })
+
+      const stored = await Step.query().findById(stepId)
+      expect(stored?.status).toBe('completed')
+    })
+
+    it('stores parameters within the limits', async () => {
+      const parameters = { body: 'hello', rows: [{ a: 1 }] }
+      await Step.query().findById(stepId).patch({ parameters })
+
+      const stored = await Step.query().findById(stepId)
+      expect(stored?.parameters).toEqual(parameters)
+    })
+  })
 })
