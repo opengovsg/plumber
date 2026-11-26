@@ -54,7 +54,12 @@
         }
       ],
       "essential": true,
+      "stopTimeout": 30,
       "environment": [
+        {
+          "name": "DD_DOGSTATSD_FLUSH_INCOMPLETE_BUCKETS",
+          "value": "true"
+        },
         {
           "name": "TZ",
           "value": "Asia/Singapore"
