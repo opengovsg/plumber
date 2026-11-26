@@ -5,6 +5,7 @@ import config from '../../../knexfile'
 import * as executionStepsAppKeyKey from '../migrations/20250804015323_add_composite_index_on_execution_steps'
 import * as executionsCreatedAtId from '../migrations/20261122120000_add-executions-created-at-id-index'
 import * as flowsTestExecutionId from '../migrations/20261122120100_add-flows-test-execution-id-index'
+import * as executionStepsCreatedAt from '../migrations/20261125120000_add-execution-steps-created-at-index'
 
 type Migration = {
   up: (client: Knex) => Promise<void>
@@ -65,6 +66,12 @@ describe.each([
     indexName: 'flows_test_execution_id_index',
     table: 'flows',
     columns: '(test_execution_id)',
+  },
+  {
+    migration: executionStepsCreatedAt as Migration,
+    indexName: 'execution_steps_created_at_index',
+    table: 'execution_steps',
+    columns: '(created_at)',
   },
 ])('$indexName migration', (testCase) => {
   const { migration, indexName, table, columns } = testCase
