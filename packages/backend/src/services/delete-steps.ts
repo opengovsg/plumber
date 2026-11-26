@@ -21,12 +21,14 @@ export async function deleteStepsInTransaction({
   trx,
   flow,
   stepIds,
+  updatedBy,
   traceId,
   includeLegacyIfBlockMembers = false,
 }: {
   trx: Transaction
   flow: Flow
   stepIds: string[]
+  updatedBy: string
   traceId?: string
   includeLegacyIfBlockMembers?: boolean
 }): Promise<void> {
@@ -91,6 +93,7 @@ export async function deleteStepsInTransaction({
       position: 1,
       parameters: {},
       connectionId: undefined,
+      updatedBy,
     })
   } else {
     if (

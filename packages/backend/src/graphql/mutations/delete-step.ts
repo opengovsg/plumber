@@ -53,7 +53,12 @@ const deleteStep: NonNullable<MutationResolvers['deleteStep']> = async (
     const flow = steps[0].flow
     flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
-    await deleteStepsInTransaction({ trx, flow, stepIds: input.ids })
+    await deleteStepsInTransaction({
+      trx,
+      flow,
+      stepIds: input.ids,
+      updatedBy: context.currentUser.id,
+    })
 
     await flow.patchLastUpdated({
       flowId: flow.id,

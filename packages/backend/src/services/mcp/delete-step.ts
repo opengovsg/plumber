@@ -40,6 +40,7 @@ export async function deleteStepService({
       trx,
       flow,
       stepIds: [stepId],
+      updatedBy: user.id,
       traceId,
       includeLegacyIfBlockMembers: true,
     })

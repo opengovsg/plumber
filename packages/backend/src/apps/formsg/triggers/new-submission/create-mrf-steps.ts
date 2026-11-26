@@ -68,6 +68,8 @@ export async function createMrfSteps(
   mrfWorkflow: ParsedMrfWorkflow,
   // Pass the caller's transaction so the stage steps commit with its writes.
   outerTrx?: Transaction,
+  // The user creating the pipe. Trigger syncs leave new stage steps unattributed.
+  updatedBy?: string,
 ) {
   const { trigger, actions } = mrfWorkflow
   const flowId = $.flow?.id
@@ -183,6 +185,7 @@ export async function createMrfSteps(
           stepName,
         },
         version: getStepVersion(MRF_APP_KEY, MRF_KEY),
+        updatedBy,
       })
       newMrfSteps.push(newStep)
       newMrfStepPositionToInsert = newStep.position + 1

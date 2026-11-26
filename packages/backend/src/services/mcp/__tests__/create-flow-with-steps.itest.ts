@@ -681,9 +681,10 @@ describe('createFlowWithStepsService', () => {
 
     it("creates the form's stage steps along with the trigger", async () => {
       mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+      const user = await newUser()
 
       const result = await createFlowWithStepsService({
-        user: await newUser(),
+        user,
         name: 'MRF Pipe',
         steps: [formsgTrigger],
         traceId: 'trace-mrf',
@@ -691,6 +692,11 @@ describe('createFlowWithStepsService', () => {
       })
 
       expect(result.steps.map((s) => s.position)).toEqual([1, 2, 3])
+      expect(result.steps.map((s) => s.updatedBy)).toEqual([
+        user.id,
+        user.id,
+        user.id,
+      ])
       expect(result.steps.map((s) => s.config?.stepName)).toEqual([
         'Requestor',
         'Approval',

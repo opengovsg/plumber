@@ -380,6 +380,7 @@ export async function createFlowWithStepsService({
           { flow: { id: createdFlow.id }, step: { id: insertedSteps[0].id } },
           mrfWorkflow,
           trx,
+          user.id,
         )
       } catch (error) {
         logger.error('create_pipe: could not create the MRF stage steps', {

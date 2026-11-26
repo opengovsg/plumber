@@ -9,6 +9,7 @@ import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.m
 import createAiFlowWithSteps from '@/graphql/mutations/ai/create-flow-with-steps'
 import createFlow from '@/graphql/mutations/create-flow'
 import createStep from '@/graphql/mutations/create-step'
+import deleteStep from '@/graphql/mutations/delete-step'
 import duplicateBranch from '@/graphql/mutations/duplicate-branch'
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'
 import { createFlowFromTemplate } from '@/helpers/flow-templates'
@@ -124,6 +125,16 @@ describe('steps.updated_by', () => {
       })
 
       expect(await updatedByOf(step.id)).toBe(editor.id)
+    })
+
+    it('is set on the blank trigger that replaces a deleted trigger', async () => {
+      await deleteStep(
+        {},
+        { input: { ids: [trigger.id], flow: flowInput() } },
+        context,
+      )
+
+      expect(await updatedByOfFlowSteps(flow.id)).toEqual([editor.id])
     })
   })
 
