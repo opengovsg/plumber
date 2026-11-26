@@ -357,6 +357,7 @@ export function TableVariablePill({
                         fontWeight="normal"
                         color="base.content.medium"
                         mt={1}
+                        aria-live="polite"
                       >
                         {isAtColumnLimit
                           ? `You've selected the maximum of ${MAX_TABLE_VARIABLE_COLUMNS} columns. Unselect one to add another.`

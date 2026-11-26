@@ -14,7 +14,7 @@ import { safeHtml } from './html-utils'
 import logger from './logger'
 
 // Logs instead of failing, because real cell value sizes are unknown.
-const LARGE_OUTPUT_LENGTH = 10 * 1024 * 1024
+const LARGE_OUTPUT_BYTES = 10 * 1024 * 1024
 
 export interface TableColumn {
   id: string
@@ -152,16 +152,6 @@ export function formatTable(
   tableData: unknown,
   options: FormatTableOptions,
 ): FormatTableResult {
-  if (!validateTableData(tableData)) {
-    return {
-      success: false,
-      error: 'invalid_structure',
-      message:
-        'Invalid table data structure. Expected { rows: Array, columns: Array }',
-    }
-  }
-
-  const { rows, columns } = tableData
   const selectedColumnIds = [...new Set(options.selectedColumnIds)]
 
   // IMPORTANT: check before any per-row work, since cost is rows × columns.
@@ -172,13 +162,28 @@ export function formatTable(
       message: `Selected ${selectedColumnIds.length} columns, the limit is ${MAX_TABLE_VARIABLE_COLUMNS}`,
     }
   }
-  if (rows.length > MAX_TABLE_VARIABLE_ROWS) {
+  const sourceRows = (tableData as { rows?: unknown } | null)?.rows
+  if (
+    Array.isArray(sourceRows) &&
+    sourceRows.length > MAX_TABLE_VARIABLE_ROWS
+  ) {
     return {
       success: false,
       error: 'limit_exceeded',
-      message: `Table has ${rows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
+      message: `Table has ${sourceRows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
     }
   }
+
+  if (!validateTableData(tableData)) {
+    return {
+      success: false,
+      error: 'invalid_structure',
+      message:
+        'Invalid table data structure. Expected { rows: Array, columns: Array }',
+    }
+  }
+
+  const { rows, columns } = tableData
 
   const columnMap = new Map(columns.map((col) => [col.id, col]))
   const columnsToUse: TableColumn[] = []
@@ -211,10 +216,11 @@ export function formatTable(
   }
 
   const output = formatAsHtml(rows, columnsToUse)
-  if (output.length > LARGE_OUTPUT_LENGTH) {
+  const outputBytes = Buffer.byteLength(output)
+  if (outputBytes > LARGE_OUTPUT_BYTES) {
     logger.warn('Table variable rendered a large output', {
       event: 'table-variable-large-output',
-      outputLength: output.length,
+      outputBytes,
       rowCount: rows.length,
       columnCount: columnsToUse.length,
     })

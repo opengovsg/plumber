@@ -109,6 +109,14 @@ function findAndSubstituteVariables(
         ? stepIdAndKeyPath.replace(/\|[a-fA-F0-9]+$/, '')
         : stepIdAndKeyPath
 
+      if (modifierMatch && modifierMatch[1].length > MAX_MODIFIER_HEX_LENGTH) {
+        logger.warn('Variable modifier exceeds length limit', {
+          event: 'variable-modifier-too-long',
+          length: modifierMatch[1].length,
+        })
+        return part
+      }
+
       const [stepId, ...keyPaths] = cleanStepIdAndKeyPath.split('.')
       const executionStep = executionSteps.find((executionStep) => {
         return executionStep.stepId === stepId
@@ -134,14 +142,6 @@ function findAndSubstituteVariables(
 
       // Handle hex-encoded modifier (e.g., table:col1,col2)
       if (modifierMatch) {
-        if (modifierMatch[1].length > MAX_MODIFIER_HEX_LENGTH) {
-          logger.warn('Variable modifier exceeds length limit', {
-            event: 'variable-modifier-too-long',
-            length: modifierMatch[1].length,
-          })
-          return part
-        }
-
         const decodedModifier = hexDecode(modifierMatch[1])
         const [modifierType, ...modifierArgs] = decodedModifier.split(':')
 
