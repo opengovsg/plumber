@@ -1294,6 +1294,13 @@ export interface IBaseAction {
 
   // if true, the action does not require authentication
   noAuthRequired?: boolean
+
+  /**
+   * True if a test run sends a real message to the step's configured
+   * recipients, not the tester. AI Builder will not test these steps without
+   * the user's confirmation.
+   */
+  sendsToRecipientsOnTest?: boolean
 }
 
 export interface IRawAction extends IBaseAction {

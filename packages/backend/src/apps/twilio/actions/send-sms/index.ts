@@ -7,6 +7,7 @@ const action: IRawAction = {
   name: 'Send an SMS',
   key: 'sendSms',
   description: 'Sends an SMS with Twilio',
+  sendsToRecipientsOnTest: true,
   arguments: [
     {
       label: 'From Number',

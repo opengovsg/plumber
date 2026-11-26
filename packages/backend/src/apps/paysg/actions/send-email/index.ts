@@ -11,6 +11,7 @@ const action: IRawAction = {
   key: 'sendEmail',
   description:
     'Send email to payee for a payment that has previously been created',
+  sendsToRecipientsOnTest: true,
   arguments: [
     {
       label: 'Payment ID',

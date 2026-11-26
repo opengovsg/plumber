@@ -164,3 +164,24 @@ describe('action catalog', () => {
     ).toEqual([])
   })
 })
+
+describe('sendsToRecipientsOnTest', () => {
+  // AI Builder refuses to test these steps without confirmation, so a new sending action must opt in deliberately.
+  it('is set on exactly the actions whose test run messages real recipients', () => {
+    const flagged = Object.values(exportedApps)
+      .flatMap((app) =>
+        (app.actions ?? [])
+          .filter((action) => action.sendsToRecipientsOnTest === true)
+          .map((action) => `${app.key}.${action.key}`),
+      )
+      .sort()
+
+    expect(flagged).toEqual([
+      'paysg.sendEmail',
+      'postman-sms.sendSms',
+      'slack.sendMessageToChannel',
+      'telegram-bot.sendMessage',
+      'twilio.sendSms',
+    ])
+  })
+})

@@ -11,6 +11,7 @@ const action: IRawAction = {
   name: 'Send message',
   key: 'sendMessage',
   description: 'Sends a message to a Telegram chat',
+  sendsToRecipientsOnTest: true,
   arguments: [
     {
       label: 'Chat ID',
