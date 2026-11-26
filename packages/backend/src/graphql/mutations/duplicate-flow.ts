@@ -98,6 +98,7 @@ const duplicateFlow: NonNullable<MutationResolvers['duplicateFlow']> = async (
           ),
           config: !isEmpty(prevStepConfig) ? prevStepConfig : undefined,
           version: getStepVersion(oldStep.appKey, oldStep.key),
+          updatedBy: context.currentUser.id,
         })
       oldToNewStepIdsMap[oldStep.id] = duplicatedStep.id // update map after duplicating step
     }

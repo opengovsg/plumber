@@ -28,6 +28,7 @@ const createFlow: NonNullable<MutationResolvers['createFlow']> = async (
     {
       type: 'trigger',
       position: 1,
+      updatedBy: context.currentUser.id,
     },
   ])
 

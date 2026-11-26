@@ -10,6 +10,7 @@ export interface CreateActionStepCoreInput {
   trx: Transaction
   flow: Flow
   previousStep: Step
+  updatedBy: string
   // The GraphQL createStep path inserts empty placeholder steps without these.
   appKey?: string
   key?: string
@@ -29,6 +30,7 @@ export async function createActionStepCore({
   trx,
   flow,
   previousStep,
+  updatedBy,
   appKey,
   key,
   parameters,
@@ -58,5 +60,6 @@ export async function createActionStepCore({
     connectionId,
     config: config ?? {},
     version: getStepVersion(appKey, key),
+    updatedBy,
   })
 }

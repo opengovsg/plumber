@@ -341,6 +341,7 @@ export async function createFlowWithStepsService({
             ...(step.parameters ?? {}),
           } as IJSONObject,
           position: step.position,
+          updatedBy: user.id,
         }
       }),
     )

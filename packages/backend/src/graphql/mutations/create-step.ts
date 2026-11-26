@@ -109,6 +109,7 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
         trx,
         flow,
         previousStep,
+        updatedBy: context.currentUser.id,
         appKey: input.appKey ?? undefined,
         key: input.key ?? undefined,
         parameters: input.parameters ?? undefined,

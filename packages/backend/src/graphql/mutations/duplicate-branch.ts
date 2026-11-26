@@ -109,6 +109,7 @@ const duplicateBranch: NonNullable<
         connectionId: connection?.id ?? undefined,
         config: sanitizedConfig,
         version: getStepVersion(appKey ?? undefined, key ?? undefined),
+        updatedBy: context.currentUser.id,
       })
 
       await assertStepTileAccess({
