@@ -1,8 +1,9 @@
 import {
+  escapeHtml,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
+  sentTableByteLength,
 } from '@plumber/shared'
-import escapeHtml from 'escape-html'
 
 import { hexDecode } from '@/helpers/hex-encoding'
 
@@ -57,7 +58,7 @@ function buildTableHtml(
   const parts: string[] = []
   let bytes = 0
   const append = (html: string): boolean => {
-    bytes += sentByteLength(html)
+    bytes += sentTableByteLength(html)
     parts.push(html)
     return bytes <= maxBytes
   }
@@ -105,31 +106,6 @@ function buildTableHtml(
     return null
   }
   return { html: parts.join(''), bytes }
-}
-
-// UTF-8 length without allocating an encoded copy. Postman turns each newline
-// into <br> before sending, adding 3 bytes.
-function sentByteLength(html: string): number {
-  let bytes = 0
-  for (let i = 0; i < html.length; i++) {
-    const code = html.charCodeAt(i)
-    if (code < 0x80) {
-      bytes += code === 0x0a ? 4 : 1
-    } else if (code < 0x800) {
-      bytes += 2
-    } else if (
-      code >= 0xd800 &&
-      code <= 0xdbff &&
-      (html.charCodeAt(i + 1) & 0xfc00) === 0xdc00
-    ) {
-      // A surrogate pair encodes one 4-byte character.
-      bytes += 4
-      i++
-    } else {
-      bytes += 3
-    }
-  }
-  return bytes
 }
 
 /**

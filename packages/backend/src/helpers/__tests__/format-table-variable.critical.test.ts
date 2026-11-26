@@ -115,6 +115,48 @@ describe('formatTable limits', () => {
     expect(renderBudget.bytes).toBeLessThan(4 * MB)
   })
 
+  describe('counts the bytes Postman sends', () => {
+    // An apostrophe, a newline and an empty cell, which Postman rewrites.
+    const table = {
+      rows: [{ data: { c0: "O'Brien\nline 2", c1: '' } }],
+      columns: [
+        { id: 'c0', name: 'Name' },
+        { id: 'c1', name: 'Empty' },
+      ],
+    }
+    const options = { selectedColumnIds: ['c0', 'c1'] }
+    const rendered = formatTable(table, options)
+    const html = rendered.success ? rendered.output : ''
+    // Mirrors the body rewrites in sendEmail before the email is sent.
+    const sentBytes = Buffer.byteLength(
+      html
+        .replace(/\n/g, '<br>')
+        .replace(
+          /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+          '<p style="margin: 0">&nbsp;</p>',
+        ),
+    )
+
+    it('renders a table that exactly fits the budget', () => {
+      expect(html).toContain('O&#039;Brien')
+      const renderBudget = { ...createTableRenderBudget(), bytes: sentBytes }
+      expect(formatTable(table, { ...options, renderBudget }).success).toBe(
+        true,
+      )
+    })
+
+    it('rejects a table one byte over the budget', () => {
+      const renderBudget = {
+        ...createTableRenderBudget(),
+        bytes: sentBytes - 1,
+      }
+      expect(formatTable(table, { ...options, renderBudget })).toMatchObject({
+        success: false,
+        error: 'limit_exceeded',
+      })
+    })
+  })
+
   it('rejects a single table over the byte budget', () => {
     expect(
       formatTable(makeBigCellTable(11 * MB), { selectedColumnIds: ['big'] }),

@@ -9,6 +9,7 @@ import {
   MAX_TABLE_VARIABLE_BYTES_PER_STEP,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
+  sentTableByteLength,
 } from '@plumber/shared'
 
 import { safeHtml } from './html-utils'
@@ -97,15 +98,6 @@ function cellToString(value: unknown): string {
   return String(value)
 }
 
-// Postman turns each newline into <br> before sending, adding 3 bytes.
-function sentByteLength(html: string): number {
-  let newlines = 0
-  for (let i = html.indexOf('\n'); i !== -1; i = html.indexOf('\n', i + 1)) {
-    newlines++
-  }
-  return Buffer.byteLength(html) + 3 * newlines
-}
-
 /**
  * Formats table data as an HTML table with inline CSS for email compatibility
  * Simple black borders with background colors matching the preview
@@ -130,7 +122,7 @@ function formatAsHtml(
   const parts: string[] = []
   let bytes = 0
   const append = (html: string): boolean => {
-    bytes += sentByteLength(html)
+    bytes += sentTableByteLength(html)
     parts.push(html)
     return bytes <= maxBytes
   }

@@ -388,13 +388,26 @@ describe('substituteForPreview', () => {
               },
             ],
           ]) as VariableInfoMap
-        // A newline, a surrogate pair and both lone surrogates.
-        const tricky = infoFor([{ c1: 'a\nb\u{1F600}\ud800c\udc00' }])
+        // A newline, an apostrophe, a surrogate pair, both lone surrogates and
+        // an empty cell.
+        const tricky = infoFor([
+          { c1: "a\nO'b\u{1F600}\ud800c\udc00" },
+          { c1: '' },
+        ])
         const html = simpleSubstitute(token, tricky)
-        // Postman sends each newline as <br>.
+        // Mirrors the body rewrites in the backend's sendEmail.
         const sentBytes = new TextEncoder().encode(
-          html.replace(/\n/g, '<br>'),
+          html
+            .replace(/\n/g, '<br>')
+            .replace(
+              /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+              '<p style="margin: 0">&nbsp;</p>',
+            ),
         ).length
+
+        it('escapes apostrophes the way the sent email does', () => {
+          expect(html).toContain('O&#039;b')
+        })
 
         it('renders a table that exactly fits the budget', () => {
           expect(simpleSubstitute(token, tricky, { bytes: sentBytes })).toBe(
