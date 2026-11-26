@@ -2,7 +2,6 @@ import type { IApp } from '@plumber/types'
 
 import actions from './actions'
 import auth from './auth'
-import getTransferDetails from './common/get-transfer-details'
 import beforeRequest from './common/interceptors/before-request'
 import requestErrorHandler from './common/interceptors/request-error-handler'
 import { stepTransformer } from './common/transform-step-parameters'
@@ -23,7 +22,6 @@ const app: IApp = {
   beforeRequest,
   requestErrorHandler,
   dynamicData,
-  getTransferDetails,
   queue,
   setupMessage: {
     variant: 'warning',
