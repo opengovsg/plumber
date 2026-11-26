@@ -1,4 +1,4 @@
-import { SENSITIVE_HEADER_NAMES } from '@/helpers/redaction/sensitive-keys'
+import { SENSITIVE_HEADER_NAMES } from '@plumber/shared'
 
 /**
  * Same shape as the variable regex in compute-parameters.ts. Auth headers built

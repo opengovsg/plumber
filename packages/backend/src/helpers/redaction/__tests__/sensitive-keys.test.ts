@@ -1,6 +1,5 @@
+import { SECRET_KEY_REGEXP, SENSITIVE_HEADER_NAMES } from '@plumber/shared'
 import { describe, expect, it } from 'vitest'
-
-import { SECRET_KEY_REGEXP, SENSITIVE_HEADER_NAMES } from '../sensitive-keys'
 
 describe('SECRET_KEY_REGEXP', () => {
   it.each([...SENSITIVE_HEADER_NAMES])(

@@ -1,3 +1,4 @@
+import { redactLogFields } from 'backend-analytics'
 import winston from 'winston'
 
 import { archivalConfig } from './config'
@@ -20,6 +21,7 @@ const archivalLogger = winston.createLogger({
   format: archivalConfig.isDev
     ? winston.format.combine(
         winston.format.errors({ stack: true }),
+        redactLogFields(),
         winston.format.colorize(),
         winston.format.printf(({ level, message, ...meta }) => {
           if (typeof message === 'object') {
@@ -33,6 +35,7 @@ const archivalLogger = winston.createLogger({
       )
     : winston.format.combine(
         winston.format.errors({ stack: true }),
+        redactLogFields(),
         winston.format.timestamp(),
         winston.format.json(),
       ),
