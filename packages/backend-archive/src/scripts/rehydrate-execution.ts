@@ -1,10 +1,20 @@
 /* oxlint-disable no-console */
+import winston from 'winston'
+
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb } from '@/helpers/archival/db'
 import { fetchArchivedExecution } from '@/helpers/archival/fetch-archived-execution'
 import { listArchivedExecutions } from '@/helpers/archival/list-archived-executions'
+import logger from '@/helpers/archival/logger'
 import { restoreExecution } from '@/helpers/archival/restore-execution'
 import { archiveS3Client } from '@/helpers/archival/s3-client'
+
+// stdout carries this script's JSON output, so every log record goes to stderr.
+logger.clear().add(
+  new winston.transports.Console({
+    stderrLevels: Object.keys(logger.levels),
+  }),
+)
 
 function parseArgs(): {
   flowId: string
@@ -73,11 +83,13 @@ async function main(): Promise<void> {
       console.log(JSON.stringify(executionIds, null, 2))
     }
   }
-
-  await archivalDb.destroy()
 }
 
-main().catch((err) => {
-  console.error('rehydrate-execution failed:', err)
-  process.exit(1)
-})
+main()
+  .catch((err) => {
+    // The archival logger keeps only an error's safe fields. console.error would print an SDK error's raw response.
+    logger.error({ event: 'rehydration.run.error', err })
+    // process.exit could cut off the log record on a pipe. The process exits once the pool closes.
+    process.exitCode = 1
+  })
+  .finally(() => archivalDb.destroy())

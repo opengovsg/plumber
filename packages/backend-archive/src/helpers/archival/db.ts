@@ -20,6 +20,8 @@ export const archivalDb: Knex = knex({
       : false,
   } satisfies pg.ClientConfig,
   pool: { min: 0, max: 12 },
+  // IMPORTANT: knex otherwise writes bound values, such as user emails, into a failed query's message.
+  compileSqlOnError: false,
 })
 
 // Reader connection. Used for archival's eligibility scan, execution_steps
@@ -38,4 +40,48 @@ export const archivalDbReader: Knex = knex({
       : false,
   } satisfies pg.ClientConfig,
   pool: { min: 0, max: 14 },
+  compileSqlOnError: false,
 })
+
+/**
+ * Rewrites a failed query's PostgreSQL error to hold only the operation, SQLSTATE and schema identifiers.
+ *
+ * IMPORTANT: PostgreSQL echoes the rejected value in its message and detail, such as an invalid UUID.
+ */
+function redactDatabaseError(
+  err: unknown,
+  query: { method?: string; sql?: string },
+): void {
+  if (!(err instanceof pg.DatabaseError)) {
+    return
+  }
+  const identifiers = {
+    routine: err.routine,
+    table: err.table,
+    // Some errors, such as an invalid timestamp, name no table, so the statement's own target tells the writes apart.
+    target: err.table ? undefined : writeTarget(query.sql),
+    column: err.column,
+    constraint: err.constraint,
+  }
+  const context = Object.entries(identifiers)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(' ')
+  err.message = `PostgreSQL ${query.method ?? 'query'} failed with SQLSTATE ${err.code}${context ? ` (${context})` : ''}`
+  err.stack = `${err.name}: ${err.message}`
+  err.detail = undefined
+  err.hint = undefined
+  err.where = undefined
+  err.internalQuery = undefined
+}
+
+const WRITE_TARGET =
+  /^\s*(?:insert\s+into|update|delete\s+from)\s+"?([\w.]+)"?/i
+
+function writeTarget(sql: string | undefined): string | undefined {
+  return sql?.match(WRITE_TARGET)?.[1]
+}
+
+// knex emits this before it rejects the query, so the rewrite reaches every caller.
+archivalDb.on('query-error', redactDatabaseError)
+archivalDbReader.on('query-error', redactDatabaseError)

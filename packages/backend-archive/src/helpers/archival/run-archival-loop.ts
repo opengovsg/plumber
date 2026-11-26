@@ -252,9 +252,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       ),
     )
 
-    for (const settled of results) {
+    for (const [index, settled] of results.entries()) {
       if (settled.status === 'rejected') {
         batchSkipped++
+        logger.error({
+          event: 'archival.execution.error',
+          executionId: batch[index].id,
+          err: settled.reason,
+        })
         continue
       }
 

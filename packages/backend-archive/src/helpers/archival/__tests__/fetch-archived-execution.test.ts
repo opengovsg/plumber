@@ -43,8 +43,12 @@ const mockPayload: ArchivedPayload = {
 
 const HIVE_KEY = `${S3_PREFIX_EXECUTIONS}/flow_id=flow-1/year=2025/month=01/execution_id=exec-1.json.gz`
 
-async function makeMockS3(payload: ArchivedPayload): Promise<S3Client> {
-  const compressed = await gzipAsync(JSON.stringify(payload))
+async function makeMockS3(
+  payload: ArchivedPayload | string,
+): Promise<S3Client> {
+  const compressed = await gzipAsync(
+    typeof payload === 'string' ? payload : JSON.stringify(payload),
+  )
   return {
     send: vi.fn().mockImplementation((cmd: unknown) => {
       if (cmd instanceof ListObjectsV2Command) {
@@ -75,6 +79,36 @@ describe('fetchArchivedExecution', () => {
     expect(result.execution.id).toBe('exec-1')
     expect(result.steps).toHaveLength(1)
     expect(result.steps[0].id).toBe('step-1')
+  })
+
+  it('keeps archived data out of the error for invalid JSON', async () => {
+    const s3 = await makeMockS3('{"execution":{"note":"private user text"')
+    const error = await fetchArchivedExecution('flow-1', 'exec-1', {
+      ...baseOpts,
+      s3Client: s3,
+    }).catch((err: Error) => err)
+
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).toBe(
+      `Archived payload is not valid JSON: ${HIVE_KEY}`,
+    )
+    expect(`${(error as Error).stack}`).not.toContain('private user text')
+    expect((error as Error).cause).toBeUndefined()
+  })
+
+  it('keeps archived values out of the error for a schema mismatch', async () => {
+    const s3 = await makeMockS3(
+      JSON.stringify({ ...mockPayload, execution: 'private user text' }),
+    )
+    const error = await fetchArchivedExecution('flow-1', 'exec-1', {
+      ...baseOpts,
+      s3Client: s3,
+    }).catch((err: Error) => err)
+
+    expect((error as Error).message).toBe(
+      `Archived payload does not match the schema at execution: ${HIVE_KEY}`,
+    )
+    expect(`${(error as Error).stack}`).not.toContain('private user text')
   })
 
   it('calls ListObjectsV2Command with the correct prefix', async () => {

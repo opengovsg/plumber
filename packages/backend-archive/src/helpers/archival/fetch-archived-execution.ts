@@ -77,5 +77,31 @@ export async function fetchArchivedExecution(
   }
   const compressed = await response.Body.transformToByteArray()
   const json = await gunzipAsync(compressed)
-  return ArchivedPayloadSchema.parse(JSON.parse(json.toString()))
+  return parseArchivedPayload(json.toString(), key)
+}
+
+/**
+ * Parses an archived payload, with errors that name the key and the failing fields only.
+ *
+ * IMPORTANT: `JSON.parse` and Zod quote the input in their messages, and archives hold user data.
+ */
+function parseArchivedPayload(json: string, key: string): ArchivedPayload {
+  let raw: unknown
+  try {
+    raw = JSON.parse(json)
+  } catch {
+    throw new Error(`Archived payload is not valid JSON: ${key}`)
+  }
+  const parsed = ArchivedPayloadSchema.safeParse(raw)
+  if (!parsed.success) {
+    const paths = [
+      ...new Set(
+        parsed.error.issues.map((issue) => issue.path.join('.') || '(root)'),
+      ),
+    ]
+    throw new Error(
+      `Archived payload does not match the schema at ${paths.slice(0, 5).join(', ')}: ${key}`,
+    )
+  }
+  return parsed.data
 }
