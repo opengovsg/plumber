@@ -1,5 +1,9 @@
 import { randomUUID } from 'crypto'
 
+import {
+  tileViewPasswordMaxLength,
+  tileViewPasswordMinLength,
+} from '@plumber/shared'
 import { z } from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -11,7 +15,10 @@ import type { MutationResolvers } from '../../__generated__/types.generated'
 
 const setTableViewPasswordSchema = z.object({
   tableId: z.string(),
-  password: z.string().min(8).max(100),
+  password: z
+    .string()
+    .min(tileViewPasswordMinLength)
+    .max(tileViewPasswordMaxLength),
 })
 
 const setTableViewPassword: NonNullable<
@@ -19,7 +26,9 @@ const setTableViewPassword: NonNullable<
 > = async (_parent, params, context) => {
   const result = setTableViewPasswordSchema.safeParse(params.input)
   if (!result.success) {
-    throw new BadUserInputError('Ensure password is 8-100 characters long')
+    throw new BadUserInputError(
+      `Ensure password is ${tileViewPasswordMinLength}-${tileViewPasswordMaxLength} characters long`,
+    )
   }
   const { tableId, password } = result.data
   // Must be at least editor
@@ -34,12 +43,24 @@ const setTableViewPassword: NonNullable<
     throw new BadUserInputError('Shareable link must be enabled first')
   }
 
-  await table.$query().patch({
-    viewOnlyPassword: {
-      hash: hashTilePassword(password, table.viewOnlyKey),
-      tokenNonce: randomUUID(),
-    },
-  })
+  const { viewOnlyKey } = table
+  const hash = await hashTilePassword(password, viewOnlyKey)
+  // The link can be replaced while the hash waits, and a hash salted with the
+  // old key would never verify against the new one.
+  const updatedCount = await table
+    .$query()
+    .patch({
+      viewOnlyPassword: {
+        hash,
+        tokenNonce: randomUUID(),
+      },
+    })
+    .where({ view_only_key: viewOnlyKey })
+  if (updatedCount === 0) {
+    throw new BadUserInputError(
+      'The shareable link changed. Please set the password again.',
+    )
+  }
 
   return true
 }

@@ -34,7 +34,7 @@ export async function enableViewPassword(
   await table.$query().patch({
     viewOnlyKey,
     viewOnlyPassword: {
-      hash: hashTilePassword(password, viewOnlyKey),
+      hash: await hashTilePassword(password, viewOnlyKey),
       tokenNonce: randomUUID(),
     },
   })

@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import verifyTableViewPassword from '@/graphql/mutations/tiles/verify-table-view-password'
+import * as scrypt from '@/helpers/scrypt'
 import { MAX_FAILED_ATTEMPTS } from '@/helpers/tiles-password-lockout'
 import TableMetadata from '@/models/table-metadata'
 import Context from '@/types/express/context'
@@ -34,6 +35,10 @@ describe('verify table view password mutation', () => {
   let table: TableMetadata
   let viewOnlyKey: string
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   beforeEach(async () => {
     const ownerContext = await generateMockContext()
     const mockTable = await generateMockTable({
@@ -64,6 +69,54 @@ describe('verify table view password mutation', () => {
     await exhaustAttempts(table, context)
 
     await expect(verify(table, context, 'wrong-again')).rejects.toThrow(
+      RateLimitedError,
+    )
+  })
+
+  it('does not spend an attempt when the hash queue is full', async () => {
+    const context = generateViewOnlyContext({
+      viewOnlyKey,
+      clientIp: '10.0.0.20',
+    })
+    for (let i = 0; i < MAX_FAILED_ATTEMPTS - 1; i++) {
+      await expect(verify(table, context, `wrong-${i}`)).rejects.toThrow(
+        ForbiddenError,
+      )
+    }
+    vi.spyOn(scrypt, 'hashWithScrypt').mockRejectedValueOnce(
+      new RateLimitedError('Too many requests. Please try again shortly.'),
+    )
+
+    await expect(verify(table, context, VIEW_PASSWORD)).rejects.toThrow(
+      'Too many requests',
+    )
+
+    // The last attempt is still available only if the rejection spent none.
+    await expect(verify(table, context, VIEW_PASSWORD)).resolves.toEqual(
+      expect.any(String),
+    )
+  })
+
+  it('spends an attempt on a view key of a different length', async () => {
+    const context = generateViewOnlyContext({
+      viewOnlyKey,
+      clientIp: '10.0.0.23',
+    })
+    const shortKeyContext = generateViewOnlyContext({
+      viewOnlyKey: 'short',
+      clientIp: '10.0.0.23',
+    })
+    for (let i = 0; i < MAX_FAILED_ATTEMPTS - 1; i++) {
+      await expect(verify(table, context, `wrong-${i}`)).rejects.toThrow(
+        ForbiddenError,
+      )
+    }
+
+    await expect(verify(table, shortKeyContext, VIEW_PASSWORD)).rejects.toThrow(
+      ForbiddenError,
+    )
+
+    await expect(verify(table, context, VIEW_PASSWORD)).rejects.toThrow(
       RateLimitedError,
     )
   })

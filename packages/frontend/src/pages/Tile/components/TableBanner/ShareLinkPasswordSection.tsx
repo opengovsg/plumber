@@ -13,6 +13,7 @@ import {
   IconButton,
   Input,
 } from '@opengovsg/design-system-react'
+import { tileViewPasswordMinLength } from '@plumber/shared'
 import { useCallback, useState } from 'react'
 import { BiCheck, BiHide, BiShow, BiX } from 'react-icons/bi'
 
@@ -172,7 +173,7 @@ const ShareLinkPasswordSection = () => {
               <InputGroup flex={1}>
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder={'At least 8 characters required'}
+                  placeholder={`At least ${tileViewPasswordMinLength} characters required`}
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -201,7 +202,10 @@ const ShareLinkPasswordSection = () => {
                 aria-label="Save"
                 size="md"
                 isLoading={isSettingPassword}
-                isDisabled={!passwordInput || passwordInput.length < 8}
+                isDisabled={
+                  !passwordInput ||
+                  passwordInput.length < tileViewPasswordMinLength
+                }
                 onClick={onSetPassword}
               />
               <IconButton

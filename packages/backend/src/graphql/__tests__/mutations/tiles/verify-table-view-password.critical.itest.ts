@@ -3,10 +3,13 @@
  *
  * 1. "A viewer who has exhausted the allowance of guesses is refused even when
  *    the password is correct."
+ * 2. "If the IP tries to send with overly long password, it should also consume
+ *    the attempt."
  *
- * The attempt is counted before the password is compared, so a correct guess
- * cannot buy its way out of an exhausted allowance.
+ * The attempt is counted before the comparison result is used, so a correct
+ * guess cannot buy its way out of an exhausted allowance.
  */
+import { tileViewPasswordMaxLength } from '@plumber/shared'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
@@ -52,6 +55,43 @@ describe('verify table view password lockout', () => {
         ),
       ).rejects.toThrow(ForbiddenError)
     }
+
+    await expect(
+      verifyTableViewPassword(
+        {},
+        { input: { tableId: table.id, password: VIEW_PASSWORD } },
+        context,
+      ),
+    ).rejects.toThrow(RateLimitedError)
+  })
+
+  it('spends an attempt on an overlong password', async () => {
+    const context = generateViewOnlyContext({
+      viewOnlyKey,
+      clientIp: '10.1.0.2',
+    })
+    for (let i = 0; i < MAX_FAILED_ATTEMPTS - 1; i++) {
+      await expect(
+        verifyTableViewPassword(
+          {},
+          { input: { tableId: table.id, password: `wrong-${i}` } },
+          context,
+        ),
+      ).rejects.toThrow(ForbiddenError)
+    }
+
+    await expect(
+      verifyTableViewPassword(
+        {},
+        {
+          input: {
+            tableId: table.id,
+            password: 'x'.repeat(tileViewPasswordMaxLength + 1),
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow(ForbiddenError)
 
     await expect(
       verifyTableViewPassword(

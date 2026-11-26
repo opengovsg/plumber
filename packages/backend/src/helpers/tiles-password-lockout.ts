@@ -40,7 +40,7 @@ function makeLockoutKey(tableId: string, clientIp: string): string {
 /**
  * Charges an attempt against the caller's allowance, throwing once it is spent.
  *
- * IMPORTANT: call this before comparing the password, so that concurrent
+ * IMPORTANT: call this before using the comparison result, so that concurrent
  * guesses cannot all clear a check-then-increment test.
  */
 export async function consumeTilePasswordAttempt(

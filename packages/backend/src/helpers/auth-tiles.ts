@@ -1,8 +1,9 @@
-import { randomBytes, scryptSync, timingSafeEqual } from 'crypto'
+import { randomBytes, timingSafeEqual } from 'crypto'
 
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
+import { hashWithScrypt } from '@/helpers/scrypt'
 
 const { sessionSecretKey } = appConfig
 
@@ -18,19 +19,25 @@ const VIEW_TOKEN_EXPIRES_IN_SEC = 24 * 60 * 60 // 24 hours
 
 // Uses viewOnlyKey as salt - no separate salt column needed
 // When viewOnlyKey is changed, the password hash will be invalidated
-export function hashTilePassword(
+export async function hashTilePassword(
   password: string,
   viewOnlyKey: string,
-): string {
-  return scryptSync(password, viewOnlyKey, SCRYPT_KEY_LENGTH).toString('base64')
+): Promise<string> {
+  return (
+    await hashWithScrypt(password, viewOnlyKey, SCRYPT_KEY_LENGTH)
+  ).toString('base64')
 }
 
-export function verifyTilePassword(
+export async function verifyTilePassword(
   password: string,
   storedHash: string,
   viewOnlyKey: string,
-): boolean {
-  const inputHashBuffer = scryptSync(password, viewOnlyKey, SCRYPT_KEY_LENGTH)
+): Promise<boolean> {
+  const inputHashBuffer = await hashWithScrypt(
+    password,
+    viewOnlyKey,
+    SCRYPT_KEY_LENGTH,
+  )
   const storedHashBuffer = Buffer.from(storedHash, 'base64')
   if (inputHashBuffer.length !== storedHashBuffer.length) {
     return false

@@ -16,17 +16,19 @@ import {
 
 describe('auth-tiles', () => {
   describe('verifyTilePassword', () => {
-    it('returns true for the correct password', () => {
+    it('returns true for the correct password', async () => {
       const viewOnlyKey = 'view-only-key'
-      const hash = hashTilePassword('password123', viewOnlyKey)
-      expect(verifyTilePassword('password123', hash, viewOnlyKey)).toBe(true)
+      const hash = await hashTilePassword('password123', viewOnlyKey)
+      expect(await verifyTilePassword('password123', hash, viewOnlyKey)).toBe(
+        true,
+      )
     })
 
-    it('returns false for an incorrect password', () => {
+    it('returns false for an incorrect password', async () => {
       const viewOnlyKey = 'view-only-key'
-      const hash = hashTilePassword('password123', viewOnlyKey)
+      const hash = await hashTilePassword('password123', viewOnlyKey)
       expect(
-        verifyTilePassword(
+        await verifyTilePassword(
           'wrong-password912783901823129837',
           hash,
           viewOnlyKey,
@@ -34,9 +36,18 @@ describe('auth-tiles', () => {
       ).toBe(false)
     })
 
-    it('returns false when viewOnlyKey does not match', () => {
-      const hash = hashTilePassword('password123', 'key-1')
-      expect(verifyTilePassword('password123', hash, 'key-2')).toBe(false)
+    it('accepts a hash stored before hashing became async', async () => {
+      // scryptSync('password123', 'view-only-key', 64) in base64.
+      const legacyHash =
+        'G40r4sQft66eesPFqQq9Dj8/8lANMZa1737QYouwNfk4Gd5+lGntsnEbRq85zpYPL/tnC3LDRYwiXZ6La1MLsA=='
+      expect(
+        await verifyTilePassword('password123', legacyHash, 'view-only-key'),
+      ).toBe(true)
+    })
+
+    it('returns false when viewOnlyKey does not match', async () => {
+      const hash = await hashTilePassword('password123', 'key-1')
+      expect(await verifyTilePassword('password123', hash, 'key-2')).toBe(false)
     })
   })
 
