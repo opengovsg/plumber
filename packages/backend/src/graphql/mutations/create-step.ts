@@ -10,6 +10,7 @@ import logger from '@/helpers/logger'
 import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 import { getConnection } from '@/services/connection'
 import {
   createActionStepCore,
@@ -150,6 +151,16 @@ const createStep: NonNullable<MutationResolvers['createStep']> = async (
     } else {
       await upgradeLegacyBlocks()
       await fixupEndStep()
+    }
+
+    if (step.appKey === 'tiles' && step.parameters?.tableId) {
+      await TableCollaborator.hasAccess(
+        context.currentUser.id,
+        step.parameters.tableId as string,
+        'editor',
+        undefined,
+        trx,
+      )
     }
 
     // NOTE: add flow connection to the flow_connections table

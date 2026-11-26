@@ -8,6 +8,7 @@ import {
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -109,6 +110,16 @@ const duplicateBranch: NonNullable<
         config: sanitizedConfig,
         version: getStepVersion(appKey ?? undefined, key ?? undefined),
       })
+
+      if (step.appKey === 'tiles' && step.parameters?.tableId) {
+        await TableCollaborator.hasAccess(
+          context.currentUser.id,
+          step.parameters.tableId as string,
+          'editor',
+          undefined,
+          trx,
+        )
+      }
 
       newSteps.push(step)
       previousStepId = step.id
