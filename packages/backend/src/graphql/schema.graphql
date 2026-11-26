@@ -83,6 +83,7 @@ type Mutation {
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
+  triggerFlowManually(input: TriggerFlowManuallyInput): String
   executeStep(input: ExecuteStepInput): ExecutionStep!
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
@@ -662,6 +663,10 @@ input UpdateFlowStatusInput {
   id: String!
   active: Boolean!
   updatedAt: String!
+}
+
+input TriggerFlowManuallyInput {
+  flowId: String!
 }
 
 enum NotificationFrequency {

@@ -19,6 +19,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { tagStyles } from '@/pages/Tiles/components/style'
 
 import PublishButton from './PublishButton'
+import RunNowButton from './RunNowButton'
 
 const GuideItem = ({ type }: { type: 'icon' | 'button' }) => {
   if (type === 'button') {
@@ -201,6 +202,10 @@ export default function EditorToolbar(props: EditorToolbarProps) {
   const { flow, flowId } = useContext(EditorContext)
   const settingsLink = URLS.FLOW_EDITOR_SHARE(flowId)
 
+  // The manual trigger app has no public URL to hit, so the only way to
+  // fire a real (non-test) run is via this button.
+  const isManualTrigger = flow?.steps?.[0]?.appKey === 'manual'
+
   return (
     <>
       <Show above="md">
@@ -208,6 +213,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
           <ExecutionsItem type="icon" />
           <GuideItem type="icon" />
           <SettingsItem {...props} type="icon" settingsLink={settingsLink} />
+          {isManualTrigger && <RunNowButton />}
           {flow?.active && <LiveTag />}
           {flow?.role === 'viewer' ? (
             <ViewOnlyTag />
@@ -239,6 +245,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
               type="button"
               settingsLink={settingsLink}
             />
+            {isManualTrigger && <RunNowButton />}
             {flow?.active && <LiveTag />}
             {flow?.role === 'viewer' ? (
               <ViewOnlyTag />
