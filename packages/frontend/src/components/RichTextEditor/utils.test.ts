@@ -355,6 +355,26 @@ describe('substituteForPreview', () => {
         expect(out.endsWith(OVER_LIMIT_NOTICE)).toBe(true)
       })
 
+      it('shows the notice for one cell over the byte budget', () => {
+        const hugeInfo: VariableInfoMap = new Map([
+          [
+            `{{${TABLE_BASE_PATH}}}`,
+            {
+              label: 'My table',
+              testRunValue: '1 row',
+              table: {
+                columns: [{ id: 'c1', name: 'Name' }],
+                rows: [{ c1: '\u00e9'.repeat(6 * 1024 * 1024) }],
+              },
+            },
+          ],
+        ])
+        // 6M two-byte characters are 12 MB in UTF-8, over the 10 MB budget.
+        expect(substituteForPreview(makeInput('table:c1'), hugeInfo)).toEqual(
+          OVER_LIMIT_NOTICE,
+        )
+      })
+
       it('shares the budget between table pills and legacy tokens', () => {
         const legacy = `<p>{{${TABLE_BASE_PATH}|${hexEncode(modifier)}}}</p>`
         const out = substituteForPreview(

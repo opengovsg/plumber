@@ -21,8 +21,6 @@ interface TableRenderBudget {
   bytes: number
 }
 
-const utf8 = new TextEncoder()
-
 // The backend fails the step for these tables, so the preview says why.
 const TABLE_OVER_LIMIT_NOTICE =
   "This table is over the size limit, so this email won't send."
@@ -263,37 +261,91 @@ function cellToString(value: unknown): string {
 function buildTableHtml(
   columns: Array<{ id: string; name: string }>,
   rows: Array<Record<string, unknown>>,
-): string {
+  maxBytes: number,
+): { html: string; bytes: number } | null {
   const headerBg = '#F3F4F6' // gray.100
   const rowOddBg = '#FFFFFF' // white
   const rowEvenBg = '#F9FAFB' // gray.50
   const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
 
-  const headerCells = columns
-    .map(
-      (col) =>
+  // IMPORTANT: stops as soon as the output passes maxBytes, like the backend,
+  // so an oversized table never builds in full.
+  const parts: string[] = []
+  let bytes = 0
+  const append = (html: string): boolean => {
+    bytes += sentByteLength(html)
+    parts.push(html)
+    return bytes <= maxBytes
+  }
+
+  if (!append('<table style="border-collapse: collapse;"><tbody><tr>')) {
+    return null
+  }
+  for (const col of columns) {
+    if (
+      !append(
         `<td style="${cell} background-color: ${headerBg}; font-weight: 600;"><p style="margin: 0;">${escapeHtml(
           col.name,
         )}</p></td>`,
-    )
-    .join('')
+      )
+    ) {
+      return null
+    }
+  }
+  if (!append('</tr>')) {
+    return null
+  }
 
-  const dataRows = rows
-    .map((row, i) => {
-      const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
-      const cells = columns
-        .map(
-          (col) =>
-            `<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${escapeHtml(
-              cellToString(row[col.id]),
-            )}</p></td>`,
+  for (const [i, row] of rows.entries()) {
+    const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
+    if (!append('<tr>')) {
+      return null
+    }
+    for (const col of columns) {
+      if (
+        !append(
+          `<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${escapeHtml(
+            cellToString(row[col.id]),
+          )}</p></td>`,
         )
-        .join('')
-      return `<tr>${cells}</tr>`
-    })
-    .join('')
+      ) {
+        return null
+      }
+    }
+    if (!append('</tr>')) {
+      return null
+    }
+  }
 
-  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
+  if (!append('</tbody></table>')) {
+    return null
+  }
+  return { html: parts.join(''), bytes }
+}
+
+// UTF-8 length without allocating an encoded copy. Postman turns each newline
+// into <br> before sending, adding 3 bytes.
+function sentByteLength(html: string): number {
+  let bytes = 0
+  for (let i = 0; i < html.length; i++) {
+    const code = html.charCodeAt(i)
+    if (code < 0x80) {
+      bytes += code === 0x0a ? 4 : 1
+    } else if (code < 0x800) {
+      bytes += 2
+    } else if (
+      code >= 0xd800 &&
+      code <= 0xdbff &&
+      (html.charCodeAt(i + 1) & 0xfc00) === 0xdc00
+    ) {
+      // A surrogate pair encodes one 4-byte character.
+      bytes += 4
+      i++
+    } else {
+      bytes += 3
+    }
+  }
+  return bytes
 }
 
 /**
@@ -351,15 +403,17 @@ function renderTableVariableHtml(
     return ''
   }
 
-  const html = buildTableHtml(selectedColumns, tableData.rows)
-  // Postman turns each newline into <br> before sending, adding 3 bytes.
-  const bytes = utf8.encode(html).length + 3 * (html.split('\n').length - 1)
-  if (bytes > renderBudget.bytes) {
+  const table = buildTableHtml(
+    selectedColumns,
+    tableData.rows,
+    renderBudget.bytes,
+  )
+  if (!table) {
     renderBudget.bytes = 0
     return TABLE_OVER_LIMIT_NOTICE
   }
-  renderBudget.bytes -= bytes
-  return html
+  renderBudget.bytes -= table.bytes
+  return table.html
 }
 
 /**
