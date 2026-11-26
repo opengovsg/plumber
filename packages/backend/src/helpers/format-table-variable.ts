@@ -6,6 +6,7 @@
  */
 
 import {
+  MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -33,8 +34,13 @@ export interface TableData {
   inputSource?: string
 }
 
+export interface TableCellBudget {
+  remaining: number
+}
+
 export interface FormatTableOptions {
   selectedColumnIds: string[]
+  cellBudget?: TableCellBudget
 }
 
 export type FormatTableResult =
@@ -213,6 +219,19 @@ export function formatTable(
       error: 'no_columns',
       message: 'No columns to display',
     }
+  }
+
+  const { cellBudget } = options
+  const cellCount = rows.length * columnsToUse.length
+  if (cellBudget) {
+    if (cellCount > cellBudget.remaining) {
+      return {
+        success: false,
+        error: 'limit_exceeded',
+        message: `Tables in this field exceed ${MAX_TABLE_VARIABLE_CELLS_PER_FIELD} cells`,
+      }
+    }
+    cellBudget.remaining -= cellCount
   }
 
   const output = formatAsHtml(rows, columnsToUse)

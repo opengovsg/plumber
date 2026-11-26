@@ -1,5 +1,6 @@
 import { PlacementWithLogical } from '@chakra-ui/react'
 import {
+  MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -72,13 +73,14 @@ export function simpleSubstitute(
   original: string,
   varInfo: VariableInfoMap,
 ): string {
+  const cellBudget = { remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD }
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
     // Table variables (id ends with a `|hexModifier`) resolve to the rendered
     // HTML table, mirroring the backend's computeParameters. This keeps the
     // substituted body in sync with the test execution's dataIn so the step's
     // "set up successfully" check (matchParamsToDataIn) matches.
-    const tableHtml = renderTableVariableHtml(id, varInfo)
+    const tableHtml = renderTableVariableHtml(id, varInfo, cellBudget)
     if (tableHtml != null) {
       return tableHtml
     }
@@ -290,6 +292,7 @@ function buildTableHtml(
 function renderTableVariableHtml(
   dataId: string,
   varInfo: VariableInfoMap,
+  cellBudget: { remaining: number },
 ): string | null {
   const modifierMatch = dataId.match(HEX_MODIFIER_SUFFIX_REGEX)
   if (!modifierMatch) {
@@ -330,6 +333,11 @@ function renderTableVariableHtml(
   if (selectedColumns.length === 0) {
     return null
   }
+  const cellCount = tableData.rows.length * selectedColumns.length
+  if (cellCount > cellBudget.remaining) {
+    return null
+  }
+  cellBudget.remaining -= cellCount
 
   return buildTableHtml(selectedColumns, tableData.rows)
 }
@@ -356,6 +364,7 @@ export function substituteForPreview(
   }
 
   const root = parse(html)
+  const cellBudget = { remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD }
 
   function processChildren(parent: NodeHTMLElement): void {
     const newChildren: Node[] = []
@@ -364,7 +373,7 @@ export function substituteForPreview(
         const dataType = child.getAttribute('data-type')
         const dataId = child.getAttribute('data-id')
         if (dataType === 'tableVariable' && dataId != null) {
-          const tableHtml = renderTableVariableHtml(dataId, varInfo)
+          const tableHtml = renderTableVariableHtml(dataId, varInfo, cellBudget)
           if (tableHtml != null) {
             newChildren.push(...parse(tableHtml).childNodes)
             continue

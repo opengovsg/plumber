@@ -1,10 +1,12 @@
 /**
  * Business rules:
- * - Table variables are capped at 100 columns and 500 rows. Over a cap, the
- *   table fails to render instead of exhausting memory.
+ * - Table variables are capped at 100 columns and 500 rows, and all tables in
+ *   one field share a 100,000-cell budget. Over a cap, the table fails to
+ *   render instead of exhausting memory.
  * - Large output: "log first, don't block the execution".
  */
 import {
+  MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
   MAX_TABLE_VARIABLE_COLUMNS,
   MAX_TABLE_VARIABLE_ROWS,
 } from '@plumber/shared'
@@ -34,6 +36,21 @@ describe('formatTable limits', () => {
   it('caps the limits at 100 columns and 500 rows', () => {
     expect(MAX_TABLE_VARIABLE_COLUMNS).toBe(100)
     expect(MAX_TABLE_VARIABLE_ROWS).toBe(500)
+    expect(MAX_TABLE_VARIABLE_CELLS_PER_FIELD).toBe(100_000)
+  })
+
+  it('stops rendering tables once the field cell budget runs out', () => {
+    const table = makeTable(MAX_TABLE_VARIABLE_ROWS, MAX_TABLE_VARIABLE_COLUMNS)
+    const options = {
+      selectedColumnIds: table.columns.map((c) => c.id),
+      cellBudget: { remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD },
+    }
+    expect(formatTable(table, options).success).toBe(true)
+    expect(formatTable(table, options).success).toBe(true)
+    expect(formatTable(table, options)).toMatchObject({
+      success: false,
+      error: 'limit_exceeded',
+    })
   })
 
   it('renders a table at the row and column limits', () => {

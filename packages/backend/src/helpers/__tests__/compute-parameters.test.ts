@@ -495,6 +495,23 @@ describe('compute parameters', () => {
       )
     })
 
+    it('shares one cell budget across tables in a field', () => {
+      const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
+      computeParameters(
+        {
+          body: `${tableVariable('table:name')} ${tableVariable('table:name')}`,
+          subject: tableVariable('table:name'),
+        },
+        executionSteps,
+        preprocessVariable,
+      )
+      const budgets = preprocessVariable.mock.calls.map(
+        ([, marker]) => (marker as { cellBudget: unknown }).cellBudget,
+      )
+      expect(budgets[0]).toBe(budgets[1])
+      expect(budgets[2]).not.toBe(budgets[0])
+    })
+
     it('leaves an oversized modifier unrendered', () => {
       const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
       const variable = tableVariable(`table:${'name,'.repeat(70_000)}`)

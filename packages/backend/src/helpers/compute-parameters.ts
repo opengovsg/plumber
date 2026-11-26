@@ -1,3 +1,4 @@
+import { MAX_TABLE_VARIABLE_CELLS_PER_FIELD } from '@plumber/shared'
 import type { IAction } from '@plumber/types'
 import get from 'lodash.get'
 
@@ -5,6 +6,7 @@ import {
   computeForEachParameters,
   ForEachContext,
 } from '@/helpers/compute-for-each-parameters'
+import type { TableCellBudget } from '@/helpers/format-table-variable'
 import { hexDecode } from '@/helpers/hex-encoding'
 import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
@@ -35,6 +37,7 @@ export interface TableVariableMarker {
   __type: 'table'
   data: unknown
   selectedColumnIds: string[]
+  cellBudget: TableCellBudget
 }
 
 function findAndSubstituteVariables(
@@ -95,6 +98,9 @@ function findAndSubstituteVariables(
   }
 
   const parts = rawValue.split(variableRegExp)
+  const tableCellBudget: TableCellBudget = {
+    remaining: MAX_TABLE_VARIABLE_CELLS_PER_FIELD,
+  }
   const { forEachStepPosition, stepPositions, isForEachStep } =
     forEachContext || {}
 
@@ -166,6 +172,7 @@ function findAndSubstituteVariables(
             __type: 'table',
             data: tableData,
             selectedColumnIds,
+            cellBudget: tableCellBudget,
           }
 
           if (preprocessVariable) {

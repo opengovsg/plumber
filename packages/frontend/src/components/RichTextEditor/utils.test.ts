@@ -328,6 +328,30 @@ describe('substituteForPreview', () => {
       )
     })
 
+    it('stops rendering tables once the field cell budget runs out', () => {
+      const columns = Array.from(
+        { length: MAX_TABLE_VARIABLE_COLUMNS },
+        (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
+      )
+      const bigInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: 'big table',
+            table: {
+              columns,
+              rows: Array.from({ length: MAX_TABLE_VARIABLE_ROWS }, () => ({})),
+            },
+          },
+        ],
+      ])
+      const input = makeInput(`table:${columns.map((c) => c.id).join(',')}`)
+      const out = substituteForPreview(input.repeat(3), bigInfo)
+      expect(out.match(/<table/g)).toHaveLength(2)
+      expect(out.endsWith('big table')).toBe(true)
+    })
+
     it('falls back to text value past the row limit', () => {
       const longInfo: VariableInfoMap = new Map([
         [
