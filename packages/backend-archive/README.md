@@ -241,6 +241,15 @@ Delete the folder after the upload:
 rm -rf "$OUT"
 ```
 
+## Execution history
+
+The nightly export also writes the execution days before its first night, back to 1 April 2023. There is no manual command. [`backend-analytics`](../backend-analytics/README.md#history) describes how.
+
+- Each night, after yesterday's files and the open-run snapshot, it writes missing final days, for up to 3 hours: the last 30 days first, so coverage stays complete, then the rest oldest first.
+- Each night logs `analytics.execution_history.progress` per table, with `writtenDays`, `remainingDays` and `firstMissing`. When `remainingDays` reaches 0 in both tables, the history is complete.
+- Archival holds every run whose day is not final yet, from April 2023 on. It logs the floor as `archival.analytics_floor` and counts held runs in `executions_held_for_analytics`. The floor moves forward as the history fills in.
+- Attach the execution tables to PostHog after the history is complete, inside a new source's first 7 days, when synced rows are free.
+
 ## Extracting the mutation log
 
 The archival task also extracts yesterday's GraphQL mutations from the server request log, after the silver tables. It queries `ANALYTICS_REQUEST_LOG_GROUP` with CloudWatch Logs Insights. [`backend-analytics`](../backend-analytics/README.md#mutation_log) describes the rows it writes. A gap older than 7 days needs `analytics:mutation-log --from --to --s3`.

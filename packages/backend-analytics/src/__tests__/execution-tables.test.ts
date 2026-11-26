@@ -6,9 +6,16 @@ import type { Knex } from 'knex'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { localDirCompletionStore } from '../completion-stores'
-import { type CompletionSource, readJobState } from '../day-completion'
 import {
+  checkCoverage,
+  type CompletionSource,
+  loadJobState,
+  readJobState,
+} from '../day-completion'
+import {
+  EXECUTION_HISTORY_MAX_FAILURES,
   EXECUTION_HISTORY_START,
+  writeExecutionHistory,
   executionArchivalFloor,
   type ExecutionDayTable,
   type ExecutionSnapshotTable,
@@ -112,6 +119,8 @@ describe('writeExecutionTables', () => {
       dayTables,
       snapshotTables,
       source,
+      // The history is covered by its own tests below.
+      historyBudgetMs: 0,
     })
   }
 
@@ -152,6 +161,7 @@ describe('writeExecutionTables', () => {
       now: new Date('2026-11-11T17:00:00.000Z'),
       dayTables: [table],
       snapshotTables: [],
+      historyBudgetMs: 0,
     })
 
     expect(
@@ -177,6 +187,19 @@ describe('writeExecutionTables', () => {
     )
 
     expect(snapshot.fetchSnapshot).not.toHaveBeenCalled()
+  })
+
+  it('runs the history in the nightly export', async () => {
+    await write([dayTable()], [])
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'analytics.execution_history.progress',
+        table: 'execution_daily',
+        writtenDays: 0,
+        firstMissing: EXECUTION_HISTORY_START,
+      }),
+    )
   })
 
   it('still writes the snapshot when a day table fails', async () => {
@@ -219,23 +242,34 @@ describe('writeExecutionTables', () => {
   })
 })
 
-// Holds completion files in memory, since the floor reads one per day back to 2023.
+// Holds files in memory, since the history and the floor read one completion file per day back to 2023.
 function memoryBucket() {
-  const keys = new Set<string>()
+  const files = new Map<string, { body: Buffer; at: Date }>()
+  const sink = async (key: string, body: Buffer) => {
+    files.set(key, { body, at: new Date() })
+  }
   const store = {
     list: async (prefix: string) =>
-      [...keys]
-        .filter((key) => key.startsWith(prefix))
-        .map((key) => ({ key, lastModified: NOW })),
-    read: async () => null,
-    lastModified: async () => null,
+      [...files]
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, file]) => ({ key, lastModified: file.at })),
+    read: async (key: string) => files.get(key)?.body ?? null,
+    lastModified: async (key: string) => files.get(key)?.at ?? null,
   }
   const seed = (job: string, days: string[]) => {
-    for (const day of days) {
-      keys.add(`bronze/_completion/${job}/day=${day}.v1.json`)
+    for (const d of days) {
+      files.set(`bronze/_completion/${job}/day=${d}.v1.json`, {
+        body: Buffer.from('{"outputs":[]}'),
+        at: new Date(0),
+      })
     }
   }
-  return { store, seed }
+  const completed = (job: string) =>
+    [...files.keys()]
+      .filter((key) => key.startsWith(`bronze/_completion/${job}/day=`))
+      .map((key) => key.slice(key.lastIndexOf('/') + 1))
+      .sort()
+  return { sink, store, seed, completed }
 }
 
 describe('executionArchivalFloor', () => {
@@ -270,5 +304,185 @@ describe('executionArchivalFloor', () => {
     expect(await executionArchivalFloor(bucket.store, NOW, tables)).toEqual(
       sgtDayWindow('2026-11-10').start,
     )
+  })
+})
+
+describe('writeExecutionHistory', () => {
+  const day = (id: string): ExecutionDayTable<{ id: string }> => ({
+    name: id,
+    version: 1,
+    columns: { id: 'STRING' },
+    fetchDay: vi.fn(async () => [{ id: 'row' }]),
+  })
+
+  function history(
+    bucket: ReturnType<typeof memoryBucket>,
+    tables: ExecutionDayTable<{ id: string }>[],
+    {
+      budgetMs = 60_000,
+      clock = (): number => 0,
+      signal,
+    }: { budgetMs?: number; clock?: () => number; signal?: AbortSignal } = {},
+  ) {
+    return writeExecutionHistory({
+      db,
+      sink: bucket.sink,
+      store: bucket.store,
+      yesterday: YESTERDAY,
+      now: NOW,
+      dayTables: tables,
+      historyBudgetMs: budgetMs,
+      clock,
+      signal,
+    })
+  }
+
+  // Counts time in fetches, so a budget reads as a number of day writes.
+  function ticking(table: ExecutionDayTable<{ id: string }>) {
+    let now = 0
+    vi.mocked(table.fetchDay).mockImplementation(async () => {
+      now += 10
+      return []
+    })
+    return () => now
+  }
+
+  it('writes every table for a day before the next, at the final time', async () => {
+    const bucket = memoryBucket()
+    const order: string[] = []
+    const tables = ['execution_daily', 'execution_step_daily'].map((name) => {
+      const table = day(name)
+      vi.mocked(table.fetchDay).mockImplementation(async (_db, query) => {
+        order.push(`${name} ${query.window.start.toISOString()}`)
+        return []
+      })
+      return table
+    })
+    const done = sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-06')
+    bucket.seed('execution_daily', done)
+    bucket.seed('execution_step_daily', [...done, '2026-11-07'])
+
+    await history(bucket, tables)
+
+    expect(order).toEqual([
+      `execution_daily ${sgtDayWindow('2026-11-07').start.toISOString()}`,
+      `execution_daily ${sgtDayWindow('2026-11-08').start.toISOString()}`,
+      `execution_step_daily ${sgtDayWindow('2026-11-08').start.toISOString()}`,
+      `execution_daily ${sgtDayWindow('2026-11-09').start.toISOString()}`,
+      `execution_step_daily ${sgtDayWindow('2026-11-09').start.toISOString()}`,
+    ])
+    expect(tables[0].fetchDay).toHaveBeenCalledWith(db, {
+      window: sgtDayWindow('2026-11-07'),
+      asOf: finalAsOf('2026-11-07'),
+    })
+  })
+
+  it('writes the days coverage checks first, so the missing-days monitor stays quiet', async () => {
+    const bucket = memoryBucket()
+    const table = day('execution_daily')
+    // The first night wrote its start marker and its one final day.
+    await bucket.sink(
+      'bronze/_completion/execution_daily/start=2026-11-09.json',
+      Buffer.from('{}'),
+    )
+    bucket.seed('execution_daily', ['2026-11-09'])
+    const clock = ticking(table)
+
+    // 40 writes: the 29 missing days of the coverage window, then 11 from April 2023.
+    await history(bucket, [table], { budgetMs: 400, clock })
+
+    const state = await loadJobState(
+      bucket.store,
+      'execution_daily',
+      '2026-11-09',
+    )
+    expect(checkCoverage(state, '2026-11-09', 1).missing).toEqual([])
+    expect(vi.mocked(table.fetchDay).mock.calls.at(-1)?.[1].window).toEqual(
+      sgtDayWindow('2023-04-11'),
+    )
+  })
+
+  it('stops at the time budget and reports what is left', async () => {
+    const bucket = memoryBucket()
+    const table = day('execution_daily')
+    bucket.seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'),
+    )
+    const clock = ticking(table)
+
+    await history(bucket, [table], { budgetMs: 25, clock })
+
+    expect(table.fetchDay).toHaveBeenCalledTimes(3)
+    expect(logger.info).toHaveBeenCalledWith({
+      event: 'analytics.execution_history.progress',
+      table: 'execution_daily',
+      writtenDays: 3,
+      remainingDays: 5,
+      firstMissing: '2026-11-05',
+    })
+  })
+
+  it('skips a failing day, writes the later ones, and fails the run', async () => {
+    const bucket = memoryBucket()
+    const table = day('execution_daily')
+    bucket.seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-06'),
+    )
+    vi.mocked(table.fetchDay)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('statement timeout'))
+      .mockResolvedValueOnce([])
+
+    await expect(history(bucket, [table])).rejects.toThrow(
+      'Execution history failed: execution_daily 2026-11-08',
+    )
+
+    expect(
+      bucket
+        .completed('execution_daily')
+        .filter((key) => key >= 'day=2026-11-07'),
+    ).toEqual(['day=2026-11-07.v1.json', 'day=2026-11-09.v1.json'])
+  })
+
+  it('stops for the night after repeated failures, even mid-day', async () => {
+    const bucket = memoryBucket()
+    const tables = ['execution_daily', 'execution_step_daily'].map((name) => {
+      bucket.seed(name, sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'))
+      const table = day(name)
+      vi.mocked(table.fetchDay).mockRejectedValue(new Error('reader down'))
+      return table
+    })
+
+    await expect(history(bucket, tables)).rejects.toThrow(
+      'Execution history failed',
+    )
+
+    // Two tables fail on the first day, so the cap is reached partway through the second.
+    expect(
+      tables.reduce(
+        (calls, table) => calls + vi.mocked(table.fetchDay).mock.calls.length,
+        0,
+      ),
+    ).toBe(EXECUTION_HISTORY_MAX_FAILURES)
+  })
+
+  it('stops between days once the task is asked to stop', async () => {
+    const bucket = memoryBucket()
+    const table = day('execution_daily')
+    bucket.seed(
+      'execution_daily',
+      sgtDaysBetween(EXECUTION_HISTORY_START, '2026-11-01'),
+    )
+    const controller = new AbortController()
+    vi.mocked(table.fetchDay).mockImplementation(async () => {
+      controller.abort()
+      return []
+    })
+
+    await history(bucket, [table], { signal: controller.signal })
+
+    expect(table.fetchDay).toHaveBeenCalledTimes(1)
   })
 })

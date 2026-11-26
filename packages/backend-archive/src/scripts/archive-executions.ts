@@ -1,5 +1,6 @@
 import {
   createLogsClient,
+  EXECUTION_HISTORY_BUDGET_MS,
   exportMutationLog,
   exportSilverTables,
   loadExecutionArchivalFloor,
@@ -31,6 +32,8 @@ async function runAnalyticsExport(): Promise<boolean> {
       s3Client: archiveS3Client,
       appEnv: archivalConfig.appEnv,
       bucket: archivalConfig.analyticsBucket,
+      historyBudgetMs: EXECUTION_HISTORY_BUDGET_MS,
+      signal: controller.signal,
     })
     // No deadline yet. Alert on durationMs if exports grow slow enough to delay archival.
     logger.info({

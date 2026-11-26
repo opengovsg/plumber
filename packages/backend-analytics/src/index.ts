@@ -12,6 +12,7 @@ export {
 } from './export-silver-tables'
 export {
   EXECUTION_DAY_TABLES,
+  EXECUTION_HISTORY_BUDGET_MS,
   EXECUTION_SNAPSHOT_TABLES,
 } from './execution-tables'
 export {

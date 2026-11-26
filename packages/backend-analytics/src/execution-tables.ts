@@ -2,6 +2,7 @@ import type { Knex } from 'knex'
 
 import {
   completionPrefix,
+  COVERAGE_DAYS,
   type CompletionSource,
   type CompletionStore,
   type JobState,
@@ -160,6 +161,51 @@ interface WriteExecutionTablesParams {
   dayTables?: ExecutionDayTable<SilverRow>[]
   snapshotTables?: ExecutionSnapshotTable<SilverRow>[]
   source?: CompletionSource
+  historyBudgetMs?: number
+  clock?: () => number
+  // Stops the history between days, so a deploy's SIGTERM ends the run cleanly.
+  signal?: AbortSignal
+}
+
+interface DayItem {
+  day: string
+  final: boolean
+}
+
+async function writeExecutionDay({
+  db,
+  sink,
+  table,
+  day,
+  final,
+  now,
+  source,
+}: {
+  db: Knex
+  sink: SilverSink
+  table: ExecutionDayTable<SilverRow>
+  day: string
+  final: boolean
+  now: Date
+  source: CompletionSource
+}): Promise<void> {
+  const asOf = final ? finalAsOf(day) : now
+  if (asOf > now) {
+    throw new Error(
+      `${table.name} ${day} is not final until ${asOf.toISOString()}`,
+    )
+  }
+  const rows = await table.fetchDay(db, { window: sgtDayWindow(day), asOf })
+  const key = await writeDayFile({ sink, table, day, rows, final })
+  if (final) {
+    await markDayComplete({
+      sink,
+      job: table.name,
+      completion: { day, version: table.version, full: false },
+      source,
+      outputs: [key],
+    })
+  }
 }
 
 async function writeExecutionDayTable(
@@ -172,6 +218,7 @@ async function writeExecutionDayTable(
     source = 'nightly',
   }: WriteExecutionTablesParams,
   table: ExecutionDayTable<SilverRow>,
+  plan: (state: JobState) => DayItem[],
 ): Promise<void> {
   await runWithCoverage(
     {
@@ -182,56 +229,35 @@ async function writeExecutionDayTable(
       sink,
     },
     async (state) => {
-      const { final, provisional } = planExecutionDays(
-        state,
-        yesterday,
-        table.version,
-      )
-      const items = [
-        ...final.map((day) => ({ day, final: true })),
-        // IMPORTANT: a final file shares its provisional file's key. A manual run's provisional upload could land after it.
-        ...(source === 'nightly' ? provisional : []).map((day) => ({
-          day,
-          final: false,
-        })),
-      ]
       await writeEachDay({
         job: table.name,
         state,
         version: table.version,
-        items,
+        items: plan(state),
         dayOf: (item) => item.day,
-        write: async ({ day, final: isFinal }) => {
-          const asOf = isFinal ? finalAsOf(day) : now
-          if (asOf > now) {
-            throw new Error(
-              `${table.name} ${day} is not final until ${asOf.toISOString()}`,
-            )
-          }
-          const rows = await table.fetchDay(db, {
-            window: sgtDayWindow(day),
-            asOf,
-          })
-          const key = await writeDayFile({
-            sink,
-            table,
-            day,
-            rows,
-            final: isFinal,
-          })
-          if (isFinal) {
-            await markDayComplete({
-              sink,
-              job: table.name,
-              completion: { day, version: table.version, full: false },
-              source,
-              outputs: [key],
-            })
-          }
-        },
+        write: ({ day, final }) =>
+          writeExecutionDay({ db, sink, table, day, final, now, source }),
       })
     },
   )
+}
+
+function nightlyPlan(
+  yesterday: string,
+  version: number,
+  source: CompletionSource,
+) {
+  return (state: JobState): DayItem[] => {
+    const { final, provisional } = planExecutionDays(state, yesterday, version)
+    return [
+      ...final.map((day) => ({ day, final: true })),
+      // IMPORTANT: a final file shares its provisional file's key. A manual run's provisional upload could land after it.
+      ...(source === 'nightly' ? provisional : []).map((day) => ({
+        day,
+        final: false,
+      })),
+    ]
+  }
 }
 
 // A snapshot cannot be caught up, so coverage reports only last night.
@@ -301,7 +327,11 @@ export async function writeExecutionTables(
   }
   const errors: Error[] = []
   await writeEachTable(dayTables, (table) =>
-    writeExecutionDayTable(params, table),
+    writeExecutionDayTable(
+      params,
+      table,
+      nightlyPlan(params.yesterday, table.version, source),
+    ),
   ).catch((err: Error) => {
     errors.push(err)
   })
@@ -310,8 +340,117 @@ export async function writeExecutionTables(
   ).catch((err: Error) => {
     errors.push(err)
   })
+  // Last, so a slow history night cannot delay yesterday's files.
+  if (dayTables.length > 0) {
+    await writeExecutionHistory({ ...params, dayTables }).catch(
+      (err: Error) => {
+        errors.push(err)
+      },
+    )
+  }
   if (errors.length > 0) {
     throw new Error(errors.map((err) => err.message).join('. '))
+  }
+}
+
+// Keeps the history's reader load inside the quiet hours after the 01:00 run, and each night's run shorter than a day.
+export const EXECUTION_HISTORY_BUDGET_MS = 3 * 60 * 60 * 1_000
+
+// A few failures can be one bad day each. More in one night points at the reader, so the rest waits.
+export const EXECUTION_HISTORY_MAX_FAILURES = 3
+
+/**
+ * Writes missing final days since EXECUTION_HISTORY_START until the night's time budget runs out.
+ *
+ * The last COVERAGE_DAYS go first, then the rest oldest first.
+ *
+ * Each day is written for every table before the next, since archival's floor is the earliest day either lacks.
+ */
+export async function writeExecutionHistory({
+  db,
+  sink,
+  store,
+  yesterday,
+  now,
+  dayTables = EXECUTION_DAY_TABLES,
+  historyBudgetMs = EXECUTION_HISTORY_BUDGET_MS,
+  clock = Date.now,
+  signal,
+}: WriteExecutionTablesParams): Promise<void> {
+  const deadline = clock() + historyBudgetMs
+  const lastFinal = lastFinalDay(yesterday)
+  const history = sgtDaysBetween(EXECUTION_HISTORY_START, lastFinal)
+  // IMPORTANT: one history day moves coverage's expected start back to 2023, so the days it checks go first.
+  // Oldest first would leave them missing, and the missing-days monitor would fire every night.
+  const recentFrom = addSgtDays(lastFinal, -(COVERAGE_DAYS - 1))
+  const order = [
+    ...history.filter((day) => day >= recentFrom),
+    ...history.filter((day) => day < recentFrom),
+  ]
+  const missing = await Promise.all(
+    dayTables.map(async (table) => {
+      const objects = await store.list(completionPrefix(table.name))
+      const { newestVersion } = readJobState(objects.map((o) => o.key))
+      return new Set(history.filter((day) => !newestVersion.has(day)))
+    }),
+  )
+  const written = dayTables.map(() => 0)
+  const failed: string[] = []
+  // Checked before every table write, since each write can take a whole query timeout.
+  const mustStop = () =>
+    signal?.aborted === true || failed.length >= EXECUTION_HISTORY_MAX_FAILURES
+  try {
+    days: for (const day of order) {
+      if (!missing.some((days) => days.has(day))) {
+        continue
+      }
+      if (clock() >= deadline || mustStop()) {
+        break
+      }
+      for (const [i, table] of dayTables.entries()) {
+        if (!missing[i].has(day)) {
+          continue
+        }
+        if (mustStop()) {
+          break days
+        }
+        try {
+          await writeExecutionDay({
+            db,
+            sink,
+            table,
+            day,
+            final: true,
+            now,
+            source: 'backfill',
+          })
+          missing[i].delete(day)
+          written[i]++
+        } catch (err) {
+          // The day stays missing and is retried next night. Later days still get written.
+          logger.error({
+            event: 'analytics.export.day.error',
+            job: table.name,
+            day,
+            err,
+          })
+          failed.push(`${table.name} ${day}`)
+        }
+      }
+    }
+  } finally {
+    dayTables.forEach((table, i) => {
+      logger.info({
+        event: 'analytics.execution_history.progress',
+        table: table.name,
+        writtenDays: written[i],
+        remainingDays: missing[i].size,
+        firstMissing: [...missing[i]].sort()[0] ?? null,
+      })
+    })
+  }
+  if (failed.length > 0) {
+    throw new Error(`Execution history failed: ${failed.join(', ')}`)
   }
 }
 
