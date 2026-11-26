@@ -1,16 +1,18 @@
 import axios from 'axios'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import logger from '@/helpers/logger'
+
+import { resolveDatabricksCredentials } from './resolve-credentials'
 
 const redisClient = createRedisClient(REDIS_DB_INDEX.APP_DATA)
 
 const DATABRICKS_AUTH_TOKEN_REDIS_PREFIX = 'databricks:authToken:'
 
 export async function getDatabricksToken(): Promise<string> {
+  const credentials = resolveDatabricksCredentials('legacy')
   const redisKey =
-    DATABRICKS_AUTH_TOKEN_REDIS_PREFIX + databricksConfig.serverHostname
+    DATABRICKS_AUTH_TOKEN_REDIS_PREFIX + credentials.serverHostname
   try {
     const cachedToken = await redisClient.get(redisKey)
     if (cachedToken) {
@@ -28,10 +30,10 @@ export async function getDatabricksToken(): Promise<string> {
         scope: 'all-apis',
       }),
       {
-        baseURL: `https://${databricksConfig.serverHostname}`,
+        baseURL: `https://${credentials.serverHostname}`,
         auth: {
-          username: databricksConfig.clientId,
-          password: databricksConfig.clientSecret,
+          username: credentials.clientId,
+          password: credentials.clientSecret,
         },
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

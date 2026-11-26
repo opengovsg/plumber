@@ -4,10 +4,10 @@ import IDBSQLClient, {
 } from '@databricks/sql/dist/contracts/IDBSQLClient'
 import { IGlobalVariable } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { constructSchemaName } from '../common/construct-schema-name'
+import { resolveDatabricksCredentials } from './resolve-credentials'
 import { getDatabricksToken } from './token-persistence'
 
 interface CreateSessionOptions {
@@ -33,11 +33,12 @@ export const createSession = async (
     },
   })
 
+  const credentials = resolveDatabricksCredentials('legacy')
   const token = await getDatabricksToken()
   const connectOptions = {
     authType: 'access-token',
-    host: databricksConfig.serverHostname,
-    path: databricksConfig.httpPath,
+    host: credentials.serverHostname,
+    path: credentials.httpPath,
     token,
   } satisfies ConnectionOptions
 
@@ -46,7 +47,7 @@ export const createSession = async (
     connectedClient = await client.connect(connectOptions)
     const session = await connectedClient.openSession({
       initialSchema: options?.skipSchema ? undefined : constructSchemaName($),
-      initialCatalog: databricksConfig.catalog,
+      initialCatalog: credentials.catalog,
     })
     const endSession = async () => {
       try {

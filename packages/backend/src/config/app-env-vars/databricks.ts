@@ -10,7 +10,7 @@ const rawDatabricksConfig = {
   clientSecret: process.env.DATABRICKS_CLIENT_SECRET,
 }
 
-const databricksConfigSchema = z.object({
+export const databricksConfigSchema = z.object({
   serverHostname: z.string().min(1, 'Databricks server hostname is required'),
   httpPath: z.string().min(1, 'Databricks HTTP path is required'),
   catalog: z.string().min(1, 'Databricks catalog name is required'),
@@ -30,3 +30,13 @@ if (databricksConfigParseResult.success === false) {
 }
 
 export const databricksConfig = Object.freeze(databricksConfigParseResult.data)
+
+export function readNewDatabricksConfig() {
+  return {
+    serverHostname: process.env.DATABRICKS_NEW_SERVER_HOSTNAME,
+    httpPath: process.env.DATABRICKS_NEW_HTTP_PATH,
+    catalog: process.env.DATABRICKS_NEW_CATALOG,
+    clientId: process.env.DATABRICKS_NEW_CLIENT_ID,
+    clientSecret: process.env.DATABRICKS_NEW_CLIENT_SECRET,
+  }
+}

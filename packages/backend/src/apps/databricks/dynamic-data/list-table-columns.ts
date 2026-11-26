@@ -4,10 +4,10 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
+import { resolveDatabricksCredentials } from '../auth/resolve-credentials'
 import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickColumnRes } from '../common/types'
 
@@ -25,11 +25,12 @@ const dynamicData: IDynamicData = {
         },
       }
     }
+    const credentials = resolveDatabricksCredentials('legacy')
     const { session, endSession } = await createSession($)
     try {
       const operation = await session.getColumns({
         tableName: $.step.parameters.tableName as string,
-        catalogName: databricksConfig.catalog,
+        catalogName: credentials.catalog,
         schemaName: constructSchemaName($),
       })
       const columns = (await operation.fetchAll({
