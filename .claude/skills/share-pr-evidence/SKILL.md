@@ -7,6 +7,8 @@ description: Records browser screenshots and videos for a PR that changes the Pl
 
 Follow [docs/agents/pr-evidence.md](../../../docs/agents/pr-evidence.md). This skill adds the Claude Code fallback for step 1, when `gh` cannot attach media.
 
+IMPORTANT: never commit the videos, screenshots or contact sheets to the repo. They stay under the git-ignored `tmp/qa/`. Before every commit, run `git status` and confirm it lists no media.
+
 ## Publish a page instead
 
 Use this path only when step 1 rules out `gh pr comment --attach`.

@@ -86,6 +86,7 @@ console.log({ consoleErrors })
 - Prove the outcome outside the screen too. For example, read the saved row with `docker exec backend-postgres-1 psql -U postgres -d plumber_dev`.
 - To show a pending state, delay the request with `page.route`. For example, hold the `UpdateStep` mutation for 4 seconds, then try Esc and an outside click.
 - Record console errors per scenario. Report any you find.
+- Review every video before you post it. Run `node packages/e2e/scripts/video-contact-sheet.mjs tmp/qa/*.webm` from the repo root. It writes `<video>.contact.png` beside each video, with 9 timestamped frames. Check that the frames show the scenario and its result.
 
 ### Good to have
 
@@ -96,7 +97,7 @@ console.log({ consoleErrors })
 ## 4. Keep the files private and out of git
 
 - Save all media under `tmp/qa/`. Git ignores `tmp/`.
-- Never commit screenshots or videos, and never push them to a branch or a release.
+- Never commit videos, screenshots or contact sheets, and never push them to a branch or a release.
 - Before you commit anything else, run `git status` and confirm it lists no media.
 - This repository is public, so media attached to its PRs is public. Record only test users and made-up data.
 - Never upload a Playwright trace. A trace holds page contents and network bodies. Keep it under `tmp/` for local debugging.
