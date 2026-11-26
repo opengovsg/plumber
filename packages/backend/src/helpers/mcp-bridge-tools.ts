@@ -15,6 +15,11 @@ import {
 } from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
 import {
+  type ChatHistoryMessage,
+  isReplyToConnectionConflict,
+  NO_CONNECTION_CONFLICT_MESSAGE,
+} from '@/services/mcp/connection-conflict-reply'
+import {
   createFlowWithStepsService,
   flattenNestedSteps,
   type McpNestedStepInput,
@@ -159,6 +164,7 @@ export function createMcpBridgeTools(
     parameters: IJSONObject,
     parameterLabels?: Record<string, string>,
   ) => void,
+  chatHistory: ChatHistoryMessage[] = [],
 ) {
   const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
@@ -525,7 +531,8 @@ export function createMcpBridgeTools(
       description:
         'Register a FormSG connection on a trigger step, overwriting any existing webhook. ' +
         'Call ONLY after the user has explicitly confirmed they want to overwrite the existing webhook. ' +
-        'On success the connection is persisted to the step.',
+        'On success the connection is persisted to the step. ' +
+        'Returns { error } unless your previous message showed a connectionConflict for this step and connection and the user has replied to it. Relay the error and ask which pipe or form the user means.',
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe containing the step'),
         step_id: z.uuid().describe('ID of the trigger step to register'),
@@ -539,7 +546,10 @@ export function createMcpBridgeTools(
         pipe_id,
         step_id,
         connection_id,
-      }): Promise<RegisterConnectionResult | PublishedPipeErrorResult> => {
+      }): Promise<RegisterConnectionResult | McpToolError> => {
+        if (!isReplyToConnectionConflict(chatHistory, step_id, connection_id)) {
+          return { error: NO_CONNECTION_CONFLICT_MESSAGE }
+        }
         try {
           const result = await registerConnectionService(
             user,
