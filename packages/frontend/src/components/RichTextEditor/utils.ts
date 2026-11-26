@@ -23,6 +23,10 @@ interface TableRenderBudget {
 
 const utf8 = new TextEncoder()
 
+// The backend fails the step for these tables, so the preview says why.
+const TABLE_OVER_LIMIT_NOTICE =
+  "This table is over the size limit, so this email won't send."
+
 interface TableVariablePreviewData {
   columns: Array<{ id: string; name: string }>
   // All rows, so the preview matches the full table the email sends — not the
@@ -289,7 +293,11 @@ function buildTableHtml(
     })
     .join('')
 
-  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
+  // Postman turns newlines into <br>, and the backend renders them that way.
+  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`.replace(
+    /\n/g,
+    '<br>',
+  )
 }
 
 /**
@@ -326,12 +334,12 @@ function renderTableVariableHtml(
       decodedModifier.slice('table:'.length).split(',').filter(Boolean),
     ),
   ]
-  // Mirrors the backend, which sends an empty table past these limits.
   if (
     selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS ||
-    tableData.rows.length > MAX_TABLE_VARIABLE_ROWS
+    tableData.rows.length > MAX_TABLE_VARIABLE_ROWS ||
+    renderBudget.bytes <= 0
   ) {
-    return ''
+    return TABLE_OVER_LIMIT_NOTICE
   }
 
   const columnById = new Map(tableData.columns.map((col) => [col.id, col]))
@@ -349,7 +357,8 @@ function renderTableVariableHtml(
   const html = buildTableHtml(selectedColumns, tableData.rows)
   const bytes = utf8.encode(html).length
   if (bytes > renderBudget.bytes) {
-    return ''
+    renderBudget.bytes = 0
+    return TABLE_OVER_LIMIT_NOTICE
   }
   renderBudget.bytes -= bytes
   return html

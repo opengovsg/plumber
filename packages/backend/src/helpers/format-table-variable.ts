@@ -118,7 +118,9 @@ function formatAsHtml(
   // table costs at most one cell past the limit.
   const parts: string[] = []
   let bytes = 0
-  const append = (html: string): boolean => {
+  const append = (fragment: string): boolean => {
+    // Postman turns newlines into <br> later, so count them as sent.
+    const html = fragment.replace(/\n/g, '<br>')
     bytes += Buffer.byteLength(html)
     parts.push(html)
     return bytes <= maxBytes
@@ -136,11 +138,15 @@ function formatAsHtml(
       return null
     }
   }
-  append('</tr>')
+  if (!append('</tr>')) {
+    return null
+  }
 
   for (const [i, row] of rows.entries()) {
     const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
-    append('<tr>')
+    if (!append('<tr>')) {
+      return null
+    }
     for (const col of columns) {
       if (
         !append(
@@ -152,7 +158,9 @@ function formatAsHtml(
         return null
       }
     }
-    append('</tr>')
+    if (!append('</tr>')) {
+      return null
+    }
   }
 
   if (!append('</tbody></table>')) {

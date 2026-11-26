@@ -1,3 +1,10 @@
+import { randomUUID } from 'crypto'
+
+import {
+  MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+} from '@plumber/shared'
 import {
   IGlobalVariable,
   IJSONArray,
@@ -37,6 +44,10 @@ import getDataOutMetadata from './get-data-out-metadata'
 const sendEmailTestRunMetadataSchema = z
   .object({ useConfiguredEmails: z.boolean().optional() })
   .default({ useConfiguredEmails: false })
+// Stands in for an over-limit table so sendEmail can fail the step. The nonce
+// stops typed body text from matching it.
+const TABLE_OVER_LIMIT_PLACEHOLDER = `[table-over-limit-${randomUUID()}]`
+
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
@@ -66,6 +77,11 @@ const action: IRawAction = {
           error: result.error,
           message: result.message,
         })
+        if (result.error === 'limit_exceeded') {
+          // The step fails, so later tables in it need no more work.
+          value.renderBudget.bytes = 0
+          return TABLE_OVER_LIMIT_PLACEHOLDER
+        }
         return ''
       }
 
@@ -172,6 +188,14 @@ async function sendEmail(
     replyTo,
     attachments,
   } = getSendEmailParams($, testRunMetadata)
+
+  if (typeof body === 'string' && body.includes(TABLE_OVER_LIMIT_PLACEHOLDER)) {
+    throw new StepError({
+      name: 'Tables in this email are too large',
+      solution: `Each table can have up to ${MAX_TABLE_VARIABLE_COLUMNS} columns and ${MAX_TABLE_VARIABLE_ROWS} rows. All tables in one email can add up to ${MAX_TABLE_VARIABLE_BYTES_PER_STEP / (1024 * 1024)} MB. Remove columns or rows, then try again.`,
+      kind: 'config',
+    })
+  }
 
   const result = transactionalEmailSchema.safeParse({
     destinationEmail,

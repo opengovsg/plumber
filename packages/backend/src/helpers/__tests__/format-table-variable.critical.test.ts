@@ -1,9 +1,9 @@
 /**
  * Business rules:
  * - Table variables are capped at 100 columns and 500 rows. All tables in one
- *   step share a 10 MB HTML budget. Over a cap, the
- *   table renders empty instead of exhausting memory.
- * - Large output: log at 5 MB, block at 10 MB.
+ *   step share a 10 MB HTML budget. Over a cap, the step fails
+ *   instead of exhausting memory or sending the email without the table.
+ * - Large output: log at 5 MB, fail the step at 10 MB.
  */
 import {
   MAX_TABLE_VARIABLE_BYTES_PER_STEP,

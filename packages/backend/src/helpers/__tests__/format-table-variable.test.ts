@@ -337,4 +337,15 @@ describe('formatTable', () => {
       expect(result.output.match(/Alice/g)).toHaveLength(1)
     }
   })
+
+  it('renders newlines in cells as line breaks', () => {
+    const result = formatTable(
+      { rows: [{ data: { col1: 'line 1\nline 2' } }], columns: COLS },
+      { selectedColumnIds: ['col1'] },
+    )
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.output).toContain('line 1<br>line 2')
+    }
+  })
 })

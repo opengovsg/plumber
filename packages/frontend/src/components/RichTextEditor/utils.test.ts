@@ -17,6 +17,9 @@ import {
   type VariableInfoMap,
 } from './utils'
 
+const OVER_LIMIT_NOTICE =
+  "This table is over the size limit, so this email won't send."
+
 const varInfo = new Map<
   string,
   {
@@ -299,6 +302,25 @@ describe('substituteForPreview', () => {
       )
     })
 
+    it('renders newlines in cells as line breaks, like the sent email', () => {
+      const multilineInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: '1 row',
+            table: {
+              columns: [{ id: 'c1', name: 'Name' }],
+              rows: [{ c1: 'line 1\nline 2' }],
+            },
+          },
+        ],
+      ])
+      expect(
+        substituteForPreview(makeInput('table:c1'), multilineInfo),
+      ).toContain('line 1<br>line 2')
+    })
+
     it('renders a duplicated column id once', () => {
       const out = substituteForPreview(
         makeInput('table:c1,c1,c1'),
@@ -307,7 +329,7 @@ describe('substituteForPreview', () => {
       expect(out.match(/Alice/g)).toHaveLength(1)
     })
 
-    it('renders an empty table past the column limit', () => {
+    it('shows an over-limit notice past the column limit', () => {
       const columns = Array.from(
         { length: MAX_TABLE_VARIABLE_COLUMNS + 1 },
         (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
@@ -323,7 +345,9 @@ describe('substituteForPreview', () => {
         ],
       ])
       const modifier = `table:${columns.map((c) => c.id).join(',')}`
-      expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual('')
+      expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual(
+        OVER_LIMIT_NOTICE,
+      )
     })
 
     describe('step byte budget', () => {
@@ -344,10 +368,10 @@ describe('substituteForPreview', () => {
       ])
       const modifier = `table:${columns.map((c) => c.id).join(',')}`
 
-      it('renders nothing once the budget runs out', () => {
+      it('shows an over-limit notice once the budget runs out', () => {
         const out = substituteForPreview(makeInput(modifier).repeat(3), bigInfo)
         expect(out.match(/<table/g)).toHaveLength(2)
-        expect(out).not.toContain('big table')
+        expect(out.endsWith(OVER_LIMIT_NOTICE)).toBe(true)
       })
 
       it('shares the budget between table pills and legacy tokens', () => {
@@ -374,7 +398,7 @@ describe('substituteForPreview', () => {
       })
     })
 
-    it('renders an empty table past the row limit', () => {
+    it('shows an over-limit notice past the row limit', () => {
       const longInfo: VariableInfoMap = new Map([
         [
           `{{${TABLE_BASE_PATH}}}`,
@@ -390,7 +414,9 @@ describe('substituteForPreview', () => {
           },
         ],
       ])
-      expect(substituteForPreview(makeInput('table:c1'), longInfo)).toEqual('')
+      expect(substituteForPreview(makeInput('table:c1'), longInfo)).toEqual(
+        OVER_LIMIT_NOTICE,
+      )
     })
 
     // simpleSubstitute powers the "has anything changed since the last test?"

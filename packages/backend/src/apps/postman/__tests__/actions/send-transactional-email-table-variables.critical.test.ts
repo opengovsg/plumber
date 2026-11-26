@@ -1,8 +1,8 @@
 /**
  * Business rules:
  * - Table variables are capped at 100 columns and 500 rows. All tables in one
- *   step share a 10 MB HTML budget. Over a cap, the table renders empty
- *   instead of exhausting memory.
+ *   step share a 10 MB HTML budget. Over a cap, the step fails
+ *   instead of exhausting memory or sending the email without the table.
  */
 import { randomUUID } from 'crypto'
 

@@ -1,3 +1,6 @@
+import { randomUUID } from 'crypto'
+
+import { MAX_TABLE_VARIABLE_ROWS } from '@plumber/shared'
 import { IGlobalVariable, IUser } from '@plumber/types'
 import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -5,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
+import StepError, { getStepErrorKind } from '@/errors/step'
+import computeParameters from '@/helpers/compute-parameters'
+import { hexEncode } from '@/helpers/hex-encoding'
+import ExecutionStep from '@/models/execution-step'
 
 import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendTransactionalEmail from '../../actions/send-transactional-email'
@@ -653,6 +660,36 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
+  })
+
+  it('fails the step with a config error when a table is over the limit', async () => {
+    const stepId = randomUUID()
+    const executionSteps = [
+      {
+        stepId,
+        dataOut: {
+          table: {
+            rows: Array.from({ length: MAX_TABLE_VARIABLE_ROWS + 1 }, () => ({
+              data: { c0: 'x' },
+            })),
+            columns: [{ id: 'c0', name: 'Col' }],
+          },
+        },
+      } as unknown as ExecutionStep,
+    ]
+    $.step.parameters = computeParameters(
+      {
+        ...$.step.parameters,
+        body: `Hi {{step.${stepId}.table|${hexEncode('table:c0')}}}`,
+      },
+      executionSteps,
+      sendTransactionalEmail.preprocessVariable,
+    )
+
+    const error = await sendTransactionalEmail.run!($).catch((e) => e)
+    expect(error).toBeInstanceOf(StepError)
+    expect(getStepErrorKind(error)).toBe('config')
+    expect($.http.post).not.toHaveBeenCalled()
   })
 
   describe('test-run recipient override', () => {
