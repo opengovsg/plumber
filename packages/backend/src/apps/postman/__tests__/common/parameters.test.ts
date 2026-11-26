@@ -1,6 +1,12 @@
 import { assert, beforeEach, describe, expect, it } from 'vitest'
 
-import { transactionalEmailSchema } from '../../common/parameters'
+import { BadUserInputError } from '@/errors/graphql-errors'
+
+import {
+  MAX_ATTACHMENTS,
+  transactionalEmailSchema,
+  validateTransactionalEmailStepParameters,
+} from '../../common/parameters'
 
 function generateEmails(length: number) {
   return Array.from({ length }, (_, i) => `user${i + 1}@example.com`).join(',')
@@ -276,5 +282,59 @@ describe('postman transactional email schema zod validation', () => {
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === true)
     expect(result.data.senderName).toEqual('a'.repeat(validLength))
+  })
+})
+
+describe('postman transactional email attachments limit', () => {
+  const s3Id = 's3:my-bucket:abcd/file.pdf'
+
+  it('accepts the maximum number of attachments at runtime', () => {
+    const result = transactionalEmailSchema.shape.attachments.safeParse(
+      Array(MAX_ATTACHMENTS).fill(s3Id),
+    )
+    expect(result.success).toBe(true)
+  })
+
+  it('removes repeated attachments and empty values at runtime', () => {
+    const result = transactionalEmailSchema.shape.attachments.safeParse([
+      s3Id,
+      '',
+      s3Id,
+    ])
+    assert(result.success === true)
+    expect(result.data).toEqual([s3Id])
+  })
+
+  it('rejects more than the maximum number of attachments at runtime', () => {
+    const result = transactionalEmailSchema.shape.attachments.safeParse(
+      Array(MAX_ATTACHMENTS + 1).fill(s3Id),
+    )
+    assert(result.success === false)
+    expect(result.error.issues[0].message).toEqual(
+      `You can attach at most ${MAX_ATTACHMENTS} files.`,
+    )
+  })
+
+  it.each([
+    { attachments: undefined },
+    { attachments: null },
+    { attachments: [] },
+    { attachments: Array(MAX_ATTACHMENTS).fill('{{step.abc.fields.def}}') },
+  ])('allows saving attachments: $attachments', (parameters) => {
+    expect(() =>
+      validateTransactionalEmailStepParameters({ subject: 'x', ...parameters }),
+    ).not.toThrow()
+  })
+
+  it.each([
+    { attachments: Array(MAX_ATTACHMENTS + 1).fill(s3Id) },
+    { attachments: Array(100_000).fill(s3Id) },
+    { attachments: 's3:my-bucket:abcd/file.pdf' },
+    { attachments: [{ id: s3Id }] },
+    { attachments: ['a'.repeat(2049)] },
+  ])('rejects saving invalid attachments', (parameters) => {
+    expect(() => validateTransactionalEmailStepParameters(parameters)).toThrow(
+      BadUserInputError,
+    )
   })
 })

@@ -17,6 +17,10 @@ import {
 } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
+import {
+  AttachmentSizeExceededError,
+  MAX_TOTAL_ATTACHMENT_SIZE,
+} from './attachment-size'
 import { buildRawEmail, withRecipient } from './build-raw-mime'
 import {
   PostmanEmailDataOut,
@@ -105,9 +109,15 @@ async function sendViaPostman(
   }
 
   for (const attachment of email.attachments ?? []) {
+    // IMPORTANT: wrap without copying. Recipients send in parallel, so a copy
+    // per recipient multiplies attachment memory by the recipient count.
     requestData.append(
       'attachments',
-      Buffer.from(attachment.data),
+      Buffer.from(
+        attachment.data.buffer,
+        attachment.data.byteOffset,
+        attachment.data.byteLength,
+      ),
       attachment.fileName,
     )
   }
@@ -133,23 +143,6 @@ async function sendViaPostman(
       reply_to,
       ...(email.ccList?.length && { cc: email.ccList }),
     },
-  }
-}
-
-// Total attachment cap for the SES path. SES accepts messages up to 40MB after
-// base64 encoding (~1.37x), so we cap raw attachments at 20MB (~27MB encoded) to
-// stay safely under that. Compared against raw (pre-base64) bytes. The Postman
-// route enforces its own (smaller) limit server-side.
-const SES_MAX_TOTAL_ATTACHMENT_SIZE_MB = 20
-const SES_MAX_TOTAL_ATTACHMENT_SIZE =
-  SES_MAX_TOTAL_ATTACHMENT_SIZE_MB * 1024 * 1024
-
-// Thrown by the SES path when attachments exceed the cap above. Mapped to
-// ATTACHMENT-SIZE-EXCEEDED by getSesErrorStatus (matched by name).
-class AttachmentSizeExceededError extends Error {
-  constructor() {
-    super(`Total attachment size exceeds ${SES_MAX_TOTAL_ATTACHMENT_SIZE_MB}MB`)
-    this.name = 'AttachmentSizeExceededError'
   }
 }
 
@@ -346,7 +339,7 @@ export async function sendTransactionalEmails(
       (sum, attachment) => sum + attachment.data.byteLength,
       0,
     )
-    if (totalAttachmentBytes > SES_MAX_TOTAL_ATTACHMENT_SIZE) {
+    if (totalAttachmentBytes > MAX_TOTAL_ATTACHMENT_SIZE) {
       attachmentBuildError = new AttachmentSizeExceededError()
     } else if (!appConfig.ses.fromAddress) {
       attachmentBuildError = new Error(

@@ -3,6 +3,7 @@ import { uniq } from 'lodash'
 import { z } from 'zod'
 
 import appConfig from '@/config/app'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { parseS3Id } from '@/helpers/s3'
 
 import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
@@ -10,6 +11,13 @@ import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
 // Keep the RFC 5321 mailbox length cap. Skip the 64-char local-part cap so
 // plus-tagged routing addresses still parse.
 const MAX_MAILBOX_LENGTH = 254
+
+// Matches the editor's file picker cap. Each attachment is buffered in memory
+// at send time, so the backend must enforce it too.
+export const MAX_ATTACHMENTS = 10
+// A variable placeholder or S3 ID. S3 caps object keys at 1024 bytes.
+const MAX_ATTACHMENT_VALUE_LENGTH = 2048
+const ATTACHMENTS_LIMIT_MESSAGE = `You can attach at most ${MAX_ATTACHMENTS} files.`
 
 // zod's default email pattern, with the local part widened to the character
 // set email-validator (our previous library) allowed. The other built-in
@@ -176,22 +184,47 @@ export const transactionalEmailSchema = z.object({
     .transform((value) =>
       value.substring(0, 255 - ` <${appConfig.postman.fromAddress}>`.length),
     ),
-  attachments: z.array(z.string()).transform((array, context) => {
-    const result: string[] = []
-    for (const value of array) {
-      // Account for optional attachment fields with no response.
-      if (!value) {
-        continue
+  attachments: z
+    .array(z.string())
+    .max(MAX_ATTACHMENTS, ATTACHMENTS_LIMIT_MESSAGE)
+    .transform((array, context) => {
+      const result: string[] = []
+      for (const value of array) {
+        // Account for optional attachment fields with no response.
+        if (!value) {
+          continue
+        }
+        if (!parseS3Id(value)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${value} is not a S3 ID.`,
+          })
+          return z.NEVER
+        }
+        result.push(value)
       }
-      if (!parseS3Id(value)) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `${value} is not a S3 ID.`,
-        })
-        return z.NEVER
-      }
-      result.push(value)
-    }
-    return result
-  }),
+      // Repeats add nothing to the email but would each be downloaded.
+      return uniq(result)
+    }),
 })
+
+const transactionalEmailStepParametersSchema = z
+  .object({
+    attachments: z
+      .array(
+        z.string().max(MAX_ATTACHMENT_VALUE_LENGTH, 'Invalid attachment.'),
+        { error: 'Attachments must be a list.' },
+      )
+      .max(MAX_ATTACHMENTS, ATTACHMENTS_LIMIT_MESSAGE)
+      .nullish(),
+  })
+  .passthrough()
+
+export function validateTransactionalEmailStepParameters(
+  parameters: unknown,
+): void {
+  const result = transactionalEmailStepParametersSchema.safeParse(parameters)
+  if (!result.success) {
+    throw new BadUserInputError(result.error.issues[0].message)
+  }
+}
