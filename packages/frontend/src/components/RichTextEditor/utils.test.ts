@@ -375,6 +375,56 @@ describe('substituteForPreview', () => {
         )
       })
 
+      describe('byte counting', () => {
+        const token = `{{${TABLE_BASE_PATH}|${hexEncode('table:c1')}}}`
+        const infoFor = (rows: Array<Record<string, unknown>>) =>
+          new Map([
+            [
+              `{{${TABLE_BASE_PATH}}}`,
+              {
+                label: 'My table',
+                testRunValue: 'rows',
+                table: { columns: [{ id: 'c1', name: 'Name' }], rows },
+              },
+            ],
+          ]) as VariableInfoMap
+        // A newline, a surrogate pair and both lone surrogates.
+        const tricky = infoFor([{ c1: 'a\nb\u{1F600}\ud800c\udc00' }])
+        const html = simpleSubstitute(token, tricky)
+        // Postman sends each newline as <br>.
+        const sentBytes = new TextEncoder().encode(
+          html.replace(/\n/g, '<br>'),
+        ).length
+
+        it('renders a table that exactly fits the budget', () => {
+          expect(simpleSubstitute(token, tricky, { bytes: sentBytes })).toBe(
+            html,
+          )
+        })
+
+        it('rejects a table one byte over the budget', () => {
+          expect(
+            simpleSubstitute(token, tricky, { bytes: sentBytes - 1 }),
+          ).toBe(OVER_LIMIT_NOTICE)
+        })
+
+        it('stops reading cells once the budget runs out', () => {
+          let laterCellRead = false
+          const laterRow = Object.defineProperty({}, 'c1', {
+            enumerable: true,
+            get: () => {
+              laterCellRead = true
+              return 'x'
+            },
+          })
+          const info = infoFor([{ c1: 'x'.repeat(2000) }, laterRow])
+          expect(simpleSubstitute(token, info, { bytes: 1000 })).toBe(
+            OVER_LIMIT_NOTICE,
+          )
+          expect(laterCellRead).toBe(false)
+        })
+      })
+
       it('shares the budget between table pills and legacy tokens', () => {
         const legacy = `<p>{{${TABLE_BASE_PATH}|${hexEncode(modifier)}}}</p>`
         const out = substituteForPreview(
