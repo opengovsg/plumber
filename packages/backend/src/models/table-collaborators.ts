@@ -61,8 +61,9 @@ class TableCollaborator extends Base {
     tableId: string,
     role: ITableCollabRole,
     $?: IGlobalVariable,
+    trx?: Transaction,
   ): Promise<void | never> => {
-    const collaborator = await this.query().findOne({
+    const collaborator = await this.query(trx).findOne({
       user_id: userId,
       table_id: tableId,
     })

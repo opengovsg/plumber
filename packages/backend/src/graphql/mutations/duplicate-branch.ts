@@ -6,6 +6,7 @@ import {
   sanitizeServerSideConfig,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { assertStepTileAccess } from '@/helpers/assert-step-tile-access'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -108,6 +109,13 @@ const duplicateBranch: NonNullable<
         connectionId: connection?.id ?? undefined,
         config: sanitizedConfig,
         version: getStepVersion(appKey ?? undefined, key ?? undefined),
+      })
+
+      await assertStepTileAccess({
+        userId: context.currentUser.id,
+        appKey: step.appKey,
+        parameters: step.parameters,
+        trx,
       })
 
       newSteps.push(step)

@@ -637,6 +637,22 @@ describe('createStep mutation integration tests', async () => {
       expect(newStep!.key).toBe('sendTransactionalEmail')
     })
   })
+
+  it('rejects a malformed Tiles tableId as bad input and leaves no step', async () => {
+    const params = {
+      input: {
+        ...genericNewStepParams.input,
+        appKey: 'tiles',
+        key: 'findMultipleRows',
+        parameters: { tableId: 'not-a-uuid' },
+      },
+    }
+
+    await expect(createStep({}, params, context)).rejects.toThrow(
+      BadUserInputError,
+    )
+    expect(await testFlow.$relatedQuery('steps').resultSize()).toBe(3)
+  })
 })
 
 describe('createStep endStepId write rules', () => {
