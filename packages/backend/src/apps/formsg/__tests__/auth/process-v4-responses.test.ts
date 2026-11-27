@@ -1328,12 +1328,11 @@ describe('processResponsesV4', () => {
       ])
     })
 
-    it('does not restore statement, image, or section fields', async () => {
+    it('does not restore statement or image fields', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'intro', title: 'Read this', fieldType: 'statement' },
           { _id: 'pic', title: 'Logo', fieldType: 'image' },
-          { _id: 'head', title: 'Details', fieldType: 'section' },
           { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
         ]),
       )
@@ -1348,6 +1347,113 @@ describe('processResponsesV4', () => {
           answer: '',
         },
       ])
+    })
+
+    it('restores section fields in the v2.1 header shape, in schema order', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'head1', title: 'a@example.com', fieldType: 'section' },
+          { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+          { _id: 'head2', title: 'Details', fieldType: 'section' },
+          { _id: 'q2', title: 'Notes', fieldType: 'textfield' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        q1: v4Response('textfield', { value: 'first' }),
+        q2: v4Response('textfield', { value: 'second' }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'head1',
+          fieldType: 'section',
+          question: 'a@example.com',
+          answer: '',
+        },
+        {
+          _id: 'q1',
+          fieldType: 'textfield',
+          question: 'Short answer',
+          answer: 'first',
+        },
+        {
+          _id: 'head2',
+          fieldType: 'section',
+          question: 'Details',
+          answer: '',
+        },
+        {
+          _id: 'q2',
+          fieldType: 'textfield',
+          question: 'Notes',
+          answer: 'second',
+        },
+      ])
+    })
+
+    it('restores section fields for a migrated storage form (multi-respondent, no workflow)', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce({
+        form: {
+          responseMode: 'multirespondent',
+          workflow: [],
+          form_fields: [
+            { _id: 'head', title: 'Details', fieldType: 'section' },
+            { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+          ],
+        },
+      })
+
+      const result = await processResponsesV4($, 'formId', {
+        q1: v4Response('textfield', { value: 'first' }),
+      })
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['head', ''],
+        ['q1', 'first'],
+      ])
+    })
+
+    it('does not restore section fields for a multi-respondent form with a workflow', async () => {
+      const workflow = [
+        {
+          _id: 'step0',
+          edit: ['head', 'q1'],
+          workflow_type: 'static' as const,
+        },
+      ]
+      mocks.fetchFormSchema.mockResolvedValueOnce({
+        form: {
+          responseMode: 'multirespondent',
+          workflow,
+          form_fields: [
+            { _id: 'head', title: 'Details', fieldType: 'section' },
+            { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+          ],
+        },
+      })
+
+      const result = await processResponsesV4(
+        {
+          request: {
+            body: {
+              data: {
+                workflowContent: {
+                  workflow,
+                  workflowStep: 0,
+                  submittedSteps: [],
+                },
+              },
+            },
+          },
+        } as IGlobalVariable,
+        'formId',
+        {
+          q1: v4Response('textfield', { value: 'first' }),
+        },
+      )
+
+      expect(result.map((field) => field._id)).toEqual(['q1'])
     })
 
     it('restores omitted fields when multi-respondent mode has no workflow', async () => {
