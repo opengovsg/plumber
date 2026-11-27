@@ -3,6 +3,7 @@ import { raw } from 'objection'
 
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
+import Step from '@/models/step'
 import type User from '@/models/user'
 import {
   getMrfTestStartStep,
@@ -63,10 +64,12 @@ export async function executeStepService(
   let executionStep = startExecutionStep
   let stageFailure: MrfStageTestResult | undefined
   if (!startExecutionStep.isFailed) {
-    const completedStep = await step.$query().patchAndFetch({
-      status: 'completed',
-      config: raw(`config - 'templateConfig'`),
-    })
+    const completedStep = await Step.transaction(async (trx) =>
+      step.$query(trx).patchAndFetch({
+        status: 'completed',
+        config: raw(`config - 'templateConfig'`),
+      }),
+    )
 
     // Passing the trigger completes every stage step too, as in the editor.
     if (isMrfStep(completedStep)) {
