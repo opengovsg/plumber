@@ -3,7 +3,7 @@ import { Tooltip } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import { IStep } from '@plumber/types'
 import { usePostHog } from 'posthog-js/react'
-import { useCallback, useContext } from 'react'
+import { useCallback, useContext, useRef } from 'react'
 import { BiDuplicate } from 'react-icons/bi'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
@@ -28,28 +28,33 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
 
   // TODO: use onCreateStep from EditorContext instead
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
+  // The `step` prop lags behind a save made from the unsaved changes dialog.
+  const savedStepRef = useRef<IStep | null>(null)
   const onDuplicateStep = useCallback(async () => {
+    const savedStep = savedStepRef.current
+    savedStepRef.current = null
+    const source = savedStep?.id === step.id ? { ...step, ...savedStep } : step
     const duplicateConfig = {
-      ...(step.config?.approval && {
-        approval: step.config?.approval,
+      ...(source.config?.approval && {
+        approval: source.config?.approval,
       }),
-      ...(step.config?.stepName && {
-        stepName: `[COPY] ${step.config.stepName}`,
+      ...(source.config?.stepName && {
+        stepName: `[COPY] ${source.config.stepName}`,
       }),
     }
 
     const mutationInput = {
       previousStep: {
-        id: step.id,
+        id: source.id,
       },
       flow: {
         id: flow.id,
-        updatedAt: flow.updatedAt,
+        updatedAt: savedStep?.flow?.updatedAt ?? flow.updatedAt,
       },
-      appKey: step.appKey,
-      key: step.key,
-      connection: { id: step.connection?.id },
-      parameters: { ...step.parameters },
+      appKey: source.appKey,
+      key: source.key,
+      connection: { id: source.connection?.id },
+      parameters: { ...source.parameters },
       config: duplicateConfig,
     }
 
@@ -98,7 +103,10 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
         cancelRef={cancelRef}
         isOpen={isWarningOpen}
         onClose={onWarningClose}
-        onLeave={handleLeave}
+        onLeave={(savedStep) => {
+          savedStepRef.current = savedStep ?? null
+          handleLeave()
+        }}
       />
     </>
   )

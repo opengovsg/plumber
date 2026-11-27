@@ -311,6 +311,7 @@ export default function EditorLayout() {
         isOpen={isWarningOpen}
         onClose={handleWarningClose}
         onLeave={onDiscardChanges}
+        requiresCompleteStep={shouldWarnOnPublish}
       />
 
       <UnpublishConfirmationDialog
