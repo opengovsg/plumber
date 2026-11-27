@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # 22.23.4-alpine
-FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS build
+FROM node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 
 ARG APP_ENV=prod
 ARG RELEASE_VERSION
@@ -47,7 +47,7 @@ RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm --filter backend deploy --prod ./deploy/backend
 
 # 22.23.4-alpine
-FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS main
+FROM node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS main
 
 # The backend reads APP_VERSION at runtime. Build args do not carry across stages.
 ARG APP_VERSION
