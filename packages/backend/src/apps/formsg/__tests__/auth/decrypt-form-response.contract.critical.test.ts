@@ -84,6 +84,8 @@ function makeSchema() {
       title: 'Child records',
       childrenSubFields: ['childname', 'childgender'],
     },
+    // Last, so the fields above keep their order.
+    { _id: 'head1', fieldType: 'section', title: 'Header title' },
   ]
   const formFields: FormSchemaField[] = [
     ...makeExampleV4FormSchema().form.form_fields,

@@ -228,7 +228,10 @@ function withOmittedFields(
   }
 
   const answerFields = schemaFields.filter(
-    (field) => !NON_ANSWER_FIELD_TYPES.has(field.fieldType),
+    (field) =>
+      !NON_ANSWER_FIELD_TYPES.has(field.fieldType) ||
+      // Storage-mode payloads (v2.1) sent header titles, and pipes reference them. MRF payloads never did.
+      (field.fieldType === 'section' && restorableIds === null),
   )
   const answerIds = new Set(answerFields.map((field) => field._id))
   const schemaIds = new Set(schemaFields.map((field) => field._id))
