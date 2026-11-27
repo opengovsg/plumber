@@ -156,7 +156,8 @@ export async function decryptFormResponse(
     if (isFieldResponsesV4(rawResponses)) {
       mappedResponses = await processResponsesV4($, data.formId, rawResponses)
     } else if (version >= 4 && Object.keys(rawResponses).length === 0) {
-      // v4 sends an empty map when every answer is blank, and the shape check cannot classify it.
+      // The shape check cannot classify an empty map, which v4 sends when every answer is blank.
+      // IMPORTANT: version 4 can still wrap v3-shaped responses, so only shapeless empty maps fall back to it.
       mappedResponses = await processResponsesV4($, data.formId, {})
     } else {
       // NOTE: V3 will be deprecated soon (tm)
