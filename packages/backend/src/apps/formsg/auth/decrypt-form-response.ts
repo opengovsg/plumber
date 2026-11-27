@@ -152,10 +152,16 @@ export async function decryptFormResponse(
     }
 
     const rawResponses = decryptedSubmission.responses
-    const mappedResponses = isFieldResponsesV4(rawResponses)
-      ? await processResponsesV4($, data.formId, rawResponses)
-      : // NOTE: V3 will be deprecated soon (tm)
-        await processResponsesV3($, data.formId, rawResponses)
+    let mappedResponses: MappedFormField[]
+    if (isFieldResponsesV4(rawResponses)) {
+      mappedResponses = await processResponsesV4($, data.formId, rawResponses)
+    } else if (version >= 4 && Object.keys(rawResponses).length === 0) {
+      // v4 sends an empty map when every answer is blank, and the shape check cannot classify it.
+      mappedResponses = await processResponsesV4($, data.formId, {})
+    } else {
+      // NOTE: V3 will be deprecated soon (tm)
+      mappedResponses = await processResponsesV3($, data.formId, rawResponses)
+    }
 
     submission = {
       responses: mappedResponses,

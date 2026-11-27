@@ -168,6 +168,55 @@ describe('decrypt form response - MRF specific', () => {
     vi.restoreAllMocks()
   })
 
+  describe('empty response map', () => {
+    const schema = {
+      form: {
+        form_fields: [
+          { _id: 'head', title: 'Details', fieldType: 'section' },
+          { _id: 'q1', title: 'Optional question', fieldType: 'textfield' },
+        ],
+      },
+    }
+
+    it('restores headers and blank answers when a v4 envelope has no responses', async () => {
+      $.request.body.data.version = 4
+      mocks.fetchFormSchema.mockResolvedValueOnce(schema)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: undefined,
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.fields).toEqual({
+        head: {
+          order: 1,
+          fieldType: 'section',
+          question: 'Details',
+          answer: '',
+        },
+        q1: {
+          order: 2,
+          fieldType: 'textfield',
+          question: 'Optional question',
+          answer: '',
+        },
+      })
+    })
+
+    it('keeps the v3 path for an empty map in a v3 envelope', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(schema)
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        responses: {},
+        verified: undefined,
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body.fields).toEqual({})
+    })
+  })
+
   describe('v3 decryption path', () => {
     it('should call cryptoV3.decrypt and processResponsesV3 for v3 submissions', async () => {
       const v3Responses = {
