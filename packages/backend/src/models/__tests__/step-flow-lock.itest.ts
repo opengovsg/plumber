@@ -1,26 +1,45 @@
 import { randomUUID } from 'crypto'
 
 import type { Transaction } from 'objection'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
+import deleteConnection from '@/graphql/mutations/delete-connection'
+import Connection from '@/models/connection'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
+import flowQueue from '@/queues/flow'
 import { updateFlowStatusService } from '@/services/flow/update-flow-status'
+import type Context from '@/types/express/context'
 
-async function waitForLockWaiters(count: number): Promise<void> {
+async function countLockWaiters(): Promise<number> {
+  const { rows } = await Flow.knex().raw<{ rows: { count: number }[] }>(
+    `SELECT count(*)::int AS count FROM pg_stat_activity
+     WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+  )
+  return rows[0].count
+}
+
+async function waitUntil(
+  condition: () => Promise<boolean>,
+  description: string,
+): Promise<void> {
   for (let attempt = 0; attempt < 120; attempt++) {
-    const { rows } = await Flow.knex().raw<{ rows: { count: number }[] }>(
-      `SELECT count(*)::int AS count FROM pg_stat_activity
-       WHERE datname = current_database() AND wait_event_type = 'Lock'`,
-    )
-    if (rows[0].count >= count) {
+    if (await condition()) {
       return
     }
     await new Promise((resolve) => setTimeout(resolve, 25))
   }
-  throw new Error(`Timed out waiting for ${count} lock waiters`)
+  throw new Error(`Timed out waiting for ${description}`)
+}
+
+async function waitForLockWaiters(count: number): Promise<void> {
+  await waitUntil(
+    async () => (await countLockWaiters()) >= count,
+    `${count} lock waiters`,
+  )
 }
 
 function settle<T>(promise: Promise<T>): Promise<T | Error> {
@@ -183,6 +202,73 @@ describe('step writes lock the flow row', () => {
     expect(step.parameters).toEqual({ edited: true })
   })
 
+  it('rejects a publish when another user edits the pipe while it waits on the flow lock', async () => {
+    const otherUser = await User.query().insert({
+      id: randomUUID(),
+      email: `${randomUUID()}@example.com`,
+    })
+    const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    flow.steps = await flow.$relatedQuery('steps').orderBy('position')
+    const seenUpdatedAt = String(new Date(flow.updatedAt).getTime())
+
+    const editTrx = await Step.startTransaction()
+    let publishResult!: Promise<Flow | Error>
+    await holding(editTrx, async (launch) => {
+      await Step.query(editTrx).patchAndFetchById(actionStepId, {
+        parameters: { edited: true },
+      })
+      await Flow.query(editTrx)
+        .findById(flowId)
+        .patch({ updatedBy: otherUser.id })
+      publishResult = launch(
+        updateFlowStatusService({
+          flow,
+          active: true,
+          userId: user.id,
+          updatedAt: seenUpdatedAt,
+        }),
+      )
+      await waitForLockWaiters(1)
+      await editTrx.commit()
+    })
+
+    const publishError = await publishResult
+    expect(publishError).toBeInstanceOf(BadUserInputError)
+    expect((publishError as Error).message).toBe(
+      'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.',
+    )
+    const finalFlow = await Flow.query().findById(flowId).throwIfNotFound()
+    expect(finalFlow.active).toBe(false)
+  })
+
+  it('keeps a config change that commits while publish waits on the flow lock', async () => {
+    const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    flow.steps = await flow.$relatedQuery('steps').orderBy('position')
+
+    const configTrx = await Flow.startTransaction()
+    let publishResult!: Promise<Flow | Error>
+    await holding(configTrx, async (launch) => {
+      await Flow.query(configTrx)
+        .findById(flowId)
+        .patch({ config: { maxQps: 5 }, updatedBy: user.id })
+      publishResult = launch(
+        updateFlowStatusService({
+          flow,
+          active: true,
+          userId: user.id,
+          updatedAt: flow.updatedAt,
+        }),
+      )
+      await waitForLockWaiters(1)
+      await configTrx.commit()
+    })
+
+    expect(await publishResult).toBeInstanceOf(Flow)
+    const finalFlow = await Flow.query().findById(flowId).throwIfNotFound()
+    expect(finalFlow.active).toBe(true)
+    expect(finalFlow.config).toEqual({ maxQps: 5 })
+  })
+
   it('lets an execution insert proceed while a step write holds the flow lock', async () => {
     const stepTrx = await Step.startTransaction()
     let executionResult!: Promise<Execution | Error>
@@ -200,5 +286,151 @@ describe('step writes lock the flow row', () => {
         Execution,
       )
     })
+  })
+})
+
+describe('publishing and deleting a connection', () => {
+  let user: User
+  let flowId: string
+  let actionStepId: string
+  let connectionA: Connection
+  let connectionB: Connection
+
+  beforeEach(async () => {
+    user = await User.query().insert({
+      id: randomUUID(),
+      email: `${randomUUID()}@example.com`,
+    })
+    const [a, b] = await Promise.all(
+      ['A', 'B'].map((name) =>
+        Connection.query().insertAndFetch({
+          userId: user.id,
+          key: 'custom-api',
+          formattedData: { screenName: `Connection ${name}` },
+          verified: true,
+        }),
+      ),
+    )
+    connectionA = a
+    connectionB = b
+    flowId = randomUUID()
+    actionStepId = randomUUID()
+    await Flow.query().insert({
+      id: flowId,
+      name: 'test flow',
+      userId: user.id,
+      updatedBy: user.id,
+    })
+    await Step.query().insert([
+      {
+        flowId,
+        type: 'trigger',
+        position: 1,
+        status: 'completed',
+        appKey: 'scheduler',
+        key: 'everyHour',
+        parameters: {},
+      },
+      {
+        id: actionStepId,
+        flowId,
+        type: 'action',
+        position: 2,
+        status: 'completed',
+        appKey: 'custom-api',
+        key: 'httpRequest',
+        connectionId: connectionA.id,
+        parameters: {},
+      },
+    ])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('never leaves a published pipe on a deleted connection', async () => {
+    // Holds publish open after its checks, so the delete can run before the
+    // publish commits.
+    let releaseQueueAdd!: () => void
+    const queueAddReleased = new Promise<void>((resolve) => {
+      releaseQueueAdd = resolve
+    })
+    let queueAddCalled = false
+    vi.spyOn(flowQueue, 'add').mockImplementation(async () => {
+      queueAddCalled = true
+      await queueAddReleased
+      return undefined as never
+    })
+
+    const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    flow.steps = await flow.$relatedQuery('steps').orderBy('position')
+    const context = { currentUser: user } as unknown as Context
+
+    const stepTrx = await Step.startTransaction()
+    let publishResult!: Promise<Flow | Error>
+    let deleteResult!: Promise<unknown>
+    await holding(stepTrx, async (launch) => {
+      try {
+        // A step save switching the connection from A to B is in flight.
+        await Step.query(stepTrx).patchAndFetchById(actionStepId, {
+          connectionId: connectionB.id,
+        })
+        publishResult = launch(
+          updateFlowStatusService({
+            flow,
+            active: true,
+            userId: user.id,
+            updatedAt: flow.updatedAt,
+          }),
+        )
+        await waitForLockWaiters(1)
+        let deleteSettled = false
+        deleteResult = launch(
+          Promise.resolve(
+            deleteConnection({}, { input: { id: connectionB.id } }, context),
+          ),
+        )
+        void deleteResult.then(() => {
+          deleteSettled = true
+        })
+        await waitForLockWaiters(2)
+
+        await stepTrx.commit()
+        await waitUntil(
+          async () =>
+            deleteSettled ||
+            (queueAddCalled && (await countLockWaiters()) >= 1),
+          'the delete to finish or wait on the publish',
+        )
+      } finally {
+        releaseQueueAdd()
+      }
+    })
+
+    // Exactly one side wins. The loser fails with its own rule's error.
+    const publishOutcome = await publishResult
+    const deleteOutcome = await deleteResult
+    const [winner, loser, loserMessage] =
+      publishOutcome instanceof Flow
+        ? [
+            publishOutcome,
+            deleteOutcome,
+            'This connection is used by a published pipe. Unpublish the pipe or switch its connection before deleting.',
+          ]
+        : [
+            deleteOutcome,
+            publishOutcome,
+            'This pipe uses a connection that has been deleted. Switch the step to another connection before publishing.',
+          ]
+    expect(winner instanceof Error).toBe(false)
+    expect(loser).toBeInstanceOf(BadUserInputError)
+    expect((loser as Error).message).toBe(loserMessage)
+    const finalFlow = await Flow.query().findById(flowId).throwIfNotFound()
+    const finalConnectionB = await Connection.query()
+      .withSoftDeleted()
+      .findById(connectionB.id)
+      .throwIfNotFound()
+    expect(finalFlow.active && finalConnectionB.deletedAt !== null).toBe(false)
   })
 })

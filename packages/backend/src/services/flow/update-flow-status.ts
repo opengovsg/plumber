@@ -106,34 +106,9 @@ export async function updateFlowStatusService({
     return flow
   }
 
-  flow.assertNotUpdatedSince(updatedAt, userId)
-
-  if (active) {
-    validateFlowSteps(flow.steps)
-    validateFlowBlocks(flow.steps, flow.id)
-  }
   const jobName = `${JOB_NAME}-${flow.id}`
-  const previousPublishedAt = flow.publishedAt
-
-  const triggerStep = await flow.getTriggerStep()
-  const trigger = await triggerStep.getTriggerCommand()
-  if (!trigger) {
-    throw new Error(`Trigger command not found for step: ${triggerStep.id}`)
-  }
-  const interval = trigger.getInterval?.(triggerStep.parameters)
-  const repeatOptions = {
-    pattern: interval || EVERY_15_MINUTES_CRON,
-    /**
-     * Why supply a custom repeat key instead of letting bullmq derive one?
-     * The default repeat-zset member differs across the bullmq upgrade: 5.7.8
-     * stores a readable concat (`flow-<id>:<id>:::<cron>`), while 5.70.2 stores
-     * the md5 HASH of that concat. Supplying our own key makes both versions
-     * store the job under a member we control (`flow-<id>`), so we can locate and
-     * remove it by prefix on either version — including after rolling the server
-     * back from 5.70.2 to 5.7.8.
-     */
-    key: jobName,
-  }
+  let previousPublishedAt = flow.publishedAt
+  let hasChanged = false
 
   /**
    * Patch first inside the transaction, then perform the queue op.
@@ -142,8 +117,50 @@ export async function updateFlowStatusService({
    * the repeatable job exists.
    */
   await Flow.transaction(async (trx) => {
+    // IMPORTANT: Lock the flow before reading it or its steps. Step writes take
+    // the same lock, so everything checked below stays current until commit.
+    const lockedFlow = await Flow.query(trx)
+      .findById(flow.id)
+      .forNoKeyUpdate()
+      .throwIfNotFound()
+    flow.active = lockedFlow.active
+    flow.publishedAt = lockedFlow.publishedAt
+    flow.updatedAt = lockedFlow.updatedAt
+    flow.updatedBy = lockedFlow.updatedBy
+    flow.config = lockedFlow.config
+    if (flow.active === active) {
+      return
+    }
+    flow.assertNotUpdatedSince(updatedAt, userId)
+    previousPublishedAt = flow.publishedAt
+
     if (active) {
+      const steps = await Step.query(trx)
+        .where('flow_id', flow.id)
+        .orderBy('position', 'asc')
+      validateFlowSteps(steps)
+      validateFlowBlocks(steps, flow.id)
       await assertConnectionsAreLive(flow.id, trx)
+    }
+
+    const triggerStep = await flow.getTriggerStep(trx)
+    const trigger = await triggerStep.getTriggerCommand()
+    if (!trigger) {
+      throw new Error(`Trigger command not found for step: ${triggerStep.id}`)
+    }
+    const interval = trigger.getInterval?.(triggerStep.parameters)
+    const repeatOptions = {
+      pattern: interval || EVERY_15_MINUTES_CRON,
+      /**
+       * Why supply a custom repeat key instead of letting bullmq derive one?
+       * The default repeat-zset member differs across the bullmq upgrade: 5.7.8
+       * stores a readable concat (`flow-<id>:<id>:::<cron>`), while 5.70.2 stores
+       * the md5 HASH of that concat. Supplying our own key makes both versions
+       * store the job under a member we control (`flow-<id>`), so we can locate and
+       * remove it by prefix on either version — including after rolling the server
+       * back from 5.70.2 to 5.7.8.
+       */
+      key: jobName,
     }
 
     await flow.$query(trx).patch({
@@ -248,7 +265,12 @@ export async function updateFlowStatusService({
         }
       }
     }
+    hasChanged = true
   })
+
+  if (!hasChanged) {
+    return flow
+  }
 
   // After the commit, so a rolled-back change sends nothing.
   captureFlowStatusChange({ flow, active, userId, source, previousPublishedAt })
