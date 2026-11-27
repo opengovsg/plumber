@@ -114,6 +114,7 @@ const createFlowWithSteps: NonNullable<
         },
         parameters: step?.parameters || {},
         position: step.position,
+        updatedBy: context.currentUser.id,
       }
     })
 

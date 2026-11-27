@@ -165,6 +165,7 @@ export async function createStepInTransaction(
     trx,
     flow,
     previousStep,
+    updatedBy: user.id,
     appKey,
     key,
     parameters: isIfThen ? { depth: 0 } : {},

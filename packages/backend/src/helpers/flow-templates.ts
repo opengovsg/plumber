@@ -295,6 +295,7 @@ export async function createFlowFromTemplate(
         key: eventKey,
         parameters: updatedParameters,
         version: getStepVersion(appKey, eventKey),
+        updatedBy: user.id,
         config: {
           templateConfig: {
             appEventKey,

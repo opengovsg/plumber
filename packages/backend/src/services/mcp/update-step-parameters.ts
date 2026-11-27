@@ -201,6 +201,7 @@ export async function updateStepParametersService({
       parameters: mergedParameters,
       version,
       status: 'incomplete',
+      updatedBy: user.id,
       ...(traceId && {
         config: appendStepAiBuilderEvent(
           step.config,
