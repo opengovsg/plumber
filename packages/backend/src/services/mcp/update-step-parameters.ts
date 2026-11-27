@@ -4,6 +4,9 @@ import apps from '@/apps'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
+import { ForbiddenError } from '@/errors/graphql-errors'
+import { UserFacingError } from '@/errors/user-facing-error'
+import { assertStepTileAccess } from '@/helpers/assert-step-tile-access'
 import globalVariable from '@/helpers/global-variable'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -150,6 +153,22 @@ export async function updateStepParametersService({
     if (step.type === 'action') {
       const action = definition as IRawAction
       action.validateStepParameters?.(mergedParameters)
+    }
+
+    try {
+      await assertStepTileAccess({
+        userId: user.id,
+        appKey: step.appKey,
+        parameters: mergedParameters,
+        trx,
+      })
+    } catch (error) {
+      if (error instanceof ForbiddenError) {
+        throw new UserFacingError(
+          'You do not have permission to use this Tile in the step',
+        )
+      }
+      throw error
     }
 
     if (connectionId !== undefined) {

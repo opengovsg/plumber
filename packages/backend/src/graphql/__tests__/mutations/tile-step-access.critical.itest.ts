@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
+import { UserFacingError } from '@/errors/user-facing-error'
 import createStep from '@/graphql/mutations/create-step'
 import duplicateBranch from '@/graphql/mutations/duplicate-branch'
+import { getAiChatErrorMessage } from '@/helpers/ai/get-ai-chat-error-message'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
+import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 import Context from '@/types/express/context'
 
 import { generateMockCollaborator, generateMockUser } from './flow.mock'
@@ -162,6 +165,65 @@ describe('Tiles step access', () => {
       )
 
       expect(result!.steps![0]!.parameters).toEqual({ tableId: sharedTile.id })
+    })
+  })
+
+  describe('MCP update_step_parameters', () => {
+    let tilesStep: Step
+
+    const updateParameters = (parameters: Record<string, unknown>) =>
+      updateStepParametersService({
+        user: editor,
+        pipeId: flow.id,
+        stepId: tilesStep.id,
+        parameters,
+      })
+
+    beforeEach(async () => {
+      tilesStep = await flow.$relatedQuery('steps').insertAndFetch({
+        ...tilesStepInput(sharedTile.id),
+        type: 'action',
+        position: 3,
+      })
+    })
+
+    it('rejects a Tile the editor cannot edit and keeps the old Tile', async () => {
+      const error = await updateParameters({ tableId: ownerOnlyTile.id }).catch(
+        (e: unknown) => e,
+      )
+
+      expect(error).toBeInstanceOf(UserFacingError)
+      expect(getAiChatErrorMessage(error)).toBe(
+        'You do not have permission to use this Tile in the step',
+      )
+
+      expect((await tilesStep.$query()).parameters).toEqual({
+        tableId: sharedTile.id,
+      })
+    })
+
+    it('accepts a Tile the editor can edit', async () => {
+      const editorTile = await editor
+        .$relatedQuery('tables')
+        .insert({ name: 'Editor owned', role: 'owner', db: 'pg' })
+
+      const { step } = await updateParameters({ tableId: editorTile.id })
+
+      expect(step.parameters).toEqual({ tableId: editorTile.id })
+    })
+
+    it('rejects editing other fields of a step on a Tile the editor cannot edit', async () => {
+      await tilesStep
+        .$query()
+        .patch({ parameters: { tableId: ownerOnlyTile.id } })
+
+      await expect(
+        updateParameters({ returnLastRowFirst: true }),
+      ).rejects.toThrow(UserFacingError)
+
+      expect((await tilesStep.$query()).parameters).toEqual({
+        tableId: ownerOnlyTile.id,
+      })
     })
   })
 })
