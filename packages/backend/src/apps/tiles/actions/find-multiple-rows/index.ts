@@ -4,11 +4,11 @@ import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 import { TableRowFilter } from '@/models/tiles/types'
 
+import { assertTileAccess } from '../../common/assert-tile-access'
 import {
   FIND_MULTIPLE_ROWS_LIMIT,
   LOOKUP_CONDITIONS_SUBFIELDS,
@@ -108,10 +108,7 @@ const action: IRawAction = {
       })
     }
 
-    if (!$.user) {
-      throw new Error('Flow is missing an owner')
-    }
-    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
+    await assertTileAccess($, tableId)
 
     // Check that filters are valid
     try {

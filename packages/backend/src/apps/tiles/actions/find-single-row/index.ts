@@ -3,11 +3,11 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 import { TableRowFilter } from '@/models/tiles/types'
 
+import { assertTileAccess } from '../../common/assert-tile-access'
 import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
 import {
   validateDynamoDbFilterOperators,
@@ -102,10 +102,7 @@ const action: IRawAction = {
       })
     }
 
-    if (!$.user) {
-      throw new Error('Flow is missing an owner')
-    }
-    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
+    await assertTileAccess($, tableId)
 
     // Check that filters are valid
     try {

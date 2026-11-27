@@ -1,10 +1,10 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
-import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 
+import { assertTileAccess } from '../../common/assert-tile-access'
 import { CreateRowOutput } from '../../types'
 import getDataOutMetadata from './get-data-out-metadata'
 
@@ -108,10 +108,7 @@ const action: IRawAction = {
       })
     }
 
-    if (!$.user) {
-      throw new Error('Flow is missing an owner')
-    }
-    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
+    await assertTileAccess($, tableId)
 
     /**
      * convert array to object

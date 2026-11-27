@@ -4,11 +4,14 @@ import { ForbiddenError } from '@/errors/graphql-errors'
 import { UserFacingError } from '@/errors/user-facing-error'
 import createStep from '@/graphql/mutations/create-step'
 import duplicateBranch from '@/graphql/mutations/duplicate-branch'
+import executeStep from '@/graphql/mutations/execute-step'
 import { getAiChatErrorMessage } from '@/helpers/ai/get-ai-chat-error-message'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
+import { getTableOperations } from '@/models/tiles/factory'
+import { createTable } from '@/models/tiles/pg/table-functions'
 import User from '@/models/user'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 import Context from '@/types/express/context'
@@ -19,7 +22,8 @@ import { generateMockContext } from './tiles/table.mock'
 /**
  * BUSINESS-CRITICAL TESTS. This file pins down the rule:
  *
- *   A user can only point a Tiles step at a Tile they own or edit.
+ *   A user can only point a Tiles step at, or run a Tiles step against, a
+ *   Tile they own or edit.
  *
  * Relaxing this rule is a security vulnerability: a pipe editor could read and
  * write rows in any Tile the pipe owner can edit. STOP and confirm with the
@@ -224,6 +228,41 @@ describe('Tiles step access', () => {
       expect((await tilesStep.$query()).parameters).toEqual({
         tableId: ownerOnlyTile.id,
       })
+    })
+  })
+
+  describe('test runs', () => {
+    const testRunAsEditor = async (tableId: string) => {
+      await createTable(tableId, [])
+      const step = await flow.$relatedQuery('steps').insertAndFetch({
+        appKey: 'tiles',
+        key: 'createTileRow',
+        type: 'action',
+        position: 3,
+        parameters: { tableId, rowData: [] },
+      })
+      return executeStep({}, { input: { stepId: step.id } }, context)
+    }
+
+    it('fails when the editor cannot edit the Tile', async () => {
+      const executionStep = await testRunAsEditor(ownerOnlyTile.id)
+
+      expect(executionStep.status).toBe('failure')
+      expect(executionStep.errorDetails).toMatchObject({
+        name: 'You do not have sufficient permissions for this tile',
+        kind: 'config',
+      })
+      expect(
+        await getTableOperations('pg').getTableRowCount({
+          tableId: ownerOnlyTile.id,
+        }),
+      ).toBe(0)
+    })
+
+    it('succeeds when the editor can edit the Tile', async () => {
+      const executionStep = await testRunAsEditor(sharedTile.id)
+
+      expect(executionStep.status).toBe('success')
     })
   })
 })
