@@ -1,19 +1,100 @@
-import {
-  Box,
-  Flex,
-  ModalCloseButton,
-  ModalHeader,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Flex, ModalHeader, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import type { IApp, ITemplate } from '@plumber/types'
-import { useEffect } from 'react'
-
-import BackButton from '@/components/FlowStepConfigurationModal/BackButton'
-import { getTemplateIconName, TemplateIcon } from '@/helpers/flow-templates'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { useCreateTemplatedFlow } from '../hooks/useCreateTemplatedFlow'
+import BackAndCloseRow from './BackAndCloseRow'
 import TemplateBody from './TemplateBody'
+
+const SEE_MORE_LABEL = 'see more'
+
+/**
+ * Shows one line of the description, then "… see more" directly after the cut.
+ * CSS ellipsis cannot place a link beside the ellipsis, so the cut is measured.
+ */
+function TemplateDescription({
+  description,
+  isExpanded,
+  onExpand,
+}: {
+  description: string
+  isExpanded: boolean
+  onExpand: () => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const measurerRef = useRef<HTMLSpanElement>(null)
+  // Null while the full description fits on one line.
+  const [cutText, setCutText] = useState<string | null>(null)
+
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    const measurer = measurerRef.current
+    if (!container || !measurer || isExpanded) {
+      return
+    }
+
+    const widthOf = (text: string) => {
+      measurer.textContent = text
+      return measurer.offsetWidth
+    }
+    const fit = () => {
+      const maxWidth = container.clientWidth
+      if (widthOf(description) <= maxWidth) {
+        setCutText(null)
+        return
+      }
+      let low = 0
+      let high = description.length
+      while (low < high) {
+        const mid = Math.ceil((low + high) / 2)
+        const candidate = `${description.slice(0, mid).trimEnd()}… ${SEE_MORE_LABEL}`
+        if (widthOf(candidate) <= maxWidth) {
+          low = mid
+        } else {
+          high = mid - 1
+        }
+      }
+      setCutText(description.slice(0, low).trimEnd())
+    }
+
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [description, isExpanded])
+
+  return (
+    <Box ref={containerRef} position="relative" minW={0}>
+      <Text
+        ref={measurerRef}
+        as="span"
+        aria-hidden
+        position="absolute"
+        visibility="hidden"
+        whiteSpace="nowrap"
+        textStyle="body-2"
+      />
+      <Text textStyle="body-2" color="base.content.default">
+        {isExpanded || cutText === null ? description : `${cutText}… `}
+        {!isExpanded && cutText !== null && (
+          <Text
+            as="button"
+            type="button"
+            display="inline"
+            p={0}
+            textStyle="body-2"
+            color="base.content.medium"
+            _hover={{ textDecoration: 'underline' }}
+            onClick={onExpand}
+          >
+            {SEE_MORE_LABEL}
+          </Text>
+        )}
+      </Text>
+    </Box>
+  )
+}
 
 interface TemplatePreviewProps {
   template: ITemplate & { isBuiltIn?: boolean }
@@ -35,7 +116,8 @@ interface TemplatePreviewProps {
 export default function TemplatePreview(props: TemplatePreviewProps) {
   const { template, apps, onBack, onDismiss, replaceOnCreate, onBusyChange } =
     props
-  const { id, name, description, iconName, steps, isBuiltIn } = template
+  const { name, description, steps } = template
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const { createFromTemplate, loading } = useCreateTemplatedFlow(
     template,
     onDismiss,
@@ -49,13 +131,10 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
   return (
     <Flex flexDir="column" flex={1} minH={0} pt={onBack ? 6 : 8} pb={8}>
       {onBack && (
-        <>
-          <Flex px={8} pb={5} pr={16}>
-            {/* A second creation from another preview would race this one. */}
-            <BackButton onBack={onBack} isDisabled={loading} />
-          </Flex>
-          <ModalCloseButton top="1.5rem" right={7} isDisabled={loading} />
-        </>
+        <Box pb={5}>
+          {/* A second creation from another preview would race this one. */}
+          <BackAndCloseRow onBack={onBack} isDisabled={loading} />
+        </Box>
       )}
 
       <Box
@@ -102,21 +181,32 @@ export default function TemplatePreview(props: TemplatePreviewProps) {
         </Flex>
       </Box>
 
-      <Flex alignItems="center" columnGap={4} px={8}>
-        <Box bg="primary.50" color="primary.500" p={2} borderRadius="base">
-          <TemplateIcon
-            iconName={getTemplateIconName({ id, iconName, isBuiltIn })}
-          />
-        </Box>
-        <Flex flexDir="column" flexGrow={1} rowGap={0.5}>
-          <ModalHeader p={0} textStyle="subhead-1">
+      <Flex
+        alignItems={isDescriptionExpanded ? 'flex-start' : 'center'}
+        columnGap={3}
+        px={8}
+      >
+        <Flex flexDir="column" flexGrow={1} minW={0} rowGap={0.5}>
+          <ModalHeader
+            p={0}
+            textStyle="subhead-1"
+            fontWeight={600}
+            fontSize="1rem"
+          >
             {name}
           </ModalHeader>
-          <Text textStyle="body-2" color="base.content.default">
-            {description}
-          </Text>
+          <TemplateDescription
+            isExpanded={isDescriptionExpanded}
+            onExpand={() => setIsDescriptionExpanded(true)}
+            description={description}
+          />
         </Flex>
-        <Button isLoading={loading} onClick={createFromTemplate}>
+        <Button
+          flexShrink={0}
+          ml={3}
+          isLoading={loading}
+          onClick={createFromTemplate}
+        >
           Use template
         </Button>
       </Flex>
