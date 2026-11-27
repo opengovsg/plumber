@@ -31,34 +31,27 @@ import {
 } from '../IfThen/styles'
 
 interface ForEachProps {
-  groupedSteps: IStep[][]
+  // The for-each step, followed by every step in its body.
+  steps: IStep[]
 }
 
 /** A for-each loop drawn as a REPEAT condition block. */
 export default function ForEach(props: ForEachProps) {
-  const { groupedSteps } = props
+  const { steps } = props
   const { currentStepId, flow, isDrawerOpen, onDrawerClose, readOnly } =
     useContext(EditorContext)
   const { groupingActions } = useContext(StepsToDisplayContext)
   const { handleReorderUpdate } = useReorderSteps(flow.id)
 
-  const forEachSteps = groupedSteps[0]
-  const conditionStep = forEachSteps[0]
-
-  // NOTE: groupedSteps includes for-each and if-then actions
-  // so groupedSteps === 1 means that there is only the for-each action
-  const nonForEachActionSteps = forEachSteps.filter(
-    (step) => step.type === 'action' && step.key !== TOOLBOX_ACTIONS.ForEach,
-  )
-  const hasNoActionSteps =
-    nonForEachActionSteps.length === 0 && groupedSteps.length === 1
+  const conditionStep = steps[0]
 
   // Every non-condition step in the body shares one reorder domain, matching
   // the top-level list — a plain step immediately next to an if-then V2
   // block must be able to swap with it, not be stuck in a separate list. A
   // block still reorders as one sortable unit; its children only reorder
   // within the block's own SortableList (in IfThen), never into this one.
-  const bodySteps = useMemo(() => groupedSteps.flat().slice(1), [groupedSteps])
+  const bodySteps = useMemo(() => steps.slice(1), [steps])
+  const hasNoActionSteps = bodySteps.length === 0
 
   const blockItems = useMemo(() => {
     if (bodySteps.length === 0) {
@@ -116,7 +109,7 @@ export default function ForEach(props: ForEachProps) {
     onClose: closeDeleteConfirmation,
     onDelete: deleteForEach,
     openDeleteConfirmation,
-  } = useDeleteStepConfirmation(TOOLBOX_ACTIONS.ForEach, groupedSteps)
+  } = useDeleteStepConfirmation(TOOLBOX_ACTIONS.ForEach, steps)
 
   const handleForEachDelete = useCallback(async () => {
     await deleteForEach()

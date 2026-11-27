@@ -9,11 +9,11 @@ import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 import ForEach from './Content/ForEach'
 
 interface FlowStepGroupProps {
-  groupedSteps: IStep[][]
+  steps: IStep[]
 }
 
 export default function FlowStepGroup(props: FlowStepGroupProps) {
-  const { groupedSteps } = props
+  const { steps } = props
   const { isDrawerOpen, isMobile } = useContext(EditorContext)
 
   return (
@@ -27,7 +27,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
         w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
         minW={MIN_FLOW_STEP_WIDTH}
       >
-        <ForEach groupedSteps={groupedSteps} />
+        <ForEach steps={steps} />
       </Flex>
     </Flex>
   )

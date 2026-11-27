@@ -105,106 +105,6 @@ describe('getIfThenV1StepIdToSkipTo', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
-  it('defaults currDepth to 0 and returns null if the current branch step has an invalid depth', async () => {
-    mocks.stepQueryResult.mockResolvedValue([
-      {
-        id: 'step1',
-        appKey: 'formsg',
-        key: 'newSubmission',
-        parameters: {},
-        position: 1,
-      },
-      {
-        id: 'step2',
-        appKey: 'toolbox',
-        key: 'ifThen',
-        parameters: { depth: 'blah' },
-        position: 2,
-      },
-      {
-        id: 'step3',
-        appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        position: 3,
-      },
-      {
-        id: 'step4',
-        appKey: 'toolbox',
-        key: 'ifThen',
-        parameters: { depth: 2 },
-        position: 4,
-      },
-      {
-        id: 'step5',
-        appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        position: 5,
-      },
-    ])
-
-    const $ = {
-      flow: { id: 'flow3' },
-      step: {
-        id: 'step2',
-        position: 2,
-      },
-    }
-
-    // currDepth defaults to 0; step4 has depth 2 which is > 0, so no next branch matches
-    const result = await getIfThenV1StepIdToSkipTo($ as any)
-    expect(result).toBeNull()
-    expect(consoleErrorSpy).not.toHaveBeenCalled()
-  })
-
-  it('defaults to 0 if the next branch step has an invalid depth', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce([
-      {
-        id: 'step1',
-        appKey: 'formsg',
-        key: 'newSubmission',
-        parameters: {},
-        position: 1,
-      },
-      {
-        id: 'step2',
-        appKey: 'toolbox',
-        key: 'ifThen',
-        parameters: { depth: '1' },
-        position: 2,
-      },
-      {
-        id: 'step3',
-        appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        position: 3,
-      },
-      {
-        id: 'step4',
-        appKey: 'toolbox',
-        key: 'ifThen',
-        parameters: { depth: NaN },
-        position: 4,
-      },
-      {
-        id: 'step5',
-        appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        position: 5,
-      },
-    ])
-
-    const $ = {
-      flow: { id: 'flow3' },
-      step: {
-        id: 'step2',
-        position: 2,
-      },
-    }
-    const result = await getIfThenV1StepIdToSkipTo($ as any)
-    expect(result).toBe('step4')
-    expect(consoleErrorSpy).not.toHaveBeenCalled()
-  })
-
   it('should return the next branch step even if there are multiple steps with the same position', async () => {
     mocks.stepQueryResult.mockResolvedValueOnce([
       {
@@ -266,56 +166,6 @@ describe('getIfThenV1StepIdToSkipTo', () => {
     const result = await getIfThenV1StepIdToSkipTo($ as any)
     expect(result).toBe('step6')
     expect(consoleErrorSpy).toHaveBeenCalled()
-  })
-
-  it('should not return the next branch step if it has a greater depth', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce([
-      {
-        id: 'step1',
-        appKey: 'formsg',
-        key: 'newSubmission',
-        parameters: {},
-        position: 1,
-      },
-      {
-        id: 'step2',
-        appKey: 'toolbox',
-        key: 'ifThen',
-        parameters: { depth: '1' },
-        position: 2,
-      },
-      {
-        id: 'step3',
-        appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        position: 3,
-      },
-      {
-        id: 'step4',
-        appKey: 'toolbox',
-        key: 'ifThen',
-        parameters: { depth: '2' },
-        position: 4,
-      },
-      {
-        id: 'step5',
-        appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        position: 5,
-      },
-    ])
-
-    const $ = {
-      flow: { id: 'flow5' },
-      step: {
-        id: 'step2',
-        position: 2,
-      },
-    }
-
-    const result = await getIfThenV1StepIdToSkipTo($ as any)
-    expect(result).toBeNull()
-    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
   describe('only continue if', () => {
@@ -834,7 +684,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
       expect(loggerErrorSpy).not.toHaveBeenCalled()
     })
 
-    it('delegates a legacy (marker-less) if-then to the depth-scan engine', async () => {
+    it('delegates a legacy (marker-less) if-then to the if-then V1 engine', async () => {
       mocks.stepQueryResult.mockResolvedValue([
         {
           id: 'trigger',

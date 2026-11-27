@@ -15,7 +15,6 @@ type Fixture = {
   id: string
   appKey?: string
   key?: string
-  parameters?: Record<string, any>
   position: number
   config?: IStepConfig
 }
@@ -55,7 +54,6 @@ const ifThen = (
   id,
   appKey: 'toolbox',
   key: 'ifThen',
-  parameters: { depth: '0' },
   position,
   ...extra,
 })
@@ -127,9 +125,7 @@ describe('deriveIfThenV1EndStep', () => {
 
   it('clamps a main-flow block to the step before an mrfSubmission', () => {
     const ifThenA = ifThen('ifThenA', 2)
-    const rejectIfThen = ifThen('rejectIfThen', 5, {
-      parameters: { depth: '0' },
-    })
+    const rejectIfThen = ifThen('rejectIfThen', 5)
     const steps = [
       trigger(1),
       ifThenA,
@@ -209,23 +205,6 @@ describe('deriveIfThenV1EndStep', () => {
     ]
 
     expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('ifThenA')
-  })
-
-  it('does not treat a deeper (nested) if-then as a boundary (mirrors V1 depth scan)', () => {
-    const ifThenA = ifThen('ifThenA', 2)
-    const nested = ifThen('nested', 4, { parameters: { depth: '1' } })
-    const ifThenB = ifThen('ifThenB', 6)
-    const steps = [
-      trigger(1),
-      ifThenA,
-      plain('stepA', 3),
-      nested,
-      plain('stepB', 5),
-      ifThenB,
-      plain('stepC', 7),
-    ]
-
-    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('stepB')
   })
 })
 
