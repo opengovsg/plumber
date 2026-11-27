@@ -157,6 +157,19 @@ const updateFlowTransferStatus: NonNullable<
         (step) => step.appKey === 'm365-excel' && step.connectionId != null,
       )
       .map((step) => step.id)
+
+    // IMPORTANT: Run this read before the flow lock. It uses its own pool
+    // connection, which step writers queued on the lock may be holding.
+    // get the connections and tables to be shared
+    // intentionally exclude m365-excel as the connection will be nullified
+    // and it should retain the user_id in the connections table
+    const connectionDetails = await getConnectionDetails(
+      flow?.steps.filter((step) => step.appKey !== 'm365-excel'),
+    )
+    const sharedConnections = connectionDetails.connection
+    const sharedTables = connectionDetails.table
+
+    await Step.lockFlow(flow.id, trx)
     const numExcelNullified = await Step.query(trx)
       .patch({ connectionId: null, status: 'incomplete' })
       .where('flow_id', flow.id)
@@ -176,15 +189,6 @@ const updateFlowTransferStatus: NonNullable<
     }
 
     // HANDLE CONNECTIONS
-    // get the connections and tables to be shared
-    // intentionally exclude m365-excel as the connection has been nullified
-    // and it should retain the user_id in the connections table
-    const connectionDetails = await getConnectionDetails(
-      flow?.steps.filter((step) => step.appKey !== 'm365-excel'),
-    )
-    const sharedConnections = connectionDetails.connection
-    const sharedTables = connectionDetails.table
-
     if (Object.keys(sharedConnections).length > 0) {
       // duplicate the connections in the connections table and nullify the IDs
       await Promise.all(
@@ -253,13 +257,6 @@ const updateFlowTransferStatus: NonNullable<
       const tableInserts = await Promise.all(
         sharedTables.map(async (tableId) => {
           try {
-            // the old owner should have the permissions to add the new owner as an editor of the table
-            await TableCollaborator.hasAccess(
-              flowTransfer.oldOwnerId,
-              tableId,
-              'editor',
-            )
-
             // there may be instances where the new pipe owner is already the owner of the table
             // we catch the error but do nothing`
             await TableCollaborator.upgradeOrInsertCollaborator({
@@ -269,11 +266,6 @@ const updateFlowTransferStatus: NonNullable<
               trx,
             })
           } catch (e) {
-            if (e instanceof ForbiddenError) {
-              throw new Error(
-                'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
-              )
-            }
             // do nothing if the new owner of the pipe is already the owner of the tile
             if (
               !(e instanceof BadUserInputError) &&
@@ -281,6 +273,26 @@ const updateFlowTransferStatus: NonNullable<
             ) {
               throw new Error(String(e))
             }
+          }
+
+          // The old owner must be able to add the new owner as an editor.
+          // IMPORTANT: Lock after the grant above. Tile ownership transfer
+          // locks the new owner's row before the old owner's, so this order
+          // cannot deadlock with it.
+          try {
+            await TableCollaborator.lockAccess(
+              flowTransfer.oldOwnerId,
+              tableId,
+              'editor',
+              trx,
+            )
+          } catch (e) {
+            if (e instanceof ForbiddenError) {
+              throw new Error(
+                'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
+              )
+            }
+            throw e
           }
 
           // always return the table

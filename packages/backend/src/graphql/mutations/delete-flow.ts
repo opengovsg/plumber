@@ -32,9 +32,10 @@ const deleteFlow: NonNullable<MutationResolvers['deleteFlow']> = async (
   // await ExecutionStep.query().delete().whereIn('execution_id', executionIds)
 
   await flow.$relatedQuery('executions').delete()
-  await Step.transaction(async (trx) =>
-    flow.$relatedQuery('steps', trx).delete(),
-  )
+  await Step.transaction(async (trx) => {
+    await Step.lockFlow(flow.id, trx)
+    await flow.$relatedQuery('steps', trx).delete()
+  })
   await flow.$relatedQuery('pendingTransfer').delete()
   await flow.$relatedQuery('flowConnections').delete()
 

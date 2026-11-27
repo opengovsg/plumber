@@ -76,7 +76,7 @@ async function addFlowTableConnection({
   // COLLABORATORS:
   // check that the user is already an Owner / Editor of the Tile first
   // otherwise they should not be allowed to add a new collaborator
-  await TableCollaborator.hasAccess(addedBy, tableId, 'editor')
+  await TableCollaborator.hasAccess(addedBy, tableId, 'editor', undefined, trx)
 
   // first try to add the connection to the flow_connections table
   await FlowConnections.addFlowConnection({

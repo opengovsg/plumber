@@ -9,6 +9,7 @@ import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import InvalidTileViewTokenError from '@/errors/invalid-tile-view-password'
 import logger from '@/helpers/logger'
+import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/tiles/dynamodb/helpers'
 import { getTableOperations } from '@/models/tiles/factory'
@@ -43,9 +44,9 @@ const getAllRows: NonNullable<QueryResolvers['getAllRows']> = async (
 
     // update last accessed at for collaborator/table
     if (!context.tilesViewKey && !context.isAdminOperation) {
-      await table.$relatedQuery('collaborators').patch({
-        lastAccessedAt: new Date().toISOString(),
-      })
+      await TableCollaborator.query()
+        .patch({ lastAccessedAt: new Date().toISOString() })
+        .where({ table_id: table.id, user_id: context.currentUser.id })
     }
 
     const tableOperations = getTableOperations(table.db)

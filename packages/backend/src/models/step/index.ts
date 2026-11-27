@@ -3,6 +3,7 @@ import { URL } from 'url'
 import {
   raw,
   RelatedQueryBuilder,
+  type QueryBuilder,
   type StaticHookArguments,
   Transaction,
   ValidationError,
@@ -19,6 +20,29 @@ import BaseStep from './base'
 
 export interface StepContext {
   shouldBypassBeforeUpdateHook?: boolean
+}
+
+/**
+ * Serializes step writes with publishing, which updates the same flow rows.
+ * NO KEY UPDATE still lets execution inserts take their foreign key lock.
+ *
+ * IMPORTANT: Do not filter by `active` in the locking query. Postgres does not
+ * lock rows that the filter excludes.
+ */
+async function lockFlowsAndAssertNotActive(
+  flowsQuery: QueryBuilder<Flow, Flow[]>,
+): Promise<void> {
+  const flows = await flowsQuery
+    .select('flows.active')
+    .orderBy('flows.id')
+    .forNoKeyUpdate()
+
+  if (flows.some((flow) => flow.active === true)) {
+    throw new ValidationError({
+      message: 'Cannot edit published pipe.',
+      type: 'editingPublishedPipeError',
+    })
+  }
 }
 
 class Step extends BaseStep {
@@ -210,6 +234,17 @@ class Step extends BaseStep {
     return command
   }
 
+  /**
+   * Takes the Step hooks' flow lock up front.
+   *
+   * IMPORTANT: Call this before a conditional step write in a READ COMMITTED
+   * transaction. The hook locks only flows of rows it finds, but the write can
+   * then match rows committed in between.
+   */
+  static async lockFlow(flowId: string, trx: Transaction): Promise<void> {
+    await Flow.query(trx).findById(flowId).forNoKeyUpdate()
+  }
+
   // Reset step ordering in case of mass deletion or reordering
   static async resetStepOrdering(flowId: string, trx?: Transaction) {
     const allSteps = await Step.query(trx)
@@ -250,18 +285,12 @@ class Step extends BaseStep {
     // means we exclude the ...byId() functions like patchAndFetchById; those
     // don't count as starting from the root because they filter first) unless
     // we want to update _all_ steps.
-    const numNonDistinctActivePipes = await args
-      .asFindQuery()
-      .joinRelated({ flow: true })
-      .where('flow.active', true)
-      .resultSize()
-
-    if (numNonDistinctActivePipes > 0) {
-      throw new ValidationError({
-        message: 'Cannot edit published pipe.',
-        type: 'editingPublishedPipeError',
-      })
-    }
+    await lockFlowsAndAssertNotActive(
+      Flow.query(args.transaction).whereIn(
+        'flows.id',
+        args.asFindQuery().select('steps.flow_id'),
+      ),
+    )
   }
 
   static async beforeInsert(args: StaticHookArguments<Step>): Promise<void> {
@@ -270,17 +299,11 @@ class Step extends BaseStep {
     // Footgun: we avoid asFindQuery because some valid inserts start from the
     // root (e.g. Step.query().insert(...)), which results in asFindQuery
     // returning _all_ steps in the DB.
-    const numActivePipes = await Flow.query(args.transaction)
-      .findByIds(args.inputItems.map((step) => step.flowId))
-      .where('active', true)
-      .resultSize()
-
-    if (numActivePipes > 0) {
-      throw new ValidationError({
-        message: 'Cannot edit published pipe.',
-        type: 'editingPublishedPipeError',
-      })
-    }
+    await lockFlowsAndAssertNotActive(
+      Flow.query(args.transaction).findByIds(
+        args.inputItems.map((step) => step.flowId),
+      ),
+    )
   }
 
   /**
