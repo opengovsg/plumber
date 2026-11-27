@@ -20,6 +20,7 @@ class Connection extends Base {
   draft!: boolean
   count?: number
   flowCount?: number
+  hasPublishedFlows?: boolean
   flow?: Flow
   description?: string
 

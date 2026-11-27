@@ -1,4 +1,11 @@
-import { Menu, MenuButton, MenuItem, MenuList, Portal } from '@chakra-ui/react'
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Portal,
+  Text,
+} from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import * as React from 'react'
 import { BiDotsHorizontalRounded } from 'react-icons/bi'
@@ -16,14 +23,21 @@ type ContextMenuProps = {
   // Whether the app's auth opted into credential editing.
   // Comes from the backend via GetAppConnections.
   supportsConnectionEdit?: boolean
+  // Deleting a connection used by a published pipe strands its executions.
+  hasPublishedFlows?: boolean
   onMenuItemClick: (event: React.MouseEvent, action: Action) => void
 }
 
 export default function ContextMenu(
   props: ContextMenuProps,
 ): React.ReactElement {
-  const { appKey, connectionId, supportsConnectionEdit, onMenuItemClick } =
-    props
+  const {
+    appKey,
+    connectionId,
+    supportsConnectionEdit,
+    hasPublishedFlows,
+    onMenuItemClick,
+  } = props
 
   const createActionHandler = React.useCallback(
     (action: Action) => {
@@ -70,8 +84,26 @@ export default function ContextMenu(
           <MenuItem
             onClick={createActionHandler({ type: 'delete' })}
             color="red.500"
+            isDisabled={hasPublishedFlows}
+            // Keeps the item in keyboard navigation so its reason is reachable.
+            // Chakra still blocks the click while isDisabled is set.
+            isFocusable
+            flexDir="column"
+            alignItems="flex-start"
           >
             Delete
+            {hasPublishedFlows ? (
+              <Text
+                maxW="xs"
+                whiteSpace="normal"
+                textAlign="left"
+                textStyle="caption-2"
+                color="base.content.medium"
+              >
+                Unpublish the pipes using this connection or switch their
+                connection before deleting.
+              </Text>
+            ) : null}
           </MenuItem>
         </MenuList>
       </Portal>

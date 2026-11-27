@@ -1,3 +1,4 @@
+import addHasPublishedFlows from '@/helpers/add-has-published-flows'
 import App from '@/models/app'
 import Connection from '@/models/connection'
 import Context from '@/types/express/context'
@@ -118,17 +119,19 @@ const getApp: NonNullable<QueryResolvers['getApp']> = async (
 
     // if user is an owner, fetch all the connections
     // if the user is an owner, fetch all the connections that the user owns
-    const connections = await context.currentUser
-      .$relatedQuery('connections')
-      .select('connections.*')
-      .fullOuterJoinRelated('steps')
-      .where({
-        'connections.key': params.key,
-        'connections.draft': false,
-      })
-      .countDistinct('steps.flow_id as flowCount')
-      .groupBy('connections.id')
-      .orderBy('created_at', 'desc')
+    const connections = await addHasPublishedFlows(
+      context.currentUser
+        .$relatedQuery('connections')
+        .select('connections.*')
+        .fullOuterJoinRelated('steps')
+        .where({
+          'connections.key': params.key,
+          'connections.draft': false,
+        })
+        .countDistinct('steps.flow_id as flowCount')
+        .groupBy('connections.id')
+        .orderBy('created_at', 'desc'),
+    )
 
     const mergedConnections = Object.values(
       [...sharedConnections, ...connections].reduce(

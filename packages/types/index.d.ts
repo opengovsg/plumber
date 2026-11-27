@@ -43,6 +43,7 @@ export interface IConnection {
   verified: boolean
   count?: number
   flowCount?: number
+  hasPublishedFlows?: boolean
   appData?: IApp
   createdAt: string
   updatedAt: string

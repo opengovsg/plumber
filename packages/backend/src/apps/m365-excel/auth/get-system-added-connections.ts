@@ -2,6 +2,7 @@ import type { ISystemAddedConnectionAuth } from '@plumber/types'
 import { type PartialModelObject } from 'objection'
 
 import { getM365TenantInfo, M365TenantKey } from '@/config/app-env-vars/m365'
+import addHasPublishedFlows from '@/helpers/add-has-published-flows'
 import type Connection from '@/models/connection'
 import User from '@/models/user'
 
@@ -58,16 +59,18 @@ const getSystemAddedConnections: NonNullable<
   // FIXME (ogp-weeloong): consider locking user's connection rows in a later
   // PR to prevent concurrent creation of duplicate connections for same
   // tenants.
-  const connections = await user
-    .$relatedQuery('connections')
-    .select('connections.*')
-    .fullOuterJoinRelated('steps')
-    .where({
-      'connections.key': APP_KEY,
-    })
-    .countDistinct('steps.flow_id as flowCount')
-    .groupBy('connections.id')
-    .orderBy('created_at', 'desc')
+  const connections = await addHasPublishedFlows(
+    user
+      .$relatedQuery('connections')
+      .select('connections.*')
+      .fullOuterJoinRelated('steps')
+      .where({
+        'connections.key': APP_KEY,
+      })
+      .countDistinct('steps.flow_id as flowCount')
+      .groupBy('connections.id')
+      .orderBy('created_at', 'desc'),
+  )
 
   // Create connections for tenants which are not yet connected
   const eligibleTenantKeys = await getEligibleTenantKeys(user.email)
@@ -83,6 +86,7 @@ const getSystemAddedConnections: NonNullable<
 
     for (const newConnection of newConnections) {
       newConnection.flowCount = 0
+      newConnection.hasPublishedFlows = false
       connections.push(newConnection)
     }
   }

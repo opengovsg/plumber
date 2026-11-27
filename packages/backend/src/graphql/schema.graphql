@@ -423,6 +423,7 @@ type Connection {
   createdAt: String
   updatedAt: String
   flowCount: Int
+  hasPublishedFlows: Boolean
   description: String
   editableLabel: String
   environment: Environment
