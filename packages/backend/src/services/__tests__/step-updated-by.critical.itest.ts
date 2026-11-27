@@ -12,6 +12,7 @@ import createStep from '@/graphql/mutations/create-step'
 import deleteStep from '@/graphql/mutations/delete-step'
 import duplicateBranch from '@/graphql/mutations/duplicate-branch'
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'
+import updateStepPositions from '@/graphql/mutations/update-step-positions'
 import { createFlowFromTemplate } from '@/helpers/flow-templates'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -30,7 +31,7 @@ vi.mock('@/helpers/launch-darkly', () => ({
 /**
  * BUSINESS-CRITICAL TESTS. This file pins down the rule:
  *
- *   If a user creates a step, that user also updated it.
+ *   If a user creates or reorders a step, that user also updated it.
  *
  * STOP and confirm with the user before loosening or deleting an assertion
  * below.
@@ -154,6 +155,34 @@ describe('steps.updated_by', () => {
     })
 
     expect(await updatedByOf(existing.id)).toBe(editor.id)
+  })
+
+  it('is replaced by updateStepPositions on every reordered step', async () => {
+    const [first, second] = await flow.$relatedQuery('steps').insertAndFetch(
+      [2, 3].map((position) => ({
+        ...emailStep,
+        type: 'action' as const,
+        position,
+        updatedBy: owner.id,
+      })),
+    )
+
+    await updateStepPositions(
+      {},
+      {
+        input: {
+          stepPositions: [
+            { id: second.id, position: 2, type: 'action' as const },
+            { id: first.id, position: 3, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect(await updatedByOf(first.id)).toBe(editor.id)
+    expect(await updatedByOf(second.id)).toBe(editor.id)
   })
 
   describe('when creating a pipe', () => {

@@ -120,6 +120,7 @@ const updateStepPositions: NonNullable<
     for (const stepPosition of stepPositions) {
       const patchData: PartialModelObject<Step> = {
         position: stepPosition.position,
+        updatedBy: context.currentUser.id,
       }
       if (stepPosition.config) {
         patchData.config = stepPosition.config.approval
