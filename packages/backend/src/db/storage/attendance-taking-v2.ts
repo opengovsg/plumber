@@ -72,7 +72,6 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'New event attendance',
         conditions: [
           {
@@ -126,7 +125,6 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'Update existing attendance',
         conditions: [
           {

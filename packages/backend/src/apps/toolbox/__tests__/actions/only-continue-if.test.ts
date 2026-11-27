@@ -47,9 +47,7 @@ const MOCK_FLOW = [
     appKey: 'toolbox',
     key: 'ifThen',
     position: 3,
-    parameters: {
-      depth: 0,
-    },
+    parameters: {},
   },
   // only continue if in branch 1
   {
@@ -69,9 +67,7 @@ const MOCK_FLOW = [
     appKey: 'toolbox',
     key: 'ifThen',
     position: 6,
-    parameters: {
-      depth: 0,
-    },
+    parameters: {},
   },
   // only continue if in branch 2
   {

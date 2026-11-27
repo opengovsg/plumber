@@ -167,7 +167,6 @@ export async function createStepInTransaction(
     previousStep,
     appKey,
     key,
-    parameters: isIfThen ? { depth: 0 } : {},
     config: {
       ...(approval && { approval }),
       ...(traceId && createStepAiBuilderConfig(traceId, 'create_step')),

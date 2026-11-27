@@ -8,7 +8,7 @@ import { wrapRowsIntoSingleGroup } from '@/helpers/wrap-rows-into-single-group'
  *
  * Old rows were all AND-ed, so they must stay AND-ed inside ONE OR-group.
  * Wrapping each old row in its own group would flip AND → OR and break existing
- * pipes. `branchName` / `depth` (and any other keys) are preserved. Idempotent.
+ * pipes. `branchName` (and any other keys) are preserved. Idempotent.
  */
 export function transformIfThenConditions(
   parameters: IJSONObject,

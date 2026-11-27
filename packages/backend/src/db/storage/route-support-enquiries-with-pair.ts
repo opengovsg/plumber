@@ -46,7 +46,6 @@ function createDivisionBranch(
     appKey: 'toolbox',
     eventKey: 'ifThen',
     parameters: {
-      depth: 0,
       branchName: division,
       conditions: [
         {

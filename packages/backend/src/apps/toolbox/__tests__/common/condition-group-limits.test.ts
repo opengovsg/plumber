@@ -18,7 +18,6 @@ describe('validateConditionGroupParameters', () => {
     expect(() =>
       validateConditionGroupParameters({
         branchName: 'Branch 1',
-        depth: 0,
         conditions: [group(1), group(MAX_ROWS_PER_CONDITION_GROUP)],
       }),
     ).not.toThrow()

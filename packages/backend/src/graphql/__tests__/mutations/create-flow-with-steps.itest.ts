@@ -642,7 +642,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
               position: 2,
               config: {},
               parameters: {
-                depth: 0,
                 branchName: 'If',
               },
             },
@@ -660,7 +659,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
               position: 4,
               config: {},
               parameters: {
-                depth: 0,
                 branchName: 'Else',
               },
             },
@@ -689,12 +687,12 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       expect(steps).toHaveLength(5)
       expect(steps[1].key).toBe('ifThen')
-      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'If' })
+      expect(steps[1].parameters).toEqual({ branchName: 'If' })
       expect(steps[3].key).toBe('ifThen')
-      expect(steps[3].parameters).toEqual({ depth: 0, branchName: 'Else' })
+      expect(steps[3].parameters).toEqual({ branchName: 'Else' })
     })
 
-    it('should not throw error when if-then step is missing depth parameter', async () => {
+    it('should not persist a legacy depth parameter on an if-then step', async () => {
       const params = {
         input: {
           flowName: 'Test Flow',
@@ -714,7 +712,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
               parameters: {
                 branchName: 'If',
-                // missing depth
+                depth: 0,
               },
             },
             {
@@ -737,7 +735,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       const steps = await Step.query()
         .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
-      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'If' })
+      expect(steps[1].parameters).toEqual({ branchName: 'If' })
     })
 
     it('should not throw error when if-then step is missing branchName parameter', async () => {
@@ -759,7 +757,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
               position: 2,
               config: {},
               parameters: {
-                depth: 0,
                 // missing branchName
               },
             },
@@ -783,7 +780,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       const steps = await Step.query()
         .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
-      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'Branch' })
+      expect(steps[1].parameters).toEqual({ branchName: 'Branch' })
     })
 
     it('should throw error when if-then is the last step', async () => {
@@ -805,7 +802,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
               position: 2,
               config: {},
               parameters: {
-                depth: 0,
                 branchName: 'If',
               },
             },
@@ -899,7 +895,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       const steps = await Step.query()
         .where('flow_id', result!.id!)
         .orderBy('position', 'asc')
-      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'Branch' })
+      expect(steps[1].parameters).toEqual({ branchName: 'Branch' })
     })
   })
 

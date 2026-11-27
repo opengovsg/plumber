@@ -35,9 +35,7 @@ const FLAT_PIPE_STEPS = [
     appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 2,
-    parameters: {
-      depth: 0,
-    },
+    parameters: {},
   },
   {
     id: 'branch-1-action-1',
@@ -50,9 +48,7 @@ const FLAT_PIPE_STEPS = [
     appKey: toolboxApp.key,
     key: ifThenAction.key,
     position: 4,
-    parameters: {
-      depth: 0,
-    },
+    parameters: {},
   },
   {
     id: 'branch-2-action-1',

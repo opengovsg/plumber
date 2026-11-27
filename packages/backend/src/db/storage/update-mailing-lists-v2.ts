@@ -77,7 +77,6 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'Officer has not signed up for the mailing list',
         conditions: [
           {
@@ -129,7 +128,6 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
       appKey: 'toolbox',
       eventKey: 'ifThen',
       parameters: {
-        depth: 0,
         branchName: 'Officer has signed up for the mailing list',
         conditions: [
           {
