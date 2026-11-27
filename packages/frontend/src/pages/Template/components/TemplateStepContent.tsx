@@ -45,19 +45,20 @@ export default function TemplateStepContent(props: TemplateStepContentProps) {
             isNested={isNested}
           />
           <StepNameAndDemo stepName={stepName} displayPosition={position} />
+          {sampleUrlDescription && (
+            <Link
+              href={sampleUrl}
+              target="_blank"
+              textStyle="caption-2"
+              colorScheme="secondary"
+              flexShrink={0}
+              ml={4}
+            >
+              {sampleUrlDescription}
+            </Link>
+          )}
         </Flex>
       </Flex>
-      {sampleUrlDescription && (
-        <Link
-          href={sampleUrl}
-          target="_blank"
-          textStyle="caption-2"
-          colorScheme="secondary"
-          mt={2}
-        >
-          {sampleUrlDescription}
-        </Link>
-      )}
     </Flex>
   )
 }
