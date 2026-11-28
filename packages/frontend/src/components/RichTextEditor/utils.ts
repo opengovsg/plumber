@@ -1,6 +1,6 @@
 import { PlacementWithLogical } from '@chakra-ui/react'
+import { MAX_TABLE_VARIABLE_BYTES_PER_STEP } from '@plumber/shared'
 import { Editor } from '@tiptap/react'
-import escapeHtml from 'escape-html'
 import {
   HTMLElement as NodeHTMLElement,
   Node,
@@ -9,8 +9,14 @@ import {
 } from 'node-html-parser'
 import { FieldValues, UseFormGetValues } from 'react-hook-form'
 
-import { hexDecode } from '@/helpers/hex-encoding'
 import type { StepWithVariables, TableVariable } from '@/helpers/variables'
+
+import {
+  HEX_MODIFIER_PATTERN,
+  HEX_MODIFIER_SUFFIX_REGEX,
+  renderTableVariableHtml,
+  type TableRenderBudget,
+} from './tableVariableHtml'
 
 interface TableVariablePreviewData {
   columns: Array<{ id: string; name: string }>
@@ -53,8 +59,6 @@ export function buildVariableInfoMapFromPaths(
   return map
 }
 
-const HEX_MODIFIER_PATTERN = '[a-fA-F0-9]+'
-
 // Matches step variables with optional hex-encoded modifier
 // Format: {{step.uuid.path}} or {{step.uuid.path|hexModifier}}
 const VARIABLE_REGEX = new RegExp(
@@ -67,6 +71,9 @@ export const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 export function simpleSubstitute(
   original: string,
   varInfo: VariableInfoMap,
+  renderBudget: TableRenderBudget = {
+    bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+  },
 ): string {
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
@@ -74,7 +81,7 @@ export function simpleSubstitute(
     // HTML table, mirroring the backend's computeParameters. This keeps the
     // substituted body in sync with the test execution's dataIn so the step's
     // "set up successfully" check (matchParamsToDataIn) matches.
-    const tableHtml = renderTableVariableHtml(id, varInfo)
+    const tableHtml = renderTableVariableHtml(id, varInfo, renderBudget)
     if (tableHtml != null) {
       return tableHtml
     }
@@ -220,108 +227,6 @@ export function substituteOldTemplates(
   return substitutedDom.outerHTML
 }
 
-// Matches a trailing `|<hexModifier>` suffix, capturing the hex in group 1.
-// Reused for both `.match` (read the modifier) and `.replace` (strip it).
-const HEX_MODIFIER_SUFFIX_REGEX = new RegExp(`\\|(${HEX_MODIFIER_PATTERN})$`)
-
-function cellToString(value: unknown): string {
-  if (value === null || value === undefined) {
-    return ''
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value)
-  }
-  return String(value)
-}
-
-/**
- * Builds an email-safe HTML table string from the resolved table data. Cell
- * content is escaped to prevent HTML injection.
- *
- * The markup/styles mirror the backend's email table renderer (formatAsHtml in
- * packages/backend/src/helpers/format-table-variable.ts) so the preview matches
- * the table that actually gets sent — keep the two in sync.
- */
-function buildTableHtml(
-  columns: Array<{ id: string; name: string }>,
-  rows: Array<Record<string, unknown>>,
-): string {
-  const headerBg = '#F3F4F6' // gray.100
-  const rowOddBg = '#FFFFFF' // white
-  const rowEvenBg = '#F9FAFB' // gray.50
-  const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
-
-  const headerCells = columns
-    .map(
-      (col) =>
-        `<td style="${cell} background-color: ${headerBg}; font-weight: 600;"><p style="margin: 0;">${escapeHtml(
-          col.name,
-        )}</p></td>`,
-    )
-    .join('')
-
-  const dataRows = rows
-    .map((row, i) => {
-      const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
-      const cells = columns
-        .map(
-          (col) =>
-            `<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${escapeHtml(
-              cellToString(row[col.id]),
-            )}</p></td>`,
-        )
-        .join('')
-      return `<tr>${cells}</tr>`
-    })
-    .join('')
-
-  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
-}
-
-/**
- * Renders a table-variable node's `data-id` (e.g. `step.uuid.path|hexModifier`)
- * into an HTML table string, or returns null when it can't be rendered (no table
- * data in varInfo, malformed modifier, or no valid selected columns).
- */
-function renderTableVariableHtml(
-  dataId: string,
-  varInfo: VariableInfoMap,
-): string | null {
-  const modifierMatch = dataId.match(HEX_MODIFIER_SUFFIX_REGEX)
-  if (!modifierMatch) {
-    return null
-  }
-  const basePath = dataId.replace(HEX_MODIFIER_SUFFIX_REGEX, '')
-  const tableData = varInfo.get(`{{${basePath}}}`)?.table
-  if (!tableData) {
-    return null
-  }
-
-  let decodedModifier: string
-  try {
-    decodedModifier = hexDecode(modifierMatch[1])
-  } catch {
-    return null
-  }
-  if (!decodedModifier.startsWith('table:')) {
-    return null
-  }
-  const selectedColumnIds = decodedModifier
-    .slice('table:'.length)
-    .split(',')
-    .filter(Boolean)
-
-  const columnById = new Map(tableData.columns.map((col) => [col.id, col]))
-  const selectedColumns = selectedColumnIds
-    .map((id) => columnById.get(id))
-    .filter((col): col is { id: string; name: string } => col != null)
-  if (selectedColumns.length === 0) {
-    return null
-  }
-
-  return buildTableHtml(selectedColumns, tableData.rows)
-}
-
 /**
  * Renders RichTextEditor HTML to plain final-form HTML, suitable for feeding
  * into an email preview pipeline.
@@ -344,6 +249,7 @@ export function substituteForPreview(
   }
 
   const root = parse(html)
+  const renderBudget = { bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP }
 
   function processChildren(parent: NodeHTMLElement): void {
     const newChildren: Node[] = []
@@ -352,7 +258,11 @@ export function substituteForPreview(
         const dataType = child.getAttribute('data-type')
         const dataId = child.getAttribute('data-id')
         if (dataType === 'tableVariable' && dataId != null) {
-          const tableHtml = renderTableVariableHtml(dataId, varInfo)
+          const tableHtml = renderTableVariableHtml(
+            dataId,
+            varInfo,
+            renderBudget,
+          )
           if (tableHtml != null) {
             newChildren.push(...parse(tableHtml).childNodes)
             continue
@@ -373,7 +283,9 @@ export function substituteForPreview(
         processChildren(child)
         newChildren.push(child)
       } else if (child instanceof TextNode) {
-        newChildren.push(new TextNode(simpleSubstitute(child.rawText, varInfo)))
+        newChildren.push(
+          new TextNode(simpleSubstitute(child.rawText, varInfo, renderBudget)),
+        )
       } else {
         newChildren.push(child)
       }

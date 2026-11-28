@@ -5,7 +5,12 @@ import {
   computeForEachParameters,
   ForEachContext,
 } from '@/helpers/compute-for-each-parameters'
-import { hexDecode } from '@/helpers/hex-encoding'
+import {
+  createTableRenderBudget,
+  markTableLimitExceeded,
+  type TableRenderBudget,
+} from '@/helpers/format-table-variable'
+import { hexDecode, hexEncode } from '@/helpers/hex-encoding'
 import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
 
@@ -23,14 +28,48 @@ import Step from '../models/step'
 const variableRegExp =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+(?:\|[a-fA-F0-9]+)?}})/g
 
+// Fits 100 M365 Excel column ids, which hex-encode header names of up to 255
+// characters. Saved modifiers peak at under 5,000 characters.
+const MAX_MODIFIER_HEX_LENGTH = 512 * 1024
+const TABLE_MODIFIER_HEX_PREFIX = hexEncode('table:')
+
+// A symbol, so the flag is never saved with the step's data in or sent to the
+// frontend.
+const TABLE_LIMIT_EXCEEDED = Symbol('table-limit-exceeded')
+
+/** Whether any table variable in these computed parameters hit a limit. */
+export function isTableLimitExceeded(parameters: object): boolean {
+  return TABLE_LIMIT_EXCEEDED in parameters
+}
+
+// A symbol, so upstream JSON data cannot pose as a marker.
+export const TABLE_VARIABLE_MARKER = Symbol('table-variable-marker')
+
 /**
  * Marker object returned when a table modifier is detected.
  * This is processed by the action's preprocessVariable function.
  */
 export interface TableVariableMarker {
-  __type: 'table'
+  [TABLE_VARIABLE_MARKER]: true
   data: unknown
   selectedColumnIds: string[]
+  renderBudget: TableRenderBudget
+}
+
+export function isTableVariableMarker(
+  value: unknown,
+): value is TableVariableMarker {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    TABLE_VARIABLE_MARKER in value
+  )
+}
+
+// One per computeParameters call, so nested fields and arrays share the limit.
+interface TableRenderContext {
+  renderBudget: TableRenderBudget
+  parsedSources: Map<string, unknown>
 }
 
 function findAndSubstituteVariables(
@@ -39,6 +78,7 @@ function findAndSubstituteVariables(
   parameterKey: string,
   rawValue: unknown,
   executionSteps: ExecutionStep[],
+  tableRenderContext: TableRenderContext,
   preprocessVariable?: IAction['preprocessVariable'],
   forEachContext?: ForEachContext,
   preserveArrayVariables = false,
@@ -49,6 +89,7 @@ function findAndSubstituteVariables(
         parameterKey,
         element,
         executionSteps,
+        tableRenderContext,
         preprocessVariable,
         forEachContext,
         preserveArrayVariables,
@@ -65,6 +106,7 @@ function findAndSubstituteVariables(
           k,
           v,
           executionSteps,
+          tableRenderContext,
           preprocessVariable,
           forEachContext,
           preserveArrayVariables,
@@ -105,6 +147,21 @@ function findAndSubstituteVariables(
         ? stepIdAndKeyPath.replace(/\|[a-fA-F0-9]+$/, '')
         : stepIdAndKeyPath
 
+      if (modifierMatch && modifierMatch[1].length > MAX_MODIFIER_HEX_LENGTH) {
+        logger.warn('Variable modifier exceeds length limit', {
+          event: 'variable-modifier-too-long',
+          length: modifierMatch[1].length,
+        })
+        if (
+          modifierMatch[1]
+            .slice(0, TABLE_MODIFIER_HEX_PREFIX.length)
+            .toLowerCase() === TABLE_MODIFIER_HEX_PREFIX
+        ) {
+          markTableLimitExceeded(tableRenderContext.renderBudget)
+        }
+        return part
+      }
+
       const [stepId, ...keyPaths] = cleanStepIdAndKeyPath.split('.')
       const executionStep = executionSteps.find((executionStep) => {
         return executionStep.stepId === stepId
@@ -136,24 +193,32 @@ function findAndSubstituteVariables(
         if (modifierType === 'table') {
           // Parse column IDs from modifier args (e.g., "col1,col2,col3")
           const selectedColumnIds = modifierArgs[0]
-            ? modifierArgs[0].split(',').filter(Boolean)
+            ? [...new Set(modifierArgs[0].split(',').filter(Boolean))]
             : []
 
           // Handle FormSG tables where dataValue is a stringified JSON
           let tableData = dataValue
-          if (typeof dataValue === 'string') {
-            try {
-              tableData = JSON.parse(dataValue)
-            } catch {
-              // Not valid JSON, keep as-is (will fail validation in formatTable)
+          const { renderBudget } = tableRenderContext
+          const hasBudget = renderBudget.bytes > 0
+          if (typeof dataValue === 'string' && hasBudget) {
+            const { parsedSources } = tableRenderContext
+            if (!parsedSources.has(dataValue)) {
+              try {
+                parsedSources.set(dataValue, JSON.parse(dataValue))
+              } catch {
+                // Not valid JSON, keep as-is (will fail validation in formatTable)
+                parsedSources.set(dataValue, dataValue)
+              }
             }
+            tableData = parsedSources.get(dataValue)
           }
 
           // Return marker object for preprocessVariable to handle
           const marker: TableVariableMarker = {
-            __type: 'table',
+            [TABLE_VARIABLE_MARKER]: true,
             data: tableData,
             selectedColumnIds,
+            renderBudget,
           }
 
           if (preprocessVariable) {
@@ -230,12 +295,18 @@ export default function computeParameters(
   forEachContext?: ForEachContext,
   preserveArrayVariables = false,
 ): Step['parameters'] {
-  return findAndSubstituteVariables(
+  const renderBudget = createTableRenderBudget()
+  const computed = findAndSubstituteVariables(
     '', // Dummy initial value; will never be used.
     parameters,
     executionSteps,
+    { renderBudget, parsedSources: new Map() },
     preprocessVariable,
     forEachContext,
     preserveArrayVariables,
   ) as Step['parameters']
+  if (renderBudget.isLimitExceeded) {
+    Object.defineProperty(computed, TABLE_LIMIT_EXCEEDED, { value: true })
+  }
+  return computed
 }

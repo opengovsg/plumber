@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatTable } from '../format-table-variable'
+import { createTableRenderBudget, formatTable } from '../format-table-variable'
 
 const COLS = [
   { id: 'col1', name: 'Name' },
@@ -324,6 +324,33 @@ describe('formatTable', () => {
         expect(result.output).toContain('<p style="margin: 0;">42</p>')
         expect(result.output).toContain('<p style="margin: 0;">3.14</p>')
       }
+    })
+  })
+
+  it('renders a duplicated column id once', () => {
+    const result = formatTable(
+      { rows: ROWS, columns: COLS },
+      { selectedColumnIds: ['col1', 'col1', 'col1'] },
+    )
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.output.match(/Alice/g)).toHaveLength(1)
+    }
+  })
+
+  it('counts each newline as the <br> Postman sends', () => {
+    const table = {
+      rows: [{ data: { col1: 'line 1\nline 2' } }],
+      columns: COLS,
+    }
+    const options = { selectedColumnIds: ['col1'] }
+    const rendered = formatTable(table, options)
+    expect(rendered.success).toBe(true)
+    const rawBytes = rendered.success ? Buffer.byteLength(rendered.output) : 0
+    const renderBudget = { ...createTableRenderBudget(), bytes: rawBytes + 2 }
+    expect(formatTable(table, { ...options, renderBudget })).toMatchObject({
+      success: false,
+      error: 'limit_exceeded',
     })
   })
 })

@@ -1,3 +1,7 @@
+import {
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+} from '@plumber/shared'
 import escapeHTML from 'escape-html'
 import { describe, expect, it } from 'vitest'
 
@@ -12,6 +16,9 @@ import {
   substituteOldTemplates,
   type VariableInfoMap,
 } from './utils'
+
+const OVER_LIMIT_NOTICE =
+  "This table is over the size limit, so this email won't send."
 
 const varInfo = new Map<
   string,
@@ -292,6 +299,187 @@ describe('substituteForPreview', () => {
       ])
       expect(substituteForPreview(makeInput('table:c1'), noTableInfo)).toEqual(
         '2 rows',
+      )
+    })
+
+    it('renders a duplicated column id once', () => {
+      const out = substituteForPreview(
+        makeInput('table:c1,c1,c1'),
+        tableVarInfo,
+      )
+      expect(out.match(/Alice/g)).toHaveLength(1)
+    })
+
+    it('shows an over-limit notice past the column limit', () => {
+      const columns = Array.from(
+        { length: MAX_TABLE_VARIABLE_COLUMNS + 1 },
+        (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
+      )
+      const wideInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: '1 row',
+            table: { columns, rows: [{}] },
+          },
+        ],
+      ])
+      const modifier = `table:${columns.map((c) => c.id).join(',')}`
+      expect(substituteForPreview(makeInput(modifier), wideInfo)).toEqual(
+        OVER_LIMIT_NOTICE,
+      )
+    })
+
+    describe('step byte budget', () => {
+      // Each table renders about 3.8 MB of HTML, so two fit in 10 MB.
+      const columns = Array.from(
+        { length: MAX_TABLE_VARIABLE_COLUMNS },
+        (_, i) => ({ id: `c${i}`, name: `Col ${i}` }),
+      )
+      const bigInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: 'big table',
+            table: { columns, rows: Array.from({ length: 300 }, () => ({})) },
+          },
+        ],
+      ])
+      const modifier = `table:${columns.map((c) => c.id).join(',')}`
+
+      it('shows an over-limit notice once the budget runs out', () => {
+        const out = substituteForPreview(makeInput(modifier).repeat(3), bigInfo)
+        expect(out.match(/<table/g)).toHaveLength(2)
+        expect(out.endsWith(OVER_LIMIT_NOTICE)).toBe(true)
+      })
+
+      it('shows the notice for one cell over the byte budget', () => {
+        const hugeInfo: VariableInfoMap = new Map([
+          [
+            `{{${TABLE_BASE_PATH}}}`,
+            {
+              label: 'My table',
+              testRunValue: '1 row',
+              table: {
+                columns: [{ id: 'c1', name: 'Name' }],
+                rows: [{ c1: '\u00e9'.repeat(6 * 1024 * 1024) }],
+              },
+            },
+          ],
+        ])
+        // 6M two-byte characters are 12 MB in UTF-8, over the 10 MB budget.
+        expect(substituteForPreview(makeInput('table:c1'), hugeInfo)).toEqual(
+          OVER_LIMIT_NOTICE,
+        )
+      })
+
+      describe('byte counting', () => {
+        const token = `{{${TABLE_BASE_PATH}|${hexEncode('table:c1')}}}`
+        const infoFor = (rows: Array<Record<string, unknown>>) =>
+          new Map([
+            [
+              `{{${TABLE_BASE_PATH}}}`,
+              {
+                label: 'My table',
+                testRunValue: 'rows',
+                table: { columns: [{ id: 'c1', name: 'Name' }], rows },
+              },
+            ],
+          ]) as VariableInfoMap
+        // A newline, an apostrophe, a surrogate pair, both lone surrogates and
+        // an empty cell.
+        const tricky = infoFor([
+          { c1: "a\nO'b\u{1F600}\ud800c\udc00" },
+          { c1: '' },
+        ])
+        const html = simpleSubstitute(token, tricky)
+        // Mirrors the body rewrites in the backend's sendEmail.
+        const sentBytes = new TextEncoder().encode(
+          html
+            .replace(/\n/g, '<br>')
+            .replace(
+              /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+              '<p style="margin: 0">&nbsp;</p>',
+            ),
+        ).length
+
+        it('escapes apostrophes the way the sent email does', () => {
+          expect(html).toContain('O&#039;b')
+        })
+
+        it('renders a table that exactly fits the budget', () => {
+          expect(simpleSubstitute(token, tricky, { bytes: sentBytes })).toBe(
+            html,
+          )
+        })
+
+        it('rejects a table one byte over the budget', () => {
+          expect(
+            simpleSubstitute(token, tricky, { bytes: sentBytes - 1 }),
+          ).toBe(OVER_LIMIT_NOTICE)
+        })
+
+        it('stops reading cells once the budget runs out', () => {
+          let laterCellRead = false
+          const laterRow = Object.defineProperty({}, 'c1', {
+            enumerable: true,
+            get: () => {
+              laterCellRead = true
+              return 'x'
+            },
+          })
+          const info = infoFor([{ c1: 'x'.repeat(2000) }, laterRow])
+          expect(simpleSubstitute(token, info, { bytes: 1000 })).toBe(
+            OVER_LIMIT_NOTICE,
+          )
+          expect(laterCellRead).toBe(false)
+        })
+      })
+
+      it('shares the budget between table pills and legacy tokens', () => {
+        const legacy = `<p>{{${TABLE_BASE_PATH}|${hexEncode(modifier)}}}</p>`
+        const out = substituteForPreview(
+          makeInput(modifier) + legacy + makeInput(modifier),
+          bigInfo,
+        )
+        expect(out.match(/<table/g)).toHaveLength(2)
+      })
+
+      it('renders nothing for a selection with a missing column', () => {
+        const out = substituteForPreview(
+          makeInput(
+            `table:missing,${columns
+              .map((c) => c.id)
+              .slice(1)
+              .join(',')}`,
+          ) + makeInput(modifier).repeat(2),
+          bigInfo,
+        )
+        expect(out).not.toContain('big table')
+        expect(out.match(/<table/g)).toHaveLength(2)
+      })
+    })
+
+    it('shows an over-limit notice past the row limit', () => {
+      const longInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: 'many rows',
+            table: {
+              columns: [{ id: 'c1', name: 'Name' }],
+              rows: Array.from({ length: MAX_TABLE_VARIABLE_ROWS + 1 }, () => ({
+                c1: 'x',
+              })),
+            },
+          },
+        ],
+      ])
+      expect(substituteForPreview(makeInput('table:c1'), longInfo)).toEqual(
+        OVER_LIMIT_NOTICE,
       )
     })
 

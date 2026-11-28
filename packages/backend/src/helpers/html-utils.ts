@@ -1,12 +1,4 @@
-// function to escape HTML in string
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
+import { escapeHtml } from '@plumber/shared'
 
 // tag function for safe HTML templates
 function safeHtml(

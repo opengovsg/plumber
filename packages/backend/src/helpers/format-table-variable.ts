@@ -5,7 +5,18 @@
  * for use in transactional emails.
  */
 
+import {
+  MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+  sentTableByteLength,
+} from '@plumber/shared'
+
 import { safeHtml } from './html-utils'
+import logger from './logger'
+
+// Logs well before the byte limit, so near-misses show up first.
+const LARGE_OUTPUT_BYTES = 5 * 1024 * 1024
 
 export interface TableColumn {
   id: string
@@ -24,8 +35,38 @@ export interface TableData {
   inputSource?: string
 }
 
+interface RenderedTable {
+  html: string
+  bytes: number
+}
+
+interface PreparedTable {
+  rows: TableRow[]
+  columnMap: Map<string, TableColumn>
+  outputs: Map<string, RenderedTable>
+}
+
+/** Shared by every table variable in one step. */
+export interface TableRenderBudget {
+  bytes: number
+  isLimitExceeded: boolean
+  hasLoggedLargeOutput: boolean
+  // Reused when one body references the same table many times.
+  preparedTables: Map<object, PreparedTable | null>
+}
+
+export function createTableRenderBudget(): TableRenderBudget {
+  return {
+    bytes: MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+    isLimitExceeded: false,
+    hasLoggedLargeOutput: false,
+    preparedTables: new Map(),
+  }
+}
+
 export interface FormatTableOptions {
   selectedColumnIds: string[]
+  renderBudget?: TableRenderBudget
 }
 
 export type FormatTableResult =
@@ -35,7 +76,11 @@ export type FormatTableResult =
     }
   | {
       success: false
-      error: 'invalid_columns' | 'no_columns' | 'invalid_structure'
+      error:
+        | 'invalid_columns'
+        | 'no_columns'
+        | 'invalid_structure'
+        | 'limit_exceeded'
       message: string
       invalidColumns?: string[]
     }
@@ -58,39 +103,71 @@ function cellToString(value: unknown): string {
  * Simple black borders with background colors matching the preview
  *
  * NOTE: the frontend email preview mirrors this exact markup in
- * `buildTableHtml` (packages/frontend/src/components/RichTextEditor/utils.ts).
+ * `buildTableHtml` (packages/frontend/src/components/RichTextEditor/tableVariableHtml.ts).
  * If you change the markup/styles here, update that mirror and its
  * markup-pinning test so the preview keeps matching the sent email.
  */
-function formatAsHtml(rows: TableRow[], columns: TableColumn[]): string {
+function formatAsHtml(
+  rows: TableRow[],
+  columns: TableColumn[],
+  maxBytes: number,
+): RenderedTable | null {
   const headerBg = '#F3F4F6' // gray.100
   const rowOddBg = '#FFFFFF' // white
   const rowEvenBg = '#F9FAFB' // gray.50
   const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
 
-  const headerCells = columns
-    .map(
-      (col) =>
+  // IMPORTANT: stops as soon as the output passes maxBytes, so an oversized
+  // table costs at most one cell past the limit.
+  const parts: string[] = []
+  let bytes = 0
+  const append = (html: string): boolean => {
+    bytes += sentTableByteLength(html)
+    parts.push(html)
+    return bytes <= maxBytes
+  }
+
+  if (!append('<table style="border-collapse: collapse;"><tbody><tr>')) {
+    return null
+  }
+  for (const col of columns) {
+    if (
+      !append(
         safeHtml`<td style="${cell} background-color: ${headerBg}; font-weight: 600;"><p style="margin: 0;">${col.name}</p></td>`,
-    )
-    .join('')
+      )
+    ) {
+      return null
+    }
+  }
+  if (!append('</tr>')) {
+    return null
+  }
 
-  const dataRows = rows
-    .map((row, i) => {
-      const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
-      const cells = columns
-        .map(
-          (col) =>
-            safeHtml`<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${cellToString(
-              row.data[col.id],
-            )}</p></td>`,
+  for (const [i, row] of rows.entries()) {
+    const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
+    if (!append('<tr>')) {
+      return null
+    }
+    for (const col of columns) {
+      if (
+        !append(
+          safeHtml`<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${cellToString(
+            row.data[col.id],
+          )}</p></td>`,
         )
-        .join('')
-      return `<tr>${cells}</tr>`
-    })
-    .join('')
+      ) {
+        return null
+      }
+    }
+    if (!append('</tr>')) {
+      return null
+    }
+  }
 
-  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
+  if (!append('</tbody></table>')) {
+    return null
+  }
+  return { html: parts.join(''), bytes }
 }
 
 /**
@@ -132,6 +209,43 @@ function validateTableData(tableData: unknown): tableData is TableData {
   return true
 }
 
+function prepareTable(
+  tableData: unknown,
+  preparedTables: TableRenderBudget['preparedTables'],
+): PreparedTable | null {
+  if (typeof tableData !== 'object' || tableData === null) {
+    return null
+  }
+  if (!preparedTables.has(tableData)) {
+    preparedTables.set(
+      tableData,
+      validateTableData(tableData)
+        ? {
+            rows: tableData.rows,
+            columnMap: new Map(tableData.columns.map((col) => [col.id, col])),
+            outputs: new Map(),
+          }
+        : null,
+    )
+  }
+  return preparedTables.get(tableData) ?? null
+}
+
+// The step fails on the first rejected table, so later tables skip parsing,
+// preparation and rendering.
+export function markTableLimitExceeded(budget: TableRenderBudget): void {
+  budget.isLimitExceeded = true
+  budget.bytes = 0
+}
+
+function limitExceeded(
+  budget: TableRenderBudget,
+  message: string,
+): FormatTableResult {
+  markTableLimitExceeded(budget)
+  return { success: false, error: 'limit_exceeded', message }
+}
+
 /**
  * Main function to format table data into HTML
  */
@@ -139,7 +253,36 @@ export function formatTable(
   tableData: unknown,
   options: FormatTableOptions,
 ): FormatTableResult {
-  if (!validateTableData(tableData)) {
+  const budget = options.renderBudget ?? createTableRenderBudget()
+  const selectedColumnIds = [...new Set(options.selectedColumnIds)]
+
+  // IMPORTANT: check before any per-row work, since cost is rows × columns.
+  if (selectedColumnIds.length > MAX_TABLE_VARIABLE_COLUMNS) {
+    return limitExceeded(
+      budget,
+      `Selected ${selectedColumnIds.length} columns, the limit is ${MAX_TABLE_VARIABLE_COLUMNS}`,
+    )
+  }
+  const sourceRows = (tableData as { rows?: unknown } | null)?.rows
+  if (
+    Array.isArray(sourceRows) &&
+    sourceRows.length > MAX_TABLE_VARIABLE_ROWS
+  ) {
+    return limitExceeded(
+      budget,
+      `Table has ${sourceRows.length} rows, the limit is ${MAX_TABLE_VARIABLE_ROWS}`,
+    )
+  }
+
+  if (budget.bytes <= 0) {
+    return limitExceeded(
+      budget,
+      `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
+    )
+  }
+
+  const prepared = prepareTable(tableData, budget.preparedTables)
+  if (!prepared) {
     return {
       success: false,
       error: 'invalid_structure',
@@ -148,10 +291,7 @@ export function formatTable(
     }
   }
 
-  const { rows, columns } = tableData
-  const { selectedColumnIds } = options
-
-  const columnMap = new Map(columns.map((col) => [col.id, col]))
+  const { rows, columnMap, outputs } = prepared
   const columnsToUse: TableColumn[] = []
   const invalidColumns: string[] = []
 
@@ -181,8 +321,34 @@ export function formatTable(
     }
   }
 
+  // Repeats reuse one string, so large cell values are not copied per reference.
+  const outputKey = JSON.stringify(selectedColumnIds)
+  let output = outputs.get(outputKey)
+  if (output === undefined) {
+    output = formatAsHtml(rows, columnsToUse, budget.bytes) ?? undefined
+    if (output) {
+      outputs.set(outputKey, output)
+    }
+  }
+  if (!output || output.bytes > budget.bytes) {
+    return limitExceeded(
+      budget,
+      `Tables in this step exceed ${MAX_TABLE_VARIABLE_BYTES_PER_STEP} bytes`,
+    )
+  }
+
+  budget.bytes -= output.bytes
+  const usedBytes = MAX_TABLE_VARIABLE_BYTES_PER_STEP - budget.bytes
+  if (usedBytes > LARGE_OUTPUT_BYTES && !budget.hasLoggedLargeOutput) {
+    budget.hasLoggedLargeOutput = true
+    logger.warn('Table variables rendered a large output', {
+      event: 'table-variable-large-output',
+      outputBytes: usedBytes,
+    })
+  }
+
   return {
     success: true,
-    output: formatAsHtml(rows, columnsToUse),
+    output: output.html,
   }
 }

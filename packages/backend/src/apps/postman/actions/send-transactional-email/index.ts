@@ -1,4 +1,9 @@
 import {
+  MAX_TABLE_VARIABLE_BYTES_PER_STEP,
+  MAX_TABLE_VARIABLE_COLUMNS,
+  MAX_TABLE_VARIABLE_ROWS,
+} from '@plumber/shared'
+import {
   IGlobalVariable,
   IJSONArray,
   IRawAction,
@@ -8,7 +13,10 @@ import { z, ZodSafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
-import { TableVariableMarker } from '@/helpers/compute-parameters'
+import {
+  isTableLimitExceeded,
+  isTableVariableMarker,
+} from '@/helpers/compute-parameters'
 import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
 import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
@@ -37,18 +45,6 @@ import getDataOutMetadata from './get-data-out-metadata'
 const sendEmailTestRunMetadataSchema = z
   .object({ useConfiguredEmails: z.boolean().optional() })
   .default({ useConfiguredEmails: false })
-/**
- * Type guard to check if a value is a TableVariableMarker
- */
-function isTableMarker(value: unknown): value is TableVariableMarker {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '__type' in value &&
-    (value as TableVariableMarker).__type === 'table'
-  )
-}
-
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
@@ -57,7 +53,7 @@ const action: IRawAction = {
 
   preprocessVariable(key: string, value: unknown) {
     // Handle table variable markers - convert to HTML table
-    if (isTableMarker(value)) {
+    if (isTableVariableMarker(value)) {
       // Only allow table rendering in the body field
       if (key !== 'body') {
         logger.warn('Table variable used in unsupported field', {
@@ -69,6 +65,7 @@ const action: IRawAction = {
 
       const result = formatTable(value.data, {
         selectedColumnIds: value.selectedColumnIds,
+        renderBudget: value.renderBudget,
       })
 
       if (result.success === false) {
@@ -183,6 +180,14 @@ async function sendEmail(
     replyTo,
     attachments,
   } = getSendEmailParams($, testRunMetadata)
+
+  if (isTableLimitExceeded($.step.parameters)) {
+    throw new StepError({
+      name: 'Tables in this email are too large',
+      solution: `Each table can have up to ${MAX_TABLE_VARIABLE_COLUMNS} columns and ${MAX_TABLE_VARIABLE_ROWS} rows. All tables in one email can add up to ${MAX_TABLE_VARIABLE_BYTES_PER_STEP / (1024 * 1024)} MB. Remove columns or rows, or shorten long cell values, then try again.`,
+      kind: 'config',
+    })
+  }
 
   const result = transactionalEmailSchema.safeParse({
     destinationEmail,

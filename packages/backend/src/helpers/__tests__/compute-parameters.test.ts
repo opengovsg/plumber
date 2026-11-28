@@ -1,11 +1,12 @@
 import { randomUUID } from 'crypto'
 
 import type { IJSONObject } from '@plumber/types'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import ExecutionStep from '@/models/execution-step'
 
-import computeParameters from '../compute-parameters'
+import computeParameters, { isTableLimitExceeded } from '../compute-parameters'
+import { hexEncode } from '../hex-encoding'
 
 const randomStepID = randomUUID()
 
@@ -475,5 +476,66 @@ describe('compute parameters', () => {
     expect(result).toEqual({
       value: 'array value 1, hehe, array value 3',
     })
+  })
+
+  describe('table modifier', () => {
+    const tableVariable = (modifier: string) =>
+      `{{step.${randomStepID}.tableProp|${hexEncode(modifier)}}}`
+
+    it('dedupes selected column ids', () => {
+      const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
+      computeParameters(
+        { body: tableVariable('table:name,name,name') },
+        executionSteps,
+        preprocessVariable,
+      )
+      expect(preprocessVariable).toHaveBeenCalledWith(
+        'body',
+        expect.objectContaining({ selectedColumnIds: ['name'] }),
+      )
+    })
+
+    it('shares one cell budget across every field in a step', () => {
+      const preprocessVariable = vi.fn((_key: string, value: unknown) => value)
+      computeParameters(
+        {
+          body: tableVariable('table:name'),
+          subject: [tableVariable('table:name')],
+          nested: { body: tableVariable('table:name') },
+        },
+        executionSteps,
+        preprocessVariable,
+      )
+      const budgets = preprocessVariable.mock.calls.map(
+        ([, marker]) => (marker as { renderBudget: unknown }).renderBudget,
+      )
+      expect(budgets).toHaveLength(3)
+      expect(new Set(budgets).size).toBe(1)
+    })
+
+    it.each([
+      ['lowercase', (hex: string) => hex],
+      ['uppercase', (hex: string) => hex.toUpperCase()],
+    ])(
+      'flags an oversized %s table modifier and empties the step budget',
+      (_case, toCase) => {
+        const preprocessVariable = vi.fn(
+          (_key: string, value: unknown) => value,
+        )
+        const hex = toCase(hexEncode(`table:${'name,'.repeat(70_000)}`))
+        const oversized = `{{step.${randomStepID}.tableProp|${hex}}}`
+        const result = computeParameters(
+          { body: `${oversized}${tableVariable('table:name')}` },
+          executionSteps,
+          preprocessVariable,
+        )
+        expect(isTableLimitExceeded(result)).toBe(true)
+        const [[, marker]] = preprocessVariable.mock.calls as [
+          string,
+          { renderBudget: { bytes: number } },
+        ][]
+        expect(marker.renderBudget.bytes).toBe(0)
+      },
+    )
   })
 })
