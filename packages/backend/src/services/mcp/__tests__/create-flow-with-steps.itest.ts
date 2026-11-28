@@ -178,9 +178,24 @@ describe('createFlowWithStepsService', () => {
       aiBuilderConfig: {
         traceId: 'trace-id-123',
         suggested: [
-          { position: 1, appKey: 'formsg', key: 'newSubmission' },
-          { position: 2, appKey: 'postman', key: 'sendTransactionalEmail' },
-          { position: 3, appKey: 'slack', key: 'sendMessageToChannel' },
+          {
+            position: 1,
+            appKey: 'formsg',
+            key: 'newSubmission',
+            stepId: triggerStep.id,
+          },
+          {
+            position: 2,
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            stepId: firstActionStep.id,
+          },
+          {
+            position: 3,
+            appKey: 'slack',
+            key: 'sendMessageToChannel',
+            stepId: secondActionStep.id,
+          },
         ],
       },
     })
@@ -329,7 +344,9 @@ describe('createFlowWithStepsService', () => {
     const [, ifThen, , sms, email] = result.steps
     expect(ifThen.config.endStepId).toBe(sms.id)
     expect(email.config.endStepId).toBeUndefined()
-    expect(result.config?.aiBuilderConfig?.suggested).toHaveLength(5)
+    expect(
+      result.config?.aiBuilderConfig?.suggested?.map((s) => s.stepId),
+    ).toEqual(result.steps.map((s) => s.id))
   })
 
   it('pins a flat if-then without ifThenChildCount to its derived extent', async () => {
@@ -476,8 +493,8 @@ describe('createFlowWithStepsService', () => {
     expect(result.steps[0].key).toBeNull()
     expect(result.steps[1].key).toBeNull()
     expect(result.config?.aiBuilderConfig?.suggested).toEqual([
-      { position: 1, appKey: 'webhook', key: null },
-      { position: 2, appKey: 'slack', key: null },
+      { position: 1, appKey: 'webhook', key: null, stepId: result.steps[0].id },
+      { position: 2, appKey: 'slack', key: null, stepId: result.steps[1].id },
     ])
   })
 
@@ -517,9 +534,24 @@ describe('createFlowWithStepsService', () => {
     expect(result.config?.aiBuilderConfig).toEqual({
       traceId: 'trace-snapshot-params',
       suggested: [
-        { position: 1, appKey: 'formsg', key: 'newSubmission' },
-        { position: 2, appKey: 'toolbox', key: 'ifThen' },
-        { position: 3, appKey: 'postman', key: 'sendTransactionalEmail' },
+        {
+          position: 1,
+          appKey: 'formsg',
+          key: 'newSubmission',
+          stepId: result.steps[0].id,
+        },
+        {
+          position: 2,
+          appKey: 'toolbox',
+          key: 'ifThen',
+          stepId: result.steps[1].id,
+        },
+        {
+          position: 3,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          stepId: result.steps[2].id,
+        },
       ],
     })
   })
@@ -888,6 +920,13 @@ describe('createFlowWithStepsService', () => {
           branch: 'reject',
           stepId: approvalStep.id,
         })
+        // Suggested position 2 is the approve email, not the stage step saved there.
+        expect(result.config?.aiBuilderConfig?.suggested).toEqual([
+          expect.objectContaining({ position: 1, stepId: result.steps[0].id }),
+          expect.objectContaining({ position: 2, stepId: result.steps[2].id }),
+          expect.objectContaining({ position: 3, stepId: result.steps[3].id }),
+          expect.objectContaining({ position: 4, stepId: result.steps[5].id }),
+        ])
       })
 
       it('places actions on two approval stages whatever order they are listed in', async () => {
@@ -1264,6 +1303,13 @@ describe('createFlowWithStepsService', () => {
             'mrfSubmission',
             'mrfSubmission',
             'newSubmission',
+          ])
+          expect(
+            flow.config?.aiBuilderConfig?.suggested?.map((s) => s.stepId),
+          ).toEqual([
+            steps.find((s) => s.key === 'newSubmission')?.id,
+            undefined,
+            undefined,
           ])
         })
 

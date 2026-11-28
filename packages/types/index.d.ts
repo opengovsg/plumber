@@ -250,11 +250,7 @@ export interface IFlowConfig {
   // AI Builder config
   aiBuilderConfig?: {
     traceId: string // trace id on Rome (Langfuse)
-    suggested?: Array<{
-      position: number
-      appKey: string | null
-      key: string | null
-    }>
+    suggested?: IFlowAiBuilderSuggestion[]
   }
   isForceClogged?: boolean
   // Set to true to prevent the archival job from archiving executions for this
@@ -262,6 +258,14 @@ export interface IFlowConfig {
   // rehydration CLI to protect restored executions from same-night re-archival;
   // clear with: UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<id>'
   archiveDisabled?: true
+}
+
+export interface IFlowAiBuilderSuggestion {
+  position: number
+  appKey: string | null
+  key: string | null
+  // The step created from this suggestion. Pipes created before this field existed lack it.
+  stepId?: string
 }
 
 export type NotificationRecipients = 'editor' | 'viewer'

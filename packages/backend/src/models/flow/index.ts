@@ -1,4 +1,4 @@
-import { IFlowCollabRole } from '@plumber/types'
+import type { IFlowAiBuilderSuggestion, IFlowCollabRole } from '@plumber/types'
 import type { ModelOptions, QueryContext, Transaction } from 'objection'
 import { ValidationError } from 'objection'
 
@@ -225,6 +225,25 @@ class Flow extends BaseFlow {
             to_jsonb(COALESCE(config->>'duplicateCount', '0')::int + 1),
             true
           )`,
+        ),
+      })
+  }
+
+  /**
+   * Writes only the suggested path, so a concurrent edit to other config keys
+   * is kept. Bypasses the model so this system write leaves updated_at alone.
+   */
+  static async saveAiBuilderSuggestions(
+    flowId: string,
+    suggested: IFlowAiBuilderSuggestion[],
+    trx: Transaction,
+  ): Promise<void> {
+    await trx(this.tableName)
+      .where('id', flowId)
+      .update({
+        config: trx.raw(
+          `jsonb_set(config, '{aiBuilderConfig,suggested}', ?::jsonb)`,
+          [JSON.stringify(suggested)],
         ),
       })
   }

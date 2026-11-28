@@ -1,5 +1,8 @@
+import type { IFlowAiBuilderSuggestion } from '@plumber/types'
+
 import { isIfThenStep } from '@/apps/toolbox/common/constants'
 import { UserFacingError } from '@/errors/user-facing-error'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
@@ -48,12 +51,16 @@ export async function addMrfActions({
   flowId,
   actions,
   traceId,
+  suggested,
 }: {
   user: User
   flowId: string
   actions: McpStepInput[]
   traceId: string
-}): Promise<void> {
+  // The pipe's AI Builder suggestions. suggested[0] is the trigger, so
+  // actions[k] is suggested[k + 1].
+  suggested: IFlowAiBuilderSuggestion[]
+}): Promise<string[]> {
   let current: McpStepInput | undefined
 
   try {
@@ -82,9 +89,10 @@ export async function addMrfActions({
 
     for (let attempt = 1; ; attempt++) {
       try {
-        await Step.transaction(async (trx) => {
+        return await Step.transaction(async (trx) => {
           await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
+          const createdStepIds: string[] = []
           const tails = new Map<string, Tail>()
           let ifThenCount = 0
 
@@ -134,14 +142,26 @@ export async function addMrfActions({
                 .patch({ parameters })
                 .where('steps.id', created.id)
 
+              createdStepIds.push(created.id)
               previous = { stepId: created.id, isInsideBlock: blockSize > 0 }
             }
 
             tails.set(groupKey, previous)
             index += blockSize
           }
+
+          // Same transaction, so the ids commit only with their steps.
+          await Flow.saveAiBuilderSuggestions(
+            flowId,
+            suggested.map((suggestion, index) =>
+              index === 0
+                ? suggestion
+                : { ...suggestion, stepId: createdStepIds[index - 1] },
+            ),
+            trx,
+          )
+          return createdStepIds
         })
-        return
       } catch (error) {
         const isConflict =
           (error as { code?: string }).code === SERIALIZATION_FAILURE

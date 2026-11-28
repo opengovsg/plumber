@@ -1,4 +1,4 @@
-import type { IStep } from '@plumber/types'
+import type { IFlowAiBuilderSuggestion, IStep } from '@plumber/types'
 import z from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -77,20 +77,19 @@ const createFlowWithSteps: NonNullable<
     throw new Error('Pipe contains invalid action steps')
   }
 
+  // Analytics diffs these against the saved steps to see how much users change the proposal.
+  // The contiguity check above guarantees step.position === index + 1.
+  const suggested: IFlowAiBuilderSuggestion[] = steps.map((step, index) => ({
+    position: index + 1,
+    appKey: step.appKey ?? null,
+    key: step.key ?? null,
+  }))
+
   return Flow.transaction(async (trx) => {
     const flow = await context.currentUser.$relatedQuery('flows', trx).insert({
       name: trimmedFlowName,
       config: {
-        aiBuilderConfig: {
-          ...aiBuilderConfig,
-          // Analytics diffs these against the saved steps to see how much users change the proposal.
-          // The contiguity check above guarantees step.position === index + 1.
-          suggested: steps.map((step, index) => ({
-            position: index + 1,
-            appKey: step.appKey ?? null,
-            key: step.key ?? null,
-          })),
-        },
+        aiBuilderConfig: { ...aiBuilderConfig, suggested },
       },
     })
 
@@ -117,9 +116,20 @@ const createFlowWithSteps: NonNullable<
       }
     })
 
-    await flow.$relatedQuery('steps', trx).insert(stepsToInsert)
+    const insertedSteps = await flow
+      .$relatedQuery('steps', trx)
+      .insert(stepsToInsert)
+    await Flow.saveAiBuilderSuggestions(
+      flow.id,
+      suggested.map((suggestion, index) => ({
+        ...suggestion,
+        stepId: insertedSteps[index].id,
+      })),
+      trx,
+    )
 
-    return flow
+    // Re-read, since the suggestions gained step ids after the insert.
+    return flow.$query(trx)
   })
 }
 
