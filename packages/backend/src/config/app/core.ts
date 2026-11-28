@@ -42,6 +42,7 @@ export type CoreConfig = {
   }
   launchDarklySdkKey: string
   launchDarklyOffline: boolean
+  launchDarklyFlagFile: string | undefined
   maxJobAttempts: number
   onboardingEmailWebhookUrl: string
   tilesPostgres: {
@@ -161,6 +162,11 @@ const coreConfig: CoreConfig = {
   // IMPORTANT: deployed environments must never skip LD, so only development honours it.
   launchDarklyOffline:
     appEnvConfig.isDev && process.env.LAUNCH_DARKLY_OFFLINE === 'true',
+  // Local flag values for flag-gated features, which the offline client would otherwise always turn off.
+  launchDarklyFlagFile:
+    appEnvConfig.isDev && process.env.LAUNCH_DARKLY_OFFLINE === 'true'
+      ? process.env.LAUNCH_DARKLY_FLAG_FILE || undefined
+      : undefined,
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
   tilesPostgres: {

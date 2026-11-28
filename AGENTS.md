@@ -56,6 +56,7 @@ biometric prompt that an agent cannot answer.
 
 - `pnpm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
   `.env-example` placeholders. Each linked worktree gets its own ports. The backend's LaunchDarkly client runs offline.
+  To turn on a backend flag, write `tmp/ld-flags.json` before you start the server, e.g. `{"flagValues": {"plumpro": true}}`. The backend reloads the file on each change. Flags missing from it read their fallback.
 - **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
   Those calls fail with third-party authentication errors. That is expected, not a bug to
   fix.

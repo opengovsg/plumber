@@ -107,3 +107,39 @@ describe('appConfig.launchDarklyOffline', () => {
     },
   )
 })
+
+describe('appConfig.launchDarklyFlagFile', () => {
+  async function loadFlagFile(
+    appEnv: string,
+    offline: string | undefined,
+    file: string | undefined,
+  ) {
+    vi.stubEnv('APP_ENV', appEnv)
+    vi.stubEnv('LAUNCH_DARKLY_OFFLINE', offline)
+    vi.stubEnv('LAUNCH_DARKLY_FLAG_FILE', file)
+    vi.resetModules()
+    const { default: appConfig } = await import('@/config/app')
+    return appConfig.launchDarklyFlagFile
+  }
+
+  it('is set in development when the client runs offline', async () => {
+    expect(
+      await loadFlagFile('development', 'true', '/tmp/ld-flags.json'),
+    ).toBe('/tmp/ld-flags.json')
+  })
+
+  it('is unset when the client runs online', async () => {
+    expect(
+      await loadFlagFile('development', undefined, '/tmp/ld-flags.json'),
+    ).toBeUndefined()
+  })
+
+  it.each(['prod', 'staging', 'uat', 'test'])(
+    'is unset in %s even when the file is set',
+    async (appEnv) => {
+      expect(
+        await loadFlagFile(appEnv, 'true', '/tmp/ld-flags.json'),
+      ).toBeUndefined()
+    },
+  )
+})

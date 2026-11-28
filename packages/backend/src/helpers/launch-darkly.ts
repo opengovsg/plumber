@@ -5,10 +5,9 @@ import { memoize } from 'lodash'
 import apps from '@/apps'
 import appConfig from '@/config/app'
 import { APP_FLAG_REGEX } from '@/config/flags'
+import { getLdClientOptions } from '@/helpers/launch-darkly-options'
 
-const client = init(appConfig.launchDarklySdkKey, {
-  offline: appConfig.launchDarklyOffline,
-})
+const client = init(appConfig.launchDarklySdkKey, getLdClientOptions(appConfig))
 
 // No top level awaits means that the 1st call _might_ need to wait a bit longer
 // for init... :(
