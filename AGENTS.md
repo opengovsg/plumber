@@ -56,6 +56,7 @@ biometric prompt that an agent cannot answer.
 
 - `pnpm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
   `.env-example` placeholders. Each linked worktree gets its own ports. The backend's LaunchDarkly client runs offline.
+  To log in and use the UI, follow [docs/agents/drive-ui.md](docs/agents/drive-ui.md).
 - **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
   Those calls fail with third-party authentication errors. That is expected, not a bug to
   fix.
